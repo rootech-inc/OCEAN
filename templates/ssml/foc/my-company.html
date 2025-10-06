@@ -12,7 +12,12 @@
         <!-- Company Details Section -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="card-title">Company Profile</h5>
+                <div class="w-100 d-flex">
+                    <div class="w-50 d-flex"><h5 class="card-title">Company Profile</h5></div>
+                    <div class="w-50 d-flex justify-content-end align-content-center">
+                        <button id="edit_owner" class="btn btn-info rounded-0"><i class="fa fa-edit"></i> Owner</button>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
 
@@ -20,23 +25,23 @@
                     <h3>Owner</h3>
                     <div class="row">
                         <div class="col-sm-4">
-                            <label class="form-label">Fullname</label>
-                            <input id="company_name" type="text" class="form-control" placeholder="Enter company name">
+                            <span class="form-label">Fullname</span><br>
+                            <strong id="company_name" >Jane Doe</strong>
                         </div>
                         <!-- GHANA CARD -->
                         <div class="col-sm-4">
-                            <label class="form-label">Ghana Number</label>
-                            <input type="text" id="ghana_card" class="form-control" placeholder="GHA - XXXXXX">
+                            <span class="form-label">Ghana Number</span> <br>
+                            <strong id="company_name" >Jane Doe</strong>
+                        </div>
+
+                        <div class="col-sm-4 mb-3">
+                            <span class="form-label">Phone Number</span><br>
+                            <strong id="company_name" >Jane Doe</strong>
                         </div>
 
                         <div class="col-sm-4">
-                            <label class="form-label">Phone Number</label>
-                            <input type="text" id="owner_phone" class="form-control" placeholder="Enter phone number">
-                        </div>
-
-                        <div class="col-sm-4">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="owner_email" class="form-control" placeholder="Enter email">
+                            <span class="form-label">Email</span><br>
+                            <strong id="company_name" >Jane Doe</strong>
                         </div>
 
                     </div>
@@ -67,6 +72,18 @@
                         <div class="col-sm-4">
                             <label class="form-label">Business Email</label>
                             <input type="email" id="business_email" class="form-control" placeholder="Enter email">
+                        </div>
+                        <div class="col-sm-4">
+                            <label for="region" class="form-label">Region</label>
+                            <input type="text" id="region" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label for="city" class="form-label">City/ Town</label>
+                            <input type="text" id="city" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label for="gh_post" class="form-label">GH POST</label>
+                            <input type="text" id="gh_post" class="form-control">
                         </div>
                         <div class="col-sm-12">
                             <label class="form-label">Address</label>
@@ -133,4 +150,45 @@
             <button type="submit" class="btn btn-primary">Save Changes</button>
         </div>
     </div>
+
+    <script>
+        let owner_update_form = `
+            <div class="row">
+                        <div class="col-sm-4">
+                            <label class="form-label">Fullname</label>
+                            <input id="company_name" type="text" class="form-control" placeholder="Enter company name">
+                        </div>
+                        <!-- GHANA CARD -->
+                        <div class="col-sm-4">
+                            <label class="form-label">Ghana Number</label>
+                            <input type="text" id="ghana_card" class="form-control" placeholder="GHA - XXXXXX">
+                        </div>
+
+                        <div class="col-sm-4">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" id="owner_phone" class="form-control" placeholder="Enter phone number">
+                        </div>
+
+                        <div class="col-sm-4">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="owner_email" class="form-control" placeholder="Enter email">
+                        </div>
+
+                    </div>
+        `
+
+        $(document).ready(function () {
+            $('#edit_owner').click(function () {
+                amodal.setTitleText("EDIT OWNER")
+                amodal.setBodyHtml(owner_update_form)
+                amodal.show()
+                amodal.setFooterHtml(`<button id="update_owner" class="btn btn-success w-100">UPDATE</button>`)
+
+                $('#update_owner').click(function() {
+                        let ids  = []
+                    }
+                )
+            })
+        })
+    </script>
 {% endblock %}
