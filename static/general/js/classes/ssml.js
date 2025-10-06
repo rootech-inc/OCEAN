@@ -3988,23 +3988,20 @@ class SSML {
                 $('#c_name').text(data['company'])
                 $('.total_installed').html(jobs.total)
                 $('.total_issued').html(data['total_issued'])
-
+                $('.avg_performance').html(data['daily_average'])
                 let jobs_by_month = data.jobs_by_month
                 let jbs = ``;
                 // console.log(jobs_by_month)
 
                 for (const mt in jobs_by_month) {
                     jbs += `
-                        <tr><td>${mt}</td><td>${jobs_by_month[mt]}</td></tr>
+                        <tr><td>${mt}</td><td>0</td><td>${jobs_by_month[mt]}</td></tr>
                     `
                 }
 
-                $('#workProgressChart').html(
-                    `<table class="table table-sm table-bordered table-stripped">
-                        <thead class="bg-dark text-light"><tr><th>MONTH</th><th>INSTALLED</th></tr></thead>
-                        <tbody>${jbs}</tbody>
-                      </table>`
-                )
+                $('#legend_table').html(jbs)
+
+
 
 
 
