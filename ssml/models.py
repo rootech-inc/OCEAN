@@ -445,12 +445,63 @@ class Contractor(models.Model):
             'can_work':self.can_work(),
         }
 
+    def total_issued_meters(self):
+
+        return IssueTransaction.objects.filter(material__item_type='pri',issue__contractor=self).aggregate(total = Sum('total_qty'))['total']
+
     def total_jobs(self):
         jobs = {}
         for service_type in ServiceType.objects.all():
-            jobs.update({service_type.name:ServiceOrder.objects.filter(contractor=self,service_type=service_type).aggregate(total_jobs=Sum('quantity'))['total_jobs']})
+            jobs.update({service_type.name:ServiceOrder.objects.filter(contractor=self,service_type=service_type).count()})
         jobs.update({'total':sum(jobs.values())})
         return jobs
+    
+    def on_average(self):
+        # Get all service orders for this contractor
+        service_orders = ServiceOrder.objects.filter(contractor=self)
+
+        # Get unique dates
+        unique_dates = service_orders.values('service_date').distinct().count()
+
+        if unique_dates == 0:
+            return 0
+
+        # Total number of installations
+        total_installations = service_orders.count()
+
+        # Calculate average installations per day
+        avg_per_day = total_installations / unique_dates if unique_dates > 0 else 0
+
+        return round(avg_per_day, 2)
+    
+    def jobs_by_month(self):
+            from django.db.models.functions import ExtractMonth
+            from django.db.models import Count
+            current_year = timezone.now().year
+            current_month = timezone.now().month
+            monthly_jobs = (
+                ServiceOrder.objects.filter(
+                    contractor=self,
+                    service_date__year=current_year
+                )
+                .annotate(month=ExtractMonth('service_date'))
+                .values('month')
+                .annotate(count=Count('id'))
+                .order_by('month')
+            )
+
+            months = {
+                1: 'January', 2: 'February', 3: 'March', 4: 'April',
+                5: 'May', 6: 'June', 7: 'July', 8: 'August',
+                9: 'September', 10: 'October', 11: 'November', 12: 'December'
+            }
+
+            result = {}
+            for month_num in range(1, current_month + 1):  # Only iterate up to current month
+                month_jobs = next((item for item in monthly_jobs if item['month'] == month_num), None)
+                result[months[month_num]] = month_jobs['count'] if month_jobs else 0
+        
+            return result
 
     def obj(self):
         return {
@@ -481,6 +532,9 @@ class Contractor(models.Model):
             'code':self.code,
             'can_work':self.can_work(),
             'jobs':self.total_jobs(),
+            'total_issued':self.total_issued_meters(),
+            'daily_average':self.on_average(),
+            'jobs_by_month':self.jobs_by_month()
             
         }
 

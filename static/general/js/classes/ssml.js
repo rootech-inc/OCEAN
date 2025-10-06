@@ -3982,7 +3982,31 @@ class SSML {
         await api.v2('VIEW',payload,'/ssml/api/contractor/').then(response => {
             if(anton.IsRequest(response)){
                 console.log("TIME IS TIMES")
-                console.table(response)
+                let data = response['message'];
+
+                let jobs = data['jobs']
+                $('.total_installed').html(jobs.total)
+                $('.total_issued').html(data['total_issued'])
+
+                let jobs_by_month = data.jobs_by_month
+                let jbs = ``;
+                // console.log(jobs_by_month)
+
+                for (const mt in jobs_by_month) {
+                    jbs += `
+                        <tr><td>${mt}</td><td>${jobs_by_month[mt]}</td></tr>
+                    `
+                }
+
+                $('#workProgressChart').html(
+                    `<table class="table table-sm table-bordered table-stripped">
+                        <thead class="bg-dark text-light"><tr><th>MONTH</th><th>INSTALLED</th></tr></thead>
+                        <tbody>${jbs}</tbody>
+                      </table>`
+                )
+
+
+
                 console.log("TIME IS TIMES")
             } else {
                 kasa.response(response)

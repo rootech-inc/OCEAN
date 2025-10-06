@@ -899,7 +899,9 @@ def interface(request):
                         raise Exception("Contractor does not exist")
 
                 elif module == 'foc_verify_token':
-                    foc_verify_token = data.get('foc_verify_token')
+                    foc_verify_token = data.get('code')
+                    print(data)
+                    print(foc_verify_token)
                     if Contractor.objects.filter(otp=foc_verify_token).exists():
                         contractor = Contractor.objects.get(otp=foc_verify_token)
                         c_code = contractor.code

@@ -14,6 +14,11 @@
 
             font-size: 16px;
         }
+
+        #content{
+            height:100vh;
+            overflow:auto;
+        }
     </style>
 
     <div id="content">
@@ -33,23 +38,23 @@
         <!-- Statistics Cards -->
         <div class="row g-3 my-2 text-center">
             <div class="col-md-3">
-                <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded">
+                <div class="p-3 bg-white text-primary shadow-sm d-flex justify-content-around align-items-center rounded">
                     <div>
-                        <h3 class="fs-2">230</h3>
+                        <h3 class="fs-2 total_issued">0</h3>
                         <p class="fs-5">Total Issued</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded">
+                <div class="p-3 bg-white text-info shadow-sm d-flex justify-content-around align-items-center rounded">
                     <div>
-                        <h3 class="fs-2">92%</h3>
+                        <h3 class="fs-2 total_installed">92%</h3>
                         <p class="fs-5">Installed</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded">
+                <div class="p-3 bg-white text-warning shadow-sm d-flex justify-content-around align-items-center rounded">
                     <div>
                         <h3 class="fs-2">15</h3>
                         <p class="fs-5">Pending</p>
@@ -57,9 +62,9 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded">
+                <div class="p-3 bg-white text-success shadow-sm d-flex justify-content-around align-items-center rounded">
                     <div>
-                        <h3 class="fs-2">0.00</h3>
+                        <h3 class="fs-2">*.**</h3>
                         <p class="fs-5">Total Earnings</p>
                     </div>
                 </div>
@@ -73,60 +78,15 @@
                     <div class="card-header">
                         Monthly Work Progress
                     </div>
-                    <div class="card-body">
-                        <canvas id="workProgressChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        Work Distribution
-                    </div>
-                    <div class="card-body">
-                        <canvas id="workDistributionChart"></canvas>
+                    <div id='workProgressChart' class="card-body p-2">
+
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Work Records Table -->
-        <div class="row my-5">
-            <div class="col">
-                <div class="card">
-                    <div class="card-header">
-                        Recent Work Records
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table">
-                            <thead>
-                            <tr>
-                                <th>Work ID</th>
-                                <th>Type</th>
-                                <th>Location</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th>Amount</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>W001</td>
-                                <td>Installation</td>
-                                <td>Sector 1</td>
-                                <td>Completed</td>
-                                <td>2024-01-15</td>
-                                <td>₹5,000</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                        </div>
 
-                    </div>
-                </div>
-            </div>
-        </div>
         `
 
         let auth_html = `
