@@ -1071,7 +1071,7 @@ def approve_document(request):
             from django.http import JsonResponse
             return JsonResponse({'status_code': '500', 'message': str(e)})
 
-@login_required()
+
 def foc_portal(request):
     # Render the template into a response object
     response = render(request, 'ssml/foc-potal.html')

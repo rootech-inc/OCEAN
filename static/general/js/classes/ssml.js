@@ -3983,8 +3983,9 @@ class SSML {
             if(anton.IsRequest(response)){
                 console.log("TIME IS TIMES")
                 let data = response['message'];
-
+                console.table(data)
                 let jobs = data['jobs']
+                $('#c_name').text(data['company'])
                 $('.total_installed').html(jobs.total)
                 $('.total_issued').html(data['total_issued'])
 

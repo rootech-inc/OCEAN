@@ -1,4 +1,4 @@
-{% extends 'ssml/ssmlbase.html' %}
+{% extends 'ssml/focbase.html' %}
 
 {% load static %}
 
@@ -15,10 +15,7 @@
             font-size: 16px;
         }
 
-        #content{
-            height:100vh;
-            overflow:auto;
-        }
+
     </style>
 
     <div id="content">
@@ -33,7 +30,7 @@
         console.log(stage)
 
         let legend1 =  `
-            <h1 class="mt-4">Contractor Dashboard</h1>
+            <h1 id="c_name" class="mt-4 text-center">Contractor Dashboard</h1>
 
         <!-- Statistics Cards -->
         <div class="row g-3 my-2 text-center">
