@@ -1082,3 +1082,24 @@ def foc_portal(request):
         response.set_cookie('stage', 'auth', max_age=3600)  # expires in 1 hour
 
     return response
+
+
+def my_company(request):
+    stage = request.COOKIES.get('stage', None)
+    if not stage:
+        return redirect('foc_portal')
+
+    foc_code = request.COOKIES.get('foc_id')
+    print(foc_code)
+    foc = Contractor.objects.get(code=foc_code)
+    page = {
+        'title': 'My Company',
+        'page': 'my_company',
+        'stage': stage,
+        'nav': True
+    }
+    context = {
+        'page': page,
+        'foc':foc
+    }
+    return render(request, 'ssml/foc/my-company.html', context)
