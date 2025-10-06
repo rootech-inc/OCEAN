@@ -15,10 +15,14 @@
             font-size: 16px;
         }
 
+        #auth_html,#token_field{
+            height: 100vh !important;
+        }
+
 
     </style>
 
-    <div id="content">
+    <div id="content" >
 
     </div>
 
@@ -50,14 +54,14 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="p-3 bg-white text-warning shadow-sm d-flex justify-content-around align-items-center rounded">
-                    <div>
-                        <h3 class="fs-2">15</h3>
-                        <p class="fs-5">Pending</p>
-                    </div>
-                </div>
-            </div>
+{#            <div class="col-md-3">#}
+{#                <div class="p-3 bg-white text-warning shadow-sm d-flex justify-content-around align-items-center rounded">#}
+{#                    <div>#}
+{#                        <h3 class="fs-2">0</h3>#}
+{#                        <p class="fs-5">Pending</p>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </div>#}
             <div class="col-md-3">
                 <div class="p-3 bg-white text-success shadow-sm d-flex justify-content-around align-items-center rounded">
                     <div>
@@ -87,24 +91,25 @@
         `
 
         let auth_html = `
-            <div class="container-fluid h-100">
+            <div id="auth_html" class="container-fluid h-100">
       <div class="row d-flex flex-column justify-content-center align-items-center h-100">
         <div class="col-sm-8 col-md-4 col-sm-offset-2 col-md-offset-4">
           <div class="card panel-default" style="border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.08); overflow:hidden;">
             <div class="card-body text-center" style="padding:30px;">
               <div style="margin-bottom:18px;">
-                <img src="" alt="logo" class="img-responsive center-block" style="max-width:110px;">
+                <img src="/static/general/ssml.png" alt="logo" class="img-responsive center-block" style="max-width:110px;">
               </div>
 
               <div style="margin-bottom:14px;">
                 <h4 class="text-muted" style="margin:0 0 6px;">Sign in with your phone</h4>
-                <p class="text-muted" style="font-size:13px; margin:0;">We'll send a one-time code to verify your number</p>
+                <p class="text-muted" style="font-size:13px; margin:0;">We'll send a one-time code to verify your email</p>
               </div>
 
-              <div class="form-group" style="margin-top:18px;">
+              <div class="form-group text-center" style="margin-top:18px;">
                 <div class="input-group input-group-lg">
                   <span class="input-group-addon"><i class="glyphicon glyphicon-phone"></i></span>
                   <input
+                    style="text-align:center;"
                     id="phone"
                     class="form-control rounded-0"
                     type="tel"
@@ -138,13 +143,16 @@
         `;
 
         let token_code = `
-             <div class="container h-100">
+             <div id="token_field" class="container h-100">
               <div class="row justify-content-center h-100 d-flex align-items-center">
                 <div class="col-md-6 col-lg-4">
                   <div class="card shadow-sm" style="border-radius:16px;">
                     <div class="card-body p=2 text-center p-4">
+                    <div style="margin-bottom:18px;">
+                        <img src="/static/general/ssml.png" alt="logo" class="img-responsive center-block" style="max-width:110px;">
+                      </div>
                       <h5 class="mb-3">Enter OTP</h5>
-                      <p class="text-muted mb-4" style="font-size:14px;">We sent you a 6-digit OTP</p>
+                      <p class="text-muted mb-4" style="font-size:14px;">We sent you a 6-digit OTP via Email / SMS</p>
 
                       <div class="d-flex flex-wrap justify-content-between overflow-hidden">
                         <input type="password" class="form-control token-input" maxlength="1">

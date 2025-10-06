@@ -4021,7 +4021,7 @@ class SSML {
         let form = ``;
         form += fom.selectv2('target',[{val:'staff',desc:"Workers"},{val:'contractor',desc:"Contractors"},{val:'all',desc:"All"}],'',true)
         form += fom.selectv2('type',[{val:'sms',desc:"SMS"},{val:'email',desc:"Email"},{val:'all',desc:"All"}],'',true)
-        form += fom.textarea('message',3,true,'replacements: $name=company name or staff name,<link> = link')
+        form += fom.textarea('message',3,true,'replacements: $name=company name or staff name, >link< = link')
 
         amodal.setBodyHtml(form)
         amodal.setTitleText("Broadcast")

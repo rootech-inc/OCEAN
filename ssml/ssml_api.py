@@ -766,12 +766,12 @@ def interface(request):
 
                 # Extract text between <> quotes
                 import re
-                quotes = re.findall(r'<(.*?)>', message)
+                quotes = re.findall(r'>(.*?)<', message)
                 if quotes:
                     for quote in quotes:
                         link = shorten_url(quote)
                         message = message.replace(quote, link)
-                        message = message.replace(f'<{quote}>', quote)
+                        message = message.replace(f'>{quote}<', quote)
 
 
 
