@@ -73,7 +73,7 @@ class Form {
     button(ini,type,color='info',margin=2,onclick=''){
         return `<button class="btn btn-${color}" style="border-radius: 0px !important; margin-left: .2rem" id="${ini}" onclick="${onclick}" type="${type}">${ini.toUpperCase().replace('_',' ')}</button>`
     }
-    textarea(ini,rows=3,required=false){
+    textarea(ini,rows=3,required=false,comment=''){
         let req = ''
         if(required){
             req = `<span class="text-danger">*</span>`
@@ -81,6 +81,7 @@ class Form {
         return `
                 <label class="text-info" for="${ini}">${ini.toUpperCase()} ${req}</label>
                 <textarea id="${ini}" name="${ini}" required="${required}" class="form-control mb-2 rounded-0" rows="${rows}"></textarea>
+                <span class="text-info">${comment}</span>
                 `
     }
 

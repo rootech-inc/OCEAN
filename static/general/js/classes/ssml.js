@@ -4016,6 +4016,42 @@ class SSML {
             kasa.error(error)
         })
     }
+
+    broadcast() {
+        let form = ``;
+        form += fom.selectv2('target',[{val:'staff',desc:"Workers"},{val:'contractor',desc:"Contractors"},{val:'all',desc:"All"}],'',true)
+        form += fom.selectv2('type',[{val:'sms',desc:"SMS"},{val:'email',desc:"Email"},{val:'all',desc:"All"}],'',true)
+        form += fom.textarea('message',3,true,'replacements: $name=company name or staff name,<link> = link')
+
+        amodal.setBodyHtml(form)
+        amodal.setTitleText("Broadcast")
+        amodal.setFooterHtml(`<button class='btn btn-success' id='send_broadcast'>Send</button>`)
+        amodal.show()
+
+        $('#send_broadcast').click(async function(){
+            let ids = ['target','type','message','mypk']
+            if(anton.validateInputs(ids)){
+                let payload = {
+                    module:'broadcast',
+                    data:anton.Inputs(ids)
+                }
+
+                if(confirm("Are you sure")){
+                    await api.v2('PUT',payload,'/ssml/api/').then(response => {
+                        if(anton.IsRequest(response)){
+                            kasa.response(response)
+                        } else {
+                            kasa.response(response)
+                        }
+                    }).catch(error => {kasa.error(error)})
+                }
+            }
+
+        })
+
+
+
+    }
 }
 const ssml = new SSML();
 

@@ -94,6 +94,24 @@ def remove_html_tags(text):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
 
+def shorten_url(url):
+
+    import requests
+
+    api_url = "https://is.gd/create.php"
+
+    params = {
+        "format": "simple",  # "simple" returns just the short URL as text
+        "url": url
+    }
+
+    response = requests.get(api_url, params=params)
+    print(response)
+    new_url = url
+    if response.status_code == 200:
+        new_url = response.text
+
+    return new_url
 
 def make_md5_hash(text):
     from datetime import datetime

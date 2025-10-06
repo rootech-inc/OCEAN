@@ -1,3 +1,5 @@
+from admin_panel.anton import shorten_url
+from admin_panel.models import UserAddOns
 from crm.views import contacts
 
 
@@ -51,7 +53,7 @@ def interface(request):
     from django.http import JsonResponse
 
     from django.db.models import Q
-    from django.contrib.auth.models import User
+    from django.contrib.auth.models import User,Group
     from ocean.settings import BASE_URL
 
     from ssml.models import Cardex, Location, RequiredReturn, InvoiceHD, InvoiceTransactions, Contractor, Expense, \
@@ -756,6 +758,157 @@ def interface(request):
                         entry.delete()
                     success_response['status_code'] = 400
                     success_response['message'] = f"Error on line {sys.exc_info()[2].tb_lineno}: {e}"
+
+            elif module == 'broadcast':
+                target = data.get('target')
+                ttype = data.get('type')
+                message = data.get('message')
+
+                # Extract text between <> quotes
+                import re
+                quotes = re.findall(r'<(.*?)>', message)
+                if quotes:
+                    for quote in quotes:
+                        link = shorten_url(quote)
+                        message = message.replace(quote, link)
+                        message = message.replace(f'<{quote}>', quote)
+
+
+
+                total_sms = 0
+                total_email = 0
+
+                message = message.replace('<', '')
+                message = message.replace('>', '')
+
+                if target == 'contractor':
+                    for x_foc in Contractor.objects.all():
+                        email = False
+                        phone = False
+                        company = False
+
+
+
+                        email = x_foc.email
+                        phone = x_foc.phone
+                        company = x_foc.company
+                        now_msg = message.replace('$name', f"{company}")
+
+
+                        print(company,email,phone,now_msg)
+
+                        if ttype == 'sms':
+                            Sms.objects.create(
+                                api=SmsApi.objects.get(sender_id='SNEDA SSML') if SmsApi.objects.filter(sender_id='SNEDA SSML').exists() else SmsApi.objects.get(is_default=True),
+                                to=phone,
+                                message=now_msg
+                            )
+
+                            total_sms += 1
+
+                        elif ttype == 'email':
+                            MailQueues.objects.create(
+                                recipient=email,
+                                subject=f'SNEDA Broadcast | {company}',
+                                body=now_msg,
+                                sender=MailSenders.objects.get(address='solomon@snedaghana.com') if MailSenders.objects.filter(address='solomon@snedaghana.com') else MailSenders.objects.get(is_default=True),
+                                mail_key=make_md5_hash(f"{email}-{now_msg}{company}")
+                            )
+                            total_email += 1
+
+                        else:
+                            Sms.objects.create(
+                                api=SmsApi.objects.get(sender_id='SNEDA SSML') if SmsApi.objects.filter(
+                                    sender_id='SNEDA SSML').exists() else SmsApi.objects.get(is_default=True),
+                                to=phone,
+                                message=now_msg
+                            )
+
+                            MailQueues.objects.create(
+                                recipient=email,
+                                subject='SNEDA Broadcast',
+                                body=now_msg,
+                                sender=MailSenders.objects.get(
+                                    address='solomon@snedaghana.com') if MailSenders.objects.filter(
+                                    address='solomon@snedaghana.com') else MailSenders.objects.get(is_default=True),
+                                mail_key=make_md5_hash(f"{email}-{now_msg}{company}")
+                            )
+
+                            total_sms += 1
+                            total_email += 1
+
+
+
+                if target == 'staff':
+                    # Get users in ssml group
+                    if not Group.objects.filter(name='ssml').exists():
+                        raise Exception("SSML group does not exist")
+
+                    ssml_group = Group.objects.get(name='ssml')
+                    staff_users = ssml_group.user_set.all()
+
+                    if not staff_users:
+                        raise Exception("No users found in SSML group")
+
+                    ttype = data.get('type')
+                    message = data.get('message')
+
+                    for user in staff_users:
+                        email = user.email
+                        addon = UserAddOns.objects.get(user=user)
+                        phone = addon.phone
+                        name = user.get_full_name()
+                        msg = message.replace('$name', name)
+
+                        if ttype == 'sms' and phone:
+                            phone = phone.replace('233', '0').replace('+233', '0')
+                            if len(phone) == 10:
+                                Sms.objects.create(
+                                    api=SmsApi.objects.get(sender_id='SNEDA SSML') if SmsApi.objects.filter(
+                                        sender_id='SNEDA SSML').exists() else SmsApi.objects.get(is_default=True),
+                                    to=phone,
+                                    message=msg
+                                )
+                                total_sms += 1
+
+                        elif ttype == 'email' and email:
+                            MailQueues.objects.create(
+                                recipient=email,
+                                subject='SNEDA Broadcast',
+                                body=msg,
+                                sender=MailSenders.objects.get(
+                                    address='solomon@snedaghana.com') if MailSenders.objects.filter(
+                                    address='solomon@snedaghana.com') else MailSenders.objects.get(is_default=True),
+                                mail_key=make_md5_hash(f"{email}-{msg}{name}")
+                            )
+                            total_email += 1
+
+                        elif ttype == 'both' and (email or phone):
+                            if phone:
+                                phone = phone.replace('233', '0').replace('+233', '0')
+                                if len(phone) == 10:
+                                    Sms.objects.create(
+                                        api=SmsApi.objects.get(sender_id='SNEDA SSML') if SmsApi.objects.filter(
+                                            sender_id='SNEDA SSML').exists() else SmsApi.objects.get(is_default=True),
+                                        to=phone,
+                                        message=msg
+                                    )
+                                total_sms += 1
+
+                            if email:
+                                MailQueues.objects.create(
+                                    recipient=email,
+                                    subject='SNEDA Broadcast',
+                                    body=msg,
+                                    sender=MailSenders.objects.get(
+                                        address='solomon@snedaghana.com') if MailSenders.objects.filter(
+                                        address='solomon@snedaghana.com') else MailSenders.objects.get(is_default=True),
+                                    mail_key=make_md5_hash(f"{email}-{msg}{name}")
+                                )
+                                total_email += 1
+
+
+                success_response['message'] = f"Broadcast sent to {target} with {ttype} type. Total SMS: {total_sms}. Total Email: {total_email}"
 
             elif module == 'transfer':
                 hdd = data.get('header')
