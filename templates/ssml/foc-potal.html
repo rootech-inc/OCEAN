@@ -209,6 +209,31 @@
             $('#content').html(auth_html)
         } else if(stage === 'verify_token'){
             $('#content').html(token_code)
+            $('.token-input').on('input', function(){
+                        this.value = this.value.replace(/[^0-9]/g,''); // digits only
+                        if(this.value.length === 1){
+                          $(this).next('.token-input').focus();
+                        }
+                        // if it's the last input and filled, trigger function
+                        if($(this).is(':last-child') && this.value.length === 1){
+                          verifyToken();
+                        }
+                      });
+
+            $('.token-input').on('keydown', function(e){
+                        if(e.key === "Backspace" && this.value === ''){
+                          $(this).prev('.token-input').focus();
+                        }
+                  });
+        } else if(stage === 'access_granted'){
+            $('#content').html(legend1)
+
+            let foc_id  = cookies.getCookie('foc_id')
+            console.log(foc_id)
+            ssml.loadFocPortal(foc_id)
+
+        } else {
+            $('#content').html("NO STAGE FOUND")
         }
 
 
@@ -221,6 +246,24 @@
                     cookies.setCookie('stage','verify_token',1)
                     cookies.setCookie('phone',phone,1)
                     $('#content').html(token_code)
+
+                    $('.token-input').on('input', function(){
+                        this.value = this.value.replace(/[^0-9]/g,''); // digits only
+                        if(this.value.length === 1){
+                          $(this).next('.token-input').focus();
+                        }
+                        // if it's the last input and filled, trigger function
+                        if($(this).is(':last-child') && this.value.length === 1){
+                          verifyToken();
+                        }
+                      });
+
+                      $('.token-input').on('keydown', function(e){
+                        if(e.key === "Backspace" && this.value === ''){
+                          $(this).prev('.token-input').focus();
+                        }
+                  });
+
                 } else {
                     kasa.response(res)
                 }
@@ -229,24 +272,7 @@
         })
 
 
-        $(document).ready(function(){
-          $('.token-input').on('input', function(){
-            this.value = this.value.replace(/[^0-9]/g,''); // digits only
-            if(this.value.length === 1){
-              $(this).next('.token-input').focus();
-            }
-            // if it's the last input and filled, trigger function
-            if($(this).is(':last-child') && this.value.length === 1){
-              verifyToken();
-            }
-          });
 
-          $('.token-input').on('keydown', function(e){
-            if(e.key === "Backspace" && this.value === ''){
-              $(this).prev('.token-input').focus();
-            }
-          });
-        });
 
         function verifyToken(){
           let code = '';
@@ -255,7 +281,23 @@
           });
           if(code.length === 6){
             alert("Entered Code: " + code);
-            // you can replace with AJAX call
+            ssml.focVerifyToken(code).then(res => {
+                loader.show()
+                if(anton.IsRequest(res)){
+                    cookies.setCookie('foc_id',res['message'],1)
+                    cookies.setCookie('stage','access_granted',1)
+                    $('#content').html(auth_html)
+                    loader.hide()
+                    kasa.confirm("ACCESS GRANTED",1,'here')
+
+
+                } else {
+                    loader.hide()
+                    kasa.response(res)
+                }
+            }).catch(error => {
+                kasa.info(error)
+            })
           }
         }
 

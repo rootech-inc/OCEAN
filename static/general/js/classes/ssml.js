@@ -3959,6 +3959,38 @@ class SSML {
         return await api.call('VIEW',payload,'/ssml/api/')
 
     }
+
+    async focVerifyToken(code) {
+        let payload = {
+            module:'foc_verify_token',
+            data:{
+                code:code
+            }
+        }
+
+        return api.call('VIEW',payload,'/ssml/api/')
+    }
+
+    async loadFocPortal(foc_id) {
+        let payload  = {
+            module:'foc_portal',
+            data:{
+                foc_id:foc_id
+            }
+        }
+
+        await api.v2('VIEW',payload,'/ssml/api/contractor/').then(response => {
+            if(anton.IsRequest(response)){
+                console.log("TIME IS TIMES")
+                console.table(response)
+                console.log("TIME IS TIMES")
+            } else {
+                kasa.response(response)
+            }
+        }).catch(error => {
+            kasa.error(error)
+        })
+    }
 }
 const ssml = new SSML();
 

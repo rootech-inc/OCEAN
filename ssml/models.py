@@ -445,6 +445,13 @@ class Contractor(models.Model):
             'can_work':self.can_work(),
         }
 
+    def total_jobs(self):
+        jobs = {}
+        for service_type in ServiceType.objects.all():
+            jobs.update({service_type.name:ServiceOrder.objects.filter(contractor=self,service_type=service_type).aggregate(total_jobs=Sum('quantity'))['total_jobs']})
+        jobs.update({'total':sum(jobs.values())})
+        return jobs
+
     def obj(self):
         return {
             'id':self.id,
@@ -472,7 +479,8 @@ class Contractor(models.Model):
             # 'matched':self.matched(),
             'ledger':0, #self.ledger_sum(),
             'code':self.code,
-            'can_work':self.can_work()
+            'can_work':self.can_work(),
+            'jobs':self.total_jobs(),
             
         }
 

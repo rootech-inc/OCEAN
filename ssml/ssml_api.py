@@ -1,3 +1,4 @@
+from crm.views import contacts
 
 
 def safe_add_image_to_pdf(pdf, image_path, x, y, w, h=None):
@@ -871,21 +872,52 @@ def interface(request):
 
                         contractor = Contractor.objects.get(phone=phone)
                         contractor.otp = otp
+                        ct_email = contractor.email
                         contractor.save()
 
                         # Send OTP via SMS
                         to = phone.replace('233', '0').replace('+233', '0')
+                        messta = f"Your OTP code is: {otp}"
                         if len(to) == 10:
-                            sms_message = f"Your OTP code is: {otp}"
+                            sms_message = messta
                             Sms(
                                 api=SmsApi.objects.get(sender_id='SNEDA SML') if SmsApi.objects.filter(sender_id='SNEDA SML').exists() else SmsApi.objects.get(is_default=True),
                                 to=to,
                                 message=sms_message
                             ).save()
 
+                            MailQueues.objects.create(
+                                sender=MailSenders.objects.get(is_default=True),
+                                body=messta,
+                                recipient=ct_email,
+                                mail_key=make_md5_hash(f"{messta}{to}{ct_email}"),
+                                subject="Sneda SML OTP Verification"
+                            )
+
                         success_response['message'] = otp
                     else:
                         raise Exception("Contractor does not exist")
+
+                elif module == 'foc_verify_token':
+                    foc_verify_token = data.get('foc_verify_token')
+                    if Contractor.objects.filter(otp=foc_verify_token).exists():
+                        contractor = Contractor.objects.get(otp=foc_verify_token)
+                        c_code = contractor.code
+                        contractor.otp = None
+                        contractor.save()
+                        success_response['message'] = c_code
+                    else:
+                        raise Exception("Invalid OTP")
+
+                elif module == 'foc_portal':
+                    foc_id = data.get('foc_id')
+                    print(foc_id)
+                    contractor = Contractor.objects.get(code=foc_id)
+
+                    arr = contractor.obj()
+                    print(arr)
+
+                    success_response['message'] = arr
 
                 elif module == 'transfer':
                     id = data.get('id','*')
@@ -2782,6 +2814,14 @@ def interface(request):
                         tp = issue.issue_type
                         mypk = data.get('mypk')
                         ct = 0
+
+                        foc_id = issue.contractor
+                        contractor = Contractor.objects.get(id=mypk)
+                        foc_email = contractor.email
+                        foc_phone = contractor.phone
+
+
+
                         user = User.objects.get(id=mypk)
                         transactions = IssueTransaction.objects.filter(issue=issue)
                         

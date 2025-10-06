@@ -379,6 +379,14 @@ def contractor_api(request):
                     success_response['status_code'] = 500
                     arr = str(e)
 
+            elif module == 'foc_portal':
+                foc_id = data.get('foc_id')
+                print(foc_id)
+                contractor = Contractor.objects.get(code=foc_id)
+
+                arr = contractor.obj()
+                print(arr)
+
             success_response['message'] = arr
 
         elif method == 'DELETE':
