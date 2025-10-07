@@ -511,21 +511,21 @@
   <aside id="sidebar" class="sidebar">
 
     <ul class="sidebar-nav" id="sidebar-nav">
-
+        <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'service_jobcard' %}">
+          <i class="bi bi-tools"></i><span>JOB CARD</span>
+        </a>
+      </li>
 
     {% if user.is_superuser %}
       <li class="nav-item">
-        <a class="nav-link collapsed" href="{% url 'serv_services' %}">
+        <a class="nav-link collapsed" href="{% url 'srv_wo_services' %}">
           <i class="bi bi-tools"></i><span>SERVICE MASTER</span>
         </a>
       </li>
     {% endif %}
 
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="{% url 'service_jobcard' %}">
-          <i class="bi bi-tools"></i><span>JOB CARD</span>
-        </a>
-      </li>
+
 
    
 

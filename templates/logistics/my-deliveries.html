@@ -1,0 +1,31 @@
+{% extends 'logistics/base.html' %}
+
+{% block body %}
+    <div class="container">
+        <div class="row">
+            {% for order in delivery_requests %}
+            <div class="col-sm-4 order" data-enc="{{ order.enc }}">
+                <div class="card shadow-sm alert {% if order.status == 'in_transit' %}alert-info{% elif order.status == 'schedule' %}alert-warning{% endif %}">
+                    <div class="card-body p-2">
+                        <small>{{ order.request_date }}</small>
+                        <p class="m-0">{{ order.source }} -> {{ order.destination }}</p>
+                        <strong>{{ order.duration }}</strong>
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('.order').click(function() {
+                var orderId = $(this).data('enc');
+                kasa.info(orderId)
+                windowPopUp(`/logistic/delivery/view/${orderId}/`, `Delivery Request`, 500,600)
+            });
+        }
+        )
+    </script>
+{% endblock %}

@@ -67,3 +67,5 @@ class Modal {
 
 const amodal = new Modal()
 const pop = new Modal()
+
+console.log("HELLO MODAL")

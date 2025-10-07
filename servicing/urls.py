@@ -18,9 +18,9 @@ from django.urls import path, include
 from . import views, servicing_api
 
 urlpatterns = [
-    path('', views.base, name='service_master'),
+    path('', views.base, name='srv_serv_services'),
     path('api/', servicing_api.interface, name='servicing_api'),
-    path('services/', views.services, name='wo_services'),
+    path('services/', views.services, name='srv_wo_services'),
     path('service/<service_id>/', views.service, name='service'),
     path('newjob/', views.newjob, name='wo_newjob'),
     path('wo/', views.jobcard, name='service_jobcard'),

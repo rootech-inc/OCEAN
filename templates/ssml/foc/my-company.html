@@ -15,7 +15,7 @@
                 <div class="w-100 d-flex">
                     <div class="w-50 d-flex"><h5 class="card-title">Company Profile</h5></div>
                     <div class="w-50 d-flex justify-content-end align-content-center">
-                        <button id="edit_owner" class="btn btn-info rounded-0"><i class="fa fa-edit"></i> Owner</button>
+                        <button id="edit_owner" onclick="alert('Hello world')" class="btn btn-info rounded-0"><i class="fa fa-edit"></i> Owner</button>
                     </div>
                 </div>
             </div>
@@ -49,6 +49,136 @@
                     <hr>
                     <h3>Business Entity</h3>
                     <div class="row">
+                        <div class="col-sm-4 mb-4">
+                            <span class="form-label">Business Name</span><br>
+                            <strong id="company">Company Name Here</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="form-label">Registration Number</span><br>
+                            <strong id="comp_reg_number">REG123456</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="form-label">Business Type</span><br>
+                            <strong id="business_type">Limited Company</strong>
+                        </div>
+                        <div class="col-sm-4 mb-4">
+                            <span class="form-label">Business Address</span><br>
+                            <strong id="business_address">123 Business Street</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="form-label">Business Phone</span><br>
+                            <strong id="business_phone_number">+233 XX XXX XXXX</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="form-label">Business Email</span><br>
+                            <strong id="business_email">business@example.com</strong>
+                        </div>
+                        <div class="col-sm-4 mb-4">
+                            <span class="form-label">Region</span><br>
+                            <strong id="region">Greater Accra</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="form-label">City/Town</span><br>
+                            <strong id="city">Accra</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="form-label">GH POST</span><br>
+                            <strong id="gh_post">GA-123-4567</strong>
+                        </div>
+                        <div class="col-sm-12">
+                            <span class="form-label">Address</span><br>
+                            <strong id="business_address_full">Detailed business address with additional information goes here</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Documents Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Compliance Documents</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Trade License</label>
+                    <input type="file" class="form-control" accept=".pdf,.doc,.docx">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tax Certificate</label>
+                    <input type="file" class="form-control" accept=".pdf,.doc,.docx">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Other Documents</label>
+                    <input type="file" class="form-control" multiple accept=".pdf,.doc,.docx">
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank Details Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Bank Details</h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <span class="form-label">Bank Name</span><br>
+                            <strong id="bank_name">Fidelity Bank</strong>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <span class="form-label">Account Number</span><br>
+                            <strong id="account_number">123456789</strong>
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <span class="form-label">SWIFT Code</span><br>
+                            <strong id="swift_code">FIDCGHAC</strong>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <span class="form-label">IBAN</span><br>
+                            <strong id="iban">GH12345678901234567890</strong>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mb-4">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+    </div>
+
+    <script>
+        let owner_update_form = `
+            <div class="row">
+                        <div class="col-sm-4">
+                            <label class="form-label">Fullname</label>
+                            <input id="company_name" type="text" class="form-control" placeholder="Enter company name">
+                        </div>
+                        <!-- GHANA CARD -->
+                        <div class="col-sm-4">
+                            <label class="form-label">Ghana Number</label>
+                            <input type="text" id="ghana_card" class="form-control" placeholder="GHA - XXXXXX">
+                        </div>
+
+                        <div class="col-sm-4">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" id="owner_phone" class="form-control" placeholder="Enter phone number">
+                        </div>
+
+                        <div class="col-sm-4">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="owner_email" class="form-control" placeholder="Enter email">
+                        </div>
+
+                    </div>
+        `
+
+        let business_form = `
+            <div class="row">
                         <div class="col-sm-4">
                             <label class="form-label">Business Name</label>
                             <input type="text" id="company" class="form-control" placeholder="Enter company name">
@@ -90,104 +220,13 @@
                             <textarea class="form-control" id="business_email" rows="3" placeholder="Enter company address"></textarea>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Compliance Documents Section -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title">Compliance Documents</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label">Trade License</label>
-                    <input type="file" class="form-control" accept=".pdf,.doc,.docx">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Tax Certificate</label>
-                    <input type="file" class="form-control" accept=".pdf,.doc,.docx">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Other Documents</label>
-                    <input type="file" class="form-control" multiple accept=".pdf,.doc,.docx">
-                </div>
-            </div>
-        </div>
-
-        <!-- Bank Details Section -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title">Bank Details</h5>
-            </div>
-            <div class="card-body">
-                <form>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Bank Name</label>
-                            <input type="text" class="form-control" placeholder="Enter bank name">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Account Number</label>
-                            <input type="text" class="form-control" placeholder="Enter account number">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">SWIFT Code</label>
-                            <input type="text" class="form-control" placeholder="Enter SWIFT code">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">IBAN</label>
-                            <input type="text" class="form-control" placeholder="Enter IBAN">
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="text-center mb-4">
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-        </div>
-    </div>
-
-    <script>
-        let owner_update_form = `
-            <div class="row">
-                        <div class="col-sm-4">
-                            <label class="form-label">Fullname</label>
-                            <input id="company_name" type="text" class="form-control" placeholder="Enter company name">
-                        </div>
-                        <!-- GHANA CARD -->
-                        <div class="col-sm-4">
-                            <label class="form-label">Ghana Number</label>
-                            <input type="text" id="ghana_card" class="form-control" placeholder="GHA - XXXXXX">
-                        </div>
-
-                        <div class="col-sm-4">
-                            <label class="form-label">Phone Number</label>
-                            <input type="text" id="owner_phone" class="form-control" placeholder="Enter phone number">
-                        </div>
-
-                        <div class="col-sm-4">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="owner_email" class="form-control" placeholder="Enter email">
-                        </div>
-
-                    </div>
         `
 
         $(document).ready(function () {
-            $('#edit_owner').click(function () {
-                amodal.setTitleText("EDIT OWNER")
+            $('#edit_owner').click(function(){
                 amodal.setBodyHtml(owner_update_form)
+                amodal.setTitleHtml('Edit Owner')
                 amodal.show()
-                amodal.setFooterHtml(`<button id="update_owner" class="btn btn-success w-100">UPDATE</button>`)
-
-                $('#update_owner').click(function() {
-                        let ids  = []
-                    }
-                )
             })
         })
     </script>

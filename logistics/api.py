@@ -1,5 +1,6 @@
 import json
 import sys
+from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.http import JsonResponse
@@ -9,7 +10,7 @@ from numba.cpython.charseq import is_default
 from admin_panel.anton import make_md5_hash
 from admin_panel.models import Sms, SmsApi, MailQueues, MailSenders, UserAddOns
 from blog.anton import make_md5
-from logistics.models import Vehicle, Driver, DeliveryRequest, DeliveryLog
+from logistics.models import Vehicle, Driver, DeliveryRequest, DeliveryLog, VehicleFuelTopUp, VehicleServicing
 from ocean.settings import LOGISTIC_CONTACT
 
 
@@ -56,6 +57,28 @@ def interface(request):
                                        )
                 success_response['message'] = Vehicle.objects.get(plate_number=plate_number).pk
 
+            elif module == 'fuel_purchase':
+                vehicle = Vehicle.objects.get(pk=data.get('pk'))
+                amount = data.get('amount')
+                rate = data.get('rate')
+                litres = Decimal(amount) / Decimal(rate)
+                user = User.objects.get(pk=data.get('mypk'))
+                enc = make_md5(make_md5_hash(f"{vehicle.plate_number} {amount} {rate}"))
+                VehicleFuelTopUp.objects.create(
+                    vehicle=vehicle,
+                    amount=amount,
+                    rate=rate,
+                    litres=litres,
+                    user=user,
+                    block=enc
+                )
+
+                print(enc)
+
+                success_response['message'] = enc
+
+
+
             elif module == 'driver':
 
                 user = User.objects.get(pk=data.get('user'))
@@ -66,7 +89,7 @@ def interface(request):
                 email = user.email
 
                 Driver.objects.create(
-                    name=name,phone_number=phone_number,license_number=license_number,email=email
+                    name=name,phone_number=phone_number,license_number=license_number,email=email,user=user
                 )
 
                 Sms.objects.create(
@@ -78,6 +101,36 @@ def interface(request):
 
 
                 success_response['message'] = Driver.objects.get(name=name,phone_number=phone_number,license_number=license_number,email=email).pk
+
+            elif module == 'trip_log':
+                enc = data.get('enc')
+                title = data.get('title')
+                details = data.get('details')
+                user = User.objects.get(pk=data.get('user'))
+
+                DeliveryLog.objects.create(
+                    delivery=DeliveryRequest.objects.get(enc=enc),
+                    title=title,
+                    details=details,
+                    user=user
+                )
+
+            elif module == 'vehicle_service_request':
+                vehicle = Vehicle.objects.get(pk=data.get('pk'))
+                stype = data.get('type')
+                details = data.get('details')
+                user = User.objects.get(pk=data.get('mypk'))
+                for_mechanic = data.get('for_mechanic')
+
+                VehicleServicing.objects.create(
+                    vehicle=vehicle,
+                    type=stype,
+                    details=details,
+                    user=user,
+                    for_mechanic=for_mechanic,
+                )
+
+                response['message'] = 'Vehicle Service Request Added'
 
             elif module == 'delivery_request':
                 requested_by = User.objects.get(pk=data.get('requested_by'))

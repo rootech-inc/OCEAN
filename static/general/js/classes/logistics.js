@@ -65,7 +65,7 @@ class Logistics {
                 $('.description').text(message.description)
                 $('.requested_by').text(message.requested_by.name)
                 $('.request_date').text(message.request_date)
-
+                let bu_ht = ""
                 let status = message.status;
                 let btn_color,btn_text,btn_status;
                 switch (status) {
@@ -83,15 +83,16 @@ class Logistics {
                         btn_color = 'success'
                         btn_text = 'Complete'
                         btn_status = 'delivered'
+                        bu_ht += `<button  class="btn btn-sm btn-info update_trip ms-2"><i class="fa fa-upload"></i></button>`;
                         break;
                     default:
                         btn_text = ''
                         btn_color = 'text-light'
                 }
 
-                let bu_ht = ""
+
                 if(status !== 'delivered'){
-                    bu_ht = `<button data-changeto="${btn_status}" class="btn xgh_del btn-sm btn-${btn_color}">${btn_text}</button>`;
+                    bu_ht += `<button data-changeto="${btn_status}" class="btn xgh_del btn-sm btn-${btn_color} ms-2">${btn_text}</button>`;
                 }
 
                 let logs_ht = ""
@@ -234,6 +235,42 @@ class Logistics {
 
 
                 })
+
+                $('.update_trip').click(function(){
+                    let form = "";
+                    form += fom.text('title')
+                    form += fom.textarea('details')
+
+                    amodal.setBodyHtml(form)
+                    amodal.setTitleHtml("Update Trip")
+                    amodal.setFooterHtml(`<button class="btn btn-success" id="uptrp">Save</button>`)
+                    amodal.show()
+
+                    $('#uptrp').click(async function(){
+                        let ids = ['title','details']
+                        if(anton.validateInputs(ids)){
+                            let payload = {
+                                module:'trip_log',
+                                data:{
+                                    enc:enc,
+                                    title:$('#title').val(),
+                                    details:$('#details').val(),
+                                    user:$('#mypk').val()
+                                }
+                            }
+
+                            await api.v2('PUT',payload,logistics.interface).then(response =>{
+                                if(anton.IsRequest(response)){
+                                    kasa.confirm(response.message,1,'here')
+                                } else {
+                                    kasa.response(response)
+                                }
+                            }).catch(err =>{kasa.error(err)});
+                        }
+                    })
+
+                })
+
             } else {
                 kasa.response(response)
             }
@@ -336,7 +373,7 @@ class Logistics {
                     module:'driver',
                     data:anton.Inputs(ids)
                 }
-                payload['data']['user'] = $('#mypk').val()
+                // payload['data']['user'] = $('#mypk').val()
 
                 await api.v2('PUT',payload,logistics.interface).then(response =>{
                     if(anton.IsRequest(response)){
@@ -390,6 +427,7 @@ class Logistics {
                 let fleet = response.message[0];
                 console.table(fleet)
                 anton.setValues(fleet)
+
                 $('#img').attr('src',fleet.img)
 
                 if(fleet.next > 0){

@@ -381,7 +381,7 @@ def contractor_errors(request):
     }
     context = {
         'page': page,
-        'contractor_errors': ContractorError.objects.all(),
+        'contractor_errors': ContractorError.objects.filter(is_cleared=False).order_by('-created_at'),
         'contractors': Contractor.objects.all().order_by('company'),
         'locations':Location.objects.all().order_by('loc_id')
     }

@@ -1,6 +1,8 @@
 
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import datetime
+from django.utils import timezone
 
 
 class Vehicle(models.Model):
@@ -44,6 +46,11 @@ class Vehicle(models.Model):
     chassis = models.CharField(max_length=255, blank=True, null=True)
     model = models.CharField(max_length=255, blank=True, null=True)
 
+    def fuel_history(self):
+        return [f.obj() for f in VehicleFuelTopUp.objects.filter(vehicle=self).order_by('-date')]
+
+    def service_history(self):
+        return [s.obj() for s in VehicleServicing.objects.filter(vehicle=self)]
 
     def dp(self):
         return self.image.url if self.image else f'https://placehold.co/100?text={self.description.split()[0][0]}{self.description.split()[-1][0]}'
@@ -66,7 +73,9 @@ class Vehicle(models.Model):
             'fuel_type':self.fuel_type,
             'next':( Vehicle.objects.filter(pk__gt=self.pk).first().pk if Vehicle.objects.filter(pk__gt=self.pk).exists() else 0),
             'previous': (Vehicle.objects.filter(pk__lt=self.pk).last().pk if Vehicle.objects.filter(
-                pk__lt=self.pk).exists() else 0)
+                pk__lt=self.pk).exists() else 0),
+            'fuel_history':self.fuel_history(),
+
         }
 
     def deliveries(self,status='*'):
@@ -76,7 +85,32 @@ class Vehicle(models.Model):
         return f"{self.plate_number} - {self.description}"
 
 
+class VehicleFuelTopUp(models.Model):
+    block = models.CharField(max_length=255, blank=True, null=True)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    litres = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    receipt = models.ImageField(upload_to='static/general/uploads/vehicle_images/',blank=True,null=True)
 
+    def dp(self):
+        return self.receipt.url if self.receipt else f'https://placehold.co/100?text={self.amount}'
+
+    def obj(self):
+        return {
+            "pk":self.pk,
+            "amount":self.amount,
+            "rate":self.rate,
+            "litres":self.litres,
+            "date":self.date.strftime("%d %b %Y, %I:%M%p").lower(),
+            "user":{
+                "username":self.user.username,
+                'name':self.user.get_full_name(),
+            },
+            'image':self.dp(),
+        }
 
 class Driver(models.Model):
     name = models.CharField(max_length=100,unique=True)
@@ -127,6 +161,8 @@ class DeliveryRequest(models.Model):
     type_choices = [
         ('transfer', 'Store Transfer'),
         ('official', 'Official'),
+        ('sales_delivery','Sales Delivery'),
+        ('marketing',"Marketing")
 
     ]
 
@@ -146,6 +182,16 @@ class DeliveryRequest(models.Model):
     arrival_time = models.DateTimeField(blank=True, null=True)
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,related_name='updated_by')
 
+    
+    def duration(self):
+        if not self.departure_time:
+            return "Not started"
+        end_time = self.arrival_time if self.arrival_time else timezone.now()
+        delta = end_time - self.departure_time
+        hours = delta.total_seconds() / 3600
+        if hours < 1:
+            return f"{int(delta.total_seconds() / 60)} minutes"
+        return f"{int(hours)} hours"
 
     def obj(self):
         return {
@@ -157,6 +203,7 @@ class DeliveryRequest(models.Model):
                 'email':self.requested_by.email,
             },
             "destination":self.destination,
+            'duration':self.duration(),
             'source':self.source,
             "description":self.description,
             "request_date":self.request_date,
@@ -174,7 +221,6 @@ class DeliveryRequest(models.Model):
             },
             "departure_time":self.departure_time,
             "arrival_time":self.arrival_time,
-            "duration":0,
             "logs":self.logs()
         }
 
@@ -206,4 +252,45 @@ class DeliveryLog(models.Model):
                 'name':self.user.get_full_name(),
             },
             'time':self.timestamp.strftime("%d %b %Y, %I:%M%p").lower(),
+        }
+
+
+class VehicleServicing(models.Model):
+    wo_no = models.CharField(max_length=255,null=False,blank=False,unique=True)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
+    type_choices = [
+        ('repair', 'Repair'),
+        ('service', 'Service'),
+        ('other', 'Other')
+    ]
+    type = models.CharField(max_length=20, choices=type_choices, default='maintenance')
+    details = models.TextField(blank=False, null=False)
+    
+    for_mechanic = models.TextField(blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
+    date_requested = models.DateTimeField(auto_now_add=True)
+    data_completed = models.DateTimeField(blank=True, null=True)
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.wo_no:
+            self.wo_no = f'LOGWO{self.pk}'
+            self.save()
+
+    def obj(self):
+        return {
+            "pk":self.pk,
+            "wo_no":self.wo_no,
+            "vehicle":{
+                "plate_number":self.vehicle.plate_number,
+                "description":self.vehicle.description,
+            },
+            "type":self.type,
+            "details":self.details,
+            "for_mechanic":self.for_mechanic,
+            "user":{
+                "username":self.user.username,
+                'name':self.user.get_full_name(),
+            }
         }

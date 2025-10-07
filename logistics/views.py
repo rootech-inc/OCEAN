@@ -1,10 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
-from logistics.models import DeliveryRequest, Driver, Vehicle
+from logistics.models import DeliveryRequest, Driver, Vehicle, VehicleFuelTopUp
 
 
 @login_required
@@ -150,3 +150,63 @@ def uploadfleetimage(request):
             messages.error(request, f'Error updating fleet image: {str(e)}')
             return redirect('logistics-fleet')
 
+@login_required()
+def mydelivery(request):
+
+    us = request.user
+    print(us.pk)
+    driver = Driver.objects.get(user=us)
+    context = {
+        'nav':False,
+        "page":{
+            "title":"My Trips",
+        },
+        'delivery_requests':DeliveryRequest.objects.filter(driver=driver).exclude(status='delivered').order_by('-scheduled_date')
+    }
+    return render(request,'logistics/my-deliveries.html',context=context)
+
+@login_required()
+@csrf_exempt
+def fuel_reciept(request):
+            if request.method == 'POST' and request.FILES.get('receipt'):
+                try:
+                    from PIL import Image
+                    import io
+
+                    # Get the delivery request using enc
+                    delivery_enc = request.POST.get('block')
+                    fuel_top_up = VehicleFuelTopUp.objects.get(block=delivery_enc)
+
+                    # Process the uploaded image
+                    image = Image.open(request.FILES['receipt'])
+
+                    # Convert to RGB if image is in RGBA mode
+                    if image.mode == 'RGBA':
+                        image = image.convert('RGB')
+
+                    # Resize the image while maintaining aspect ratio
+                    image.thumbnail((800, 800))
+
+                    # Save the processed image to a bytes buffer
+                    buffer = io.BytesIO()
+                    image.save(buffer, format='JPEG')
+                    buffer.seek(0)
+
+                    # Create a new Django File object from the buffer
+                    from django.core.files import File
+                    processed_image = File(buffer, name=request.FILES['receipt'].name)
+
+                    # Update the delivery request with fuel receipt details
+                    fuel_top_up.receipt = processed_image
+                    fuel_top_up.save()
+
+                    messages.success(request, 'Fuel receipt uploaded successfully')
+                    return redirect(request.META.get('HTTP_REFERER', 'logistics-delivery-details'))
+
+                except Exception as e:
+                    print(e)
+                    return HttpResponse(e, status=500)
+                    messages.error(request, f'Error uploading fuel receipt: {str(e)}')
+                    return redirect(request.META.get('HTTP_REFERER', 'logistics-delivery-details'))
+
+            return redirect(request.META.get('HTTP_REFERER', 'logistics-delivery-details'))

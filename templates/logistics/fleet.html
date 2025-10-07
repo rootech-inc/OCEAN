@@ -30,11 +30,12 @@
                                 Menu
                             </button>
                             <div class="dropdown-menu" aria-labelledby="statusDropdown">
+                                <a class="dropdown-item" id="fuel" href="javascript:void(0)">Fuel History</a>
                                 <a class="dropdown-item" id="trips" href="javascript:void(0)">Trips</a>
-                                <a class="dropdown-item" id="compliance" href="javascript:void(0)">Compliance</a>
-                                <a class="dropdown-item" id="images" href="javascript:void(0)">Images</a>
                                 <a class="dropdown-item" id="service_history" href="javascript:void(0)">Service History</a>
-                                <a class="dropdown-item" id="logs" href="javascript:void(0)">Logs</a>
+                                <a class="dropdown-item" id="compliance" disabled="" href="javascript:void(0)">Compliance</a>
+                                <a class="dropdown-item" id="images" disabled="" href="javascript:void(0)">Images</a>
+                                <a class="dropdown-item" id="logs" disabled="" href="javascript:void(0)">Logs</a>
                             </div>
                         </div>
                     </div>
@@ -48,6 +49,7 @@
                             <div class="row d-flex align-items-center mb-2">
                                 <label for="plate_number" class="col-sm-4">ASSET No.</label>
                                 <div class="col-sm-8">
+                                    <input type="hidden" id="pk">
                                     <input type="text" readonly id="plate_number" class="form-control rounded-0">
                                 </div>
                             </div>
@@ -128,6 +130,9 @@
 
     <script>
         $(document).ready(function(){
+
+                let fh = true;
+                let arr = []
                 {#logistics.loadFleets()#}
                 logistics.loadFleet(`{{ last_fleet_pk }}`)
                 $('#previous').click(function(){
@@ -224,9 +229,9 @@
                     })
                 })
 
-                $('#trips').click(function(){
+                $('#trips').click(async function(){
                     let body = `
-                    <div style="height: 75vh !important" class="d-flex justify-content-center align-items-center">
+                    <div style="height: 75vh !important" class="d-flex leg justify-content-center align-items-center">
                         <div class="spinner-container">
                             <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
                                 <span class="sr-only">Loading...</span>
@@ -239,11 +244,60 @@
                     amodal.setBodyHtml(body)
                     amodal.setSize('L')
                     amodal.show()
-                    amodal.setFooterHtml(`<button class="btn btn-primary">Export</button>`)
+                    amodal.setFooterHtml(`<button class="btn exp btn-primary">Export</button>`)
                     amodal.show()
+
+                    await logistics.getFleet(`${$('#pk').val()}`).then(response => {
+                        if(anton.IsRequest(response)){
+                            console.table(response)
+                            let trips = response['message'][0]['deliveries']
+                            let tr = '';
+                            arr.push(['REQUEST DATE','SOURCE','DESTINATION','DRIVER','STATUS','REQUESTED BY'])
+                            if(trips.length > 0){
+                                trips.map(item => {
+                                    let xr = [item['request_date'].split('T')[0],item['source'],item['destination'],item['driver']['name'],item['status'],item['requested_by']['name']]
+                                    arr.push(xr)
+                                    tr += `
+                                        <tr>
+                                            <td>${item['request_date'].split('T')[0]}</td>
+                                            <td>${item['source']}</td>
+                                             <td>${item['destination']}</td>
+                                            <td>${item['driver']['name']}</td>
+                                            <td>${item['status']}</td>
+                                            <td>${item['requested_by']['name']}</td>
+                                        </td>
+                                    `
+                                })
+
+                                let table = `
+                                    <table class="table table-sm table-bordered">
+                                        <thead><tr><th>DATE</th><th>SOURCE</th><th>DESTINATION</th><th>DRIVER</th><th>STATUS</th><th>USER</th></tr></thead>
+                                        <tbody>${tr}</tbody>
+                                `
+
+                                $('.leg').html(table)
+                                $('.leg').removeClass('justify-content-center')
+                                $('.leg').removeClass('align-content-center')
+                                $('.leg').removeClass('d-flex')
+
+                            } else {
+                                let table = `No trips found`
+                                $('.leg').html(table)
+                            }
+                        } else {
+                            $('.leg').html(response.message)
+                        }
+                    }).catch(error => {
+                        $('.leg').html(error.message)
+                    })
+
+                    $('.exp').click(function(){
+                        anton.downloadCSV(`${$('#plate_number').val().replace(' ','_')}_trips.csv`,anton.convertToCSV(arr))
+                    })
+
                 })
 
-                $('#compliance').click(function(){
+                $('#service_history').click(function(){
                     let body = `
                     <div style="height: 75vh !important" class="d-flex justify-content-center align-items-center">
                         <div class="spinner-container">
@@ -251,12 +305,46 @@
                         </div>
                     </div>`
 
-                    amodal.setTitleText("COMPLIANCE")
+                    amodal.setTitleText("SERVICING REQUEST")
                     amodal.setBodyHtml(body)
                     amodal.setSize('L')
                     amodal.show()
-                    amodal.setFooterHtml(`<button class="btn btn-primary">Export</button>`)
+                    amodal.setFooterHtml(`<button class="btn btn-primary">Export</button><button id="new_service_request" class="btn btn-info ms-2"><i class="fa fa-plus"></i> Service Request</button>`)
                     amodal.show()
+
+                    $('#new_service_request').click(function(){
+                        let body = "";
+                        body += fom.selectv2('type',[{'val':'service','desc':'Service'},{'val':'repair','desc':'Repair'}])
+                        body += fom.textarea('details',10,true)
+                        body += fom.textarea('for_mechanic',4,true)
+
+                        amodal.setTitleText("NEW SERVICE REQUEST")
+                        amodal.setBodyHtml(body)
+                        amodal.setSize('L')
+                        amodal.show()
+                        amodal.setFooterHtml(`<button class="btn btn-primary" id="save_service_request">SAVE</button>`)
+                        amodal.show()
+
+                        $('#save_service_request').click(async function(){
+                            let ids = ['type','details','for_mechanic','pk','mypk']
+                            if(anton.validateInputs(ids)){
+                                let payload = {
+                                    module:'vehicle_service_request',
+                                    data:anton.Inputs(ids)
+                                }
+
+                                await api.v2('PUT',payload,logistics.interface).then(response => {
+                                    if(anton.IsRequest(response)){
+                                        $('#block').val(response.message)
+                                        kasa.confirm(response.message,1,'here')
+                                    } else {
+                                        kasa.response(response)
+                                    }
+                                }).catch(error => {kasa.error(error)})
+                            }
+                        })
+                    })
+
                 })
 
                 $('#images').click(function(){
@@ -274,6 +362,116 @@
                     amodal.setFooterHtml(`<button class="btn btn-primary">Export</button>`)
                     amodal.show()
                 })
+
+                $('#fuel').click(async function(){
+
+
+
+
+                    let body = `
+                    <div style="height: 75vh !important" class="d-flex leg justify-content-center align-items-center">
+                        <div class="spinner-container">
+                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"> <span class="sr-only">Loading...</span></div>
+                        </div>
+                    </div>`
+
+                    amodal.setTitleText("FUELING HISTORY")
+                    amodal.setBodyHtml(body)
+                    amodal.setSize('L')
+                    amodal.show()
+                    amodal.setFooterHtml(`<button class="btn btn-primary">Export</button><button style="margin-right:50px !important" id="record_purchase" class="btn btn-info ms-2"><i class="fa fa-gas-pump"></i></button>`)
+                    amodal.show()
+
+
+
+                    $('#record_purchase').click(function(){
+                        let body = "";
+                        body += fom.number('amount','how much purchase?',true)
+                        body += fom.number('rate','price per lt',true)
+                        body +=  `
+                            <form id="snd_rep" method='post' enctype="multipart/form-data" action="/logistic/fuel-reciept/" >
+                             <input type="hidden" name="block" id="block">
+                            <input type="file" name="receipt" class="form-control" id="receipt"></form>
+                        `
+
+                        amodal.setTitleText("NEW RECORD")
+                        amodal.setBodyHtml(body)
+                        amodal.setSize('L')
+                        amodal.show()
+                        amodal.setFooterHtml(`<button class="btn btn-primary" id="save_fuel">SAVE</button>`)
+                        amodal.show()
+
+                        $('#save_fuel').click(async function(){
+                            let ids = ['amount','rate','pk','mypk','receipt']
+                            if(anton.validateInputs(ids)){
+                                let payload = {
+                                    module:'fuel_purchase',
+                                    data:anton.Inputs(ids)
+                                }
+
+                                await api.v2('PUT',payload,logistics.interface).then(response => {
+                                    if(anton.IsRequest(response)){
+                                        $('#block').val(response.message)
+                                        $('#snd_rep').submit()
+                                    } else {
+                                        kasa.response(response)
+                                    }
+                                })
+
+                            }
+                        })
+
+                    })
+
+                    await logistics.getFleet(`${$('#pk').val()}`).then(response => {
+                        if(anton.IsRequest(response)){
+                            console.table(response)
+                            let fuel_history = response['message'][0]['fuel_history']
+                            let tr = '';
+                            if(fuel_history.length > 0){
+                                fuel_history.map(item => {
+                                    tr += `
+                                        <tr>
+                                            <td>${item['date']}</td>
+                                            <td>${item['amount']}</td>
+                                            <td>${item['rate']}</td>
+                                            <td>${item['litres']}</td>
+                                             <td>${item['user']['name']}</td>
+                                            <td><a href="javascript:void(0)" onclick="anton.viewFile('${item['image']}')"><i class="fa fa-eye"></i></a></td>
+                                        </tr>
+                                    `
+
+
+
+                                })
+
+                                let table = `
+                                    <table class="table table-sm table-bordered">
+                                        <thead><tr><th>DATE</th><th>AMOUNT</th><th>RATE</th><th>LIT.</th><th>USER</th><th>Reciept</th></tr></thead>
+                                        <tbody>${tr}</tbody>
+
+                                    </table>
+                                `
+
+                                $('.leg').html(table)
+                                $('.leg').removeClass('justify-content-center')
+                                $('.leg').removeClass('align-content-center')
+                                $('.leg').removeClass('d-flex')
+                            } else {
+                                let table = `No fuel history found`
+                                $('.leg').html(table)
+                            }
+
+                        } else {
+                            $('.leg').html(response.message)
+                        }
+                    }).catch(error => {
+                        $('.leg').html(error)
+                    })
+
+                })
+
+
             }
 
         )
