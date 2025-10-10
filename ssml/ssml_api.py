@@ -1016,6 +1016,10 @@ def interface(request):
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
 
+                elif module == 'contractor_documents':
+                    contactor_id = data.get('pk')
+                    success_response['message'] = Contractor.objects.get(pk=contactor_id).documents()
+
                 elif module == 'foc_otp':
                     phone = data.get('phone')
                     if Contractor.objects.filter(phone=phone).exists():
@@ -2036,7 +2040,7 @@ def interface(request):
                     # contractor wise
                     pdf.ln(5)
                     pdf.set_font("Arial","B", size=10)
-                    pdf.cell(190, 5, txt="Contractor Wise", ln=True, border=0, align="C")
+                    pdf.cell(190, 5, txt="Contractor On Site", ln=True, border=0, align="C")
 
                     pdf.set_font("Arial","B", size=10)
                     pdf.cell(100, 5, txt="Contractor", ln=False, align="L",border=1)
@@ -2045,18 +2049,47 @@ def interface(request):
 
                     total_today_jobs = 0
                     total_total_jobs = 0
-                    print("Cash")
-                    for contractor in Contractor.objects.filter(~Q(company="A TRADITION")):
+
+                    for contractor in Contractor.objects.filter(is_installer=True):
                         today_jobs = ServiceOrder.objects.filter(contractor=contractor,service_date=day_date).count()
                         total_jobs = ServiceOrder.objects.filter(contractor=contractor, service_date__lte=day_date).count()
 
-                        pdf.set_font("Arial","", size=10)   
-                        pdf.cell(100, 5, txt=f"{contractor.company[:30]}", ln=False, align="L",border=1)
-                        pdf.cell(45, 5, txt=f"{today_jobs}", ln=False, align="L",border=1)
-                        pdf.cell(45, 5, txt=f"{total_jobs}", ln=True, align="L",border=1)
+                        print('today',today_jobs,'total',total_jobs)
+                        if today_jobs > 0:
+                            pdf.set_font("Arial","", size=10)
+                            pdf.cell(100, 5, txt=f"{contractor.company}", ln=False, align="L",border=1)
+                            pdf.cell(45, 5, txt=f"{today_jobs}", ln=False, align="L",border=1)
+                            pdf.cell(45, 5, txt=f"{total_jobs}", ln=True, align="L",border=1)
+
+                            total_today_jobs += today_jobs
+                            total_total_jobs += total_jobs
+
+
 
                         total_today_jobs += today_jobs
                         total_total_jobs += total_jobs
+
+                    # contractor wise
+                    total_today_jobs = 0
+                    total_total_jobs = 0
+                    pdf.ln(5)
+                    pdf.set_font("Arial", "B", size=10)
+                    pdf.cell(190, 5, txt="Contractor Not On Site", ln=True, border=0, align="C")
+                    pdf.set_font("Arial", "B", size=10)
+                    pdf.cell(100, 5, txt="Contractor", ln=False, align="L", border=1)
+                    pdf.cell(90, 5, txt="Phone Number", ln=True , align="L", border=1)
+                    for contractor in Contractor.objects.filter(is_installer=True):
+                        today_jobs = ServiceOrder.objects.filter(contractor=contractor, service_date=day_date).count()
+                        total_jobs = ServiceOrder.objects.filter(contractor=contractor,
+                                                                 service_date__lte=day_date).count()
+
+                        if today_jobs <= 0:
+                            pdf.set_font("Arial", "", size=10)
+                            pdf.cell(100, 5, txt=f"{contractor.company[:20]}", ln=False, align="L", border=1)
+                            pdf.cell(90, 5, txt=f"{contractor.phone}", ln=True, align="L", border=1)
+
+                            total_today_jobs += today_jobs
+                            total_total_jobs += total_jobs
 
                     pdf.set_font("Arial","B", size=10)
                     pdf.cell(100, 5, txt="Total", ln=False, align="L",border=1)
@@ -2077,7 +2110,7 @@ def interface(request):
 
                     total_errors = 0
                     
-                    for contractor in Contractor.objects.filter(~Q(company="A TRADITION")):
+                    for contractor in Contractor.objects.filter(is_installer=True):
                         errors = ContractorError.objects.filter(contractor=contractor)
                         total_errors += errors.count()
 
@@ -3077,6 +3110,7 @@ def interface(request):
                 contractor.gh_post_code = data.get('gh_post_code')
                 contractor.gh_card_no = data.get('gh_card_no')
                 contractor.code = data.get('code')
+                contractor.is_installer = data.get('is_installer')
                 contractor.save()
         
             elif module == 'service_order_return':

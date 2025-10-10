@@ -15,6 +15,9 @@
             
             <button class="btn btn-info rounded-0 ms-2" id="view_contractor"><i class="bi bi-eye"></i> View</button>
             <button class="btn btn-info rounded-0 ms-2" id="close_jobs"><i class="bi bi-eye"></i> Close Jobs</button>
+            <button class="btn btn-info rounded-0 ms-2" id="documents"><i class="bi bi-file-earmark"></i> Documents
+            </button>
+
             <div class="dropdown">
                 <button class="btn btn-primary dropdown-toggle ms-2" type="button" id="exportDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-file-export"></i> Export
@@ -250,6 +253,11 @@
                     loader.hide()
                 }
             }).catch(error => {kasa.error("There is an error");loader.hide()})
+        })
+
+        $('#documents').click(function(){
+            let id = $('#contractor_id').val();
+            ssml.viewContactorDocuments(id)
         })
 
 

@@ -56,7 +56,7 @@ class Anton {
     }
 
     IsRequest(request) {
-        if (request['status_code'] === 200 || request['status'] === 200) {
+        if (request['status_code'] === 200 || request['status'] === 200 || request['status'] === 202 || request['status_code'] === 202) {
             return true
         }
         return false;
@@ -93,39 +93,51 @@ class Anton {
         }
     }
 
-    viewFile(url = '', title = "", description = "") {
-            console.log(url)
+    async viewFile(url = '', title = "", description = "") {
+        console.log(url)
         amodal.setTitleText("Error!!");
         amodal.setBodyHtml("Cannot Load Resource")
         if (url.length > 0) {
             amodal.setTitleText(title)
-            amodal.setFooterHtml('<a href="'+url+'" target="_blank">DOWNLOAD</a>')
+            amodal.setFooterHtml('<a href="' + url + '" target="_blank">DOWNLOAD</a> <a class="x_share">Share</a>')
             let ft = this.fileType(url);
             if (ft === 'image') {
                 amodal.setBodyHtml(
                     `<img class='img-fluid' src='${url}' />`
                 );
 
-            }
-
-            else if (ft === 'pdf') {
+            } else if (ft === 'pdf') {
                 amodal.setBodyHtml(`<embed src="${url}" width="100%" height="600px" />`);
                 amodal.setSize('XL')
-            }
-
-            else if (ft === 'video') {
+            } else if (ft === 'video') {
                 amodal.setBodyHtml(`
                 <video width="100%" height="auto" controls>
                     <source src="${url}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
                 `)
-            }
-
-            else {
+            } else {
                 amodal.setTitleText("Consufe!!")
                 amodal.setBodyHtml(`Cannot render resource type : ${ft} <br>Download file with link below <br> <a target='_blank' href='${url}'>>_Link_<</a>`)
             }
+
+            await anton.shorterUrn(url).then(response => {
+                console.table(response)
+                if(anton.IsRequest(response)){
+                    let short_url = response['message']
+                    amodal.setFooterHtml(`<a href="${short_url}" target="_blank">SHORTENED</a> <a class="x_share">Share</a>`)
+                    $('.x_share').click(function () {
+                        navigator.clipboard.writeText(short_url).then(() => {
+                            kasa.success("URL copied to clipboard!");
+                        }).catch(err => {
+                            kasa.error("Failed to copy URL");
+                            console.error(err);
+                        });
+                    })
+                    
+                }
+            }).catch(error => {console.error(error)})
+
         }
         $('#g_modal_body').prepend(`<p>${description}</p>`)
         amodal.show()
@@ -249,6 +261,17 @@ class Anton {
         const combined = text + timestamp;
 
         return SparkMD5.hash(combined);
+    }
+
+    async shorterUrn(url=window.location.href) {
+        let payload = {
+            'module': 'tools',
+            'data': {
+                'task': 'shorten',
+                'url': url
+            }
+        }
+        return api.call('PUT', payload, '/apiv2/')
     }
 }
 

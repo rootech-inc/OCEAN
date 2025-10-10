@@ -14,6 +14,7 @@ import os
 
 from django.views.decorators.csrf import csrf_exempt
 
+from admin_panel.anton import shorten_url
 from admin_panel.models import TicketHd, SmsApi, Sms, TaskHD, TaskTrans, ProductMaster, ProductPacking, ProductTrans, \
     UserAddOns
 from api.extras import get_stock, suppler_details, cardex
@@ -102,6 +103,14 @@ def api_function(request):
                     computer.computer_name = computer_name
                     computer.mac_address = mac_address
                     computer.save()
+
+                elif module == 'tools':
+                    task = data.get('task')
+                    if task == 'shorten':
+                        url = data.get('url')
+                        short_url = shorten_url(url)
+
+                        response['message'] = short_url
 
                 elif module == 'ticket':
                     owner = data.get('owner')

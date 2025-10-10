@@ -54,10 +54,10 @@
                                 </select>
                             </div>
 
-                            <div class="col-sm-4"><label for="loc_to">From Loc.</label></div>
+                            <div class="col-sm-4"><label for="loc_to">To Loc.</label></div>
                             <div class="col-sm-8 mb-3">
                                 <select name="" id="loc_to" class="form-control form-control-sm rounded-0">
-                                    <option value="" disabled selected>Select From</option>
+                                    <option value="" disabled selected>Select To</option>
                                     {% for loc in locations %}
                                         <option value="{{ loc.id }}">{{ loc.loc_name }}</option>
                                     {% endfor %}

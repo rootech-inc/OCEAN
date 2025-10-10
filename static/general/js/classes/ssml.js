@@ -778,6 +778,14 @@ class SSML {
                             <label for="gh_card_no" class="text-primary">Ghana Card No</label>
                             <input type="text" class="form-control" value="${contractor.gh_card_no}"   id="gh_card_no" name="gh_card_no">
                         </div>
+                        
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="is_installer">Is Installler?</label>
+                            <select class="form-control" id="is_installer">
+                                <option value="0">No</option>
+                                <option value="1">Yes</option>
+                            </select>
+                        </div>
 
                     </div>
                     
@@ -793,7 +801,7 @@ class SSML {
                 amodal.show();
 
                 $('#update_contractor').click(async function() {
-                    let ids = ['link','company','owner','phone','email','country','city','postal_code','gh_post_code','gh_card_no','code']
+                    let ids = ['link','company','owner','phone','email','country','city','postal_code','gh_post_code','gh_card_no','code','is_installer']
                     if(anton.validateInputs(ids)) {
                             let payload = {
                                 module: 'contractor',
@@ -4049,7 +4057,119 @@ class SSML {
 
 
     }
+
+    async viewContactorDocuments(id) {
+        let payload = {
+            'module': 'contractor_documents',
+            data: {
+                pk: id
+            }
+        }
+
+        let html = `
+            <div id="contactor_documents" class="d-flex w-100 flex-wrap justify-content-center align-content-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `
+
+        amodal.setBodyHtml(html)
+        amodal.setTitleText("Contractor Documents")
+        amodal.show()
+        amodal.setFooterHtml(`<button class='btn btn-success' id='upload_docs'><i class="fa fa-upload"></i> Upload</button>`)
+
+        await api.v2('VIEW', payload, '/ssml/api/').then(response => {
+            if (anton.IsRequest(response)) {
+                let docs = response.message
+                let docHtml = ''
+                let tr = ""
+                docs.forEach(doc => {
+                    tr += `
+                        <tr><td>${doc.title}</td><td>${doc.description}</td><td><a onclick='anton.viewFile("${doc.file}")'><i class="fa fa-eye"></i></a></td></tr>
+                    `
+                })
+
+                docHtml += `
+                    <table class="table table-bordered table-striped"><thead><tr><th>TITLE</th><th>DESCRIPTION</th><th>ACTION</th></tr></thead><tbody>${tr}</tbody></table>
+                `
+
+                if (docs.length === 0) {
+                    docHtml = '<div class="alert alert-info">No documents found</div>'
+                }
+
+                $('#contactor_documents').html(docHtml)
+                $('#upload_docs').click(function() {
+                    let form = `
+                        <form id="upload_contractor_docs_xx" method="POST" action="/ssml/upload_contractor_docs/" enctype="multipart/form-data">
+                            <input type="hidden" name="pk" value="${id}">
+                            <div class="mb-3">
+                                <label for="contractor_docs_title" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="contractor_docs_title" name="title" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="contractor_docs_file" class="form-label">File</label>
+                                <input type="file" class="form-control" id="contractor_docs_file" name="file" required>
+                                <div class="form-text">Allowed file types: pdf, doc, docx, jpg, png, jpeg</div>
+                                <div class="form-text">Maximum file size: 5MB</div>
+                            </div>
+
+                    `
+
+                    amodal.setBodyHtml(form)
+                    amodal.setTitleText("Upload Contractor Documents")
+                    amodal.setFooterHtml(`<button class='btn btn-success' id='upload_docs_submit'>Upload</button>`)
+                    amodal.show()
+
+                    $(document).on('submit', '#upload_contractor_docs_xx', function (e) {
+                        e.preventDefault();
+                        console.log('Form submitted');
+                        let formData = new FormData(this);
+
+                        $.ajax({
+                            url: $(this).attr('action'),
+                            type: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function (response) {
+                                kasa.success(response.message);
+                                ssml.viewContactorDocuments(formData.get('pk'));
+                                amodal.hide();
+                            },
+                            error: function (xhr, status, error) {
+                                kasa.error(xhr.responseText || error);
+                            }
+                        });
+                    });
+
+                    $('#upload_docs_submit').click(function(){
+                        $('#upload_contractor_docs_xx').submit()
+                    })
+
+                })
+
+            } else {
+                $('#contactor_documents').html(`
+                    <div class="alert alert-danger">
+                        ${response.message}
+                    </div>
+                `)
+            }
+        }).catch(error => {
+            $('#contactor_documents').html(`
+                <div class="alert alert-danger">
+                    Error loading documents: ${error}
+                </div>
+            `)
+        })
+    }
 }
+
 const ssml = new SSML();
 
 

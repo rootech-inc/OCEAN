@@ -12,8 +12,9 @@ from admin_panel.anton import make_md5_hash
 
 from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
-    IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, ServiceMaterials, ServiceOrder, \
-    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd,Documents
+    IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, \
+    ServiceMaterials, ServiceOrder, \
+    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments
 
 
 # Create your views here.
@@ -1103,3 +1104,28 @@ def my_company(request):
         'foc':foc
     }
     return render(request, 'ssml/foc/my-company.html', context)
+
+@login_required
+@csrf_exempt
+def upload_contractor_docs(request):
+
+    if request.method == 'POST':
+        try:
+            form = request.POST
+            foc_id = form.get('pk')
+            title = form.get('title')
+            description = form.get('description')
+            file = request.FILES.get('file')
+
+            contractor = Contractor.objects.get(id=foc_id)
+            ContractorDocuments.objects.create(
+                contractor=contractor,
+                title=title,
+                file=file,
+                description=description
+            )
+
+            return JsonResponse({'status_code': '200','message':"Document Uploaded"})
+        except Exception as e:
+            return JsonResponse({'status_code': '500', 'message': str(e)})
+    return JsonResponse({'status_code': '500', 'message': "Invalid Method"})

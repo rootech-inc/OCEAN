@@ -9,7 +9,7 @@ from ocean import settings
 
 import re
 
-from ocean.settings import ATTENDANCE_URL
+from ocean.settings import ATTENDANCE_URL, BASE_URL
 
 
 def is_valid_password(password):
@@ -99,6 +99,9 @@ def shorten_url(url):
     import requests
 
     api_url = "https://is.gd/create.php"
+
+    if not url.startswith('http'):
+        url = BASE_URL + (url[1:] if url.startswith('/') else url)
 
     params = {
         "format": "simple",  # "simple" returns just the short URL as text
