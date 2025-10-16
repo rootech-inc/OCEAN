@@ -4168,6 +4168,151 @@ class SSML {
             `)
         })
     }
+
+    async newInstallationType(){
+        let form = "";
+        form += fom.text('name','',true,255)
+        form += fom.textarea('description',3,true)
+
+        amodal.setBodyHtml(form)
+        amodal.setTitleText('New Installation Type')
+        amodal.setFooterHtml(fom.button('save_new_installation_type','button','success'))
+        amodal.show()
+
+        $('#save_new_installation_type').click(async function(){
+            let ids = ['name','description','mypk']
+            if(anton.validateInputs(ids)){
+                let payload = {
+                    module:'new_installation_type',
+                    data:anton.Inputs(ids)
+                }
+                await api.v2('PUT',payload,'/ssml/api/').then(response => {
+                    kasa.response(response)
+                }).catch(error => {kasa.error(error)})
+            }
+
+        })
+    }
+
+    async getInstallationTypes(pk='*'){
+        let payload = {
+            module:'installation_type',
+            data:{
+                id:pk
+            }
+        }
+        return await api.v2('VIEW',payload,'/ssml/api/')
+    }
+
+    async loadInstallationTypes(){
+
+        await ssml.getInstallationTypes().then(response => {
+            if(anton.IsRequest(response)){
+                let data = response.message;
+                console.table(data)
+                loader.hide()
+                let tr = ``;
+                data.forEach(item => {
+                    tr += `
+                        <tr><td>${item.name}</td><td>${item.description}</td><td><button class="btn btn-primary edit_installation_type" data-name="${item.name}" data-description="${item.description}" data-pk="${item.pk}">Edit</button></td></tr>`;
+                    });
+
+                let body = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="installation_types_table">
+                    
+                                ${tr}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                $('#installation_types_table').html(body)
+                $('.edit_installation_type').click(function(){
+                    let name = $(this).data('name')
+                    let description = $(this).data('description')
+                    let pk = $(this).data('pk')
+
+                    let form = "";
+                    form += fom.text('edit_name','',true,255)
+                    form += fom.textarea('edit_description',3,true)
+                    amodal.setBodyHtml(form)
+                    amodal.setTitleText('Edit Installation Type')
+                    amodal.setFooterHtml(fom.button('save_installation_type_edit','button','success'))
+                    amodal.show()
+
+                    $('#edit_name').val(name)
+                    $('#edit_description').val(description)
+
+                    $('#save_installation_type_edit').click(async function(){
+                        let ids = ['edit_name','edit_description','mypk']
+                        if(anton.validateInputs(ids)){
+                            let payload = {
+                                module:'installation_type',
+                                data:anton.Inputs(ids)
+                            }
+                            payload.data.id = pk;
+                            payload.data.pk = pk;
+                            await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+                                kasa.response(response)
+                                amodal.hide()
+                                ssml.loadInstallationTypes()
+                            }).catch(error => {kasa.error(error)})
+                        }
+                    })
+                })
+
+            } else {
+
+                $('#installation_types_table').html(response['message'])
+
+            }
+        })
+        .catch(error => {
+            kasa.error(error)
+            $('#installation_types_table').html(error)
+        })
+    }
+
+
+    async newServiceOrderType(){
+        let form = "";
+        form += fom.text('st_name','Name',true)
+        form += fom.text('st_desc','Description',true)
+        form += fom.number('st_rate','Rate',true)
+
+        amodal.setBodyHtml(form)
+        amodal.setFooterHtml(fom.button('save_order_type','button','success'))
+        amodal.show()
+
+        $('#save_order_type').click(async function(){
+            let ids = ['st_name','st_desc','st_rate']
+            if(anton.validateInputs(ids)){
+                let payload = {
+                    module:'order_type',
+                    data:anton.Inputs(ids)
+                }
+
+                await api.v2('PUT',payload,'/ssml/').then(response => {
+                    console.table(response)
+                }).catch(error => {
+                    kasa.response(error)
+                })
+            }
+
+
+        })
+
+    }
+
 }
 
 const ssml = new SSML();

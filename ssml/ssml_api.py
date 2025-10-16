@@ -104,6 +104,13 @@ def interface(request):
 
                 success_response['message'] = "Contractor Created Successfully"
 
+            elif module == 'new_installation_type':
+                name = data.get('name')
+                description = data.get('description')
+                created_by = User.objects.get(id=data.get('mypk'))
+                InstallationType.objects.create(name=name, description=description, created_by=created_by)
+                success_response['message'] = "Installation Type Created Successfully"
+
             elif module == 'daily_sms_report':
                 from django.utils import timezone
                 from datetime import datetime
@@ -1015,6 +1022,16 @@ def interface(request):
                     else:
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
+
+                elif module == 'installation_type':
+                    id = data.get('id', '*')
+                    if id == '*':
+                        installation_types = InstallationType.objects.all().order_by('name')
+                        success_response['message'] = [installation_type.obj() for installation_type in
+                                                       installation_types]
+                    else:
+                        installation_type = InstallationType.objects.get(id=id)
+                        success_response['message'] = installation_type.obj()
 
                 elif module == 'contractor_documents':
                     contactor_id = data.get('pk')

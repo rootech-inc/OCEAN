@@ -1129,3 +1129,14 @@ def upload_contractor_docs(request):
         except Exception as e:
             return JsonResponse({'status_code': '500', 'message': str(e)})
     return JsonResponse({'status_code': '500', 'message': "Invalid Method"})
+
+
+def service_tools(request):
+    page = {
+        'title': 'Service Tools',
+        'nav': True
+    }
+    context = {
+        'page': page
+    }
+    return render(request, 'ssml/service/tools.html', context)

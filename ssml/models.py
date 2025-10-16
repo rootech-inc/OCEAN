@@ -1596,3 +1596,22 @@ class Documents(models.Model):
         else:
             data['file'] = None
         return data
+
+
+class InstallationType(models.Model):
+    name = models.CharField(max_length=255,unique=True,null=False,blank=False)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    rate = models.DecimalField(max_digits=10, decimal_places=2,default=0.00)
+
+    def obj(self):
+        return {
+            'pk':self.id,
+            'name':self.name,
+            'description':self.description,
+            'created_at':self.created_at,
+            'updated_at':self.updated_at,
+            'rate':self.rate
+        }
