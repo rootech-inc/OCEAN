@@ -21,7 +21,8 @@
                   </a>
 
                   <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink">
-                    <a class="dropdown-item" id="new_delivery_request" href="javascript:void(0)">New Request</a>
+                    <a class="dropdown-item" id="new_delivery_request" href="javascript:void(0)"><i class="fa fa-plus"></i> New Request</a>
+                      <a href="javascript:void(0)" class="dropdown-item" id="weekly_report"><i class="fa fa-file"></i> Weekly Report</a>
 
                   </div>
                 </div>
@@ -56,6 +57,11 @@
             $('#new_delivery_request').click(function(){
 
                 windowPopUp('/logistic/new-delivery/',"NEW DELIVERY",600,600)
+            })
+
+            $('#weekly_report').click(function(){
+
+                    logistics.weeklyReport()
             })
 
 

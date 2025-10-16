@@ -3402,8 +3402,9 @@ class SSML {
 
         $('#exp_expensis').click(async function(){
             if(anton.validateInputs(['as_of','direction'])){
-                await ssml.getExpenses('*',100000,$('#as_of').val(),'excel',$('#direction').val()).then(response => {
+                await ssml.getExpenses('*',10000,'approved',$('#as_of').val(),'excel',$('#direction').val()).then(response => {
                     if(anton.IsRequest(response)){
+                        console.table(response)
                         anton.viewFile(`/${response.message.expenses}`)
                     } else {
                         kasa.response(response)
@@ -4289,20 +4290,26 @@ class SSML {
         form += fom.text('st_desc','Description',true)
         form += fom.number('st_rate','Rate',true)
 
+
         amodal.setBodyHtml(form)
         amodal.setFooterHtml(fom.button('save_order_type','button','success'))
+        $('#st_rate').val(1)
         amodal.show()
 
         $('#save_order_type').click(async function(){
-            let ids = ['st_name','st_desc','st_rate']
+            let ids = ['st_name','st_desc','st_rate','mypk']
             if(anton.validateInputs(ids)){
                 let payload = {
                     module:'order_type',
                     data:anton.Inputs(ids)
                 }
 
-                await api.v2('PUT',payload,'/ssml/').then(response => {
-                    console.table(response)
+                await api.v2('PUT',payload,'/ssml/api/').then(response => {
+                    if(anton.IsRequest(response,true)){
+                        console.table(response)
+                        amodal.hide()
+                        ssml.loadOrderTypes()
+                    }
                 }).catch(error => {
                     kasa.response(error)
                 })
@@ -4313,6 +4320,32 @@ class SSML {
 
     }
 
+    async loadOrderTypes() {
+        await ssml.getOrderTypes('*').then(response => {
+            if(anton.IsRequest(response,false)){
+                let data = response.message;
+                console.table(data)
+                loader.hide()
+                let tr = ``;
+                data.forEach(item => {
+                    tr += `
+                        <tr><td>${item.name}</td><td>${item.description}</td><td>${item.rate}</td><td><button class="btn btn-primary edit_order_type" data-name="${item.name}" data-description="${item.description}" data-pk="${item.pk}">Edit</button></td></tr>`;
+                    });
+                $('#service_order_types_table').html(`
+                    <table class="table table-bordered"><thead><tr><th>NAME</th><th>DESCRIPTION</th><th>RATE</th><th>ACTION</th></tr></thead><tbody>${tr}</tbody></table>
+                `)
+            } else {
+                console.table(response)
+                $('#service_order_types_table').html(`<i class="text-danger">${response['message']}</i>`)
+            }
+        }).catch(error => {
+            $('#service_order_types_table').html(error)
+        })
+    }
+
+    async getOrderTypes(pl) {
+        return await api.v2('VIEW',{module:'order_type',data:{id:pl}},'/ssml/api/')
+    }
 }
 
 const ssml = new SSML();

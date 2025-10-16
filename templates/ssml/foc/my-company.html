@@ -15,7 +15,7 @@
                 <div class="w-100 d-flex">
                     <div class="w-50 d-flex"><h5 class="card-title">Company Profile</h5></div>
                     <div class="w-50 d-flex justify-content-end align-content-center">
-                        <button id="edit_owner" onclick="alert('Hello world')" class="btn btn-info rounded-0"><i class="fa fa-edit"></i> Owner</button>
+                        <button id="edit_owner" class="btn btn-info rounded-0"><i class="fa fa-edit"></i> Owner</button>
                     </div>
                 </div>
             </div>
@@ -26,22 +26,22 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <span class="form-label">Fullname</span><br>
-                            <strong id="company_name" >Jane Doe</strong>
+                            <strong id="company_name" >{{ foc.owner }}</strong>
                         </div>
                         <!-- GHANA CARD -->
                         <div class="col-sm-4">
                             <span class="form-label">Ghana Number</span> <br>
-                            <strong id="company_name" >Jane Doe</strong>
+                            <strong id="company_name" >{{ foc.gh_card_no }}</strong>
                         </div>
 
                         <div class="col-sm-4 mb-3">
                             <span class="form-label">Phone Number</span><br>
-                            <strong id="company_name" >Jane Doe</strong>
+                            <strong id="company_name" >{{ foc.owner_phone }}</strong>
                         </div>
 
                         <div class="col-sm-4">
                             <span class="form-label">Email</span><br>
-                            <strong id="company_name" >Jane Doe</strong>
+                            <strong id="company_name" >{{ foc.owner_email }}</strong>
                         </div>
 
                     </div>
@@ -51,43 +51,43 @@
                     <div class="row">
                         <div class="col-sm-4 mb-4">
                             <span class="form-label">Business Name</span><br>
-                            <strong id="company">Company Name Here</strong>
+                            <strong id="company">{{ foc.company }}</strong>
                         </div>
                         <div class="col-sm-4">
                             <span class="form-label">Registration Number</span><br>
-                            <strong id="comp_reg_number">REG123456</strong>
+                            <strong id="comp_reg_number">{{ foc.comp_reg_number }}</strong>
                         </div>
                         <div class="col-sm-4">
                             <span class="form-label">Business Type</span><br>
-                            <strong id="business_type">Limited Company</strong>
+                            <strong id="business_type">{{ foc.business_type }}</strong>
                         </div>
                         <div class="col-sm-4 mb-4">
                             <span class="form-label">Business Address</span><br>
-                            <strong id="business_address">123 Business Street</strong>
+                            <strong id="business_address">{{ foc.business_address }}</strong>
                         </div>
                         <div class="col-sm-4">
                             <span class="form-label">Business Phone</span><br>
-                            <strong id="business_phone_number">+233 XX XXX XXXX</strong>
+                            <strong id="business_phone_number">{{ foc.phone }}</strong>
                         </div>
                         <div class="col-sm-4">
                             <span class="form-label">Business Email</span><br>
-                            <strong id="business_email">business@example.com</strong>
+                            <strong id="business_email">{{ foc.email }}</strong>
                         </div>
                         <div class="col-sm-4 mb-4">
                             <span class="form-label">Region</span><br>
-                            <strong id="region">Greater Accra</strong>
+                            <strong id="region">{{ foc.region }}</strong>
                         </div>
                         <div class="col-sm-4">
                             <span class="form-label">City/Town</span><br>
-                            <strong id="city">Accra</strong>
+                            <strong id="city">{{ foc.city }}</strong>
                         </div>
                         <div class="col-sm-4">
                             <span class="form-label">GH POST</span><br>
-                            <strong id="gh_post">GA-123-4567</strong>
+                            <strong id="gh_post">{{ foc.gh_post_code }}</strong>
                         </div>
                         <div class="col-sm-12">
                             <span class="form-label">Address</span><br>
-                            <strong id="business_address_full">Detailed business address with additional information goes here</strong>
+                            <strong id="business_address_full">{{ foc.business_address }}</strong>
                         </div>
                     </div>
                 </div>
@@ -125,21 +125,17 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <span class="form-label">Bank Name</span><br>
-                            <strong id="bank_name">Fidelity Bank</strong>
+                            <strong id="bank_name">{{ foc.bank_name }}</strong>
                         </div>
                         <div class="col-md-6 mb-3">
                             <span class="form-label">Account Number</span><br>
-                            <strong id="account_number">123456789</strong>
+                            <strong id="account_number">{{ foc.bank_acct_number }}</strong>
                         </div>
                     </div>
                     <div class="row mb-4">
                         <div class="col-md-6 mb-3">
-                            <span class="form-label">SWIFT Code</span><br>
-                            <strong id="swift_code">FIDCGHAC</strong>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <span class="form-label">IBAN</span><br>
-                            <strong id="iban">GH12345678901234567890</strong>
+                            <span class="form-label">Branch</span><br>
+                            <strong id="bank_branch">{{ foc.bank_branch }}</strong>
                         </div>
                     </div>
                 </form>
@@ -152,26 +148,80 @@
     </div>
 
     <script>
+
+        const mypk = `{{ foc.pk }}`
         let owner_update_form = `
             <div class="row">
+                        <div class="col-sm-12"><h3>Owner Information</h3></div>
                         <div class="col-sm-4">
                             <label class="form-label">Fullname</label>
-                            <input id="company_name" type="text" class="form-control" placeholder="Enter company name">
+                            <input id="owner_name" value="{{ foc.owner }}" type="text" class="form-control">
                         </div>
                         <!-- GHANA CARD -->
                         <div class="col-sm-4">
                             <label class="form-label">Ghana Number</label>
-                            <input type="text" id="ghana_card" class="form-control" placeholder="GHA - XXXXXX">
+                            <input type="text" id="ghana_card" value="{{ foc.gh_card_no }}" class="form-control" placeholder="GHA - XXXXXX">
                         </div>
 
                         <div class="col-sm-4">
                             <label class="form-label">Phone Number</label>
-                            <input type="text" id="owner_phone" class="form-control" placeholder="Enter phone number">
+                            <input type="text" id="owner_phone" value='{{ foc.owner_phone }}' class="form-control" >
                         </div>
 
                         <div class="col-sm-4">
                             <label class="form-label">Email</label>
-                            <input type="email" id="owner_email" class="form-control" placeholder="Enter email">
+                            <input type="email" value='{{ foc.owner_email }}' id="owner_email" class="form-control">
+                        </div>
+
+                        <div class="col-sm-12"><h3>Company Information</h3></div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Business Name</label>
+                            <input type="text" value="{{ foc.company }}" id="company" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Registration Number</label> 
+                            <input type="text" value="{{ foc.comp_reg_number }}" id="comp_reg_number" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Business Type</label>
+                            <input type="text" value="{{ foc.business_type }}" id="business_type" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Business Phone</label>
+                            <input value="{{ foc.phone  }}" type="text" id="business_phone_number" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Business Email</label>
+                            <input type="email" value="{{ foc.email }}" id="business_email" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Region</label>
+                            <input type="text" value="{{ foc.region }}" id="region" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">City/Town</label>
+                            <input type="text" id="city" value="{{ foc.city }}" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">GH POST</label>
+                            <input type="text" id="gh_post" value="{{ foc.gh_post_code }}" class="form-control">
+                        </div>
+                        <div class="col-sm-12">
+                            <label class="form-label">Business Address</label>
+                            <textarea id="business_address"  class="form-control" rows="3" placeholder="Enter business address">{{ foc.business_address }}</textarea>
+                        </div>
+                        <div class="col-sm-12"><h3>Bank Details</h3></div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Bank Name</label>
+                            <input type="text" id="bank_name" value="{{ foc.bank_name }}" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Account Number</label>
+                            <input type="text" id="bank_acct_number" value="{{ foc.bank_acct_number }}" class="form-control">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Bank Branch</label>
+                            <input type="text" id="bank_branch" value="{{ foc.bank_branch }}" class="form-control">
                         </div>
 
                     </div>
@@ -185,23 +235,23 @@
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">Registration Number</label>
-                            <input type="text" id="comp_reg_number" class="form-control" placeholder="Enter registration number">
+                            <input type="text" id="comp_reg_number" class="form-control">
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">Business Type</label>
-                            <input type="text" id="business_type" class="form-control" placeholder="Enter phone number">
+                            <input type="text" id="business_type" class="form-control">
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">Business Address</label>
-                            <input type="text" id="business_address" class="form-control" placeholder="Enter email">
+                            <input type="text" id="business_address" class="form-control">
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">Business Phone</label>
-                            <input type="text" id="business_phone_number" class="form-control" placeholder="Enter phone number">
+                            <input type="text" id="business_phone_number" class="form-control">
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">Business Email</label>
-                            <input type="email" id="business_email" class="form-control" placeholder="Enter email">
+                            <input type="email" id="business_email" class="form-control">
                         </div>
                         <div class="col-sm-4">
                             <label for="region" class="form-label">Region</label>
@@ -224,9 +274,35 @@
 
         $(document).ready(function () {
             $('#edit_owner').click(function(){
+
+
                 amodal.setBodyHtml(owner_update_form)
                 amodal.setTitleHtml('Edit Owner')
+                amodal.setFooterHtml(`<button id="save_owner_information" class="btn btn-primary">Save Changes</button>`)
+                amodal.setSize('L')
                 amodal.show()
+
+                $('#save_owner_information').click(async function(){
+                    let ids = ['owner_name','ghana_card','owner_phone','owner_email','company','comp_reg_number','business_type','business_phone_number','business_email','region','city','gh_post','business_address','bank_name','bank_acct_number','bank_branch']
+                    if(anton.validateInputs(ids)){
+                        let payload = {
+                            module:'contractor',
+                            data:anton.Inputs(ids)
+                            }
+                        payload['data']['id'] = mypk
+                        console.table(payload)
+
+                        await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+                            if(anton.IsRequest(response)){
+                                kasa.success('Owner Information Updated Successfully')
+                                amodal.hide()
+                                location.reload()
+                            } else {
+                                kasa.response(response)
+                            }
+                        }).catch(error => {kasa.error(error)})
+                    }
+                })
             })
         })
     </script>

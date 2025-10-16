@@ -287,18 +287,19 @@ def interface(request):
                 attachments = MailAttachments.objects.filter(mail=mail)
 
                 for attachment in attachments:
-                    attachment_filename = attachment.attachment.path
-                    file_name = os.path.basename(attachment_filename)
-                    print(attachment_filename)
+
                     try:
+                        attachment_filename = attachment.attachment.path
+                        file_name = os.path.basename(attachment_filename)
+                        print(attachment_filename)
                         with open(attachment_filename, 'rb') as attached:
                             part = MIMEApplication(attached.read())  # Read the content of the file
                             part.add_header('Content-Disposition', f'attachment; filename="{file_name}"')
                             msg.attach(part)
                     except FileNotFoundError:
-                        print(f"File not found: {attachment_filename}")
+                        pass
                     except Exception as e:
-                        print(f"Error attaching file {attachment_filename}: {str(e)}")
+                        pass
 
                 # send email
 

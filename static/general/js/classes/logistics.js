@@ -449,6 +449,24 @@ class Logistics {
             }
         }).catch(err =>{kasa.error(err)});
     }
+
+    async weeklyReport() {
+        let payload = {
+            module:'weekly_report',
+            data:{}
+        }
+
+        await api.v2('VIEW',payload,logistics.interface).then(response =>{
+            if(anton.IsRequest(response)){
+                let file = response.message;
+                anton.viewFile(`/${file}`)
+            } else {
+                kasa.response(response)
+            }
+        }).catch(err =>{
+            kasa.error(err)
+        })
+    }
 }
 
 const logistics = new Logistics();

@@ -971,17 +971,20 @@ class Meter(models.Model):
     is_issued = models.BooleanField(default=False)
     service_order = models.ForeignKey(ServiceOrder, on_delete=models.SET_NULL, null=True, blank=True)
     meter_type_choices = [
-        ('SIN', 'Single Phase'),
-        ('TRIN', 'Three Phase'),
+        ('1 phase ', 'Single Phase'),
+        ('3 phase', 'Three Phase'),
+        ('other', 'Other'),
     ]
-    meter_type = models.CharField(max_length=255, choices=meter_type_choices, default='SIN')
+    phase = models.CharField(max_length=255, choices=meter_type_choices, default='other')
     location = models.ForeignKey(Location,on_delete=models.CASCADE,null=False)
+    ip_address = models.CharField(max_length=255, default='0.0.0.0')
+    installation_address = models.CharField(max_length=255, default='0')
 
     def __str__(self):
         return self.meter_no
     
     def meter_type_display(self):
-        return self.meter_type
+        return self.phase
     
     def obj(self):
         return {
@@ -1599,6 +1602,24 @@ class Documents(models.Model):
 
 
 class InstallationType(models.Model):
+    name = models.CharField(max_length=255,unique=True,null=False,blank=False)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    rate = models.DecimalField(max_digits=10, decimal_places=2,default=0.00)
+
+    def obj(self):
+        return {
+            'pk':self.id,
+            'name':self.name,
+            'description':self.description,
+            'created_at':self.created_at,
+            'updated_at':self.updated_at,
+            'rate':self.rate
+        }
+
+class ServiceOrderType(models.Model):
     name = models.CharField(max_length=255,unique=True,null=False,blank=False)
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)

@@ -110,7 +110,8 @@ def fleet(request):
         "page":{
             "title":"Fleet",
         },
-        "last_fleet_pk":last_fleet_pk
+        "last_fleet_pk":last_fleet_pk,
+        "fleets":Vehicle.objects.all()
     }
     return render(request,'logistics/fleet.html',context=context)
 

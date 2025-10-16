@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from admin_panel.models import Emails, Locations, BusinessEntityTypes, MailSenders, MailQueues, MailAttachments, Sms, \
     SmsApi
 from admin_panel.anton import make_md5_hash
-
+from crm.views import contacts
 
 from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
@@ -38,6 +38,7 @@ def index(request):
     context['total_installs'] = ServiceOrder.objects.all().count()
     context['today_installs'] = ServiceOrder.objects.filter(service_date=datetime.now().date()).count()
     context['materials'] = InventoryMaterial.objects.all()
+    context['locations'] = Location.objects.all().order_by('loc_name')
     # context['low_stock'] = InventoryMaterial.objects.filter()
     return render(request, 'ssml/index.html', context)
 
@@ -490,14 +491,17 @@ def upload_service_order(request):
         excel_file = request.FILES['excel_file']
         wb = openpyxl.load_workbook(excel_file)
         sheet = wb.active  # or wb['SheetName'] if you know it
-        service_id = request.POST['service']
-        service = ServiceType.objects.get(pk=service_id)
-        service_name = service.name
+        # service_id = request.POST['service']
+        # service = ServiceType.objects.get(pk=service_id)
+        # service_name = service.name
+
+        loc_id = request.POST['loc_id']
+        loc = Location.objects.get(loc_id=loc_id)
 
         headers = [cell.value for cell in sheet[1]] 
         sample_data = []
 
-        service_rates = ServiceTypeServices.objects.filter(service_type=service)
+        # service_rates = ServiceTypeServices.objects.filter(service_type=service)
 
         cts = 0
 
@@ -507,9 +511,19 @@ def upload_service_order(request):
             customer = row_dict['CUSTOMER NAME']
             customer_phone = row_dict['CUSTOMER PHONE']
             contractor_code = row_dict['CONTRACTOR CODE']
-            print(contractor_code)
+            if not Contractor.objects.filter(code=contractor_code).exists():
+                Contractor.objects.create(
+                    code=contractor_code,
+                    company=f"{contractor_code} created from job upload",
+                    created_by=request.user,
+                    email=f"{contractor_code}@{contractor_code}.com",
+                    gh_card_no=contractor_code,
+                    owner=contractor_code,
+                    phone=contractor_code,
+
+                ).save()
             contractor = Contractor.objects.get(code=contractor_code)
-            dt = row_dict['DATE APPROVED'] if row_dict.get('DATE APPROVED')  else row_dict['DATE RESOLVED']
+            dt = row_dict['DATE COMPLETED'] if row_dict.get('DATE COMPLETED')  else row_dict['DATE RESOLVED']
             from datetime import datetime
             resolved_on = datetime.strptime(dt, "%d/%m/%Y %H:%M")
             print(resolved_on)
@@ -518,7 +532,34 @@ def upload_service_order(request):
 
             order_status = row_dict['PREPAID SYNC STATUS']
             address = row_dict['DIGITAL ADDRESS']
+            phase = row_dict['REQUESTED METER PHASE'].lower() if row_dict.get('REQUESTED METER PHASE') else 'other'
+
+            # create meter
+            if not Meter.objects.filter(meter_no=meter_no).exists():
+                Meter.objects.create(
+                    meter_no=meter_no,
+                    ip_address=ip_address,
+                    location=loc,
+                    created_by=request.user,
+                    installation_address=address,
+                    phase=phase,
+                    contractor=contractor,
+                    created_at=resolved_on,
+                    updated_at=resolved_on,
+                    is_issued=True,
+                )
+
             old_meter = row_dict['OLD METER NUMBER'] if row_dict.get('OLD METER NUMBER') else row_dict['SERVICE POINT NUMBER']
+            service_order_type = row_dict['SERVICE ORDER TYPE']
+            if not ServiceType.objects.filter(name=service_order_type).exists():
+                ServiceType.objects.create(
+                    name=service_order_type,
+                    description=service_order_type,
+                    created_by=request.user,
+                )
+
+            service = ServiceType.objects.get(name=service_order_type)
+            service_rates = ServiceTypeServices.objects.filter(service_type=service)
 
 
             
@@ -528,7 +569,7 @@ def upload_service_order(request):
 
             #if order_status == 'Completed': 
             if True:
-                hd = [service_name,customer,customer_phone,contractor.company,resolved_on,meter_no,ip_address]
+                hd = [service_order_type,customer,customer_phone,contractor.company,resolved_on,meter_no,ip_address]
 
                 # check if meter job created
                 ServiceOrder.objects.filter(new_meter=meter_no).delete()
@@ -547,7 +588,7 @@ def upload_service_order(request):
                             new_meter=meter_no,
                             status=order_status,
                             created_by=request.user,
-                            location=Location.objects.get(loc_id='002')
+                            location=loc
                         ).save()
                     print("Service Created")
                 except Exception as e:
@@ -640,12 +681,15 @@ def upload_service_order(request):
             # print('\n')
             sample_data.append(row_dict)
 
-        print(cts, service_name, "Added")
+        print(cts, service_order_type, "Added")
 
-        return HttpResponse(sample_data[:5])
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+
 
     else:
-        return HttpResponse("Invalid Method")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
 
 @csrf_exempt
 @login_required

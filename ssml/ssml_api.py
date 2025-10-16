@@ -1,6 +1,7 @@
 from admin_panel.anton import shorten_url
 from admin_panel.models import UserAddOns
 from crm.views import contacts
+from ssml.models import ServiceOrderType
 
 
 def safe_add_image_to_pdf(pdf, image_path, x, y, w, h=None):
@@ -59,7 +60,7 @@ def interface(request):
     from ssml.models import Cardex, Location, RequiredReturn, InvoiceHD, InvoiceTransactions, Contractor, Expense, \
         InventoryGroup, InventoryMaterial, Issue, IssueTransaction, Ledger, MaterialOrderItem, Meter, PaySlipHD, Plot, \
         RedeemTransactions, Reedem, Service, ServiceMaterials, ServiceOrder, ServiceOrderItem, ServiceOrderReturns, \
-        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr
+        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType
     from admin_panel.models import Emails, Locations, BusinessEntityTypes, MailSenders, MailQueues, MailAttachments, \
         Sms, SmsApi
     from admin_panel.anton import make_md5_hash
@@ -103,6 +104,14 @@ def interface(request):
                                           city=city,postal_code=postal_code,gh_card_no=gh_card_no,gh_post_code=gh_post_code,created_by=created_by)
 
                 success_response['message'] = "Contractor Created Successfully"
+
+            elif module == 'order_type':
+                st_name = data.get('st_name')
+                st_desc = data.get('st_desc')
+                st_rate = data.get('st_rate')
+                created_by = User.objects.get(id=data.get('mypk'))
+                ServiceOrderType.objects.create(name=st_name,description=st_desc,rate=st_rate,created_by=created_by)
+                success_response['message'] = "Order Type Created Successfully"
 
             elif module == 'new_installation_type':
                 name = data.get('name')
@@ -1033,6 +1042,16 @@ def interface(request):
                         installation_type = InstallationType.objects.get(id=id)
                         success_response['message'] = installation_type.obj()
 
+                elif module == 'order_type':
+                    id = data.get('id', '*')
+                    if id == '*':
+                        order_types = ServiceOrderType.objects.all().order_by('name')
+                        success_response['message'] = [order_type.obj() for order_type in
+                                                       order_types]
+                    else:
+                        order_type = ServiceOrderType.objects.get(id=id)
+                        success_response['message'] = order_type.obj()
+
                 elif module == 'contractor_documents':
                     contactor_id = data.get('pk')
                     success_response['message'] = Contractor.objects.get(pk=contactor_id).documents()
@@ -1231,15 +1250,16 @@ def interface(request):
                     doc = data.get('doc','json')
                     direction = data.get('direction')
                     print(data)
+                    arr = []
                     if id == '*':
                         filt = data.get('filter','pending')
                         print(filt)
                         if filt == 'approved':
-                            expenses = Expense.objects.filter(is_approved=True)
+                            expenses = Expense.objects.filter(is_approved=True).order_by('-created_at')
                         elif filt == 'pending':
-                            expenses = Expense.objects.filter(is_approved=False)
+                            expenses = Expense.objects.filter(is_approved=False).order_by('-created_at')
                         else:
-                            expenses = Expense.objects.all()
+                            expenses = Expense.objects.all().order_by('-created_at')
                         # if direction == '*':
                         #     direction = 'all'
                         #     expenses = expenses.filter(is_approved=False).order_by('date')
@@ -1262,7 +1282,8 @@ def interface(request):
                                 tr = [expense.direction,expense.category,expense.amount,expense.date,expense.reference,expense.description]
                                 ws.append(tr)
 
-                            file_name = f'static/general/tmp/{direction}_expensis.xlsx'
+                            dir_name = direction if direction != '*' else 'all'
+                            file_name = f'static/general/tmp/{dir_name}_expensis_as_of_{str(as_of)}.xlsx'
                             wb.save(file_name)
                             arr = file_name
 

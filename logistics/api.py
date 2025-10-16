@@ -3,6 +3,7 @@ import sys
 from decimal import Decimal
 
 from django.contrib.auth.models import User
+from django.db.models import Sum
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from numba.cpython.charseq import is_default
@@ -205,6 +206,102 @@ def interface(request):
                     success_response['message'] = [v.obj() for v in Vehicle.objects.all()]
                 else:
                     success_response['message'] = [v.obj() for v in Vehicle.objects.filter(pk=pk)]
+                    
+            elif module == 'weekly_report':
+                import fpdf
+                from datetime import datetime, timedelta
+
+                today = datetime.now()
+                start_date = (today - timedelta(days=today.weekday() + 1)).strftime('%Y-%m-%d')  # Previous Sunday
+                end_date = (today + timedelta(days=(5 - today.weekday()))).strftime('%Y-%m-%d')  # Next Saturday
+
+                # Initialize PDF
+                pdf = fpdf.FPDF(format='A4')
+                pdf.add_page()
+
+                # Set header
+                pdf.set_font('Arial', 'B', 16)
+                pdf.cell(0, 10, 'SNEDA LOGISTICS WEEKLY REPORT', 0, 1, 'C')
+                pdf.ln(5)
+
+                # Add date range
+                pdf.set_font('Arial', '', 12)
+                pdf.cell(0, 10, f'Period: {start_date} to {end_date}', 0, 1, 'C')
+                pdf.ln(10)
+
+                pdf.cell(0, 10, 'Vehicle Details', 0, 1, 'C')
+                pdf.ln(5)
+
+                pdf.cell(50, 5, 'Plate Number', 1, 0,'L')
+                pdf.cell(50, 5, 'Description', 1, 0,'L')
+                pdf.cell(30, 5, 'Trips', 1, 0,'L')
+                pdf.cell(30, 5, 'Lires', 1, 0, 'L')
+                pdf.cell(30, 5, 'Amount', 1, 1,'L')
+
+                for vehicle in Vehicle.objects.all():
+                    weekly_fuel_litres = VehicleFuelTopUp.objects.filter(
+                        vehicle=vehicle,
+                        date__range=[start_date, end_date]
+                    ).aggregate(sum=Sum('litres'))['sum'] or 0
+
+                    weekly_fuel_amt = VehicleFuelTopUp.objects.filter(
+                        vehicle=vehicle,
+                        date__range=[start_date, end_date]
+                    ).aggregate(sum=Sum('amount'))['sum'] or 0
+
+
+                    pdf.cell(50, 5, vehicle.plate_number, 1, 0,'L')
+                    pdf.cell(50, 5, vehicle.description, 1, 0,'L')
+                    pdf.cell(30, 5, str(vehicle.deliveryrequest_set.filter(status='completed').count()), 1, 0,'L')
+                    pdf.cell(30, 5, str(weekly_fuel_amt), 1, 0, 'L')
+                    pdf.cell(30, 5, str(weekly_fuel_litres), 1, 1,'L')
+
+                pdf.ln(5)
+                pdf.cell(0, 10, 'Driver Report', 0, 1, 'C')
+
+
+                pdf.cell(50, 5, 'Name', 1, 0,'L')
+                pdf.cell(50, 5, 'Assigned', 1, 0,'L')
+                pdf.cell(30, 5, 'Completed', 1, 0,'L')
+                pdf.cell(30, 5, 'In Progress', 1, 0,'L')
+                pdf.cell(30, 5, 'Pending', 1, 1,'L')
+
+                for driver in Driver.objects.all():
+                    pdf.cell(50, 5, driver.name, 1, 0,'L')
+                    pdf.cell(50, 5, str(driver.deliveryrequest_set.filter(scheduled_date__range=[start_date,end_date]).count()), 1, 0,'L')
+                    pdf.cell(30, 5, str(driver.deliveryrequest_set.filter(status='delivered',arrival_time__range=[start_date,end_date]).count()), 1, 0,'L')
+                    pdf.cell(30, 5, str(driver.deliveryrequest_set.filter(status='in_transit',scheduled_date__range=[start_date,end_date]).count()), 1, 0,'L')
+                    pdf.cell(30, 5, str(driver.deliveryrequest_set.filter(status='schedule',scheduled_date__range=[start_date,end_date]).count()), 1, 1,'L')
+
+
+
+
+                # delivery requests
+                pdf.ln(5)
+                pdf.cell(0, 10, 'Deliveries', 0, 1, 'C')
+
+                pdf.cell(30, 5, 'Date', 1, 0,'L')
+                pdf.cell(30, 5, 'BY', 1, 0,'L')
+                pdf.cell(50, 5, 'From', 1, 0,'L')
+                pdf.cell(50, 5, 'To', 1, 0,'L')
+                pdf.cell(30, 5, 'Duration', 1, 1,'L')
+
+                for req in DeliveryRequest.objects.filter(request_date__range=[start_date,end_date]):
+                    pdf.cell(30,5,str(req.request_date).split(' ')[0],1,0,'L')
+                    pdf.cell(30, 5, req.requested_by.get_full_name()[:10], 1, 0, 'L')
+                    pdf.cell(50, 5, req.source[:10], 1, 0, 'L')
+                    pdf.cell(50, 5, req.destination[:10], 1, 0, 'L')
+                    pdf.cell(30, 5, req.duration()[:10], 1, 1, 'L')
+
+
+                file_name = f"static/general/tmp/weekly_report_{start_date}_{end_date}.pdf"
+                pdf.output(file_name, 'F')
+                success_response['message'] = file_name
+
+
+
+
+
 
             elif module == 'driver':
                 pk = data.get('pk','*')

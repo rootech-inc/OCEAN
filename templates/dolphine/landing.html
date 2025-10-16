@@ -1,13 +1,7 @@
 {% extends 'dolphine/base.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+
     {% block main %}
         <div class="modal" id="rmbg">
             <div class="modal-dialog">
@@ -28,72 +22,62 @@
             </div>
         </div>
         <div class="row h-100 overflow-hidden">
-{#            <!-- LEFT PANE -->#}
-{#            <div class="col-sm-3 h-100"></div>#}
-
             <!-- CENTER -->
             <div class="col-sm-12 text-muted h-100">
-
-
-
                 {% if files.count > 0 %}
-                    <div class="card recent_files">
-                        <div class="card-header">
+                    <div class="card border-0 recent_files">
+                        <div class="card-header bg-white border-bottom">
                             <div class="w-100 d-flex flex-wrap align-content-center justify-content-between">
-                                <h5 class="card-title p-0 m-0">
-                                    DOLPHIN
+                                <h5 class="card-title p-0 m-0 text-primary">
+                                    <i class="fa fa-dropbox"></i> DOLPHIN
                                 </h5>
-                                <div class="w-50 d-flex flex-wrap justify-content-end">
-                                    <button onclick="location.href='{% url 'back_remover' %}'" class="btn btn-sm btn-primary">BG REMOVER</button>
-                                    <button onclick="location.href='{% url 'home' %}'" class="btn btn-sm btn-primary">HOME</button>
+                                <div class="d-flex align-items-center">
+                                    <button onclick="location.href='{% url 'back_remover' %}'"
+                                            class="btn btn-outline-primary mx-2">BG Remover
+                                    </button>
+                                    <button onclick="location.href='{% url 'home' %}'" class="btn btn-outline-primary">
+                                        Home
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-body overflow-auto p-2">
-                            <table class="table">
-                                <thead class="bg-dark text-light">
-                                    <tr>
-                                        <th>Name</th><th>Date</th><th>Size</th><th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for file in files %}
-                                    <tr>
-                                        <td>
-                                            <i onclick="location.href='{% url 'download_file' file.enc %}'" class="fa pointer text-success fa-download"></i> &spar;
-                                            {{ file.filename }}</td>
-                                        <td>{{ file.time }}</td>
-                                        <td>{{ file.size | filesizeformat }}</td>
-                                        <td>
-                                            <div class="w-100 d-flex flex-wrap justify-content-between">
-                                                <i class="fa pointer text-info fa-eye mr-2"></i>
-                                                {% if user.is_authenticated %}
-                                                <i onclick="location.href='{% url 'delete_file' file.enc %}'" class="fa text-danger pointer fa-trash"></i>
-                                                {% endif %}
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                {% for file in files %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center border-0 border-bottom py-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa fa-file-o text-muted me-3"></i>
+                                            <div>
+                                                <div class="text-dark mb-1">{{ file.filename }}</div>
+                                                <small class="text-muted">{{ file.time }}
+                                                    • {{ file.size | filesizeformat }}</small>
                                             </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i onclick="location.href='{% url 'download_file' file.enc %}'"
+                                               class="fa fa-download pointer text-primary mx-3"></i>
+                                            <i class="fa fa-eye pointer text-primary mx-3"></i>
+                                            {% if user.is_authenticated %}
+                                                <i onclick="location.href='{% url 'delete_file' file.enc %}'"
+                                                   class="fa fa-trash pointer text-danger mx-3"></i>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 {% else %}
-                    <div class="w-100 h-100 d-flex flex-wrap align-content-center justify-content-center">
-                        <div class="alert alert-info">
-                            Drop files to start upload
-                        </div>
+                    <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                        <i class="fa fa-cloud-upload fa-3x text-primary mb-4"></i>
+                        <h4 class="text-dark">Drop files here</h4>
+                        <p class="text-muted">or click to browse</p>
                     </div>
                 {% endif %}
-
             </div>
-
-{#            <!-- RIGHT PANE -->#}
-{#            <div class="col-sm-3 h-100">#}
-
-            </div>
-
         </div>
+
+        
 
         <script>
     // Get references to the input and image elements
@@ -171,5 +155,3 @@
   </script>
 
     {% endblock %}
-</body>
-</html>

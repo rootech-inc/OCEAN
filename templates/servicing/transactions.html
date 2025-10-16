@@ -8,35 +8,37 @@
             <strong class="card-title">{{ pagemessage.service.name }} | {{ pagemessage.service_sub.name }}</strong>
         </div>
         <div class="card-body p-2">
-            <div class="alert alert-info">
-                <h1>{{ pagemessage.ticket.title }}</h1>
-                <hr>
-                {{ pagemessage.ticket.descr }}
+        <div class="card bg-light border-secondary mb-3">
+        <div class="card-header bg-secondary text-light">
+            <code class="fs-5 text-light">TICKET #{{ pagemessage.cardno }}</code><br>
+            <code class="fs-5 text-info">{{ pagemessage.ticket.title }}</code>
+        </div>
+        <div class="card-body font-monospace">
+
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-sm-4">
+                        <h4>Reported</h4>
+                        {{ pagemessage.ticket.descr }}
+
+                        <h3>Analysis</h3>
+                        {{ pagemessage.analysis }}
+
+                        <h3>Transactions</h3>
+                        {% for tran in pagemessage.ticket.transactions %}
+                            <div class="border-bottom border-secondary rounded-0 p-2">
+                                <strong class="card-title text-primary">{{ tran.title }}</strong><br>
+                                <small class="text-muted">by <span class="text-info">{{ tran.user.username }}</span>
+                                </small>on <span class="text-success">{{ tran.created_on }}</span><br>
+                                <span class="text-secondary">{{ tran.tran }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
-                <div class="w-100 d-flex flex-wrap justify-content-center">
-                    <button onclick="location.href='tel:{{ pagemessage.technician.phone }}'" class="btn btn-info" style="margin: 2px"><i class="fa fa-phone"></i> SUPPORT</button>
-                    {% if pagemessage.client_approval == 1 %}
-                        <button style="margin: 2px" onclick="if(confirm('Are you sure you accept solution?')){ticket.approveTicket(`{{ pagemessage.cardno }}`,2)}" class="btn btn-success">APPROVE</button>
-                        <button style="margin: 2px" onclick="if(confirm('Are you sure you want to reject solution?')){ticket.approveTicket(`{{ pagemessage.cardno }}`,0)}" class="btn btn-danger">REJECT</button>
-                    {% endif %}
-                </div>
 
 
-            <hr>
-            {% for tran in pagemessage.ticket.transactions %}
-
-                <div class="card rounded-0">
-                    <div class="card-header">
-                        <strong class="card-title">{{ tran.title }}</strong><br>
-                        <small>by {{ tran.user.username }} </small>on {{ tran.created_on }}
-                    </div>
-                <div class="card-body p-2">
-                    {{ tran.tran }}
-                </div>
-                </div>
-
-            {% endfor %}
 
         </div>
     {% else %}

@@ -184,8 +184,8 @@ class DeliveryRequest(models.Model):
 
     
     def duration(self):
-        if not self.departure_time:
-            return "Not started"
+        if not self.arrival_time or self.arrival_time == '':
+            return "comp..."
         end_time = self.arrival_time if self.arrival_time else timezone.now()
         delta = end_time - self.departure_time
         hours = delta.total_seconds() / 3600
