@@ -1208,7 +1208,15 @@ class ContractorError(models.Model):
             'cleared_by':self.cleared_by.username if self.cleared_by else None,
             'cleared_remarks':self.cleared_remarks
         }
-    
+
+class PettyCash(models.Model):
+    contractor = models.ForeignKey(Contractor, on_delete=models.CASCADE)
+    date = models.DateField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    remarks = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
 class Expense(models.Model):
     direction_choices = [

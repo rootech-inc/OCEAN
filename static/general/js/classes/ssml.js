@@ -4346,6 +4346,30 @@ class SSML {
     async getOrderTypes(pl) {
         return await api.v2('VIEW',{module:'order_type',data:{id:pl}},'/ssml/api/')
     }
+
+    async newPettyCash(){
+        let form = fom.date('date','Date',true)
+        amodal.setBodyHtml(form)
+        amodal.setTitleText('New Petty Cash')
+        amodal.setFooterHtml(fom.button('save_petty_cash','button','success'))
+        amodal.show()
+
+        $('#save_petty_cash').click(async function(){
+            let ids = ['date','mypk'];
+            if(anton.validateInputs(ids)){
+                let payload = {
+                    module:'petty_cash',
+                    data:anton.Inputs(ids)
+                }
+
+                await api.v2('PUT',payload,'/ssml/api/').then(response => {
+                    if(anton.IsRequest(response,true)){
+                        console.table(response)
+                    }
+                }).catch(error => {kasa.error(error)})
+            }
+        })
+    }
 }
 
 const ssml = new SSML();

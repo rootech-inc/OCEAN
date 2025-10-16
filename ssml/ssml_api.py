@@ -105,6 +105,20 @@ def interface(request):
 
                 success_response['message'] = "Contractor Created Successfully"
 
+            elif module == 'petty_cash':
+                dt = data.get('date')
+                from datetime import datetime
+                month = datetime.strptime(dt, '%Y-%m-%d').month
+
+                if Expense.objects.filter(date__month=month).exists():
+                    entry_no = f"SSML-PTC-{month}"
+
+                else:
+                    raise Exception("No data month")
+
+                success_response['message'] = f"Petty Cash Created Successfully for {month}"
+
+
             elif module == 'order_type':
                 st_name = data.get('st_name')
                 st_desc = data.get('st_desc')

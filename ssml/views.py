@@ -1184,3 +1184,15 @@ def service_tools(request):
         'page': page
     }
     return render(request, 'ssml/service/tools.html', context)
+
+
+def petty_cash(request):
+    page = {
+        'title': 'Petty Cash',
+        'nav': True
+    }
+    context = {
+        'page': page
+    }
+
+    return render(request, 'ssml/accounts/petty-cash.html', context)

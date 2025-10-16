@@ -27,6 +27,7 @@ urlpatterns = [
     path('accounts/finlog/',views.accounts,name='accounts'),
     path('accounts/invoice/',views.invoice,name='cont-invoice'),
     path('account/new-cont-inv/',views.invoice_new,name='new-cont-inv'),
+    path('accounts/petty-cash/',views.petty_cash,name='ssml-petty-cash'),
     path('accounts/upload-evidence/',views.financial_evidence,name='financial_evidence'),
     path('accounts/request/',views.request_expense,name='request_expense'),
    
