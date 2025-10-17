@@ -33,6 +33,7 @@ from inventory.models import AssetGroup
 from meeting.models import MeetingHD, MeetingTalkingPoints, MeetingTrans
 from ocean.settings import EMAIL_HOST_USER
 from .models import Company
+from servicing.models import ServiceTechnicians
 
 
 def today(what='none'):  # get time
@@ -132,7 +133,8 @@ def index(request):
         'my_issues': my_issues,
         'sales': sales,
         'usadons': UserAddOns.objects.filter(user=request.user.pk),
-        'ussettings': UserSettings.objects.filter(user=request.user.pk)
+        'ussettings': UserSettings.objects.filter(user=request.user.pk),
+        'is_technician': True if ServiceTechnicians.objects.filter(technician=request.user).exists() else False
     }
     return render(request, 'dashboard/index.html', context=context)
 

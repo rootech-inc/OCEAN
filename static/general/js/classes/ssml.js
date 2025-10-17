@@ -4355,7 +4355,7 @@ class SSML {
         amodal.show()
 
         $('#save_petty_cash').click(async function(){
-            let ids = ['date','mypk'];
+            let ids = ['date','mypk','sidebar-location-select'];
             if(anton.validateInputs(ids)){
                 let payload = {
                     module:'petty_cash',
@@ -4364,7 +4364,7 @@ class SSML {
 
                 await api.v2('PUT',payload,'/ssml/api/').then(response => {
                     if(anton.IsRequest(response,true)){
-                        console.table(response)
+                        kasa.confirm(response.message,1,'here')
                     }
                 }).catch(error => {kasa.error(error)})
             }

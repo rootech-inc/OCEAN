@@ -238,6 +238,7 @@ def interface(request):
                 pk = data.get('pk') or '*'
                 if pk == '*':
                     services = Services.objects.filter(status__gt=0)
+
                 else:
                     services = Services.objects.filter(pk=pk, status__gt=0)
 
@@ -273,6 +274,14 @@ def interface(request):
                 else:
                     success_response['status_code'] = 404
                     success_response['message'] = f"NO SERVICES AVAILABLE {pk}"
+
+            elif module == 'my_service':
+                mypk = data.get('mypk')
+                technician = User.objects.get(pk=mypk)
+
+
+                success_response['message'] = [srv.obj() for srv in ServiceCard.objects.filter(technician__technician=technician,status=1)]
+
 
             elif module == 'servicecard':
                 cardno = data.get('cardno')

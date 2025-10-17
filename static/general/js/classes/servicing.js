@@ -63,6 +63,38 @@ class Servicing{
             kasa.error("Fill Required Fields")
         }
     }
+
+    async loadMyServices(){
+        let tr = "";
+        await servicing.getMyServices($('#mypk').val()).then(response =>{
+
+            if(anton.IsRequest(response,true)){
+                response.message.map(task => {
+                    console.table(task)
+                    tr += `<tr><td>${task.title}</td><td><a href="javascript:void(0)" class="view_task" data-cardno="${task.cardno}"><i class="fa fa-eye"></i></a></td></tr>`
+                })
+                console.log(tr)
+                $('#my_tasks_x').html(tr)
+
+                $('.view_task').click(function(){
+                    let cardno = $(this).data('cardno');
+                    windowPopUp(`/servicing/wo/?cardno=${cardno}`,100,1027,700)
+
+                })
+            }
+        }).catch(error => {kasa.error(error)})
+    }
+
+    async getMyServices(mypk){
+        let payload = {
+            module:'my_service',
+            data:{
+                mypk:mypk
+            }
+        }
+
+        return api.call('VIEW',payload,'/servicing/api/')
+    }
 }
 
 const servicing = new Servicing()

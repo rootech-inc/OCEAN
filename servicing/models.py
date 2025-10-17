@@ -91,6 +91,13 @@ class ServiceCard(models.Model):
 
     client_approval = models.IntegerField(default=0)  # 0 not sent, 1 sent, 2 approved
 
+    def obj(self):
+        return {
+            "title":self.ticket.title,
+            "description":self.ticket.descr,
+            "cardno":self.cardno
+        }
+
     def materials(self):
         return ServiceMaterials.objects.filter(service_card=self)
 

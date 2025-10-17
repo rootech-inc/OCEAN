@@ -46,6 +46,29 @@
 
             {% endif %}
 
+            {% if is_technician %}
+            <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
+                <div class="card" >
+                    <div class="card-header">
+                        <strong class="card-title">My Tasks</strong>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="w-100" style="height: 400px">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>TITLE</th><th>ACTION</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="my_tasks_x"></tbody>
+                                </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            {% endif %}
             <!-- ISSUES STATS -->
             <div class="col-lg-6">
               <div class="card">
@@ -655,7 +678,10 @@
     {% endif %}
 
     <script>
-    sales.total()
+        sales.total()
+        $(document).ready(function(){
+            servicing.loadMyServices()
+        })
     </script>
 
 {% endblock %}

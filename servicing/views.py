@@ -51,10 +51,15 @@ def newjob(request):
 
 @login_required()
 def jobcard(request):
+
+
     if ServiceCard.objects.all().count() < 1:
         return redirect('wo_newjob')
 
-    cardno = ServiceCard.objects.filter(pk__gt=0).last().cardno
+    if request.GET.get('cardno'):
+        cardno = request.GET.get('cardno')
+    else:
+        cardno = ServiceCard.objects.filter(pk__gt=0).last().cardno
     context['page']['title'] = "Job Cards"
     context['cardno'] = cardno
     return render(request, 'servicing/jobcard.html', context=context)

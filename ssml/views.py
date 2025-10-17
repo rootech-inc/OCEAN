@@ -14,7 +14,7 @@ from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
     IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, \
     ServiceMaterials, ServiceOrder, \
-    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments
+    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash
 
 
 # Create your views here.
@@ -1192,7 +1192,8 @@ def petty_cash(request):
         'nav': True
     }
     context = {
-        'page': page
+        'page': page,
+        'last_petty_cash_entry':PettyCash.objects.all().last().entry_no if PettyCash.objects.all().exists() else 'none'
     }
 
     return render(request, 'ssml/accounts/petty-cash.html', context)

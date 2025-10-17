@@ -60,7 +60,7 @@ def interface(request):
     from ssml.models import Cardex, Location, RequiredReturn, InvoiceHD, InvoiceTransactions, Contractor, Expense, \
         InventoryGroup, InventoryMaterial, Issue, IssueTransaction, Ledger, MaterialOrderItem, Meter, PaySlipHD, Plot, \
         RedeemTransactions, Reedem, Service, ServiceMaterials, ServiceOrder, ServiceOrderItem, ServiceOrderReturns, \
-        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType
+        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash
     from admin_panel.models import Emails, Locations, BusinessEntityTypes, MailSenders, MailQueues, MailAttachments, \
         Sms, SmsApi
     from admin_panel.anton import make_md5_hash
@@ -107,16 +107,47 @@ def interface(request):
 
             elif module == 'petty_cash':
                 dt = data.get('date')
+                location = Location.objects.get(pk=data.get('sidebar-location-select'))
+                user = User.objects.get(pk=data.get('mypk'))
                 from datetime import datetime
                 month = datetime.strptime(dt, '%Y-%m-%d').month
 
                 if Expense.objects.filter(date__month=month).exists():
                     entry_no = f"SSML-PTC-{month}"
 
+                    try:
+                        total_in = 0
+                        total_out = 0
+                        total = 0
+                        for tran in Expense.objects.filter(date__month=month):
+                            tran.entry_no = entry_no
+                            total += tran.amount
+                            if tran.direction == 'in':
+                                total_in += total
+                            if tran.direction == 'out':
+                                total_out += total
+
+                            tran.save()
+                        # save headr
+                        PettyCash.objects.create(
+                            date=dt,
+                            month=month,
+                            total_out = total_out,
+                            total_in = total_in,
+                            total=total,
+                            remarks=f"Petty Cash transactiosn for the month {month}",
+                            created_by=user,
+                            entry_no=entry_no,
+                            location=location
+                        )
+                    except Exception as e:
+                        Expense.objects.filter(entry_no=entry_no).update(entry_no='')
+                        raise Exception(str(e))
+
                 else:
                     raise Exception("No data month")
 
-                success_response['message'] = f"Petty Cash Created Successfully for {month}"
+                success_response['message'] = f"Petty Cash Created Successfully for month {month}"
 
 
             elif module == 'order_type':
@@ -1055,6 +1086,13 @@ def interface(request):
                     else:
                         installation_type = InstallationType.objects.get(id=id)
                         success_response['message'] = installation_type.obj()
+
+                elif module == 'petty_cash':
+                    entry_no = data.get('entry_no','*')
+                    if entry_no == '*':
+                        success_response['message'] = [pt.obj() for pt in PettyCash.objects.all()]
+                    else:
+                        success_response['message'] = [pt.obj() for pt in PettyCash.objects.finter(entry_no=entry_no)]
 
                 elif module == 'order_type':
                     id = data.get('id', '*')

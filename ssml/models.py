@@ -1210,15 +1210,29 @@ class ContractorError(models.Model):
         }
 
 class PettyCash(models.Model):
-    contractor = models.ForeignKey(Contractor, on_delete=models.CASCADE)
+
     date = models.DateField()
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    month = models.CharField(max_length=255,null=False,blank=False)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
     remarks = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    entry_no = models.CharField(max_length=255,null=True,blank=True)
+    total_out = models.DecimalField(max_digits=10, decimal_places=2)
+    total_in = models.DecimalField(max_digits=10, decimal_places=2)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+
+    def obj(self):
+        return {
+            'month':self.month,
+            'date':self.date,
+            'total':self.total,
+            'entry_no':self.entry_no
+        }
 
 class Expense(models.Model):
+
     direction_choices = [
         ('in', 'In'),
         ('out', 'Out'),
@@ -1248,6 +1262,7 @@ class Expense(models.Model):
     is_approved = models.BooleanField(default=False)
     is_posted = models.BooleanField(default=False)
     is_rejected = models.BooleanField(default=False)
+    entry_no = models.CharField(max_length=255)
 
     def evidence(self):
         # INSERT_YOUR_CODE
