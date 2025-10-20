@@ -644,6 +644,20 @@
         </a>
       </li>
 
+        <li>
+        <a href="javascript:void(0)" id="installed_meters_report">
+          <i class="bi bi-circle"></i><span>Installations</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="javascript:void(0)" id="month_inv_report">
+          <i class="bi bi-circle"></i><span>Month4Invoice</span>
+        </a>
+      </li>
+
+      
+
 
           
 
@@ -731,6 +745,13 @@
 
         $(document).ready(function(){
           locadLocations()
+            $('#installed_meters_report').click(function(){
+
+                ssml.InstalledMeters()
+            })
+            $('#month_inv_report').click(function(){
+                ssml.monthInvReport()
+            })
         })
 
     </script>

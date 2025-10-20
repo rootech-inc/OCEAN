@@ -111,11 +111,14 @@ def interface(request):
                 user = User.objects.get(pk=data.get('mypk'))
                 from datetime import datetime
                 month = datetime.strptime(dt, '%Y-%m-%d').month
+                year = datetime.strptime(dt, '%Y-%m-%d').year
 
                 if Expense.objects.filter(date__month=month).exists():
-                    entry_no = f"SSML-PTC-{month}"
+                    entry_no = f"SSML-PTC-{month}-{year}"
 
                     try:
+                        if PettyCash.objects.filter(entry_no=entry_no).exists():
+                            raise Exception("Already exists")
                         total_in = 0
                         total_out = 0
                         total = 0
@@ -135,7 +138,7 @@ def interface(request):
                             total_out = total_out,
                             total_in = total_in,
                             total=total,
-                            remarks=f"Petty Cash transactiosn for the month {month}",
+                            remarks=f"Petty Cash transaction for the month {month}",
                             created_by=user,
                             entry_no=entry_no,
                             location=location
@@ -1077,6 +1080,80 @@ def interface(request):
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
 
+                elif module == 'installed_meters':
+                    start_date = data.get('start_date')
+                    end_date = data.get('end_date')
+                    success_response['message'] = [serv.obj() for serv in ServiceOrder.objects.filter(service_date__gte=start_date, service_date__lte=end_date)]
+
+                elif module == 'month_inv_report':
+                    start_date = data.get('start_date')
+                    end_date = data.get('end_date')
+                    # INSERT_YOUR_CODE
+                    from datetime import datetime
+
+                    days_count = 1
+                    if start_date and end_date:
+                        try:
+                            fmt = "%Y-%m-%d"
+                            d1 = datetime.strptime(start_date, fmt)
+                            d2 = datetime.strptime(end_date, fmt)
+                            days_count = (d2 - d1).days
+                        except Exception:
+                            days_count = 1
+
+                    import openpyxl
+                    book = openpyxl.Workbook()
+                    sheet = book.active
+                    sheet.title = "Installations"
+
+                    sheet.append(["DATE","METER","OLD METER","SPN","JOB TYPE","FOC"])
+                    for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
+                        sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+
+
+                    # summary consumption
+                    mcs = book.create_sheet(title="Consumption Summary")
+                    mcs.append(["ITEM NAME","UNIT","CONCUMNED","WASTAGE","WASTAGE QTY","TOTAL CONSUMPTION","AVG CONSUMPTION"])
+                    for mat in InventoryMaterial.objects.all():
+                        from django.db.models import Sum
+                        consumned = MaterialOrderItem.objects.filter(
+                            service_order__service_date__gte=start_date,
+                            service_order__service_date__lte=end_date,
+                            material=mat
+                        ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+                        if consumned > 0:
+                            
+                            mcs.append(
+                                [mat.name,"",consumned,"","",consumned,Decimal(consumned)/Decimal(days_count)]
+                            )
+
+                    ## create material consumption
+                    
+                    ms = book.create_sheet(title="Material Consumption")
+                    hd = ["BARCODE","NAME","QUANTITY","METER","SERVICE TYPE","FOC",]
+                    ms.append(hd)
+                    for mt in MaterialOrderItem.objects.filter(service_order__service_date__gte=start_date,service_order__service_date__lte=end_date):
+                        
+                        ms.append([mt.material.barcode,mt.material.name,mt.quantity,mt.service_order.new_meter,mt.service_order.service_type.name,mt.service_order.contractor.company])
+
+
+                    # service count
+                    sc = book.create_sheet(title="Count By Service")
+                    sc.append(["NAME","TOTAL"])
+                    for st in ServiceType.objects.all():
+                        name = st.name
+                        total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,service_type=st).count()
+                        if total > 0:
+                            sc.append([name,total])
+
+                    filename = f"static/general/tmp/instalations.xlsx"
+                    book.save(filename)
+
+                    success_response['message'] = filename
+                    response = success_response
+                    
+
+
                 elif module == 'installation_type':
                     id = data.get('id', '*')
                     if id == '*':
@@ -1092,7 +1169,7 @@ def interface(request):
                     if entry_no == '*':
                         success_response['message'] = [pt.obj() for pt in PettyCash.objects.all()]
                     else:
-                        success_response['message'] = [pt.obj() for pt in PettyCash.objects.finter(entry_no=entry_no)]
+                        success_response['message'] = [pt.obj() for pt in PettyCash.objects.filter(entry_no=entry_no)]
 
                 elif module == 'order_type':
                     id = data.get('id', '*')
@@ -3187,22 +3264,73 @@ def interface(request):
                 success_response['message'] = "Service Order Item Updated Successfully"
 
             elif module == 'contractor':
+                print(data)
                 id = data.get('id')
                 contractor = Contractor.objects.get(id=id)
-                contractor.link = data.get('link')
+                # contractor.link = data.get('link')
+                contractor.owner = data.get('owner_name')
                 contractor.company = data.get('company')
-                contractor.owner = data.get('owner')
-                contractor.phone = data.get('phone')
-                contractor.email = data.get('email')
-                contractor.country = data.get('country')
+                contractor.gh_card_no = data.get('ghana_card')
+
+                contractor.owner_phone = data.get('owner_phone')
+                contractor.owner_email = data.get('owner_email')
+                contractor.comp_reg_number = data.get('comp_reg_number')
+                contractor.business_type = data.get('business_type')
+                contractor.region = data.get('region')
+                contractor.gh_post = data.get('gh_post')
+                contractor.business_address = data.get('business_address')
+
+                contractor.phone = data.get('business_phone_number')
+                contractor.email = data.get('business_email')
+
                 contractor.city = data.get('city')
-                contractor.postal_code = data.get('postal_code')
-                contractor.gh_post_code = data.get('gh_post_code')
-                contractor.gh_card_no = data.get('gh_card_no')
-                contractor.code = data.get('code')
-                contractor.is_installer = data.get('is_installer')
+                contractor.postal_code = data.get('gh_post')
+                contractor.gh_post_code = data.get('gh_post')
+                contractor.is_installer = data.get('is_installer', True)
+                contractor.bank_name = data.get('bank_name')
+                contractor.bank_acct_number = data.get('bank_acct_number')
+                contractor.bank_branch = data.get('bank_branch')
+
                 contractor.save()
-        
+
+                link = shorten_url(f"{BASE_URL}ssml/foc-portal/my-company/")
+
+                # Email template
+                email_template = f"""
+                                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                                    <h2 style="color: #333;">Account Update Notification</h2>
+                                    <p>Dear {data.get('owner_name')},</p>
+                                    <p>Your contractor account information has been updated in the SSML Cloud ERP system.</p>
+                                    <p>To review these changes and stay informed about your account status, please visit:</p>
+                                    <p><a href="{link}" style="color: #007bff;">Sneda SML Cloud ERP Portal</a></p>
+                                    <p>Thank you for your continued partnership.</p>
+                                    <p>Best regards,<br>Sneda SML Team</p>
+                                </div>
+                                """
+
+                # SMS template
+                sms_template = f"SSML: Dear {data.get('owner_name')}, your contractor account has been updated. Visit SSML Cloud ERP to review changes. Thank you. \n{link}"
+
+                # Send notifications
+                if contractor.email:
+                    MailQueues.objects.create(
+                        sender=MailSenders.objects.get(is_default=True),
+                        recipient=data.get('owner_email'),
+                        subject="Sneda SML Contractor Account Update",
+                        body=email_template,
+                        mail_key=make_md5_hash(f"contractor_update_{contractor.id}")
+                    )
+
+                if contractor.phone:
+                    to = data.get('owner_phone').replace('233', '0').replace('+233', '0')
+                    if len(to) == 10:
+                        Sms.objects.create(
+                            api=SmsApi.objects.get(is_default=True),
+                            to=to,
+                            message=sms_template
+                        )
+
+
             elif module == 'service_order_return':
                 id = data.get('ret_id')
                 return_item = ServiceOrderReturns.objects.get(id=id)

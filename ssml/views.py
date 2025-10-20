@@ -473,7 +473,7 @@ def add_service_to_type(request):
                 ).save()
             except Exception as e:
                 pass
-            print(service_rate.name,service_rate.rate)
+            # print(service_rate.name,service_rate.rate)
         # You can now use this list however you want, e.g., save to DB
 
     
@@ -484,6 +484,11 @@ def add_service_to_type(request):
 @login_required
 def upload_service_order(request):
     if request.method == 'POST':
+
+        # for tp in ServiceType.objects.all():
+        #     if ServiceOrder.objects.filter(service_type=tp) == 0:
+        #         tp.delete()
+
         if 'excel_file' not in request.FILES:
             return HttpResponseBadRequest("No file uploaded.")
         
@@ -526,7 +531,7 @@ def upload_service_order(request):
             dt = row_dict['DATE COMPLETED'] if row_dict.get('DATE COMPLETED')  else row_dict['DATE RESOLVED']
             from datetime import datetime
             resolved_on = datetime.strptime(dt, "%d/%m/%Y %H:%M")
-            print(resolved_on)
+            # print(resolved_on)
             meter_no = row_dict['MFG Serial Number']
             ip_address = row_dict['IP Address']
 
@@ -549,8 +554,22 @@ def upload_service_order(request):
                     is_issued=True,
                 )
 
-            old_meter = row_dict['OLD METER NUMBER'] if row_dict.get('OLD METER NUMBER') else row_dict['SERVICE POINT NUMBER']
+            old_meter = row_dict['OLD METER NUMBER'] if row_dict.get('OLD METER NUMBER') else meter_no
+            spn = row_dict['SERVICE POINT NUMBER'] if row_dict.get('SERVICE POINT NUMBER') else row_dict.get('SERVICE POINT NUMBER')
+            geo_code = row_dict['GEOCODE'] if row_dict.get('GEOCODE') else meter_no
             service_order_type = row_dict['SERVICE ORDER TYPE']
+            re_routing = row_dict["RE-ROUTING TYPE"] if row_dict.get('RE-ROUTING TYPE') else 'Without Rerouting'
+            routing = False
+            
+            if re_routing == "Without Rerouting":
+                routing = False
+            else:
+                service_order_type = f"Re-routing"
+                routing = True
+
+            
+
+
             if not ServiceType.objects.filter(name=service_order_type).exists():
                 ServiceType.objects.create(
                     name=service_order_type,
@@ -561,8 +580,10 @@ def upload_service_order(request):
             service = ServiceType.objects.get(name=service_order_type)
             service_rates = ServiceTypeServices.objects.filter(service_type=service)
 
-
+            ServiceOrder.objects.filter(new_meter=meter_no).delete()
+            xi = [service_order_type,customer,customer_phone,contractor.company,resolved_on,meter_no,ip_address]
             
+            # print(xi)
 
             # get materials
             service_charge = 0
@@ -571,8 +592,35 @@ def upload_service_order(request):
             if True:
                 hd = [service_order_type,customer,customer_phone,contractor.company,resolved_on,meter_no,ip_address]
 
-                # check if meter job created
-                ServiceOrder.objects.filter(new_meter=meter_no).delete()
+                print("#" * 20)
+                print("SPN",spn)
+                print("SERVICE TYPE",service.name)
+                print("ROUTING",routing)
+                print("NEW METER",meter_no)
+
+                print("#" * 20)
+                
+
+                if ServiceOrder.objects.filter(old_meter_no=old_meter).exists():
+                    # send sms
+                    Sms.objects.create(
+                        api=SmsApi.objects.get(is_default=True),
+                        to=contractor.phone,
+                        message=f"There is a duplicate old meter {meter_no}:{old_meter}"
+                    )
+                    # send message to soomon
+                    Sms.objects.create(
+                        api=SmsApi.objects.get(is_default=True),
+                        to="0546310011",
+                        message=f"There is a duplicate old meter {meter_no}:{old_meter}"
+                    )
+                    Sms.objects.create(
+                        api=SmsApi.objects.get(is_default=True),
+                        to='0543700095',
+                        message=f"There is a duplicate old meter {meter_no}:{old_meter}"
+                    )
+                    
+                    old_meter = f"dup_{old_meter}{make_md5_hash(meter_no)}"
                                   
                     # create
                 try:
@@ -581,26 +629,43 @@ def upload_service_order(request):
                             service_date = resolved_on,
                             contractor=contractor,
                             plot = "",
-                            geo_code = "",
+                            geo_code = geo_code,
                             customer = customer,
                             customer_no = customer_phone,
                             old_meter_no = old_meter,
                             new_meter=meter_no,
                             status=order_status,
                             created_by=request.user,
-                            location=loc
+                            location=loc,
+                            spn=spn,
+                            is_routing = routing
                         ).save()
-                    print("Service Created")
+                    # print("Service Created")
                 except Exception as e:
                     # update type
-                    ServiceOrder.objects.filter(new_meter=meter_no).update(service_type=service,service_date=resolved_on)
-                    print(e)
-                print(meter_no)
+                    ServiceOrder.objects.filter(new_meter=meter_no).update(
+                        service_type= service,
+                            service_date = resolved_on,
+                            contractor=contractor,
+                            plot = "",
+                            geo_code = geo_code,
+                            customer = customer,
+                            customer_no = customer_phone,
+                            old_meter_no = old_meter,
+                            new_meter=meter_no,
+                            status=order_status,
+                            created_by=request.user,
+                            location=loc,
+                            spn=spn,
+                            is_routing = routing
+                        )
+                    # print(e)
+                # print(meter_no)
                 met_service = ServiceOrder.objects.get(new_meter=meter_no)
             
 
-                # print(hd)
-                # print('RATES')
+                # # print(hd)
+                # # print('RATES')
                 rate_message = ""
                 total_rate = 0
                 for rate in service_rates:
@@ -619,7 +684,7 @@ def upload_service_order(request):
                             quantity=1,rate=rt,amount=Decimal(rt)*Decimal(1)
 
                         ).save()
-                    # print(name,rt)    
+                    # # print(name,rt)    
                 # print("Materials")       
                 materials_message = ''
                 for material in InventoryMaterial.objects.all().order_by('name'):
@@ -629,7 +694,7 @@ def upload_service_order(request):
                     
 
                     if qty > 0:
-                        # print("FISH",material.name,qty)
+                        # # print("FISH",material.name,qty)
                         materials_message += f"{material.name} | {qty}\n"
 
                         
@@ -639,31 +704,34 @@ def upload_service_order(request):
                         
                         # get service rates
                         other_rates = ServiceMaterialRates.objects.filter(material__barcode=material.barcode)
-                        # print(other_rates.count(),"COUNTED")
+                        # # print(other_rates.count(),"COUNTED")
                         if other_rates.count() > 0:
                             extra_rate = ServiceMaterialRates.objects.get(material__barcode=material.barcode)
                             if qty > extra_rate.break_point :
-                                # print("GREATER")
+                                # # print("GREATER")
                                 rate = extra_rate.service.rate
                                 name = extra_rate.service.name
                                 total_rate += extra_rate.service.rate
                                 # rate_message += f"{name},1,{rt},{rt*1}\n"
                             else:
                                 pass
-                                # print("NOT GREATER")
+                                # # print("NOT GREATER")
                         
-                        # print(meter_no, material.name,qty)
-
+                        # # print(meter_no, material.name,qty)
+                    else:
+                        pass
+                        # print("Material Not Found Here")
                 # default issues    
                 MaterialOrderItem.objects.filter(service_order=met_service)    
                 for mat in ServiceMaterials.objects.filter(service=service):
-                    print(mat.material.name,mat.qty)
+                    # print(mat.material.name,mat.qty)
                     try:
                         MaterialOrderItem(
                                     service_order=met_service,material=mat.material,quantity=mat.qty,rate=0,amount=0
                                 ).save()
                     except Exception as e:
-                        print(e)
+                        pass
+                        # print(e)
                         
                     
                 # update total amount
@@ -671,17 +739,17 @@ def upload_service_order(request):
 
 
 
-            # print(f'###### {contractor.company} ##### {meter_no}')
-            # print("MATERIALS")
-            # print(materials_message)
-            # print("SERVICE RATES")
-            # print(rate_message)
+            # # print(f'###### {contractor.company} ##### {meter_no}')
+            # # print("MATERIALS")
+            # # print(materials_message)
+            # # print("SERVICE RATES")
+            # # print(rate_message)
 
-            # print(f'###### total ##### {total_rate}')
-            # print('\n')
+            # # print(f'###### total ##### {total_rate}')
+            # # print('\n')
             sample_data.append(row_dict)
 
-        print(cts, service_order_type, "Added")
+        # print(cts, service_order_type, "Added")
 
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
@@ -709,7 +777,7 @@ def sync_retired_meter(request):
         # Loop through each sheet in the workbook
         for sheet_name in wb.sheetnames:
             sheet = wb[sheet_name]
-            # print(f"Sheet: {sheet_name}")
+            # # print(f"Sheet: {sheet_name}")
             # Loop through each row in the sheet
             for row in sheet.iter_rows(values_only=True):
                 box_no = row[2]
@@ -733,13 +801,13 @@ def sync_retired_meter(request):
                                     if ServiceOrder.objects.filter(old_meter_no=old_meter_no).count() == 0:
                                         # try adding 0 if no 0
                                         
-                                        print(old_meter_no,"HAS NO SERVICE")
+                                        # print(old_meter_no,"HAS NO SERVICE")
                                         pass
                                     else:
                                         
                                         is_service = True
                                 else:
-                                    # print(old_meter_no)
+                                    # # print(old_meter_no)
                                     is_service = True
                                     # update return
                     
@@ -771,7 +839,7 @@ def sync_retired_meter(request):
                         
                         # if foc_name == 'KOSMEN ELECTRICAL WORKS':
                         if True:
-                            print(foc_name,box_no,old_meter_no,service.new_meter,phase,service.service_type.name,product.name)
+                            # print(foc_name,box_no,old_meter_no,service.new_meter,phase,service.service_type.name,product.name)
                             sheet.append([foc_name,box_no,old_meter_no,service.new_meter,phase,service.service_type.name,product.name])
                         # add to return
                         try:
@@ -783,14 +851,14 @@ def sync_retired_meter(request):
                                 rate=0,
                                 amount=0
                             )
-                            # print(product.name,'ADDED')
+                            # # print(product.name,'ADDED')
                         except Exception as e:
                             pass
-                            # print(e)
-                        # print(old_meter_no,service.new_meter,phase,service.service_type.name,product.name)
+                            # # print(e)
+                        # # print(old_meter_no,service.new_meter,phase,service.service_type.name,product.name)
                         
 
-        print(foc_list)
+        # print(foc_list)
 
         book.save(f'static/general/tmp/{no_service_file_name}.xlsx')
                 
@@ -816,7 +884,7 @@ def add_material_rate(request):
 
         ## add to model
 
-        print(form)
+        # print(form)
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
@@ -1135,7 +1203,7 @@ def my_company(request):
         return redirect('foc_portal')
 
     foc_code = request.COOKIES.get('foc_id')
-    print(foc_code)
+    # print(foc_code)
     foc = Contractor.objects.get(code=foc_code)
     page = {
         'title': 'My Company',
@@ -1185,12 +1253,15 @@ def service_tools(request):
     }
     return render(request, 'ssml/service/tools.html', context)
 
-
+@login_required()
 def petty_cash(request):
+    # PettyCash.objects.all().delete()
+    # Expense.objects.all().update(entry_no='')
     page = {
         'title': 'Petty Cash',
         'nav': True
     }
+
     context = {
         'page': page,
         'last_petty_cash_entry':PettyCash.objects.all().last().entry_no if PettyCash.objects.all().exists() else 'none'

@@ -743,43 +743,80 @@ class SSML {
                             <label for="company" class="text-primary">Company</label>
                             <input type="text" class="form-control" value="${contractor.company}" id="company" name="company">
                         </div>
-                        
-                        
-                        
+                   
                         <div class="form-group mb-2 col-sm-6">
-                            <label for="owner" class="text-primary">Owner</label>
-                            <input type="text" class="form-control" value="${contractor.owner}" id="owner" name="owner">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="phone" class="text-primary">Phone</label>
-                            <input type="text" class="form-control" value="${contractor.phone}" id="phone" name="phone">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="email" class="text-primary">Email</label>
-                            <input type="email" class="form-control" value="${contractor.email}" id="email" name="email">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="country" class="text-primary">Country</label>
-                            <input type="text" class="form-control" value="${contractor.country}" id="country" name="country">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="city" class="text-primary">City</label>
-                            <input type="text" class="form-control" value="${contractor.city}" id="city" name="city">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="postal_code" class="text-primary">Postal Code</label>
-                            <input type="text" class="form-control" value="${contractor.postal_code}" id="postal_code" name="postal_code">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="gh_post_code" class="text-primary">Ghana Post Code</label>
-                            <input type="text" class="form-control" value="${contractor.gh_post_code}" id="gh_post_code" name="gh_post_code">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="gh_card_no" class="text-primary">Ghana Card No</label>
-                            <input type="text" class="form-control" value="${contractor.gh_card_no}"   id="gh_card_no" name="gh_card_no">
+                            <label for="owner_name" class="text-primary">Owner</label>
+                            <input type="text" class="form-control" value="${contractor.owner}" id="owner_name" name="owner_name">
                         </div>
                         
                         <div class="form-group mb-2 col-sm-6">
+                            <label for="owner_phone" class="text-primary">owner_phone</label>
+                            <input type="text" class="form-control" value="${contractor.owner_phone}" id="owner_phone" name="owner_phone">
+                        </div>
+                        
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="owner_email" class="text-primary">owner_email</label>
+                            <input type="text" class="form-control" value="${contractor.owner_email}" id="owner_email" name="owner_phone">
+                        </div>
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="ghana_card" class="text-primary">gh_card_no</label>
+                            <input type="text" class="form-control" value="${contractor.gh_card_no}" id="ghana_card" name="ghana_card">
+                        </div>
+                        
+                        <div class="col-sm-12"><hr></div>
+                        
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="comp_reg_number" class="text-primary">comp_reg_number</label>
+                            <input type="text" class="form-control" value="${contractor.comp_reg_number}" id="comp_reg_number" name="comp_reg_number">
+                        </div>
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="business_type" class="text-primary">business_type</label>
+                            <input type="text" class="form-control" value="${contractor.business_type}" id="business_type" name="business_type">
+                        </div>
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="region" class="text-primary">region</label>
+                            <input type="text" class="form-control" value="${contractor.region}" id="region" name="region">
+                        </div>
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="gh_post" class="text-primary">gh_post</label>
+                            <input type="text" class="form-control" value="${contractor.gh_post}" id="gh_post" name="gh_post">
+                        </div>
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="business_address" class="text-primary">business_address</label>
+                            <input type="text" class="form-control" value="${contractor.business_address}" id="business_address" name="business_address">
+                        </div>
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="business_phone_number" class="text-primary">business_phone_numbere</label>
+                            <input type="text" class="form-control" value="${contractor.business_phone_number}" id="business_phone_number" name="business_phone_number">
+                        </div>
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="business_email" class="text-primary">business_email</label>
+                            <input type="text" class="form-control" value="${contractor.business_email}" id="business_email" name="business_email">
+                        </div>
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="city" class="text-primary">city</label>
+                            <input type="text" class="form-control" value="${contractor.city}"   id="city" name="city">
+                        </div>
+                        
+                       
+                        
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="bank_name" class="text-primary">bank_name</label>
+                            <input type="text" class="form-control" value="${contractor.bank_name}"   id="bank_name" name="bank_name">
+                        </div>
+                        
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="bank_acct_number" class="text-primary">bank_acct_number</label>
+                            <input type="text" class="form-control" value="${contractor.bank_acct_number}"   id="bank_acct_number" name="bank_acct_number">
+                        </div>
+                        <div class="form-group mb-2 col-sm-6">
+                            <label for="bank_branch" class="text-primary">bank_branch</label>
+                            <input type="text" class="form-control" value="${contractor.bank_branch}"   id="bank_branch" name="bank_branch">
+                        </div>
+                        
+                        
+                        <div class="form-group mb-2 col-sm-6">
+                            <input type="hidden" class="form-control" value="${contractor.pk}"   id="id" name="id">
                             <label for="is_installer">Is Installler?</label>
                             <select class="form-control" id="is_installer">
                                 <option value="0">No</option>
@@ -801,7 +838,7 @@ class SSML {
                 amodal.show();
 
                 $('#update_contractor').click(async function() {
-                    let ids = ['link','company','owner','phone','email','country','city','postal_code','gh_post_code','gh_card_no','code','is_installer']
+                    let ids = ['link','owner_name','ghana_card','owner_phone','owner_email','company','comp_reg_number','business_type','business_phone_number','business_email','region','city','gh_post','business_address','bank_name','bank_acct_number','bank_branch','id','is_installer']
                     if(anton.validateInputs(ids)) {
                             let payload = {
                                 module: 'contractor',
@@ -817,8 +854,6 @@ class SSML {
                                     kasa.error(response.message);
                                 }
                             });
-                    } else {
-                        kasa.error('Please fill all the fields');
                     }
                 });
 
@@ -4367,6 +4402,117 @@ class SSML {
                         kasa.confirm(response.message,1,'here')
                     }
                 }).catch(error => {kasa.error(error)})
+            }
+        })
+    }
+
+    async loadPettyCash(entry_no){
+        loader.show()
+        await ssml.getPettyCash(entry_no).then(response => {
+            if(anton.IsRequest(response,true)){
+                let data = response.message[0];
+                console.table(data)
+                anton.setValues(data)
+                loader.hide()
+                let tr = ``;
+                data.transactions.forEach(item => {
+                    tr += `
+                        <tr><td>${item.date}</td><td>${item.description}</td><td>${item.reference}</td><td>${item.amount}</td></tr>`;
+                })
+
+                $('#petty_cash_table').html(tr)
+
+            } else {
+                loader.hide()
+            }
+        }).catch(error => {kasa.error(error);loader.hide()})
+    }
+
+    async getPettyCash(entry_no) {
+        return api.call('VIEW',{module:'petty_cash',data:{entry_no:entry_no}},'/ssml/api/')
+    }
+
+    InstalledMeters() {
+        let form = "";
+        form += fom.date('start_date','Start Date',true)
+        form += fom.date('end_date','End Date',true)
+        amodal.setBodyHtml(form)
+        amodal.setTitleText('Installed Meters')
+        amodal.setFooterHtml(fom.button('load_installed_meters','button','success'))
+        amodal.show()
+
+        $('#load_installed_meters').click(async function(){
+            let ids = ['start_date','end_date','mypk']
+            if(anton.validateInputs(ids)){
+                let payload = {
+                    module:'installed_meters',
+                    data:anton.Inputs(ids)
+                }
+                loader.show()
+                await api.v2('VIEW',payload,'/ssml/api/').then(response => {
+
+                    if(anton.IsRequest(response,true)){
+                        let data = response.message;
+                        let arr = [["SERVICE DATE","STS NUMBER","OLD METER","SERVICE TYPE","DOC"]]
+                        let tr = ``;
+                        data.forEach(item => {
+                            console.table(item)
+                            arr.push([item.service_date,item.new_meter_no,item.old_meter_no,item.service_type.name,item.contractor.company])
+                            tr += `
+                                <tr><td>${item.service_date}</td><td>${item.new_meter_no}</td><td>${item.old_meter_no}</td><td>${item.service_type.name}</td><td>${item.contractor.company}</td></tr>`;`
+                            `
+                        })
+
+                        let table = `
+                            <table id="x_tab" class="table table-bordered"><thead><tr><th>DATE</th><th>NEW METER</th><th>OLD METER</th><th>SERVICE TYPE</th><th>FOC</th></tr></thead><tbody>${tr}</tbody></table>
+                        `;
+                        amodal.setBodyHtml(table)
+                        amodal.setTitleText('Installed Meters')
+                        amodal.setSize("L")
+                        amodal.setFooterHtml(fom.button('export_service','button','success'))
+                        loader.hide()
+
+
+
+                        $('#export_service').click(function(){
+                            anton.downloadCSV('services.csv',anton.convertToCSV(arr))
+                        })
+                    } else {
+                        loader.hide()
+                    }
+                }).catch(error => {kasa.error(error);loader.hide()})
+            }
+        })
+    }
+
+    monthInvReport(){
+        let form = "";
+        form += fom.date('start_date','Start Date',true)
+        form += fom.date('end_date','End Date',true)
+        amodal.setBodyHtml(form)
+        amodal.setTitleText('InstalledMeters4Month')
+        amodal.setFooterHtml(fom.button('month_inv_report','button','success'))
+        amodal.show()
+
+        $('#month_inv_report').click(async function(){
+            let ids = ['start_date','end_date','mypk']
+            if(anton.validateInputs(ids)){
+                let payload = {
+                    module:'month_inv_report',
+                    data:anton.Inputs(ids)
+                }
+                loader.show()
+                await api.v2('VIEW',payload,'/ssml/api/').then(response => {
+
+                    if(anton.IsRequest(response,true)){
+                        let data = response.message;
+                        anton.viewFile(`/${data}`)
+                        console.table(data)
+                        loader.hide()
+                    } else {
+                        loader.hide()
+                    }
+                }).catch(error => {kasa.error(error);loader.hide()})
             }
         })
     }

@@ -71,7 +71,7 @@ class Servicing{
             if(anton.IsRequest(response,true)){
                 response.message.map(task => {
                     console.table(task)
-                    tr += `<tr><td>${task.title}</td><td><a href="javascript:void(0)" class="view_task" data-cardno="${task.cardno}"><i class="fa fa-eye"></i></a></td></tr>`
+                    tr += `<tr><td>${task.provider.name}</td><td>${task.title}</td><td><a href="javascript:void(0)" class="view_task" data-cardno="${task.cardno}"><i class="fa fa-eye"></i></a></td></tr>`
                 })
                 console.log(tr)
                 $('#my_tasks_x').html(tr)

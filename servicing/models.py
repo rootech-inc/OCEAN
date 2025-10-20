@@ -95,7 +95,10 @@ class ServiceCard(models.Model):
         return {
             "title":self.ticket.title,
             "description":self.ticket.descr,
-            "cardno":self.cardno
+            "cardno":self.cardno,
+            "provider":{
+                "name":self.app.provider.name,
+            }
         }
 
     def materials(self):

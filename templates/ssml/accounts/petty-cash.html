@@ -17,21 +17,41 @@
                 <div class="row bg-info text-light py-3 h-25">
                     <div class="col-sm-4">
                         <div class="row mb-2">
+                            <div class="col-sm-4"><label for="entry_no">Entry No.</label></div>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control rounded-0" id="entry_no">
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="date">Date</label></div>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control rounded-0" id="date">
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="total">Total</label></div>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control rounded-0" id="total">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="row mb-2">
                             <div class="col-sm-4"><label for="month">Month</label></div>
                             <div class="col-sm-8">
                                 <input type="text" class="form-control rounded-0" id="month">
                             </div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-sm-4"><label for="month">Total In</label></div>
+                            <div class="col-sm-4"><label for="total_in">Total In</label></div>
                             <div class="col-sm-8">
-                                <input type="text" class="form-control rounded-0" id="month">
+                                <input type="text" class="form-control rounded-0" id="total_in">
                             </div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-sm-4"><label for="month">Total Out</label></div>
+                            <div class="col-sm-4"><label for="total_out">Total Out</label></div>
                             <div class="col-sm-8">
-                                <input type="text" class="form-control rounded-0" id="month">
+                                <input type="text" class="form-control rounded-0" id="total_out">
                             </div>
                         </div>
                     </div>
@@ -43,6 +63,7 @@
                                 <th>Date</th><th>Direction</th><th>Reference</th><th>Amount</th>
                             </tr>
                         </thead>
+                        <tbody id="petty_cash_table"></tbody>
                     </table>
                 </div>
             </div>
@@ -52,6 +73,7 @@
 
     <script>
         $(document).ready(function () {
+            ssml.loadPettyCash(`{{ last_petty_cash_entry }}`)
             $('#new').click(function () {
                 ssml.newPettyCash()
             })

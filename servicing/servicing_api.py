@@ -279,9 +279,12 @@ def interface(request):
                 mypk = data.get('mypk')
                 technician = User.objects.get(pk=mypk)
 
-
-                success_response['message'] = [srv.obj() for srv in ServiceCard.objects.filter(technician__technician=technician,status=1)]
-
+                if technician.is_superuser:
+                    success_response['message'] = [srv.obj() for srv in ServiceCard.objects.filter(status=1)]
+                else:
+                    success_response['message'] = [srv.obj() for srv in
+                                                   ServiceCard.objects.filter(technician__technician=technician,
+                                                                              status=1)]
 
             elif module == 'servicecard':
                 cardno = data.get('cardno')

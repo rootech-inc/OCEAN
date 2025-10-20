@@ -883,6 +883,8 @@ class ServiceOrder(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    spn = models.CharField(max_length=255,null=False)
+    is_routing = models.BooleanField(default=False)
     status_choices = [
         ('pending', 'Pending'),
         ('completed', 'Completed'),
@@ -1218,18 +1220,37 @@ class PettyCash(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    entry_no = models.CharField(max_length=255,null=True,blank=True)
+    entry_no = models.CharField(max_length=255,null=False,blank=False,unique=True)
     total_out = models.DecimalField(max_digits=10, decimal_places=2)
     total_in = models.DecimalField(max_digits=10, decimal_places=2)
     location = models.ForeignKey(Location, on_delete=models.CASCADE)
 
+    def next_entry_no(self):
+        return Expense.objects.filter(id__gt=self.id).first().entry_no if Expense.objects.filter(id__gt=self.id).count() > 0 else False
+
+    def prev_entry_no(self):
+        return Expense.objects.filter(id__lt=self.id).last().entry_no if Expense.objects.filter(id__lt=self.id).count() > 0 else False
+
     def obj(self):
         return {
-            'month':self.month,
+            'month': datetime.strptime(str(self.month), "%m").strftime("%B") if self.month.isdigit() else self.month,
             'date':self.date,
             'total':self.total,
-            'entry_no':self.entry_no
+            'entry_no':self.entry_no,
+            'transactions':self.transactions(),
+            'total_out':self.total_outt(),
+            'total_in':self.total_ins(),
+            'next_entry_no':self.next_entry_no(),
+            'prev_entry_no':self.prev_entry_no(),
         }
+
+    def total_ins(self):
+        return Expense.objects.filter(entry_no=self.entry_no,direction='in').aggregate(total_in=Sum('amount'))['total_in'] or 0
+    def total_outt(self):
+        return Expense.objects.filter(entry_no=self.entry_no,direction='out').aggregate(total_out=Sum('amount'))['total_out'] or 0
+
+    def transactions(self):
+        return [tr.obj() for tr in Expense.objects.filter(entry_no=self.entry_no)]
 
 class Expense(models.Model):
 
