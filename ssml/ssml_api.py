@@ -1103,8 +1103,30 @@ def interface(request):
 
                     import openpyxl
                     book = openpyxl.Workbook()
-                    sheet = book.active
-                    sheet.title = "Installations"
+
+                    foc_summ = book.active
+                    foc_summ.title = "1.2 Summary FOC"
+                    foc_sum_hd = ["No","Contractor","Total"]
+                    for so in ServiceType.objects.all().order_by('name'):
+                        foc_sum_hd.append(so.name)
+                    foc_summ.append(foc_sum_hd)
+
+                    fosn = 1
+                    for foc in Contractor.objects.filter(is_installer=True).order_by('company'):
+                        total_jobs = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc).count()
+                        if total_jobs > 0:
+                            li = [fosn,foc.company,total_jobs]
+                            for so in ServiceType.objects.all().order_by('name'):
+                                this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,service_type=so).count()
+                                li.append(this_total)
+                            
+                            foc_summ.append(li)
+                            fosn += 1
+                    
+
+
+                    sheet = book.create_sheet(title = "Installations")
+                    
 
                     sheet.append(["DATE","METER","OLD METER","SPN","JOB TYPE","FOC"])
                     for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
@@ -1130,11 +1152,40 @@ def interface(request):
                     ## create material consumption
                     
                     ms = book.create_sheet(title="Material Consumption")
-                    hd = ["BARCODE","NAME","QUANTITY","METER","SERVICE TYPE","FOC",]
+                    hd = ["SN","DISTRICT","FOC","SPN","INSTALL DATE","METER TYPE","GPS","INSTALLATION TYPE"]
+                    for mtn in InventoryMaterial.objects.filter(is_issue=True).order_by('name'):
+                        hd.append(mtn.name)
+                    hd.append('Tower Clip (if used)')
+                    hd.append('Input Meter STS number')
+                    hd.append('Meter Enclosure used?')
+                    hd.append('Colours of Meter Seal Installed')
+
                     ms.append(hd)
-                    for mt in MaterialOrderItem.objects.filter(service_order__service_date__gte=start_date,service_order__service_date__lte=end_date):
+                    sn = 1
+                    for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,):
                         
-                        ms.append([mt.material.barcode,mt.material.name,mt.quantity,mt.service_order.new_meter,mt.service_order.service_type.name,mt.service_order.contractor.company])
+                        phase = Meter.objects.get(meter_no=service.new_meter).phase if Meter.objects.filter(meter_no=service.new_meter).exists() else "Unknown"
+                        line = [
+                            sn,
+                            service.location.loc_id,
+                            service.contractor.company,
+                            service.spn,
+                            service.service_date,
+                            service.phase,
+                            service.gps_code,
+                            service.service_type.name
+                        ]
+
+                        for mtn in InventoryMaterial.objects.filter(is_issue=True).order_by('name'):
+                            used_qty = MaterialOrderItem.objects.filter(material=mtn,service_order=service).aggregate(total=Sum('quantity'))['total'] or 0
+                            line.append(used_qty)
+
+                        line.append("YES")
+                        line.append("YES")
+                        line.append(service.new_meter)
+                        line.append("BLUE")
+                        ms.append(line)
+                        sn += 1
 
 
                     # service count
@@ -1145,6 +1196,82 @@ def interface(request):
                         total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,service_type=st).count()
                         if total > 0:
                             sc.append([name,total])
+
+                    # 3.3 Material Inventory Reciept
+                    mir = book.create_sheet(title="3.3 Inventory Reciept")
+                    from datetime import date, timedelta
+                    mirhd = ["No","Material Description","Unit Of Measurement","Total Request"]
+                    
+                    months_data = []
+                    year = date.today().year
+                    from datetime import datetime
+                    if isinstance(end_date, str):
+                        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+                    for month in range(1, end_date.month + 1):
+                        start_date_of_month = date(year, month, 1)
+                        if month == 12:
+                            next_month = date(year + 1, 1, 1)
+                        else:
+                            next_month = date(year, month + 1, 1)
+                        end_date_of_month = next_month - timedelta(days=1)
+                        month_name_yy = start_date_of_month.strftime("%b'%y")  # e.g. Jun'24
+                        lx = [start_date_of_month,end_date_of_month,month_name_yy]
+                        months_data.append({
+                            'start':start_date_of_month,
+                            'end':end_date_of_month,
+                            'name':month_name_yy
+                        })
+                        mirhd.append(month_name_yy)
+                    mirhd.append("Total Receipts from ECG")
+                    mirhd.append("Balance to be Received from ECG")
+
+                    mir.append(mirhd)
+
+                    mirsn = 1
+                    for mirmat in InventoryMaterial.objects.filter(is_issue=True):
+                        total_request = mirmat.required_qty
+                        legend_recieved = 0
+                        li = [mirsn,mirmat.name,mirmat.uom,total_request]
+                        print(months_data)
+                        for mt in months_data:
+                            print(mt)
+                            total_recieved = mirmat.in_by_date_range(mt.get('start'),mt.get('end'))
+                            li.append(total_recieved)
+                            legend_recieved += total_recieved
+                        
+                        li.append(legend_recieved)
+                        li.append(total_request-legend_recieved)
+                        mir.append(li)
+                        mirsn += 1
+
+
+                    # 3.4 Inventory Tracking
+                    itr = book.create_sheet(title="3.4 Inventory Tracking")
+                    itrhd = ["No","Material Description","UNIT","TOTAL RECIEPT"]
+                    for mt in months_data:
+                        itrhd.append(mt.get('name'))
+                    itrhd.append("Total Utilized by FOCs")
+                    itrhd.append("Stock Balance with Supplier")
+                    itr.append(itrhd)
+                    mirsn = 1
+                    for mirmat in InventoryMaterial.objects.filter(is_issue=True):
+                        total_recieved =  mirmat.in_by_date_range(mt.get('start'),mt.get('end'))
+                        legend_usage = 0
+
+                        li = [mirsn,mirmat.name,mirmat.uom,total_recieved]
+
+                        print(months_data)
+                        for mt in months_data:
+                            print(mt)
+                            total_used = mirmat.used_by_date_range(mt.get('start'),mt.get('end'))
+                            li.append(total_used)
+                            legend_usage += total_used
+                        
+                        li.append(legend_usage)
+                        li.append(total_recieved-legend_usage)
+                        itr.append(li)
+                        mirsn += 1
+                    
 
                     filename = f"static/general/tmp/instalations.xlsx"
                     book.save(filename)
@@ -2625,6 +2752,9 @@ def interface(request):
                 is_issue = data.get('is_issue')
                 auto_issue = data.get('auto_issue')
                 item_type = data.get('item_type')
+                required_qty = data.get('required_qty')
+
+                print(data)
                 
                 print(data)
                 material = InventoryMaterial.objects.get(barcode=barcode)
@@ -2637,6 +2767,7 @@ def interface(request):
                 material.is_issue = is_issue
                 material.issue_qty = data.get('issue_qty')
                 material.auto_issue = auto_issue
+                material.required_qty = required_qty
 
 
                 material.save()

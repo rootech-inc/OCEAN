@@ -638,11 +638,15 @@ def upload_service_order(request):
                             created_by=request.user,
                             location=loc,
                             spn=spn,
-                            is_routing = routing
+                            is_routing = routing,
+                            gps_code=address,
+                            phase=phase
                         ).save()
                     # print("Service Created")
                 except Exception as e:
                     # update type
+                    print("Error Creating Service :",str(e))
+                    print("Error: Mark End")
                     ServiceOrder.objects.filter(new_meter=meter_no).update(
                         service_type= service,
                             service_date = resolved_on,

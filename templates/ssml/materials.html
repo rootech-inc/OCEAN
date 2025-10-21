@@ -640,6 +640,11 @@
                                                     <label for="reorder_qty">Reorder Qty</label>
                                                     <input type="number" class="form-control" id="reorder_qty" name="reorder_qty" value="${material.reorder_qty}">
                                                 </div>
+
+                                                <div class="form-group mb-3">
+                                                    <label for="required_qty">Required Qty</label>
+                                                    <input type="number" class="form-control" id="required_qty" name="required_qty" value="${material.required_qty}">
+                                                </div>
                                                 
                                                 <div class="form-group mb-3">
                                                     <label for="value">Value</label>
@@ -693,7 +698,7 @@
                                 amodal.show();
 
                                 $('#save-material').click(async function () {
-                                    let ids = ['barcode', 'name', 'group', 'reorder_qty', 'value','is_return','is_issue','issue_qty','auto_issue','item_type'];
+                                    let ids = ['barcode', 'name','required_qty', 'group', 'reorder_qty', 'value','is_return','is_issue','issue_qty','auto_issue','item_type'];
                                     if (anton.validateInputs(ids)) {
                                         let payload = {
                                             module: 'material',
@@ -708,9 +713,12 @@
                                                 is_issue:$('#is_issue').val(),
                                                 issue_qty:$('#issue_qty').val(),
                                                 auto_issue:$('#auto_issue').val(),
-                                                item_type:$('#item_type').val()
+                                                item_type:$('#item_type').val(),
+                                                required_qty:$('#required_qty').val()
                                             }
                                         };
+
+                                        console.table(payload)
 
                                         console.log("THIS IS WHERE WE HAVE FISHES")
                                         await api.v2('PATCH', payload, '/ssml/api/').then(res => {

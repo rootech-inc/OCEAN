@@ -81,6 +81,9 @@ class InventoryMaterial(models.Model):
     is_issue = models.BooleanField(default=False)
     issue_qty = models.DecimalField(max_digits=10,default=0.00, decimal_places=2)
     auto_issue = models.BooleanField(default=False)
+    uom = models.CharField(max_length=255, default='PCS',blank=False,null=False)
+    required_qty = models.DecimalField(max_digits=10,default=0.00, decimal_places=2)
+
 
     item_type_choices = [
         ('pri',"Primary"),
@@ -93,6 +96,7 @@ class InventoryMaterial(models.Model):
     def obj(self):
         return {
             'id':self.id,
+            'required_qty':self.required_qty,
             'barcode':self.barcode,
             'name':self.name,
             'group':self.group.obj(),
@@ -201,6 +205,23 @@ class InventoryMaterial(models.Model):
         return Cardex.objects.filter(material=self).aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
     def out(self):
         return Cardex.objects.filter(material=self).aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
+
+    def in_by_date_range(self,start_date,end_date):
+        return Cardex.objects.filter(
+            material=self,
+            created_at__gte=start_date,
+            created_at__lte=end_date,
+            doc_type='GR'
+            ).aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
+
+    def used_by_date_range(self,start_date,end_date):
+        return MaterialOrderItem.objects.filter(
+            material=self,
+            service_order__service_date__gte=start_date,
+            service_order__service_date__lte=end_date,
+            material_type='is'
+            ).aggregate(total_qty=models.Sum('quantity'))['total_qty'] or 0
+    
     def cardex(self,loc='*'):
         obj = []
         if loc == '*':
@@ -901,6 +922,8 @@ class ServiceOrder(models.Model):
     closed_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='closed_service_orders')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     location = models.ForeignKey(Location,on_delete=models.CASCADE,null=False)
+    gps_code = models.CharField(unique=False,null=True,blank=True,max_length=255,default="none")
+    phase = models.CharField(unique=False,null=True,blank=True,max_length=255,default="1 phase")
 
     
 
