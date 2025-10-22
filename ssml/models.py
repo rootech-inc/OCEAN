@@ -1703,3 +1703,90 @@ class ServiceOrderType(models.Model):
             'updated_at':self.updated_at,
             'rate':self.rate
         }
+
+
+class RetiredMetersBox(models.Model):
+    box_no = models.CharField(max_length=255,unique=False,blank=False,null=False)
+    location = models.ForeignKey(Location,on_delete=models.SET_NULL,null=True)
+    created_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    class Meta:
+        unique_together = ('box_no', 'location')
+
+    def transactions(self):
+        return [tran.obj() for tran in RetiredMetersTransactions.objects.filter(box=self).order_by('sn')]
+
+    def next(self):
+        return RetiredMetersBox.objects.filter(pk__gt=self.pk).first().pk if RetiredMetersBox.objects.filter(pk__gt=self.pk).exists() else 0
+
+    def previous(self):
+        return RetiredMetersBox.objects.filter(pk__lt=self.pk).last().pk if RetiredMetersBox.objects.filter(pk__lt=self.pk).exists() else 0
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'box_no': self.box_no,
+            'location': self.location.obj() if hasattr(self.location, 'obj') else (self.location.id if self.location else None),
+            'created_by': self.created_by.get_full_name() if self.created_by else None,
+            'created_at': self.created_at,
+            'transactions': self.transactions(),
+            "next":self.next(),
+            'previous':self.previous()
+        }
+
+class RetiredMetersTransactions(models.Model):
+    box = models.ForeignKey(RetiredMetersBox, on_delete=models.CASCADE, related_name='retired_meters')
+    sn = models.IntegerField(max_length=100)
+    spn = models.CharField(max_length=100, blank=True, null=True)
+    old_meter_no = models.CharField(max_length=100, unique=True, blank=False, null=False)
+    diff_old_meter_no = models.CharField(max_length=100, blank=True, null=True)
+    ppm_cm = models.CharField(max_length=100, blank=True, null=True)
+    final_readings = models.CharField(max_length=100, blank=True, null=True)
+    rem_wattage = models.CharField(max_length=100, blank=True, null=True)
+    rem_cedis = models.CharField(max_length=100, blank=True, null=True)
+    make_year = models.CharField(max_length=100, blank=True, null=True)
+    manufacturere = models.CharField(max_length=255, blank=True, null=True)
+    has_uiu = models.CharField(max_length=10, blank=True, null=True)
+    phase = models.CharField(max_length=20, blank=True, null=True)
+    has_enclosure = models.CharField(max_length=10, blank=True, null=True)
+    has_sim_card = models.CharField(max_length=10, blank=True, null=True)
+    ret_cable_length = models.CharField(max_length=100, blank=True, null=True)
+    rating = models.CharField(max_length=100, blank=True, null=True)
+    date_removed = models.DateField(max_length=50, blank=True, null=True)
+    reason = models.TextField(blank=True, null=True)
+    has_breaker = models.CharField(max_length=10, blank=True, null=True)
+    foc = models.ForeignKey(Contractor, on_delete=models.CASCADE, related_name='foc')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('box', 'old_meter_no')
+
+   
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'sn': self.sn,
+            'spn': self.spn,
+            'old_meter_no': self.old_meter_no,
+            'diff_old_meter_no': self.diff_old_meter_no,
+            'ppm_cm': self.ppm_cm,
+            'final_readings': self.final_readings,
+            'rem_wattage': self.rem_wattage,
+            'rem_cedis': self.rem_cedis,
+            'make_year': self.make_year,
+            'manufacturere': self.manufacturere,
+            'has_uiu': self.has_uiu,
+            'phase': self.phase,
+            'has_enclosure': self.has_enclosure,
+            'has_sim_card': self.has_sim_card,
+            'ret_cable_length': self.ret_cable_length,
+            'rating': self.rating,
+            'date_removed': self.date_removed,
+            'reason': self.reason,
+            'has_breaker': self.has_breaker,
+            'foc': self.foc.company if self.foc else None,
+            'created_at': self.created_at,
+        }

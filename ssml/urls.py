@@ -24,6 +24,7 @@ urlpatterns = [
     path('inventory/materials/', views.materials, name='materials'),
     # path('ssml/',include('ssml.urls')),
     path('master/meters/',views.meters,name='meters'),
+    path('master/retired_meters/',views.retired_meters,name='retired_meters'),
     path('accounts/finlog/',views.accounts,name='accounts'),
     path('accounts/invoice/',views.invoice,name='cont-invoice'),
     path('account/new-cont-inv/',views.invoice_new,name='new-cont-inv'),

@@ -60,7 +60,7 @@ def interface(request):
     from ssml.models import Cardex, Location, RequiredReturn, InvoiceHD, InvoiceTransactions, Contractor, Expense, \
         InventoryGroup, InventoryMaterial, Issue, IssueTransaction, Ledger, MaterialOrderItem, Meter, PaySlipHD, Plot, \
         RedeemTransactions, Reedem, Service, ServiceMaterials, ServiceOrder, ServiceOrderItem, ServiceOrderReturns, \
-        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash
+        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash,RetiredMetersBox,RetiredMetersTransactions
     from admin_panel.models import Emails, Locations, BusinessEntityTypes, MailSenders, MailQueues, MailAttachments, \
         Sms, SmsApi
     from admin_panel.anton import make_md5_hash
@@ -104,6 +104,124 @@ def interface(request):
                                           city=city,postal_code=postal_code,gh_card_no=gh_card_no,gh_post_code=gh_post_code,created_by=created_by)
 
                 success_response['message'] = "Contractor Created Successfully"
+
+            elif module == 'sync_retired_meters':
+                #RetiredMetersBox.objects.all().delete()
+                box_no = data.get('box_no')
+                location = Location.objects.get(loc_id=data.get('loc_id'))
+
+                sheet_name = f"Box {box_no}"
+                
+                
+
+                import gspread
+                from oauth2client.service_account import ServiceAccountCredentials
+
+                # Path to your service account key
+                SERVICE_ACCOUNT_FILE = 'static\general\oth\ssml.json'  # You must set this filename in your deployment
+
+                # 1. Set up Google Sheets API client
+                scope = [
+                    'https://spreadsheets.google.com/feeds',
+                    'https://www.googleapis.com/auth/drive'
+                ]
+                creds = ServiceAccountCredentials.from_json_keyfile_name(SERVICE_ACCOUNT_FILE, scope)
+                gc = gspread.authorize(creds)
+
+                # 2. Open the Google Sheet
+                sheet_url = 'https://docs.google.com/spreadsheets/d/1RrN2zKophgm3Dz9PzewqbNfdU8B8hbnFPdBwVoZv4YI/edit?usp=sharing'
+                sh = gc.open_by_url(sheet_url)
+
+                try:
+
+                    print("BOX NUMBER:",box_no)
+                    if not RetiredMetersBox.objects.filter(box_no=box_no,location=location).exists():
+                                RetiredMetersBox.objects.create(
+                                    box_no=box_no,
+                                    created_by=User.objects.get(pk=data.get('mypk')),
+                                    location=location
+                                )
+                    box = RetiredMetersBox.objects.get(box_no=box_no,location=location)
+
+                    worksheet = sh.worksheet(sheet_name)
+                
+                    # Loop from row 7 to 31 (inclusive) and print each row's values
+                    for row in worksheet.get_all_values()[6:31]:
+                        empt,sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc = row[:22]
+                        
+                        
+
+                        
+                        
+                        print(manufacturere)
+                        li = [sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc]
+                        
+                        
+                        # Example: get contractor with company like foc
+                        if Contractor.objects.filter(company__icontains=foc).exists():
+                            contractor = Contractor.objects.filter(company__icontains=foc).last()
+                        else:
+                            raise Exception("Cannot Find FOC")
+                        print(box.box_no)
+                        RetiredMetersTransactions.objects.filter(old_meter_no=old_meter_no).delete()
+                        if len(box_no) > 0:
+                            if date_removed:
+                                from datetime import datetime
+                                try:
+                                    # Try MM/DD/YYYY HH:MM
+                                    date_removed = datetime.strptime(date_removed, '%m/%d/%Y %H:%M').date()
+                                except ValueError:
+                                    try:
+                                        # Try MM/DD/YYYY
+                                        date_removed = datetime.strptime(date_removed, '%m/%d/%Y').date()
+                                    except ValueError:
+                                        try:
+                                            # Try DD/MM/YYYY HH:MM
+                                            date_removed = datetime.strptime(date_removed, '%d/%m/%Y %H:%M').date()
+                                        except ValueError:
+                                            try:
+                                                # Try DD/MM/YYYY
+                                                date_removed = datetime.strptime(date_removed, '%d/%m/%Y').date()
+                                            except Exception as e:
+                                                print(f"Failed to parse date_removed '{date_removed}': {e}")
+                                                date_removed = None
+
+                            RetiredMetersTransactions(
+                                box=box,
+                                sn=sn,
+                                spn=spn,
+                                old_meter_no=old_meter_no,
+                                diff_old_meter_no=diff_old_meter_no,
+                                ppm_cm=ppm_cm,
+                                final_readings=final_readings,
+                                rem_wattage=rem_wattage,
+                                rem_cedis=rem_cedis,
+                                make_year=make_year,
+                                manufacturere=manufacturere,
+                                has_uiu=has_uiu,
+                                phase=phase,
+                                has_enclosure=has_enclosure,
+                                has_sim_card=has_sim_card,
+                                ret_cable_length=ret_cable_length,
+                                rating=rating,
+                                date_removed=date_removed,
+                                reason=reason,
+                                has_breaker=has_breaker,
+                                foc=contractor
+                            ).save()
+
+                            print("DONE: ",li)
+
+                except gspread.exceptions.WorksheetNotFound:
+                    raise Exception(f"Sheet '{sheet_name}' not found")
+                all_data = {}
+                
+                    
+                response['sheets_processed'] = {
+                    k: len(v) for k, v in all_data.items()
+                }
+                success_response['message'] = "Retired meter sheets read successfully"
+
 
             elif module == 'petty_cash':
                 dt = data.get('date')
@@ -1080,6 +1198,13 @@ def interface(request):
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
 
+                elif module == 'retired_meters':
+                    pk = data.get('pk','*')
+                    if pk == '*':
+                        success_response['message'] = [ret.obj() for ret in RetiredMetersBox.objects.all()]
+                    else:
+                        success_response['message'] = [ret.obj() for ret in RetiredMetersBox.objects.filter(pk=pk)]
+
                 elif module == 'installed_meters':
                     start_date = data.get('start_date')
                     end_date = data.get('end_date')
@@ -1200,7 +1325,7 @@ def interface(request):
                     # 3.3 Material Inventory Reciept
                     mir = book.create_sheet(title="3.3 Inventory Reciept")
                     from datetime import date, timedelta
-                    mirhd = ["No","Material Description","Unit Of Measurement","Total Request"]
+                    mirhd = ["No","Material Description","Unit of Measurement","Total Request"]
                     
                     months_data = []
                     year = date.today().year
@@ -1271,7 +1396,41 @@ def interface(request):
                         li.append(total_recieved-legend_usage)
                         itr.append(li)
                         mirsn += 1
+
+                    #4.1 Summary_Retired Materials
+                    srm_sheet = book.create_sheet(title='4.1 Summary Retired Materials')
+                    srm_hd = ["No","Disctict","Energy Meter","Meter Enclosure","MCB/ MCCB/ FUSE","Cables etc","Burnt Meters","Stolen Meters"]
+                    srm_sheet.append(srm_hd)
+
                     
+                    risn = 1
+                    end_date = data.get('end_date')
+                    start_date = data.get('start_date')
+
+                    for loc in Location.objects.all():
+                        
+                        total_removed_meters = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date,box__location=loc).count()
+                        print(start_date,"to",end_date)
+                        ri = [risn,loc.loc_id,total_removed_meters]
+                        
+                        srm_sheet.append(ri)
+                        risn += 1
+                    
+
+                    # 4.2 Retiring Material
+                    rm_sheet = book.create_sheet("4.2 Retiring Material")
+                    rm_hd = ["No","Disctrict","FOC Company Name","SPN","OLD METER NUMBER","Meter Phase(1Ø/3Ø)",
+                    "Meter Year of Manufacturing",
+                    "GPS/Digital Address",
+                    "Installation Type",
+                    "Meter Display ON/OFF",
+                    "Faulty Meter Make (To be Replaced)",
+                    "MCB/ MCCB/ FUSE Retired?(Yes/No)",
+                    " Meter Enclosure Retired?(Yes/No)",
+                    "Length of existing cable retired (in meters)"
+                    ]
+
+                    rm_sheet.append(rm_hd)
 
                     filename = f"static/general/tmp/instalations.xlsx"
                     book.save(filename)

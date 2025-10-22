@@ -14,7 +14,7 @@ from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
     IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, \
     ServiceMaterials, ServiceOrder, \
-    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash
+    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox
 
 
 # Create your views here.
@@ -370,6 +370,23 @@ def meters(request):
      }
     
     return render(request, 'ssml/meters.html', context)
+
+@login_required
+def retired_meters(request):
+    page = {
+        'title':"Retired Meters",
+        'nav':True
+    }
+
+    # delete all return materials in issued
+    #RetiredMetersBox.objects.all().delete()
+
+    context = {
+         'page':page,
+         "last_pk":RetiredMetersBox.objects.all().last().pk if RetiredMetersBox.objects.all().count() > 0 else 0
+     }
+    
+    return render(request, 'ssml/retired-meters.html', context)
 
 
 @login_required

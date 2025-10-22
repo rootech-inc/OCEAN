@@ -1,0 +1,201 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+
+{% block body %}
+
+
+    <div class="card h-100">
+        <div class="card-header">
+            <div class="w-100 d-flex flex-wrap">
+                <button id="sync" class="btn btn-success ms-2">SYNC</button>
+                <button class="btn btn-info ms-2" disabled id="previous"><i>prev</i></button>
+                <button class="btn btn-info ms-2" disabled id="next"><i>next</i></button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="container-fluid p-2">
+                <div class="row">
+                    <div class="col-sm-4">
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="box_no">Box No.</label></div>
+                            <div class="col-sm-8"><input type="text" id="box_no" disabled class="form-control"></div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="created_at">Date</label></div>
+                            <div class="col-sm-8"><input type="tex" id="created_at" disabled class="form-control"></div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="created_by">Created By</label></div>
+                            <div class="col-sm-8"><input type="text" id="created_by" disabled class="form-control"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-4">
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="location">Location.</label></div>
+                            <div class="col-sm-8"><input type="text" id="location" disabled class="form-control"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12 rounded" style="background-color: #d0d0d0;height: 70vh; overflow: auto;">
+                        <div class="table-responsive p-0">
+                            <table id="x_table" class="table m-2">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>SN</th>
+                                        <th>METER</th>
+                                        <th>SPN</th>
+                                        <th>MAKE YEAR</th>
+                                        <th>FINAL READINGS</th>
+                                        <th>MANUFACTURER</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="x_body"></tbody>
+                            </table>
+                            <hr>
+                            <hr>
+                            <hr>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        let next_row = 0
+        let prev_row = 0
+
+        let last_pk = `{{last_pk}}`
+        async function loadRetiredMeters(pk){
+            let payload = {
+                module:'retired_meters',
+                data:{
+                    "pk":pk
+                }
+            }
+
+            await api.v2('VIEW',payload,'/ssml/api/').then(response => {
+                if(anton.IsRequest(response,true)){
+                    let data = response.message[0];
+                    anton.setValues(data)
+                    
+                    next_row = data.next
+                    if(data.next > 0){
+                        $('#next').attr('disabled',false)
+                        next_row = data.next
+                    } else {
+                        $('#next').attr('disabled',true)
+                        
+                    }
+
+                    prev_row = data.previous
+                    if(data.previous > 0){
+                        $('#previous').attr('disabled',false)
+                        prev_row = data.previous
+                    } else {
+                        $('#previous').attr('disabled',true)
+                    }
+
+                    $('#location').val(data.location.name)
+                    let tr = "";
+                    data.transactions.map(line => {
+                        tr += `
+                            <tr>
+                                <td>${line.sn}</td>   
+                                <td>${line.old_meter_no}</td>  
+                                <td>${line.spn}</td>  
+                                <td>${line.make_year}</td> 
+                                <td>${line.final_readings}</td>   
+                                <td>${line.manufacturere}</td>  
+                            </tr>
+                        `
+                    })
+
+                    $('#x_body').html(tr)
+                    
+                }
+            }).catch(error => {kasa.error(error)})
+
+        }
+
+        $(document).ready(function(){
+
+            loadRetiredMeters(last_pk);
+
+            $('#previous').click(function(){
+                console.log("Previous")
+                loadRetiredMeters(prev_row)
+            })
+
+            $('#next').click(function(){
+                loadRetiredMeters(next_row)
+            })
+
+            $('#sync').click(async function(){
+
+                // get all contractors
+
+                await ssml.getLocations().then(response => {
+                    if(anton.IsRequest(response,true)){
+                        let messages = response['message'];
+                        let options = ``
+                        messages.map(location => {
+                            console.table(location)
+                            if(location.is_default){
+                            options += `<option value='${location.loc_id}'>${location.name}</option>`
+                            } else {
+                            options += `<option value='${location.loc_id}'>${location.name}</option>`
+                            }
+                            
+                        })
+
+                        let form = ``
+                        form += `<select class='form-control mb-2 rounded-0' id='loc'>${options}</select>`
+                        form += `<label for='boxx_no'>Box No.</label><input type='number' class='form-control mb-2 rounded-0' id='boxx_no' >`
+                        amodal.setBodyHtml(form)
+                        amodal.setFooterHtml(`<button id='sync_box' class='btn btn-info'>SYNC</button>`)
+                        amodal.setTitleHtml("Import Retired Meters")
+                        amodal.show()
+                        
+                        $('#sync_box').click(async function(){
+                            let ids = ['mypk','loc','boxx_no']
+
+                            if(anton.validateInputs(ids)){
+                                loader.show()
+                                let payload = {
+                                    "module":"sync_retired_meters",
+                                    "data":{
+                                        "loc_id":$('#loc').val(),
+                                        "mypk":$('#mypk').val(),
+                                        "box_no":$('#boxx_no').val()
+                                    }
+                                }
+
+                                await api.v2('PUT',payload,'/ssml/api/').then(response => {
+                                    kasa.confirm(response['message'],1,'here')
+                                    loader.hide()
+                                }).catch(error => {kasa,error(error);loader.hide()})
+                            }
+                        })
+
+                }
+                }).catch(error => {
+                    kasa.error(error)
+                })
+                
+
+                $('#sync_box').click(async function(){
+                    let ids = ['mypk','boxx_no','']
+                })
+
+                
+            })
+
+            
+        })
+    </script>
+
+{% endblock %}
