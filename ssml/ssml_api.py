@@ -149,20 +149,17 @@ def interface(request):
                     for row in worksheet.get_all_values()[6:31]:
                         empt,sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc = row[:22]
                         
+                                               
                         
-
-                        
-                        
-                        print(manufacturere)
                         li = [sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc]
-                        
+                        print(li)
                         
                         # Example: get contractor with company like foc
                         if Contractor.objects.filter(company__icontains=foc).exists():
                             contractor = Contractor.objects.filter(company__icontains=foc).last()
                         else:
                             raise Exception("Cannot Find FOC")
-                        print(box.box_no)
+                        # print(box.box_no)
                         RetiredMetersTransactions.objects.filter(old_meter_no=old_meter_no).delete()
                         if len(box_no) > 0:
                             if date_removed:
@@ -185,6 +182,25 @@ def interface(request):
                                             except Exception as e:
                                                 print(f"Failed to parse date_removed '{date_removed}': {e}")
                                                 date_removed = None
+
+                            # # get proper removed date
+                            if ServiceOrder.objects.filter(spn=spn).exists():
+                                ct = ServiceOrder.objects.filter(spn=spn).count()
+                                date_removed = ServiceOrder.objects.filter(spn=spn).last().service_date
+                                ServiceOrder.objects.filter(spn=spn).update(
+                                    is_boxed = True,
+                                    box_no = data.get('box_no')
+                                )
+                                
+                                print(f"THERE IS SPN {ct} {date_removed}")
+
+                            else:
+                                print("NO SPN")
+
+                            if len(diff_old_meter_no) > 0:
+                                print("There is different meter_no")
+                            else:
+                                pass   
 
                             RetiredMetersTransactions(
                                 box=box,
@@ -1213,226 +1229,299 @@ def interface(request):
                 elif module == 'month_inv_report':
                     start_date = data.get('start_date')
                     end_date = data.get('end_date')
-                    # INSERT_YOUR_CODE
-                    from datetime import datetime
+                    for_invoice = data.get('for_invoice')
 
-                    days_count = 1
-                    if start_date and end_date:
-                        try:
-                            fmt = "%Y-%m-%d"
-                            d1 = datetime.strptime(start_date, fmt)
-                            d2 = datetime.strptime(end_date, fmt)
-                            days_count = (d2 - d1).days
-                        except Exception:
-                            days_count = 1
-
+                    print(data)
                     import openpyxl
                     book = openpyxl.Workbook()
 
-                    foc_summ = book.active
-                    foc_summ.title = "1.2 Summary FOC"
-                    foc_sum_hd = ["No","Contractor","Total"]
-                    for so in ServiceType.objects.all().order_by('name'):
-                        foc_sum_hd.append(so.name)
-                    foc_summ.append(foc_sum_hd)
-
-                    fosn = 1
-                    for foc in Contractor.objects.filter(is_installer=True).order_by('company'):
-                        total_jobs = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc).count()
-                        if total_jobs > 0:
-                            li = [fosn,foc.company,total_jobs]
-                            for so in ServiceType.objects.all().order_by('name'):
-                                this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,service_type=so).count()
-                                li.append(this_total)
-                            
-                            foc_summ.append(li)
-                            fosn += 1
+                    if for_invoice == 'YES':
                     
+                        from datetime import datetime
 
+                        days_count = 1
+                        if start_date and end_date:
+                            try:
+                                fmt = "%Y-%m-%d"
+                                d1 = datetime.strptime(start_date, fmt)
+                                d2 = datetime.strptime(end_date, fmt)
+                                days_count = (d2 - d1).days
+                            except Exception:
+                                days_count = 1
 
-                    sheet = book.create_sheet(title = "Installations")
-                    
-
-                    sheet.append(["DATE","METER","OLD METER","SPN","JOB TYPE","FOC"])
-                    for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
-                        sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
-
-
-                    # summary consumption
-                    mcs = book.create_sheet(title="Consumption Summary")
-                    mcs.append(["ITEM NAME","UNIT","CONCUMNED","WASTAGE","WASTAGE QTY","TOTAL CONSUMPTION","AVG CONSUMPTION"])
-                    for mat in InventoryMaterial.objects.all():
-                        from django.db.models import Sum
-                        consumned = MaterialOrderItem.objects.filter(
-                            service_order__service_date__gte=start_date,
-                            service_order__service_date__lte=end_date,
-                            material=mat
-                        ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-                        if consumned > 0:
-                            
-                            mcs.append(
-                                [mat.name,"",consumned,"","",consumned,Decimal(consumned)/Decimal(days_count)]
-                            )
-
-                    ## create material consumption
-                    
-                    ms = book.create_sheet(title="Material Consumption")
-                    hd = ["SN","DISTRICT","FOC","SPN","INSTALL DATE","METER TYPE","GPS","INSTALLATION TYPE"]
-                    for mtn in InventoryMaterial.objects.filter(is_issue=True).order_by('name'):
-                        hd.append(mtn.name)
-                    hd.append('Tower Clip (if used)')
-                    hd.append('Input Meter STS number')
-                    hd.append('Meter Enclosure used?')
-                    hd.append('Colours of Meter Seal Installed')
-
-                    ms.append(hd)
-                    sn = 1
-                    for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,):
                         
-                        phase = Meter.objects.get(meter_no=service.new_meter).phase if Meter.objects.filter(meter_no=service.new_meter).exists() else "Unknown"
-                        line = [
-                            sn,
-                            service.location.loc_id,
-                            service.contractor.company,
-                            service.spn,
-                            service.service_date,
-                            service.phase,
-                            service.gps_code,
-                            service.service_type.name
+
+                        foc_summ = book.active
+                        foc_summ.title = "1.2 Summary FOC"
+                        foc_sum_hd = ["No","Contractor","Total"]
+                        for so in ServiceType.objects.all().order_by('name'):
+                            foc_sum_hd.append(so.name)
+                        foc_summ.append(foc_sum_hd)
+
+                        fosn = 1
+                        for foc in Contractor.objects.filter(is_installer=True).order_by('company'):
+                            total_jobs = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,is_boxed=True).count()
+                            
+                            if total_jobs > 0:
+                                li = [fosn,foc.company,total_jobs]
+                                for so in ServiceType.objects.all().order_by('name'):
+                                    this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,service_type=so,is_boxed=True).count()
+                                    li.append(this_total)
+                                
+                                foc_summ.append(li)
+                                fosn += 1
+                        
+
+
+                        sheet = book.create_sheet(title = "Installations")
+                        
+
+                        sheet.append(["DATE","METER","OLD METER","SPN","JOB TYPE","FOC"])
+                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,is_boxed=True):
+                            sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+
+
+                        # summary consumption
+                        mcs = book.create_sheet(title="Consumption Summary")
+                        mcs.append(["ITEM NAME","UNIT","CONCUMNED","WASTAGE","WASTAGE QTY","TOTAL CONSUMPTION","AVG CONSUMPTION"])
+                        for mat in InventoryMaterial.objects.all():
+                            from django.db.models import Sum
+                            
+
+                            
+                            consumned = MaterialOrderItem.objects.filter(
+                                service_order__service_date__gte=start_date,
+                                service_order__service_date__lte=end_date,
+                                material=mat,
+                                service_order__is_boxed=True
+                            ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+                            
+                            if consumned > 0:
+                                
+                                mcs.append(
+                                    [mat.name,"",consumned,"","",consumned,Decimal(consumned)/Decimal(days_count)]
+                                )
+
+                        ## create material consumption
+                        
+                        ms = book.create_sheet(title="3.2 Material Consumption")
+                        hd = ["SN","DISTRICT","FOC","SPN","INSTALL DATE","METER TYPE","GPS","INSTALLATION TYPE"]
+                        for mtn in InventoryMaterial.objects.filter(is_issue=True).order_by('name'):
+                            hd.append(mtn.name)
+                        hd.append('Tower Clip (if used)')
+                        hd.append('Input Meter STS number')
+                        hd.append('Meter Enclosure used?')
+                        hd.append('Colours of Meter Seal Installed')
+
+                        ms.append(hd)
+                        sn = 1
+                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,is_boxed=True):
+
+                            # check if old meter is boxed
+                        
+                            if True:
+                            
+                                phase = Meter.objects.get(meter_no=service.new_meter).phase if Meter.objects.filter(meter_no=service.new_meter).exists() else "Unknown"
+                                line = [
+                                    sn,
+                                    service.location.loc_name,
+                                    service.contractor.company,
+                                    service.spn,
+                                    service.service_date,
+                                    service.phase,
+                                    service.gps_code,
+                                    service.service_type.name
+                                ]
+
+                                for mtn in InventoryMaterial.objects.filter(is_issue=True).order_by('name'):
+                                    used_qty = MaterialOrderItem.objects.filter(material=mtn,service_order=service).aggregate(total=Sum('quantity'))['total'] or 0
+                                    line.append(used_qty)
+
+                                line.append("YES")
+                                line.append("YES")
+                                line.append(service.new_meter)
+                                line.append("BLUE")
+                                ms.append(line)
+                                sn += 1
+
+
+                        # service count
+                        sc = book.create_sheet(title="Count By Service")
+                        sc.append(["NAME","TOTAL"])
+                        for st in ServiceType.objects.all():
+                            name = st.name
+                            total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,service_type=st,is_boxed=True).count()
+                            if total > 0:
+                                sc.append([name,total])
+
+                        # 3.3 Material Inventory Reciept
+                        mir = book.create_sheet(title="3.3 Inventory Reciept")
+                        from datetime import date, timedelta
+                        mirhd = ["No","Material Description","Unit of Measurement","Total Request"]
+                        
+                        months_data = []
+                        year = date.today().year
+                        from datetime import datetime
+                        if isinstance(end_date, str):
+                            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+                        for month in range(1, end_date.month + 1):
+                            start_date_of_month = date(year, month, 1)
+                            if month == 12:
+                                next_month = date(year + 1, 1, 1)
+                            else:
+                                next_month = date(year, month + 1, 1)
+                            end_date_of_month = next_month - timedelta(days=1)
+                            month_name_yy = start_date_of_month.strftime("%b'%y")  # e.g. Jun'24
+                            lx = [start_date_of_month,end_date_of_month,month_name_yy]
+                            months_data.append({
+                                'start':start_date_of_month,
+                                'end':end_date_of_month,
+                                'name':month_name_yy
+                            })
+                            mirhd.append(month_name_yy)
+                        mirhd.append("Total Receipts from ECG")
+                        mirhd.append("Balance to be Received from ECG")
+
+                        mir.append(mirhd)
+
+                        mirsn = 1
+                        for mirmat in InventoryMaterial.objects.filter(is_issue=True):
+                            total_request = mirmat.required_qty
+                            legend_recieved = 0
+                            li = [mirsn,mirmat.name,mirmat.uom,total_request]
+                            print(months_data)
+                            for mt in months_data:
+                                print(mt)
+                                total_recieved = mirmat.in_by_date_range(mt.get('start'),mt.get('end'))
+                                li.append(total_recieved)
+                                legend_recieved += total_recieved
+                            
+                            li.append(legend_recieved)
+                            li.append(total_request-legend_recieved)
+                            mir.append(li)
+                            mirsn += 1
+
+
+                        # 3.4 Inventory Tracking
+                        itr = book.create_sheet(title="3.4 Inventory Tracking")
+                        itrhd = ["No","Material Description","UNIT","TOTAL RECIEPT"]
+                        for mt in months_data:
+                            itrhd.append(mt.get('name'))
+                        itrhd.append("Total Utilized by FOCs")
+                        itrhd.append("Stock Balance with Supplier")
+                        itr.append(itrhd)
+                        mirsn = 1
+                        for mirmat in InventoryMaterial.objects.filter(is_issue=True):
+                            total_recieved =  mirmat.in_by_date_range(mt.get('start'),mt.get('end'))
+                            legend_usage = 0
+
+                            li = [mirsn,mirmat.name,mirmat.uom,total_recieved]
+
+                            print(months_data)
+                            for mt in months_data:
+                                print(mt)
+                                total_used = mirmat.used_by_date_range(mt.get('start'),mt.get('end'),True)
+                                li.append(total_used)
+                                legend_usage += total_used
+                            
+                            li.append(legend_usage)
+                            li.append(total_recieved-legend_usage)
+                            itr.append(li)
+                            mirsn += 1
+
+                        #4.1 Summary_Retired Materials
+                        srm_sheet = book.create_sheet(title='4.1 Summary Retired Materials')
+                        srm_hd = ["No","Disctict","Energy Meter","Meter Enclosure","MCB/ MCCB/ FUSE","Cables etc","Burnt Meters","Stolen Meters"]
+                        srm_sheet.append(srm_hd)
+
+                        
+                        risn = 1
+                        end_date = data.get('end_date')
+                        start_date = data.get('start_date')
+
+                        for loc in Location.objects.all():
+                            
+                            total_removed_meters = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date,box__location=loc).count()
+                            print(start_date,"to",end_date)
+                            if total_removed_meters > 0:
+                                ri = [risn,loc.loc_name,total_removed_meters]
+                            
+                                srm_sheet.append(ri)
+                                risn += 1
+                        
+
+                        # 4.2 Retiring Material
+                        rm_sheet = book.create_sheet("4.2 Retiring Material")
+                        rm_hd = ["No","Disctrict","FOC Company Name","SPN","OLD METER NUMBER","Meter Phase(1Ø/3Ø)",
+                        "Meter Year of Manufacturing",
+                        "GPS/Digital Address",
+                        "Installation Type",
+                        "Meter Display ON/OFF",
+                        "Faulty Meter Make (To be Replaced)",
+                        "MCB/ MCCB/ FUSE Retired?(Yes/No)",
+                        " Meter Enclosure Retired?(Yes/No)",
+                        "Length of existing cable retired (in meters)"
                         ]
 
-                        for mtn in InventoryMaterial.objects.filter(is_issue=True).order_by('name'):
-                            used_qty = MaterialOrderItem.objects.filter(material=mtn,service_order=service).aggregate(total=Sum('quantity'))['total'] or 0
-                            line.append(used_qty)
+                        rm_sheet.append(rm_hd)
 
-                        line.append("YES")
-                        line.append("YES")
-                        line.append(service.new_meter)
-                        line.append("BLUE")
-                        ms.append(line)
-                        sn += 1
+                        rmline = 1
+                        for loc in Location.objects.all():
+                            removed = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date,box__location=loc)
+                            if removed.count() > 0:
+                                for rem in removed:
+                                    li = [rmline,loc.loc_name,rem.foc.company,rem.spn,rem.old_meter_no,rem.phase,rem.make_year,"GPS ADDRESS","","ON",rem.manufacturere,"NO","YES","0"]
+                                    rm_sheet.append(li)
+                                    rmline += 1
 
+                        #4.3 Old Meter Reading
+                        omr_sheet = book.create_sheet(title="4.3 Old Meter Reading")
+                        omr_hd = ["NO","District","SPN","Old Meter Number","Meter Phase(1Ø/3Ø)","Installation Type(Faulty/Illegal Meter Replacement)","Meter Display ON/OFF"," Record Final KWh Reading from Meter Display"]
+                        omr_sheet.append(omr_hd)
+                        omrline = 1
+                        for loc in Location.objects.all():
+                            
+                            removed = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date,box__location=loc)
+                            if removed.count() > 0:
+                                for rem in removed:
+                                    li = [omrline,loc.loc_name,rem.spn,rem.old_meter_no,rem.phase,"","ON",rem.final_readings]
+                                    omr_sheet.append(li)
+                                    omrline += 1
 
-                    # service count
-                    sc = book.create_sheet(title="Count By Service")
-                    sc.append(["NAME","TOTAL"])
-                    for st in ServiceType.objects.all():
-                        name = st.name
-                        total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,service_type=st).count()
-                        if total > 0:
-                            sc.append([name,total])
-
-                    # 3.3 Material Inventory Reciept
-                    mir = book.create_sheet(title="3.3 Inventory Reciept")
-                    from datetime import date, timedelta
-                    mirhd = ["No","Material Description","Unit of Measurement","Total Request"]
+                        # districts data
+                        
+                        for loc in Location.objects.all():
+                            name = loc.loc_name
+                            code = loc.loc_id
+                            this_sheet = book.create_sheet(title=f"{code} - {name}")
+                            hd = ["No","District","FOC Company Name","SPN","Date of Installation","Meter Type","GPS or Digital Address","Installation Type","Serial Number for Meter to be replaced","Is Meter serial number same as work order?","Cable Re-Routing Required","Input Meter STS number","Meter Enclosure used?","Colours of Meter Seal Installed","CIU Handed over to Consumer"]
+                            this_sheet.append(hd)
+                            mx = 1
+                            for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,location=loc):
+                                if len(service.old_meter_no) > 0:
+                                    if service.is_boxed:
+                                        rr = "YES" if service.is_routing else "NO"
+                                        is_same = service.sn_same_as_wo().get('is_same')
+                                        li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,service.service_type.name,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
+                                        mx += 1
+                                        this_sheet.append(li)
+                                else:
+                                    li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,service.service_type.name,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
+                                    mx += 1
+                                    this_sheet.append(li)
                     
-                    months_data = []
-                    year = date.today().year
-                    from datetime import datetime
-                    if isinstance(end_date, str):
-                        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
-                    for month in range(1, end_date.month + 1):
-                        start_date_of_month = date(year, month, 1)
-                        if month == 12:
-                            next_month = date(year + 1, 1, 1)
-                        else:
-                            next_month = date(year, month + 1, 1)
-                        end_date_of_month = next_month - timedelta(days=1)
-                        month_name_yy = start_date_of_month.strftime("%b'%y")  # e.g. Jun'24
-                        lx = [start_date_of_month,end_date_of_month,month_name_yy]
-                        months_data.append({
-                            'start':start_date_of_month,
-                            'end':end_date_of_month,
-                            'name':month_name_yy
-                        })
-                        mirhd.append(month_name_yy)
-                    mirhd.append("Total Receipts from ECG")
-                    mirhd.append("Balance to be Received from ECG")
+                    else:
+                        sheet = book.active
+                        sheet.title = "Meters Installed"
+                        sn = 1
+                        sheet.append(["SN","SERVICE","METER","PHASE","FOC","BOX"])
+                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
+                            li = [sn,service.service_type.name,service.new_meter,service.phase,service.contractor.company,service.box_no]
+                            sheet.append(li)
+                            sn += 1
+                            
 
-                    mir.append(mirhd)
-
-                    mirsn = 1
-                    for mirmat in InventoryMaterial.objects.filter(is_issue=True):
-                        total_request = mirmat.required_qty
-                        legend_recieved = 0
-                        li = [mirsn,mirmat.name,mirmat.uom,total_request]
-                        print(months_data)
-                        for mt in months_data:
-                            print(mt)
-                            total_recieved = mirmat.in_by_date_range(mt.get('start'),mt.get('end'))
-                            li.append(total_recieved)
-                            legend_recieved += total_recieved
-                        
-                        li.append(legend_recieved)
-                        li.append(total_request-legend_recieved)
-                        mir.append(li)
-                        mirsn += 1
-
-
-                    # 3.4 Inventory Tracking
-                    itr = book.create_sheet(title="3.4 Inventory Tracking")
-                    itrhd = ["No","Material Description","UNIT","TOTAL RECIEPT"]
-                    for mt in months_data:
-                        itrhd.append(mt.get('name'))
-                    itrhd.append("Total Utilized by FOCs")
-                    itrhd.append("Stock Balance with Supplier")
-                    itr.append(itrhd)
-                    mirsn = 1
-                    for mirmat in InventoryMaterial.objects.filter(is_issue=True):
-                        total_recieved =  mirmat.in_by_date_range(mt.get('start'),mt.get('end'))
-                        legend_usage = 0
-
-                        li = [mirsn,mirmat.name,mirmat.uom,total_recieved]
-
-                        print(months_data)
-                        for mt in months_data:
-                            print(mt)
-                            total_used = mirmat.used_by_date_range(mt.get('start'),mt.get('end'))
-                            li.append(total_used)
-                            legend_usage += total_used
-                        
-                        li.append(legend_usage)
-                        li.append(total_recieved-legend_usage)
-                        itr.append(li)
-                        mirsn += 1
-
-                    #4.1 Summary_Retired Materials
-                    srm_sheet = book.create_sheet(title='4.1 Summary Retired Materials')
-                    srm_hd = ["No","Disctict","Energy Meter","Meter Enclosure","MCB/ MCCB/ FUSE","Cables etc","Burnt Meters","Stolen Meters"]
-                    srm_sheet.append(srm_hd)
-
-                    
-                    risn = 1
-                    end_date = data.get('end_date')
-                    start_date = data.get('start_date')
-
-                    for loc in Location.objects.all():
-                        
-                        total_removed_meters = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date,box__location=loc).count()
-                        print(start_date,"to",end_date)
-                        ri = [risn,loc.loc_id,total_removed_meters]
-                        
-                        srm_sheet.append(ri)
-                        risn += 1
-                    
-
-                    # 4.2 Retiring Material
-                    rm_sheet = book.create_sheet("4.2 Retiring Material")
-                    rm_hd = ["No","Disctrict","FOC Company Name","SPN","OLD METER NUMBER","Meter Phase(1Ø/3Ø)",
-                    "Meter Year of Manufacturing",
-                    "GPS/Digital Address",
-                    "Installation Type",
-                    "Meter Display ON/OFF",
-                    "Faulty Meter Make (To be Replaced)",
-                    "MCB/ MCCB/ FUSE Retired?(Yes/No)",
-                    " Meter Enclosure Retired?(Yes/No)",
-                    "Length of existing cable retired (in meters)"
-                    ]
-
-                    rm_sheet.append(rm_hd)
-
-                    filename = f"static/general/tmp/instalations.xlsx"
+                    filename = f"static/general/tmp/instalations_{start_date.replace("-","_")}_to_{end_date.replace("-","_")}.xlsx"
                     book.save(filename)
 
                     success_response['message'] = filename
@@ -2793,6 +2882,11 @@ def interface(request):
                 service = Service.objects.get(id=id)
                 service.delete()
                 success_response['message'] = "Service Deleted Successfully"
+
+            elif module == "service_type":
+                print(data)
+                ServiceType.objects.get(pk=data.get('pk')).delete()
+                success_response['message'] = "Service Type Deleted Successfully"
 
             elif module == 'delete_transfer':
                 entry_no = data.get('entry_no')

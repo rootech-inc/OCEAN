@@ -47,7 +47,9 @@
                 let services = res.message;
                 let tr = '';
                 services.forEach(service => {
-                    tr += `<tr><td>${service.code}</td><td>${service.name}</td><td>${service.description}</td><td>${service.rate}</td><td><button class="btn btn-primary" onclick="editService(${service.id})">Edit</button></td></tr>`;
+                    tr += `<tr><td>${service.code}</td><td>${service.name}</td><td>${service.description}</td><td>${service.rate}</td>
+                        <td><a class="text-info" href='javascript:void(0)' onclick="editService(${service.id})"><i class='fa fa-edit'></i></a></td>
+                        </tr>`;
                 });
 
                 $('#services-table').html(tr);
@@ -172,7 +174,11 @@
                     
                     let tr = '';
                     services_types.forEach(service_type => {
-                        tr += `<tr><td>${service_type.name}</td><td>${service_type.description}</td><td><a href='/ssml/service-type/view/${service_type.id}/' class="btn btn-primary">View</a></td></tr>`;
+                        tr += `<tr><td>${service_type.name}</td><td>${service_type.description}</td>
+                                <td>
+                                <a href='/ssml/service-type/view/${service_type.id}/' class="text-info ms-2"><i class='fa fa-eye'></i></a>
+                                <a href='javascript:void()' data-pk='${service_type.id}' class="text-danger ms-2 delete_service"><i class='fa fa-trash'></i></a></td>
+                            </tr>`;
                     });
 
                     let body = `
@@ -193,6 +199,7 @@
                     `;
                     amodal.setTitleText('Service Types');
                     amodal.setBodyHtml(body);
+                    amodal.setSize("L")
                     amodal.setFooterHtml('<button class="btn btn-primary" id="add_service_type">Add Service Type</button>');
                     amodal.show();
 
@@ -239,6 +246,35 @@
 
                     });
                 
+                    $('.delete_service').click(async function(){
+                        if(confirm("Are You Sure")){
+                            let pk = $(this).data('pk');
+                            let payload = {
+                                module:'service_type',
+                                data:{
+                                    pk:pk
+                                }
+                            }
+                            
+
+                            console.table(payload)
+
+                            await api.v2("DELETE",payload,'/ssml/api/').then(response => {
+                                if(anton.IsRequest(response,true)){
+                                    kasa.info("Deleted Proper")
+                                   
+                                }
+                            }).catch(error => {
+                                kasa.info(error)
+                            })
+                        } else {
+                            kasa.info("Process Cancelled")
+                        }
+                        
+
+
+                    })
+
                 } else {
                     kasa.response(res)
                 }

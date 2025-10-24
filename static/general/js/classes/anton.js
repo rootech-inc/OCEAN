@@ -500,6 +500,10 @@ class Loader {
     hide() {
         $('#loader').hide()
     }
+
+    setMessage(message=""){
+        $("#loader_message").html(message)
+    }
 }
 
 class Cookies{

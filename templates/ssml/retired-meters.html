@@ -154,30 +154,73 @@
 
                         let form = ``
                         form += `<select class='form-control mb-2 rounded-0' id='loc'>${options}</select>`
-                        form += `<label for='boxx_no'>Box No.</label><input type='number' class='form-control mb-2 rounded-0' id='boxx_no' >`
+                        form += `<label for='boxx_no'>Box No.</label><input type='number' class='form-control mb-2 rounded-0' id='from' >`
+                        form += `<label for='boxx_no'>Box No.</label><input type='number' class='form-control mb-2 rounded-0' id='to' >`
                         amodal.setBodyHtml(form)
                         amodal.setFooterHtml(`<button id='sync_box' class='btn btn-info'>SYNC</button>`)
                         amodal.setTitleHtml("Import Retired Meters")
                         amodal.show()
                         
                         $('#sync_box').click(async function(){
-                            let ids = ['mypk','loc','boxx_no']
+                            let ids = ['mypk','loc','from','to']
 
                             if(anton.validateInputs(ids)){
                                 loader.show()
-                                let payload = {
-                                    "module":"sync_retired_meters",
-                                    "data":{
-                                        "loc_id":$('#loc').val(),
-                                        "mypk":$('#mypk').val(),
-                                        "box_no":$('#boxx_no').val()
-                                    }
-                                }
 
-                                await api.v2('PUT',payload,'/ssml/api/').then(response => {
-                                    kasa.confirm(response['message'],1,'here')
-                                    loader.hide()
-                                }).catch(error => {kasa,error(error);loader.hide()})
+                                let fromVal = parseInt($('#from').val());
+                                let toVal = parseInt($('#to').val());
+                                if (isNaN(fromVal) || isNaN(toVal)) {
+                                    kasa.error("Both 'from' and 'to' must be numbers.");
+                                    loader.hide();
+                                    return;
+                                }
+                                if (toVal < fromVal) {
+                                    kasa.error("'to' value must be greater than or equal to 'from' value.");
+                                    loader.hide();
+                                    return;
+                                }
+                                for (let i = fromVal; i <= toVal; i++) {
+                                    let payload = {
+                                        "module": "sync_retired_meters",
+                                        "data": {
+                                            "loc_id": $('#loc').val(),
+                                            "mypk": $('#mypk').val(),
+                                            "box_no": i
+                                        }
+                                    };
+
+                                    // We should await each call in sequence if necessary,
+                                    // or you could use Promise.all for parallel, but do sequential for clarity
+                                    loader.setMessage(`Syncing Box: ${i}`)
+                                    await api.v2('PUT', payload, '/ssml/api/')
+                                        .then(response => {
+                                            if(anton.IsRequest(response)){
+                                                loader.setMessage(`BOX ${i}: synced`)
+                                            } else {
+                                                loader.setMessage
+                                                (`BOX ${i}: ${response.message}`)
+                                            }
+                                        })
+                                        .catch(error => {
+                                            kasa.error(`Box #${i}: ` + error);
+                                        });
+                                }
+                                loader.hide();
+                                kasa.confirm("Meters Synced",1,'here')
+
+                                // let payload = {
+                                //     "module":"sync_retired_meters",
+                                //     "data":{
+                                //         "loc_id":$('#loc').val(),
+                                //         "mypk":$('#mypk').val(),
+                                //         "box_no":$('#boxx_no').val()
+                                //     }
+                                // }
+
+                                // await api.v2('PUT',payload,'/ssml/api/').then(response => {
+                                //     kasa.confirm(response['message'],1,'here')
+                                //     loader.hide()
+                                // }).catch(error => {kasa,error(error);loader.hide()})
                             }
                         })
 

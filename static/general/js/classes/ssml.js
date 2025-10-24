@@ -4487,6 +4487,7 @@ class SSML {
 
     monthInvReport(){
         let form = "";
+        form += fom.selectv2('for_invoice',[{val:"YES",desc:"YES"},{val:"NO",desc:"NO"}])
         form += fom.date('start_date','Start Date',true)
         form += fom.date('end_date','End Date',true)
         amodal.setBodyHtml(form)
@@ -4495,7 +4496,7 @@ class SSML {
         amodal.show()
 
         $('#month_inv_report').click(async function(){
-            let ids = ['start_date','end_date','mypk']
+            let ids = ['for_invoice','start_date','end_date','mypk']
             if(anton.validateInputs(ids)){
                 let payload = {
                     module:'month_inv_report',

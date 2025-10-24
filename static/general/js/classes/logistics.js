@@ -60,6 +60,7 @@ class Logistics {
         await this.getDeliveries('*','*',enc).then(response => {
             if(anton.IsRequest(response)){
                 let message = response.message[0];
+                console.table(message)
                 $('.source').text(message.source)
                 $('.destination').text(message.destination)
                 $('.description').text(message.description)
@@ -81,7 +82,7 @@ class Logistics {
                         break;
                     case 'in_transit':
                         btn_color = 'success'
-                        btn_text = 'Complete'
+                        btn_text = 'END'
                         btn_status = 'delivered'
                         bu_ht += `<button  class="btn btn-sm btn-info update_trip ms-2"><i class="fa fa-upload"></i></button>`;
                         break;
