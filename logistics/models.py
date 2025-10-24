@@ -214,6 +214,7 @@ class DeliveryRequest(models.Model):
                 "valid":True if self.vehicle else False,
                 "plate_number":self.vehicle.plate_number if self.vehicle else "Not Assigned",
                 "description":self.vehicle.description if self.vehicle else "Not Assigned",
+                "pk":self.vehicle.pk if self.vehicle else 0,
             },
             "driver":{
                 "valid":True if self.driver else False,

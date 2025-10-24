@@ -45,6 +45,7 @@ def delivery_details(request,enc):
         }
     }
     context['enc'] = enc
+    context['car_pk'] = DeliveryRequest.objects.get(enc=enc).obj()['vehicle']['pk'] if DeliveryRequest.objects.filter(enc=enc).exists() else 0
     return render(request,'logistics/delivery_details.html',context=context)
 
 @login_required

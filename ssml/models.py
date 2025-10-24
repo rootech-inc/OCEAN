@@ -214,12 +214,12 @@ class InventoryMaterial(models.Model):
             doc_type='GR'
             ).aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
 
-    def used_by_date_range(self,start_date,end_date):
+    def used_by_date_range(self,start_date,end_date,is_boxed=False):
         return MaterialOrderItem.objects.filter(
             material=self,
             service_order__service_date__gte=start_date,
             service_order__service_date__lte=end_date,
-            material_type='is'
+            material_type='is',service_order__is_boxed=is_boxed
             ).aggregate(total_qty=models.Sum('quantity'))['total_qty'] or 0
     
     def cardex(self,loc='*'):
@@ -924,6 +924,8 @@ class ServiceOrder(models.Model):
     location = models.ForeignKey(Location,on_delete=models.CASCADE,null=False)
     gps_code = models.CharField(unique=False,null=True,blank=True,max_length=255,default="none")
     phase = models.CharField(unique=False,null=True,blank=True,max_length=255,default="1 phase")
+    is_boxed = models.BooleanField(default=False)
+    box_no = models.IntegerField(max_length=100,default=0)
 
     
 
@@ -936,6 +938,23 @@ class ServiceOrder(models.Model):
 
     def total_amount(self):
         return ServiceOrderItem.objects.filter(service_order=self).aggregate(total_amount=models.Sum('amount'))['total_amount'] or 0
+
+    def sn_same_as_wo(self):
+        if RetiredMetersTransactions.objects.filter(spn=self.spn).exists():
+
+            row =  RetiredMetersTransactions.objects.filter(spn=self.spn).last()
+            
+            is_same = "NO" if len(row.diff_old_meter_no) == 0 else "YES"
+            return {
+                "application":True,
+                "is_same" : is_same
+            }
+
+        else:
+            return {
+                "application":False,
+                "is_same":"NO"
+            }
 
     def materials(self):
         obj = []

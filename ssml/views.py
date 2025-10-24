@@ -581,7 +581,6 @@ def upload_service_order(request):
             if re_routing == "Without Rerouting":
                 routing = False
             else:
-                service_order_type = f"Re-routing"
                 routing = True
 
             

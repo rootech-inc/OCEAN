@@ -60,6 +60,8 @@ def interface(request):
 
             elif module == 'fuel_purchase':
                 vehicle = Vehicle.objects.get(pk=data.get('pk'))
+                trip_enc = data.get('trip_enc')
+                trip = DeliveryRequest.objects.get(enc=trip_enc)
                 amount = data.get('amount')
                 rate = data.get('rate')
                 litres = Decimal(amount) / Decimal(rate)
@@ -75,6 +77,12 @@ def interface(request):
                 )
 
                 print(enc)
+                DeliveryLog.objects.create(
+                    delivery=trip,
+                    title="Fuel Top Up",
+                    details=f"Fuel Purchase - Amount: {amount}, Rate: {rate}, Litres: {litres:.2f}",
+                    user=user
+                )
 
                 success_response['message'] = enc
 
