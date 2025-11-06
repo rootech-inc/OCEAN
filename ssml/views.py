@@ -554,7 +554,9 @@ def upload_service_order(request):
 
             order_status = row_dict['PREPAID SYNC STATUS']
             address = row_dict['DIGITAL ADDRESS']
-            phase = row_dict['REQUESTED METER PHASE'].lower() if row_dict.get('REQUESTED METER PHASE') else 'other'
+            phase = row_dict['REQUESTED METER PHASE'].lower() if row_dict.get('REQUESTED METER PHASE') else False
+            if not phase:
+                phase = row_dict['METER PHASE'].lower() if row_dict.get('METER PHASE') else 'other'
 
             # create meter
             if not Meter.objects.filter(meter_no=meter_no).exists():
@@ -613,6 +615,7 @@ def upload_service_order(request):
                 print("SERVICE TYPE",service.name)
                 print("ROUTING",routing)
                 print("NEW METER",meter_no)
+                print("PHASE",phase)
 
                 print("#" * 20)
                 
@@ -677,7 +680,9 @@ def upload_service_order(request):
                             created_by=request.user,
                             location=loc,
                             spn=spn,
-                            is_routing = routing
+                            is_routing = routing,
+                            phase=phase,
+                            gps_code=address,
                         )
                     # print(e)
                 # print(meter_no)
@@ -1288,3 +1293,16 @@ def petty_cash(request):
     }
 
     return render(request, 'ssml/accounts/petty-cash.html', context)
+
+@login_required()
+def post_transfer(request, entry_no):
+    page = {
+        'title': 'Post Transfer',
+        'nav': True
+    }
+    context = {
+        'page': page,
+        'entry_no': entry_no,
+        'transfer': TransferHd.objects.get(entry_no=entry_no)
+    }
+    return render(request, 'ssml/inventory/transfer_post.html', context)

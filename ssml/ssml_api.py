@@ -143,7 +143,15 @@ def interface(request):
                                 )
                     box = RetiredMetersBox.objects.get(box_no=box_no,location=location)
 
-                    worksheet = sh.worksheet(sheet_name)
+                    # Make sheetname lookup case insensitive
+                    worksheet = None
+                    all_worksheets = sh.worksheets()
+                    for ws in all_worksheets:
+                        if ws.title.lower() == sheet_name.lower():
+                            worksheet = ws
+                            break
+                    if worksheet is None:
+                        raise Exception(f"Worksheet '{sheet_name}' (case-insensitive) not found in the Google Sheet.")
                 
                     # Loop from row 7 to 31 (inclusive) and print each row's values
                     for row in worksheet.get_all_values()[6:31]:
@@ -158,6 +166,7 @@ def interface(request):
                         if Contractor.objects.filter(company__icontains=foc).exists():
                             contractor = Contractor.objects.filter(company__icontains=foc).last()
                         else:
+                            print("CANNOT SEE FOC")
                             raise Exception("Cannot Find FOC")
                         # print(box.box_no)
                         RetiredMetersTransactions.objects.filter(old_meter_no=old_meter_no).delete()
@@ -1514,9 +1523,9 @@ def interface(request):
                         sheet = book.active
                         sheet.title = "Meters Installed"
                         sn = 1
-                        sheet.append(["SN","SERVICE","METER","PHASE","FOC","BOX"])
+                        sheet.append(["SN","DATE INSTALLED","SERVICE","METER","SPN","OLD METER","PHASE","FOC","BOX","ROUTING",])
                         for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
-                            li = [sn,service.service_type.name,service.new_meter,service.phase,service.contractor.company,service.box_no]
+                            li = [sn,service.service_date,service.service_type.name,service.new_meter,service.spn,service.old_meter_no,service.phase,service.contractor.company,service.box_no,service.is_routing]
                             sheet.append(li)
                             sn += 1
                             
@@ -1985,13 +1994,14 @@ def interface(request):
 
                     line = 1
                     for tran in entry.transactions():
+                        recieved = tran.get('received_qty') if entry.is_posted else ""
                         dummy_data.append(
-                            [line,tran.get('barcode'),tran.get('name'),tran.get('oum'),tran.get('total_qty'),'']
+                            [line,tran.get('barcode'),tran.get('name'),tran.get('oum'),tran.get('total_qty'),recieved]
                         )
                         line += 1
                     for row in dummy_data:
                         for i, item in enumerate(row):
-                            align = "C" if i in [0,3,4] else "L"
+                            align = "C" if i in [0,3,4,5] else "L"
                             pdf.cell(col_widths[i], 10, str(item), border=1, align=align)
                         pdf.ln()
 
@@ -3314,7 +3324,7 @@ def interface(request):
                                 print(mt.qty,'of',mt.material.name,'added to',service.new_meter)
                                 created += 1
                             except Exception as e:
-                                print(e)
+                                print("NO NEED")
 
                 success_response['message'] = f"UPDATED {updated}, CREATED:{created}"
 
@@ -3451,11 +3461,17 @@ def interface(request):
 
             elif module == 'post_transfer':
                 entry_no = data.get('entry_no','*')
-                if entry_no == '*':
-                    transfers = TransferHd.objects.filter(is_valid=True,is_posted=False,is_sent=True)
-                else:
-                    transfers = TransferHd.objects.filter(is_valid=True,is_posted=False,is_sent=True,entry_no=entry_no)
+                
+                transfers = TransferHd.objects.filter(is_valid=True,is_posted=False,is_sent=True,entry_no=entry_no)
 
+                # update recieved quantity
+                for tran in data.get('trans'):
+                    tran_id = tran.get('id')
+                    tranx = TransferTr.objects.get(id=tran_id)
+                    tranx.received_qty = tran.get('received_qty')
+                    tranx.save()
+
+                # make cardex
                 for tr in transfers:
                     loc_from = tr.loc_fr
                     loc_to = tr.loc_to
@@ -3466,7 +3482,7 @@ def interface(request):
                         material_id = tran.get('material_id')
                         print(material_id)
                         material = InventoryMaterial.objects.get(id=material_id)
-                        total = Decimal(tran.get('sent_qty') ) * Decimal(tran.get('pack_qty'))
+                        total = Decimal(tran.get('received_qty') ) * Decimal(tran.get('pack_qty'))
 
                         Cardex.objects.create(
                             doc_type='TRF',

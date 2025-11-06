@@ -62,6 +62,7 @@ urlpatterns = [
     path('master/location_master/',views.location_master,name='ssml_location_master'),
     path('inventory/trenasfer/',views.transfer,name='ssml_transfer'),
     path('inventory/transfer/add/',views.add_transfer,name='ssml_add_transfer'),
+    path('inventory/transfer/post/<entry_no>/',views.post_transfer,name='ssml_post_transfer'),
     path('sync_retired_meter/',views.sync_retired_meter,name='sync_retired_meter'),
     path('approve_document/',views.approve_document, name='ssml_approve_document'),
     path('foc-portal/',views.foc_portal,name='ssml_foc_portal'),

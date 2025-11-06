@@ -3825,7 +3825,8 @@ class SSML {
 
     async postTransfter(entry_no = '*'){
         //loader.show()
-
+        windowPopUp(`/ssml/inventory/transfer/post/${entry_no}/`,"Post Transfer",1024,800)
+        return
         let form = `
             <form id="post_document" method='POST' action='/ssml/approve_document/' enctype="multipart/form-data">
                 
