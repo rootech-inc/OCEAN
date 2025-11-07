@@ -578,6 +578,7 @@ def upload_service_order(request):
             geo_code = row_dict['GEOCODE'] if row_dict.get('GEOCODE') else meter_no
             service_order_type = row_dict['SERVICE ORDER TYPE']
             re_routing = row_dict["RE-ROUTING TYPE"] if row_dict.get('RE-ROUTING TYPE') else 'Without Rerouting'
+            installation_type = row_dict['INSTALLATION TYPE'] if row_dict.get('INSTALLATION TYPE') else 'UNKNOWN'
             routing = False
             
             if re_routing == "Without Rerouting":
@@ -659,7 +660,8 @@ def upload_service_order(request):
                             spn=spn,
                             is_routing = routing,
                             gps_code=address,
-                            phase=phase
+                            phase=phase,
+                            installation_type=installation_type
                         ).save()
                     # print("Service Created")
                 except Exception as e:
@@ -683,6 +685,7 @@ def upload_service_order(request):
                             is_routing = routing,
                             phase=phase,
                             gps_code=address,
+                            installation_type=installation_type
                         )
                     # print(e)
                 # print(meter_no)

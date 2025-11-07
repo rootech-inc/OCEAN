@@ -132,6 +132,8 @@ def interface(request):
                 sheet_url = 'https://docs.google.com/spreadsheets/d/1RrN2zKophgm3Dz9PzewqbNfdU8B8hbnFPdBwVoZv4YI/edit?usp=sharing'
                 sh = gc.open_by_url(sheet_url)
 
+                print("CONNECTED TO GOOGLE SHEET")
+
                 try:
 
                     print("BOX NUMBER:",box_no)
@@ -1269,12 +1271,18 @@ def interface(request):
 
                         fosn = 1
                         for foc in Contractor.objects.filter(is_installer=True).order_by('company'):
-                            total_jobs = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,is_boxed=True).count()
+                            total_jobs = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc).count()
                             
                             if total_jobs > 0:
                                 li = [fosn,foc.company,total_jobs]
                                 for so in ServiceType.objects.all().order_by('name'):
-                                    this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,service_type=so,is_boxed=True).count()
+
+                                    if so.name in ['Replacement', 'Regularization']:
+                                        this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,service_type=so,is_boxed=True).count()
+                                    else:
+                                        this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,service_type=so).count()
+                                    print(foc.company,so.name,this_total)
+                                    print("--------------------------------")
                                     li.append(this_total)
                                 
                                 foc_summ.append(li)
@@ -1286,8 +1294,21 @@ def interface(request):
                         
 
                         sheet.append(["DATE","METER","OLD METER","SPN","JOB TYPE","FOC"])
-                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,is_boxed=True):
-                            sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
+                            print(service.service_type.name)
+                            if service.service_type.name in ['Replacement', 'Regularization']:
+                                
+                                if service.is_boxed:
+                                    print(f"BOXING EXPECTED FOR {service.service_type.name} and FOUND")
+                                    sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+                                else:
+                                    print(f"BOXING EXPECTED FOR {service.service_type.name} and NOT FOUND")
+                            else:
+                                
+                                print(f"BOXING NOT EXPECTED FOR {service.service_type.name}")
+                                sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+
+                            print("--------------------------------")
 
 
                         # summary consumption
@@ -1528,9 +1549,10 @@ def interface(request):
                             li = [sn,service.service_date,service.service_type.name,service.new_meter,service.spn,service.old_meter_no,service.phase,service.contractor.company,service.box_no,service.is_routing]
                             sheet.append(li)
                             sn += 1
-                            
-
-                    filename = f"static/general/tmp/instalations_{start_date.replace("-","_")}_to_{end_date.replace("-","_")}.xlsx"
+                    
+                    import uuid
+                    unique_id = uuid.uuid4()
+                    filename = f"static/general/tmp/{for_invoice}_{unique_id}_{start_date.replace('-''_')}_to_{end_date.replace('-','_')}.xlsx"
                     book.save(filename)
 
                     success_response['message'] = filename
