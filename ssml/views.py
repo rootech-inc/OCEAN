@@ -526,10 +526,13 @@ def upload_service_order(request):
         # service_rates = ServiceTypeServices.objects.filter(service_type=service)
 
         cts = 0
-
+      
+        r_count = 1
+        r_len = sheet.max_row - 1 
         for row in sheet.iter_rows(min_row=2, values_only=True):
             cts += 1
             row_dict = dict(zip(headers, row))
+            # print(row_dict)
             customer = row_dict['CUSTOMER NAME']
             customer_phone = row_dict['CUSTOMER PHONE']
             contractor_code = row_dict['CONTRACTOR CODE']
@@ -612,13 +615,17 @@ def upload_service_order(request):
                 hd = [service_order_type,customer,customer_phone,contractor.company,resolved_on,meter_no,ip_address]
 
                 print("#" * 20)
+                print(r_count , "/" , r_len)
                 print("SPN",spn)
                 print("SERVICE TYPE",service.name)
                 print("ROUTING",routing)
                 print("NEW METER",meter_no)
                 print("PHASE",phase)
+                print("INSTALLATIO TYPE",installation_type)
 
                 print("#" * 20)
+
+                r_count += 1
                 
 
                 if ServiceOrder.objects.filter(old_meter_no=old_meter).exists():

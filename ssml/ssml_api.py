@@ -210,6 +210,10 @@ def interface(request):
 
                             if len(diff_old_meter_no) > 0:
                                 print("There is different meter_no")
+                                ServiceOrder.objects.filter(spn=spn).update(
+                                    is_boxed = True,
+                                    box_no = data.get('box_no')
+                                )
                             else:
                                 pass   
 
@@ -1544,15 +1548,15 @@ def interface(request):
                         sheet = book.active
                         sheet.title = "Meters Installed"
                         sn = 1
-                        sheet.append(["SN","DATE INSTALLED","SERVICE","METER","SPN","OLD METER","PHASE","FOC","BOX","ROUTING",])
+                        sheet.append(["SN","DATE INSTALLED","SERVICE","INSTALLATION TYPE","METER","SPN","OLD METER","PHASE","FOC","BOX","ROUTING","IS BOXED"])
                         for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
-                            li = [sn,service.service_date,service.service_type.name,service.new_meter,service.spn,service.old_meter_no,service.phase,service.contractor.company,service.box_no,service.is_routing]
+                            li = [sn,service.service_date,service.service_type.name,service.installation_type,service.new_meter,service.spn,service.old_meter_no,service.phase,service.contractor.company,service.box_no,service.is_routing]
                             sheet.append(li)
                             sn += 1
                     
                     import uuid
                     unique_id = uuid.uuid4()
-                    filename = f"static/general/tmp/{for_invoice}_{unique_id}_{start_date.replace('-''_')}_to_{end_date.replace('-','_')}.xlsx"
+                    filename = f"static/general/tmp/{for_invoice}_{unique_id}_{start_date}_to_{end_date}.xlsx"
                     book.save(filename)
 
                     success_response['message'] = filename
