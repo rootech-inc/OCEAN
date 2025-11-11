@@ -156,93 +156,116 @@ def interface(request):
                         raise Exception(f"Worksheet '{sheet_name}' (case-insensitive) not found in the Google Sheet.")
                 
                     # Loop from row 7 to 31 (inclusive) and print each row's values
-                    for row in worksheet.get_all_values()[6:31]:
+                    all_rows = worksheet.get_all_values()[6:]
+                    print(sheet_name, "has",len(all_rows),'rows')
+                    for row in all_rows:
                         empt,sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc = row[:22]
                         
                                                
                         
                         li = [sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc]
-                        print(li)
-                        
-                        # Example: get contractor with company like foc
-                        if Contractor.objects.filter(company__icontains=foc).exists():
-                            contractor = Contractor.objects.filter(company__icontains=foc).last()
-                        else:
-                            print("CANNOT SEE FOC")
-                            raise Exception("Cannot Find FOC")
-                        # print(box.box_no)
+                        print(sn,spn)
+                         # print(box.box_no)
                         RetiredMetersTransactions.objects.filter(old_meter_no=old_meter_no).delete()
-                        if len(box_no) > 0:
-                            if date_removed:
-                                from datetime import datetime
+                        if RetiredMetersTransactions.objects.filter(spn=spn).count() == 0:
+                        
+                            # Example: get contractor with company like foc
+                            if Contractor.objects.filter(company__icontains=foc).exists():
+                                foc = "INTERNAL"
+                            
+                            contractor = Contractor.objects.filter(company__icontains=foc).last()
+                            
+                           
+                            # print("Before Date")
+                            if len(box_no) > 0:
                                 try:
-                                    # Try MM/DD/YYYY HH:MM
-                                    date_removed = datetime.strptime(date_removed, '%m/%d/%Y %H:%M').date()
-                                except ValueError:
-                                    try:
-                                        # Try MM/DD/YYYY
-                                        date_removed = datetime.strptime(date_removed, '%m/%d/%Y').date()
-                                    except ValueError:
-                                        try:
-                                            # Try DD/MM/YYYY HH:MM
-                                            date_removed = datetime.strptime(date_removed, '%d/%m/%Y %H:%M').date()
-                                        except ValueError:
-                                            try:
-                                                # Try DD/MM/YYYY
-                                                date_removed = datetime.strptime(date_removed, '%d/%m/%Y').date()
-                                            except Exception as e:
-                                                print(f"Failed to parse date_removed '{date_removed}': {e}")
-                                                date_removed = None
+                                    # if date_removed:
+                                    #     from datetime import datetime
+                                    #     try:
+                                    #         # Try MM/DD/YYYY HH:MM
+                                    #         date_removed = datetime.strptime(date_removed, '%m/%d/%Y %H:%M').date()
+                                    #     except ValueError:
+                                    #         try:
+                                    #             # Try MM/DD/YYYY
+                                    #             date_removed = datetime.strptime(date_removed, '%m/%d/%Y').date()
+                                    #         except ValueError:
+                                    #             try:
+                                    #                 # Try DD/MM/YYYY HH:MM
+                                    #                 date_removed = datetime.strptime(date_removed, '%d/%m/%Y %H:%M').date()
+                                    #             except ValueError:
+                                    #                 try:
+                                    #                     # Try DD/MM/YYYY
+                                    #                     date_removed = datetime.strptime(date_removed, '%d/%m/%Y').date()
+                                    #                 except Exception as e:
+                                    #                     print(f"Failed to parse date_removed '{date_removed}': {e}")
+                                    #                     date_removed = None
 
-                            # # get proper removed date
-                            if ServiceOrder.objects.filter(spn=spn).exists():
-                                ct = ServiceOrder.objects.filter(spn=spn).count()
-                                date_removed = ServiceOrder.objects.filter(spn=spn).last().service_date
-                                ServiceOrder.objects.filter(spn=spn).update(
-                                    is_boxed = True,
-                                    box_no = data.get('box_no')
-                                )
+                                    # print('date removed:',date_removed)
+                                    # # get proper removed date
+                                    if ServiceOrder.objects.filter(spn=spn).exists():
+                                        ct = ServiceOrder.objects.filter(spn=spn).count()
+                                        date_removed = ServiceOrder.objects.filter(spn=spn).last().service_date
+                                        ServiceOrder.objects.filter(spn=spn).update(
+                                            is_boxed = True,
+                                            box_no = data.get('box_no')
+                                        )
+                                        
+                                        # print(f"THERE IS SPN {spn} {date_removed}")
+
+                                    else:
+                                        date_removed = timezone.now().date()
+                                        print("NO SPN")
+
+                                    if len(diff_old_meter_no) > 0:
+                                        print("There is different meter_no")
+                                        ServiceOrder.objects.filter(spn=spn).update(
+                                            is_boxed = True,
+                                            box_no = data.get('box_no')
+                                        )
+                                    else:
+                                        pass   
+
+                                    RetiredMetersTransactions(
+                                        box=box,
+                                        sn=sn,
+                                        spn=spn,
+                                        old_meter_no=old_meter_no,
+                                        diff_old_meter_no=diff_old_meter_no,
+                                        ppm_cm=ppm_cm,
+                                        final_readings=final_readings,
+                                        rem_wattage=rem_wattage,
+                                        rem_cedis=rem_cedis,
+                                        make_year=make_year,
+                                        manufacturere=manufacturere,
+                                        has_uiu=has_uiu,
+                                        phase=phase,
+                                        has_enclosure=has_enclosure,
+                                        has_sim_card=has_sim_card,
+                                        ret_cable_length=ret_cable_length,
+                                        rating=rating,
+                                        date_removed=date_removed,
+                                        reason=reason,
+                                        has_breaker=has_breaker,
+                                        foc=contractor
+                                    ).save()
+
+                                    print("DONE: ",li)
                                 
-                                print(f"THERE IS SPN {ct} {date_removed}")
+                                except Exception as e:
+                                    import sys
+                                    import traceback
+                                    exc_type, exc_value, exc_tb = sys.exc_info()
+                                    tb = traceback.extract_tb(exc_tb)
+                                    if tb:
+                                        line_number = tb[-1].lineno
+                                        print(f"[Exception on line {line_number}] {str(e)}")
+                                    else:
+                                        print(f"[Exception] {str(e)}")
 
                             else:
-                                print("NO SPN")
-
-                            if len(diff_old_meter_no) > 0:
-                                print("There is different meter_no")
-                                ServiceOrder.objects.filter(spn=spn).update(
-                                    is_boxed = True,
-                                    box_no = data.get('box_no')
-                                )
-                            else:
-                                pass   
-
-                            RetiredMetersTransactions(
-                                box=box,
-                                sn=sn,
-                                spn=spn,
-                                old_meter_no=old_meter_no,
-                                diff_old_meter_no=diff_old_meter_no,
-                                ppm_cm=ppm_cm,
-                                final_readings=final_readings,
-                                rem_wattage=rem_wattage,
-                                rem_cedis=rem_cedis,
-                                make_year=make_year,
-                                manufacturere=manufacturere,
-                                has_uiu=has_uiu,
-                                phase=phase,
-                                has_enclosure=has_enclosure,
-                                has_sim_card=has_sim_card,
-                                ret_cable_length=ret_cable_length,
-                                rating=rating,
-                                date_removed=date_removed,
-                                reason=reason,
-                                has_breaker=has_breaker,
-                                foc=contractor
-                            ).save()
-
-                            print("DONE: ",li)
-
+                                print("Invalid Box Number")
+                        else:
+                            print(spn,"SYNCED")
                 except gspread.exceptions.WorksheetNotFound:
                     raise Exception(f"Sheet '{sheet_name}' not found")
                 all_data = {}
@@ -1562,7 +1585,37 @@ def interface(request):
                     success_response['message'] = filename
                     response = success_response
                     
+                elif module == 'not_returned_installations':
+                    import openpyxl
+                    book = openpyxl.Workbook()
 
+                    total_sent = ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=True).count()
+                    total_not_sent = ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=False).count()
+                    total_expected = ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization']).count()
+                    xr = book.active
+                    xr.append(["LEGEND","#"])
+                    xr.append(["EXPECTED",total_expected])
+
+                    xr.append(["SENT", total_sent])
+                    xr.append(["REMAINING", total_not_sent])
+
+                    sheet = book.create_sheet(title = "RETIRED METERS")
+                    sheet.title = "RETIRED METERS"
+                    sheet.append(["LN","SERVICE","DATE","FOC","NEW METER","SPN","OLD METER"])
+                    sn = 1
+                    for service in ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=False).order_by('service_date'):
+                        li = [sn,service.service_type.name,service.service_date,service.contractor.company,service.new_meter,service.spn,service.old_meter_no]
+                        sheet.append(li)
+                        print(li)
+                        sn += 1
+
+                    import uuid
+                    unique_id = uuid.uuid4()
+                    filename = f"static/general/tmp/pending_retired_materials_{unique_id}.xlsx"
+                    book.save(filename)
+
+                    success_response['message'] = filename
+                    response = success_response
 
                 elif module == 'installation_type':
                     id = data.get('id', '*')

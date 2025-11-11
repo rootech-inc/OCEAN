@@ -22,6 +22,7 @@ from appscenter.models import AppsGroup, App, AppAssign, VersionControl
 from community.models import tags
 from dolphine.models import Documents
 from inventory.models import Computer, DeviceLogs, PoHd, PoTran
+from .models import Alarms
 
 
 @csrf_exempt
@@ -103,6 +104,21 @@ def api_function(request):
                     computer.computer_name = computer_name
                     computer.mac_address = mac_address
                     computer.save()
+
+                elif module == 'alarms':
+                    domain = data.get('domain')
+                    alarm_type = data.get('alarm_type')
+                    title = data.get('title')
+                    description = data.get('description')
+                    date_added = data.get('date_added')
+
+                    Alarms.objects.create(
+                        domain=domain,
+                        alarm_type=alarm_type,
+                        title=title,
+                        description=description,
+                        date_added=date_added,
+                    )
 
                 elif module == 'tools':
                     task = data.get('task')
@@ -917,6 +933,13 @@ def api_function(request):
 
                 elif module == "inventory":
                     pass
+                elif module == 'alarms':
+                    start_date = data.get('start_date')
+                    end_date = data.get('end_date')
+                    response['message'] = [alarm.obj() for alarm in Alarms.objects.filter(date_added__range=(start_date, end_date))]
+
+                else:
+                    raise Exception("Invalid Module")
 
             except KeyError as e:
                 response["status_code"] = 400

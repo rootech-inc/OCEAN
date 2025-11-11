@@ -29,6 +29,8 @@ from retail.models import BoltItems, BoltGroups, ProductSupplier, ProductGroup, 
 from retail.prodMast import ProdMaster
 from retail.retail_tools import create_recipe_card
 
+from apiv2.models import Alarms
+
 
 @csrf_exempt
 def interface(request):
@@ -99,6 +101,52 @@ def interface(request):
                     success_response['message'] = "Product Added"
                 else:
                     raise Exception(f"Product Exist with barcode {pd.barcode}")
+
+            elif module == 'sync_alarms':
+                for loc in Locations.objects.filter(type='retail'):
+                    try:
+                        ip_address = loc.ip_address
+                        db = loc.db
+                        db_user = loc.db_user
+                        db_password= loc.db_password
+
+                        domain = loc.descr
+
+                        print("CONNECTING TO ",domain,"........",loc.db_password)
+                        conn = ret_cursor(host=ip_address,db='POSDBV4',user=db_user,password=db_password)
+                        cursor = conn.cursor()
+                        print("CONNECTED TO ",domain,"........")
+                        # sync held bills
+                        hld_query = "select mech_no,bill_date,bill_amt,bill_start_time,bill_end_time,cl.clrk_name from hld_header hd join clerk_mast cl on cl.clrk_code= hd.clrk_code where alarm_rep is null"
+                        cursor.execute(hld_query)
+
+                        print("GETTING HOLDS FOR ",domain,"........")
+                        rows = cursor.fetchall()
+                        r_len = len(rows)
+                        c_l = 1
+                        for row in rows:
+                            mech_no,bill_date,amount,start_time,end_time,cashier = row
+                            alarm_type = "BILLING"
+                            title = "HELD BILL"
+                            description = f"There is a held bull of {amount} on counter {mech_no} by {cashier} as {start_time}"
+                            li = [domain,alarm_type,title,description]
+                            print(c_l,"/", r_len, "###",li)
+                            Alarms.objects.create(
+                                domain=domain,
+                                alarm_type=alarm_type,
+                                title=title,
+                                description=description,
+                                date_added=bill_date,
+                            )
+
+                            update_q = f"UPDATE hld_header set alarm_rep = 1 where mech_no='{mech_no}' and bill_date='{bill_date}' and bill_start_time = '{start_time}'"
+                            cursor.execute(update_q)
+                            cursor.commit()
+                            c_l += 1
+                        conn.close()
+                    except Exception as e:
+                        print(loc.descr,str(e))
+
 
             elif module == 'moves':
                 move_type = data.get('type','')
