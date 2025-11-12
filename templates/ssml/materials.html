@@ -32,12 +32,17 @@
 <div class="card-header">
     <div class="d-flex justify-content-between">
         <div class="w-50 d-flex justify-content-start">
-            <button class="btn btn-sm btn-primary ms-2" id="edit_material">Edit</button>
-            <button class="btn btn-sm btn-primary ms-2" id="rates">Rates</button>
-            <button class="btn btn-sm btn-primary ms-2" id="prev-material"><i class="fas fa-arrow-left"></i> Previous</button>
-            <button class="btn btn-sm btn-primary ms-2" id="next-material">Next <i class="fas fa-arrow-right"></i></button>
-            <button class="btn btn-sm ms-2 btn-info link_model" data-bs-toggle="modal" data-bs-target="#link_model_model">Link Service</button>
+            <button title="Edit" class="btn btn-sm btn-primary ms-2" id="edit_material"><i class="fa fa-edit"></i></button>
+            
+            <button class="btn btn-sm btn-primary ms-2" id="prev-material"><i class="fas fa-arrow-left"></i></button>
+            <button class="btn btn-sm btn-primary ms-2" id="next-material"><i class="fas fa-arrow-right"></i></button>
+
+            {% if request.user.is_superuser %}
+            <button title="Rates" class="btn btn-sm btn-primary ms-2" id="rates"><i class="fa fa-money-bill"></i></button>
+            <button class="btn btn-sm btn-danger ms-2" id="delete"><i class="fas fa-trash"></i></button>
+            <button title="Link Services" class="btn btn-sm ms-2 btn-info link_model" data-bs-toggle="modal" data-bs-target="#link_model_model"><i class="fa fa-toolbox"></i></button>
             <button class="btn btn-sm btn-warning ms-2" id="stock-transfer">Stock Transfer</button>
+            {%endif%}
         </div>
         <div class="w-50 d-flex justify-content-end">
             <button id="search-material" class="btn btn-primary">Search</button>
@@ -949,7 +954,22 @@
 
             })
         })
+        
+        $('#delete').click(function(){
+            let id = $('#material_id').val();
+            let payload = {
+                module:'material',
+                data:{
+                    id:id
+                }
+            }
 
+            if(confirm("Are you sure?")){
+                kasa.confirm(api.call('DELETE',payload,'/ssml/api/')['message'],1,'here')
+            } else {
+                kasa.info("Operation Canceled")
+            }
+        })
         ssml.loadMaterial(last_pk);
     });
 

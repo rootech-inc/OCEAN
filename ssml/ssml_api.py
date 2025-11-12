@@ -3081,7 +3081,7 @@ def interface(request):
                 material = InventoryMaterial.objects.get(id=id)
 
                 # check cardex
-                cardex = Cardex.objects.filter(material=material).count()
+                cardex = Cardex.objects.filter(material=material).aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
                 if cardex > 0:
                     success_response['status_code'] = 400
                     success_response['message'] = "Material Cannot Be Deleted"
