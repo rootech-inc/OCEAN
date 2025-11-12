@@ -29,6 +29,9 @@ class Location(models.Model):
 
     is_default =models.BooleanField(default=False)
 
+    boxing_file_link = models.TextField(default='not set')
+    boxing_auth_file = models.FileField(upload_to='static/general/ssml/loc_docs')
+
     def obj(self):
         return {
             'pk':self.id,

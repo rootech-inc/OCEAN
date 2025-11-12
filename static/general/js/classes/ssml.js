@@ -3358,6 +3358,7 @@ class SSML {
                                 <a href="javascript:void(0)" data-id='${loc.pk}' class="btn btn-sm ${loc.default ? 'btn-primary' : 'btn-outline-primary'} makedfl" title="Make Default">
                                     <i class="fa fa-star"></i>
                                 </a>
+                                <a data-id='${loc.pk}' class='btn loc_boxing btn-sm btn-outline-secondary ms-2'><i class='fa fa-file'></i></a>
                             </td>
                         </tr>
                         
@@ -3383,6 +3384,36 @@ class SSML {
                     } else {
                         kasa.info("Operation Cancelled")
                     }
+                })
+
+                $('.loc_boxing').click(function(){
+                    let pk = $(this).data('id');
+                    let f1 = ""
+                    let form = `
+                        <form method='post' action='/ssml/forms/ulbm/' enctype='multipart/form-data'>
+                            <input type='hidden' name='loc_pk' value='${pk}' >
+                            <div class='form-group mb-2'>
+                                <label for='boxing_file_link'>Boxing Link</label>
+                                <input required type='url' name='boxing_file_link' id='boxing_file_link' class='form-control rounded-0' >
+                                <small class='text-info'>Link to google sheet</small>
+                            </div>
+
+                            <div class='form-group mb-2'>
+                                <label for='auth_file'>Authentication File</label>
+                                <input required type='file' name='auth_file' id='auth_file' class='form-control rounded-0' >
+                                <small class='text-info'>Google Drive Auth FIle from google console</small>
+                            </div>
+
+                            <hr>
+                            <button class='btn btn-success' type='submit'>UPDATE</button>
+
+                        </form>
+                    `
+
+                    amodal.setTitleText("Boxing Information")
+                    amodal.setBodyHtml(form)
+                    amodal.show()
+
                 })
             } else {
                 kasa.response(response)

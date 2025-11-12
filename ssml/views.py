@@ -1316,3 +1316,23 @@ def post_transfer(request, entry_no):
         'transfer': TransferHd.objects.get(entry_no=entry_no)
     }
     return render(request, 'ssml/inventory/transfer_post.html', context)
+
+@login_required
+@csrf_exempt
+def ulbm(request):
+    if request.method == 'POST':
+        try:
+            form = request.POST
+            loc_id = form.get('loc_pk')
+            boxing_file_link = form.get('boxing_file_link')
+            file = request.FILES.get('auth_file')
+
+            location = Location.objects.get(pk=loc_id)
+            location.boxing_file_link = boxing_file_link
+            location.boxing_auth_file = file
+            location.save()
+
+            return JsonResponse({'status_code': '200','message':"Document Uploaded"})
+        except Exception as e:
+            return JsonResponse({'status_code': '500', 'message': str(e)})
+    return JsonResponse({'status_code': '500', 'message': "Invalid Method"})
