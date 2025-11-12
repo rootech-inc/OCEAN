@@ -1406,8 +1406,9 @@ def interface(request):
                                     line.append(used_qty)
 
                                 line.append("YES")
-                                line.append("YES")
                                 line.append(service.new_meter)
+                                line.append("YES")
+                                
                                 line.append("BLUE")
                                 ms.append(line)
                                 sn += 1
