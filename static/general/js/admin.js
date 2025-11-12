@@ -634,3 +634,51 @@ class SysMod {
 }
 
 const genMod = new SysMod()
+
+
+class Admin{
+    async loadAlarms(start_date,end_date){
+        await this.getAlerms(start_date,end_date).then(response => {
+            if(anton.IsRequest(response)){
+                let alarms = response.message;
+                console.table(response)
+                let tr = "";
+                if(alarms.length > 0){
+                    alarms.map(alarm =>{
+                        tr += `
+                                <tr>
+                                  <td>DOMAIN</td>
+                                  <td>DOMAIN</td>
+                                  <td>DOMAIN</td>
+                                  <td>DOMAIN</td>
+                                  <td>DOMAIN</td>
+                                </tr>
+                        `
+                    
+                    })
+                } else {
+                    tr = `<tr><td colspan='5' class='text-info text-center'>NO ALARMS FOR TODAY</td></tr>`
+                }
+                
+                
+                $('#leg_alrms').html(tr)
+            } else {
+                console.error(response.message)
+            }
+        }).catch(error => {console.error(error)})
+    }
+
+    async getAlerms(start_date,end_date){
+        let payload = {
+            module:'alarms',
+            data:{
+                start_date:start_date,
+                end_date:end_date
+            }
+        }
+
+        return api.call('VIEW',payload,'/apiv2/')
+    }
+}
+
+const system32 = new Admin()

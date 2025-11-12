@@ -234,6 +234,21 @@
                     let ids = ['mypk','boxx_no','']
                 })
 
+                $('#searchQuery').on('change keypress', function (e) {
+                    // If Enter key is pressed
+                    if (e.type === 'keypress' && e.which === 13) {
+                        e.preventDefault(); // prevent form submission if inside a form
+                        console.log('Enter key pressed: ' + $(this).val());
+                        // your custom code here
+                    }
+
+                    // If input value changed (and user leaves the field)
+                    if (e.type === 'change') {
+                        console.log('Value changed: ' + $(this).val());
+                        // your custom code here
+                    }
+                });
+
                 
             })
 

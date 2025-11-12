@@ -4549,6 +4549,21 @@ class SSML {
             }
         })
     }
+
+    async retired2Return(){
+
+        loader.show()
+        await api.v2('VIEW',{module:'not_returned_installations',data:{}},'/ssml/api/').then(response => {
+            if(anton.IsRequest(response,true)){
+                anton.viewFile(`/${response.message}`)
+                loader.hide()
+            } else{
+                loader.hide()
+            }
+        }).catch(error=>{kasa.error(error);loader.hide()})
+
+    }
+
 }
 
 const ssml = new SSML();

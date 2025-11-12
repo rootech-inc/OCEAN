@@ -10,6 +10,38 @@
         <div class="row" style="min-height:  400px">
 
             {% if user.is_superuser %}
+
+              <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                <div class="card">
+                    <div class="card-header">
+                        <strong class="card-title text-center">ALARMS</strong>
+                    </div>
+                    <div class="card-body">
+                        <table id="system_alarms" class="table table-sm">
+                          <thead>
+                              <tr>
+                                <th>DOMAIN</th>
+                                <th>TYPE</th>
+                                <th>TITLE</th>
+                                <th>DESCRIPTION</th>
+                                <th>TIME STAMP</th>
+                              </tr>
+                          </thead>
+                          <tbody id="leg_alrms">
+                            <tr>
+                              <td>DOMAIN</td>
+                              <td>DOMAIN</td>
+                              <td>DOMAIN</td>
+                              <td>DOMAIN</td>
+                              <td>DOMAIN</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+                
+
                 <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
                     <div class="card">
                         <div class="card-header">
@@ -684,4 +716,10 @@
         })
     </script>
 
+      <script>
+          $(document).ready(function(){
+            // load alarms
+            system32.loadAlarms(today,today)
+          })  
+      </script>
 {% endblock %}
