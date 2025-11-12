@@ -14,7 +14,7 @@ from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
     IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, \
     ServiceMaterials, ServiceOrder, \
-    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox
+    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType
 
 
 # Create your views here.
@@ -582,14 +582,19 @@ def upload_service_order(request):
             service_order_type = row_dict['SERVICE ORDER TYPE']
             re_routing = row_dict["RE-ROUTING TYPE"] if row_dict.get('RE-ROUTING TYPE') else 'Without Rerouting'
             installation_type_desc = row_dict['INSTALLATION TYPE'] if row_dict.get('INSTALLATION TYPE') else 'UNKNOWN'
-            if service_order_type in ['Replacement']:
-                installation_type_desc = service_order_type
+            
             routing = False
             
             if re_routing == "Without Rerouting":
                 routing = False
             else:
                 routing = True
+
+            if service_order_type == 'Replacement':
+                if routing:
+                    installation_type_desc = 'Rerouting'
+                else:
+                    installation_type_desc = service_order_type
 
             
             if not InstallationType.objects.filter(name=installation_type_desc).exists():

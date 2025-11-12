@@ -916,7 +916,7 @@ class ServiceOrder(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     spn = models.CharField(max_length=255,null=False)
     is_routing = models.BooleanField(default=False)
-    # installation_type = models.CharField(max_length=255,default="UNKNOWN")
+    installation_type = models.ForeignKey('InstallationType',on_delete=models.SET_NULL,null=True)
     status_choices = [
         ('pending', 'Pending'),
         ('completed', 'Completed'),

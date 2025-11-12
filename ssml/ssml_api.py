@@ -1303,7 +1303,7 @@ def interface(request):
                         foc_summ = book.active
                         foc_summ.title = "1.2 Summary FOC"
                         foc_sum_hd = ["No","Contractor","Total"]
-                        for so in ServiceType.objects.all().order_by('name'):
+                        for so in InstallationType.objects.all().order_by('name'):
                             foc_sum_hd.append(so.name)
                         foc_summ.append(foc_sum_hd)
 
@@ -1313,12 +1313,12 @@ def interface(request):
                             
                             if total_jobs > 0:
                                 li = [fosn,foc.company,total_jobs]
-                                for so in ServiceType.objects.all().order_by('name'):
+                                for so in InstallationType.objects.all().order_by('name'):
 
                                     if so.name in ['Replacement', 'Regularization']:
-                                        this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,service_type=so,is_boxed=True).count()
+                                        this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,installation_type=so).count()
                                     else:
-                                        this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,service_type=so).count()
+                                        this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,installation_type=so).count()
                                     print(foc.company,so.name,this_total)
                                     print("--------------------------------")
                                     li.append(this_total)
@@ -1333,20 +1333,21 @@ def interface(request):
 
                         sheet.append(["DATE","METER","OLD METER","SPN","JOB TYPE","FOC"])
                         for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
-                            print(service.service_type.name)
-                            if service.service_type.name in ['Replacement', 'Regularization']:
+                            sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+                            # print(service.service_type.name)
+                            # if service.service_type.name in ['Replacement', 'Regularization']:
                                 
-                                if service.is_boxed:
-                                    print(f"BOXING EXPECTED FOR {service.service_type.name} and FOUND")
-                                    sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
-                                else:
-                                    print(f"BOXING EXPECTED FOR {service.service_type.name} and NOT FOUND")
-                            else:
+                            #     if service.is_boxed:
+                            #         print(f"BOXING EXPECTED FOR {service.service_type.name} and FOUND")
+                            #         sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+                            #     else:
+                            #         print(f"BOXING EXPECTED FOR {service.service_type.name} and NOT FOUND")
+                            # else:
                                 
-                                print(f"BOXING NOT EXPECTED FOR {service.service_type.name}")
-                                sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+                            #     print(f"BOXING NOT EXPECTED FOR {service.service_type.name}")
+                            #     sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
 
-                            print("--------------------------------")
+                            # print("--------------------------------")
 
 
                         # summary consumption
@@ -1360,8 +1361,7 @@ def interface(request):
                             consumned = MaterialOrderItem.objects.filter(
                                 service_order__service_date__gte=start_date,
                                 service_order__service_date__lte=end_date,
-                                material=mat,
-                                service_order__is_boxed=True
+                                material=mat
                             ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
                             
                             if consumned > 0:
@@ -1383,7 +1383,7 @@ def interface(request):
 
                         ms.append(hd)
                         sn = 1
-                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,is_boxed=True):
+                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
 
                             # check if old meter is boxed
                         
@@ -1418,7 +1418,7 @@ def interface(request):
                         sc.append(["NAME","TOTAL"])
                         for st in ServiceType.objects.all():
                             name = st.name
-                            total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,service_type=st,is_boxed=True).count()
+                            total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,service_type=st).count()
                             if total > 0:
                                 sc.append([name,total])
 
@@ -1488,7 +1488,7 @@ def interface(request):
                             print(months_data)
                             for mt in months_data:
                                 print(mt)
-                                total_used = mirmat.used_by_date_range(mt.get('start'),mt.get('end'),True)
+                                total_used = mirmat.used_by_date_range(mt.get('start'),mt.get('end'),False)
                                 li.append(total_used)
                                 legend_usage += total_used
                             
@@ -1584,7 +1584,7 @@ def interface(request):
                         sn = 1
                         sheet.append(["SN","DATE INSTALLED","SERVICE","INSTALLATION TYPE","METER","SPN","OLD METER","PHASE","FOC","BOX","ROUTING","IS BOXED"])
                         for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
-                            li = [sn,service.service_date,service.service_type.name,service.installation_type,service.new_meter,service.spn,service.old_meter_no,service.phase,service.contractor.company,service.box_no,service.is_routing]
+                            li = [sn,service.service_date,service.service_type.name,service.installation_type.name,service.new_meter,service.spn,service.old_meter_no,service.phase,service.contractor.company,service.box_no,service.is_routing]
                             sheet.append(li)
                             sn += 1
                     
