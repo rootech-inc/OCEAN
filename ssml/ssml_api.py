@@ -1567,7 +1567,7 @@ def interface(request):
                             mx = 1
                             for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,location=loc):
                                 if len(service.old_meter_no) > 0:
-                                    if service.is_boxed:
+                                    if True:
                                         rr = "YES" if service.is_routing else "NO"
                                         is_same = service.sn_same_as_wo().get('is_same')
                                         li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,service.service_type.name,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
