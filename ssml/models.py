@@ -32,6 +32,13 @@ class Location(models.Model):
     boxing_file_link = models.TextField(default='not set')
     boxing_auth_file = models.FileField(upload_to='static/general/ssml/loc_docs')
 
+    def auth_file_path(self):
+        if self.boxing_auth_file and hasattr(self.boxing_auth_file, 'path'):
+            import os
+            if os.path.exists(self.boxing_auth_file.path):
+                return self.boxing_auth_file.url.lstrip('/')
+        return None
+
     def obj(self):
         return {
             'pk':self.id,

@@ -106,35 +106,44 @@ def interface(request):
                 success_response['message'] = "Contractor Created Successfully"
 
             elif module == 'sync_retired_meters':
-                #RetiredMetersBox.objects.all().delete()
-                box_no = data.get('box_no')
-                location = Location.objects.get(loc_id=data.get('loc_id'))
-
-                sheet_name = f"Box {box_no}"
                 
-                
-
-                import gspread
-                from oauth2client.service_account import ServiceAccountCredentials
-
-                # Path to your service account key
-                SERVICE_ACCOUNT_FILE = 'static\general\oth\ssml.json'  # You must set this filename in your deployment
-
-                # 1. Set up Google Sheets API client
-                scope = [
-                    'https://spreadsheets.google.com/feeds',
-                    'https://www.googleapis.com/auth/drive'
-                ]
-                creds = ServiceAccountCredentials.from_json_keyfile_name(SERVICE_ACCOUNT_FILE, scope)
-                gc = gspread.authorize(creds)
-
-                # 2. Open the Google Sheet
-                sheet_url = 'https://docs.google.com/spreadsheets/d/1RrN2zKophgm3Dz9PzewqbNfdU8B8hbnFPdBwVoZv4YI/edit?usp=sharing'
-                sh = gc.open_by_url(sheet_url)
-
-                print("CONNECTED TO GOOGLE SHEET")
 
                 try:
+
+                    #RetiredMetersBox.objects.all().delete()
+                    box_no = data.get('box_no')
+                    location = Location.objects.get(loc_id=data.get('loc_id'))
+
+                    sheet_name = f"Box {box_no}"
+                    
+                    
+
+                    import gspread
+                    from oauth2client.service_account import ServiceAccountCredentials
+
+                    # Path to your service account key
+                    # SERVICE_ACCOUNT_FILE = 'static\general\oth\ssml.json' 
+                    print("Getting FIle")
+                    print("FILE FROM DB",location.auth_file_path())
+                    print("Getting FIle")
+                    SERVICE_ACCOUNT_FILE = str(location.auth_file_path())
+                    print("PASSED FILE",SERVICE_ACCOUNT_FILE)
+
+                    # 1. Set up Google Sheets API client
+                    scope = [
+                        'https://spreadsheets.google.com/feeds',
+                        'https://www.googleapis.com/auth/drive'
+                    ]
+                    creds = ServiceAccountCredentials.from_json_keyfile_name(SERVICE_ACCOUNT_FILE, scope)
+                    gc = gspread.authorize(creds)
+
+                    # 2. Open the Google Sheet
+                    sheet_url = 'https://docs.google.com/spreadsheets/d/1RrN2zKophgm3Dz9PzewqbNfdU8B8hbnFPdBwVoZv4YI/edit?usp=sharing'
+                    sheet_url = location.boxing_file_link
+                    print("LINK:",sheet_url)
+                    sh = gc.open_by_url(sheet_url)
+
+                    print("CONNECTED TO GOOGLE SHEET")
 
                     print("BOX NUMBER:",box_no)
                     if not RetiredMetersBox.objects.filter(box_no=box_no,location=location).exists():
@@ -266,8 +275,9 @@ def interface(request):
                                 print("Invalid Box Number")
                         else:
                             print(spn,"SYNCED")
-                except gspread.exceptions.WorksheetNotFound:
-                    raise Exception(f"Sheet '{sheet_name}' not found")
+                except Exception as e:
+                    print(str(e))
+                    raise Exception(e)
                 all_data = {}
                 
                     
