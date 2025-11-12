@@ -166,14 +166,14 @@ def interface(request):
                 
                     # Loop from row 7 to 31 (inclusive) and print each row's values
                     all_rows = worksheet.get_all_values()[6:]
-                    print(sheet_name, "has",len(all_rows),'rows')
+                    # print(sheet_name, "has",len(all_rows),'rows')
                     for row in all_rows:
                         empt,sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc = row[:22]
                         
                                                
                         
                         li = [sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc]
-                        print(sn,spn)
+                        # print(sn,spn)
                          # print(box.box_no)
                         RetiredMetersTransactions.objects.filter(old_meter_no=old_meter_no).delete()
                         if RetiredMetersTransactions.objects.filter(spn=spn).count() == 0:
@@ -223,10 +223,10 @@ def interface(request):
 
                                     else:
                                         date_removed = timezone.now().date()
-                                        print("NO SPN")
+                                        # print("NO SPN")
 
                                     if len(diff_old_meter_no) > 0:
-                                        print("There is different meter_no")
+                                        # print("There is different meter_no")
                                         ServiceOrder.objects.filter(spn=spn).update(
                                             is_boxed = True,
                                             box_no = data.get('box_no')
@@ -258,7 +258,7 @@ def interface(request):
                                         foc=contractor
                                     ).save()
 
-                                    print("DONE: ",li)
+                                    # print("DONE: ",li)
                                 
                                 except Exception as e:
                                     import sys
@@ -274,9 +274,10 @@ def interface(request):
                             else:
                                 print("Invalid Box Number")
                         else:
-                            print(spn,"SYNCED")
+                            pass
+                            #print(spn,"SYNCED")
                 except Exception as e:
-                    print(str(e))
+                    #print(str(e))
                     raise Exception(e)
                 all_data = {}
                 
