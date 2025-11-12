@@ -267,9 +267,9 @@ def interface(request):
                                     tb = traceback.extract_tb(exc_tb)
                                     if tb:
                                         line_number = tb[-1].lineno
-                                        print(f"[Exception on line {line_number}] {str(e)}")
+                                        print(f"[Exception on line {line_number}] {sn} {str(e)}")
                                     else:
-                                        print(f"[Exception] {str(e)}")
+                                        print(f"[Exception] {sn} {str(e)}")
 
                             else:
                                 print("Invalid Box Number")
