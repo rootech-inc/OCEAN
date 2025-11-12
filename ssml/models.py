@@ -30,7 +30,7 @@ class Location(models.Model):
     is_default =models.BooleanField(default=False)
 
     boxing_file_link = models.TextField(default='not set')
-    boxing_auth_file = models.FileField(upload_to='static/general/ssml/loc_docs')
+    boxing_auth_file = models.FileField(upload_to='static/uploads/files/ssml_docs/')
 
     def auth_file_path(self):
         if self.boxing_auth_file and hasattr(self.boxing_auth_file, 'path'):
