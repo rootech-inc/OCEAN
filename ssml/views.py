@@ -581,7 +581,9 @@ def upload_service_order(request):
             geo_code = row_dict['GEOCODE'] if row_dict.get('GEOCODE') else meter_no
             service_order_type = row_dict['SERVICE ORDER TYPE']
             re_routing = row_dict["RE-ROUTING TYPE"] if row_dict.get('RE-ROUTING TYPE') else 'Without Rerouting'
-            installation_type = row_dict['INSTALLATION TYPE'] if row_dict.get('INSTALLATION TYPE') else 'UNKNOWN'
+            installation_type_desc = row_dict['INSTALLATION TYPE'] if row_dict.get('INSTALLATION TYPE') else 'UNKNOWN'
+            if service_order_type in ['Replacement']:
+                installation_type_desc = service_order_type
             routing = False
             
             if re_routing == "Without Rerouting":
@@ -590,8 +592,14 @@ def upload_service_order(request):
                 routing = True
 
             
+            if not InstallationType.objects.filter(name=installation_type_desc).exists():
+                InstallationType.objects.create(
+                    name=installation_type_desc,
+                    description=installation_type_desc,
+                    created_by=request.user
+                )
 
-
+            installation_type = InstallationType.objects.get(name=installation_type_desc)
             if not ServiceType.objects.filter(name=service_order_type).exists():
                 ServiceType.objects.create(
                     name=service_order_type,
@@ -621,7 +629,7 @@ def upload_service_order(request):
                 print("ROUTING",routing)
                 print("NEW METER",meter_no)
                 print("PHASE",phase)
-                print("INSTALLATIO TYPE",installation_type)
+                print("INSTALLATIO TYPE",installation_type_desc)
 
                 print("#" * 20)
 
