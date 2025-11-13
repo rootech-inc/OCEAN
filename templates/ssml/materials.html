@@ -36,6 +36,7 @@
             
             <button class="btn btn-sm btn-primary ms-2" id="prev-material"><i class="fas fa-arrow-left"></i></button>
             <button class="btn btn-sm btn-primary ms-2" id="next-material"><i class="fas fa-arrow-right"></i></button>
+            <button class="btn btn-info ms-2" id="view_cardex">Cardex</button>
 
             {% if request.user.is_superuser %}
             <button title="Rates" class="btn btn-sm btn-primary ms-2" id="rates"><i class="fa fa-money-bill"></i></button>
@@ -104,9 +105,7 @@
                 <div class="container mt-4">
                     <!-- Nav tabs -->
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
-                      <li class="nav-item">
-                        <a class="nav-link active" id="home-tab" data-toggle="tab" href="#cardex" role="tab">Cardex</a>
-                      </li>
+                     
                       <li class="nav-item">
                         <a class="nav-link" id="profile-tab" data-toggle="tab" href="#ratesx" role="tab">Rates</a>
                       </li>
@@ -120,31 +119,7 @@
                   
                     <!-- Tab content -->
                     <div class="tab-content" id="myTabContent">
-                        <div class="tab-pane fade show active p-3" id="cardex" role="tabpanel">
-                            <div class="card">
-                                <div class="card-header"><strong class="card-title">Cardex</strong></div>
-                                <div style="height: 50vh; overflow-y: auto;" class="card-body">
-                                    <table class="table table-bordered table-striped">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Doc Type</th>
-                                                <th>Doc No</th>
-                                                <th>Qty</th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody id="cardex_table">
-
-                                        </tbody>
-                                        
-                                    </table>
-                                </div>
-                                <div class="card-footer">
-                                    <a href="" id="download-cardex" class="btn btn-primary">Download</a>
-                                </div>
-                            </div>
-                        </div>
+                        
                         <div class="tab-pane fade p-3" id="ratesx" role="tabpanel">
                                 <table class="table table-sm table-bordered">
                                     <thead class="table-dark">
@@ -158,7 +133,7 @@
                                     <tbody id="rates_table"></tbody>
                                 </table>
                         </div>
-                        <div class="tab-pane fade p-3" id="stockx" role="tabpanel">
+                        <div class="tab-pane fade active p-3" id="stockx" role="tabpanel">
                             <table class="table table-sm w-50 table-bordered">
                                 <thead class="table-dark">
                                     <tr>
@@ -308,6 +283,13 @@
     $(document).ready(function () {
 
         // getMaterials();
+
+        $('#view_cardex').click(function(){
+            let barcode = $('#barcode').val();
+
+            let link = `/ssml/inventory/cardex/${barcode}/`
+            windowPopUp(link,"Cardex",1024,800)
+        })
 
         $('#materials-table').on('click', '.delete-material', function(){
             let id = $(this).attr('arial-id');

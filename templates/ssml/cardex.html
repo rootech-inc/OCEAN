@@ -1,0 +1,68 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+{% block body %}
+
+
+    <div class="card h-100">
+        <div class="card-header">
+            <button id="download_cardex" class="btn btn-info">Export</button>
+        </div>
+        <div class="card-body p-1">
+            <div class="container-fluid p-0">
+                <div class="row">
+                    <div style="height: 20vh;" class="col-12 bg-info p-2">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <div class="row">
+                                        <input type="hidden" id="material_id" name="material_id" value="">
+                                        <div class="col-sm-4 mb-2"><label for="barcode">Barcode</label></div>
+                                        <div class="col-sm-8 mb-2"><input type="text" readonly class="form-control rounded-0" id="barcode" name="barcode" value="{{product.barcode}}"></div>
+                    
+                                        <div class="col-sm-4 mb-2"><label for="name">Name</label></div>
+                                        <div class="col-sm-8 mb-2"><input type="text" readonly class="form-control rounded-0" id="name" name="name" value="{{product.name}}"></div>
+                    
+                                        
+                                        
+                    
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="height: 80vh;" class="col-12">
+                        <table class="table table-bordered table-hover datatable">
+                            <thead>
+                                <tr><th>DOCUMENT</th><th>ENTRY</th><th>DATE</th><th>QUANTITY</th></tr>
+                            </thead>
+                            <tbody>
+                                {%for cr in cardex %}
+                                    <tr>
+                                        <td>{{cr.doc_type}}</td>
+                                        <td>{{cr.doc_no}}</td>
+                                        <td>{{cr.created_at}}</td>
+                                        <td>{{cr.qty}}</td>
+                                    </tr>
+                                {%endfor%}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        $(document).ready(function(){
+            $('#download_cardex').click(function(){
+                ssml.downloadCardex('*',`{{product.pk}}`)
+            })
+        })
+    </script>
+
+
+
+{% endblock %}

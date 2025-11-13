@@ -14,7 +14,7 @@ from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
     IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, \
     ServiceMaterials, ServiceOrder, \
-    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType
+    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType,Cardex
 
 
 # Create your views here.
@@ -1349,3 +1349,17 @@ def ulbm(request):
         except Exception as e:
             return JsonResponse({'status_code': '500', 'message': str(e)})
     return JsonResponse({'status_code': '500', 'message': "Invalid Method"})
+
+@login_required
+def cardex(request,barcode):
+    page = {
+        'title': 'Cardex',
+        'nav': True
+    }
+    material = InventoryMaterial.objects.get(barcode=barcode)
+    context = {
+        'page': page,
+        'product': InventoryMaterial.objects.get(barcode=barcode),
+        'cardex': Cardex.objects.filter(material=material)
+    }
+    return render(request, 'ssml/cardex.html', context)

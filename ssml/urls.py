@@ -70,5 +70,6 @@ urlpatterns = [
     path('upload_contractor_docs/',views.upload_contractor_docs,name='ssml_upload_contractor_docs'),
     path('service/tools/', views.service_tools, name='ssml_service_tools'),
     path('forms/ulbm/',views.ulbm,name='ssml_form_ulbm'),# update boxing meta data
+    path('inventory/cardex/<barcode>/',views.cardex, name='ssml_cardex')
 
 ]

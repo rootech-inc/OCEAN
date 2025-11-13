@@ -2931,48 +2931,48 @@ class SSML {
                 
 
 
-                let cardex_payload = {
-                    module:'cardex',    
-                    data:{
-                        pk:pk
-                    }
-                }
+                // let cardex_payload = {
+                //     module:'cardex',    
+                //     data:{
+                //         pk:pk
+                //     }
+                // }
 
-                // console.table(cardex_payload)
-                let card_rows = ``;
+                // // console.table(cardex_payload)
+                // let card_rows = ``;
 
-                await api.v2('VIEW',cardex_payload,'/ssml/api/').then(response => {
-                    if(anton.IsRequest(response)){
-                        let cardex = response.message
-                        let js = response.message.json
-                        let excel = response.message.excel
+                // await api.v2('VIEW',cardex_payload,'/ssml/api/').then(response => {
+                //     if(anton.IsRequest(response)){
+                //         let cardex = response.message
+                //         let js = response.message.json
+                //         let excel = response.message.excel
                         
-                        js.forEach(row => {
-                            card_rows += `
-                                <tr>
-                                    <td>${row.doc_no}</td>
-                                    <td>${row.doc_type}</td>
-                                    <td>${row.qty}</td>
-                                    <td>${row.created_at}</td>
-                                </tr>
-                            `
-                        })
-                        $('#cardex_table').html(card_rows)
-                        $('#download-cardex').attr('href',`/${excel}`)
-                        $('#material_id').val(pk)
-                    } else {
-                        kasa.response(response)
-                    }
-                }).catch(error => {
-                    kasa.error(error)
-                    loader.hide()
-                })
+                //         js.forEach(row => {
+                //             card_rows += `
+                //                 <tr>
+                //                     <td>${row.doc_no}</td>
+                //                     <td>${row.doc_type}</td>
+                //                     <td>${row.qty}</td>
+                //                     <td>${row.created_at}</td>
+                //                 </tr>
+                //             `
+                //         })
+                //         $('#cardex_table').html(card_rows)
+                //         $('#download-cardex').attr('href',`/${excel}`)
+                //         $('#material_id').val(pk)
+                //     } else {
+                //         kasa.response(response)
+                //     }
+                // }).catch(error => {
+                //     kasa.error(error)
+                //     loader.hide()
+                // })
                 loader.hide()
 
-                $('.download-location-stock').click(function(){
-                    let loc_id = $(this).data('loc');
-                    ssml.downloadCardex(loc_id,pk)
-                })
+                // $('.download-location-stock').click(function(){
+                //     let loc_id = $(this).data('loc');
+                //     ssml.downloadCardex(loc_id,pk)
+                // })
             } else {
                 kasa.response(response)
                 loader.hide()
