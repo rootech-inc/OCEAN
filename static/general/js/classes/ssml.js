@@ -4505,12 +4505,12 @@ class SSML {
                 await api.v2('VIEW',payload,'/ssml/api/').then(response => {
 
                     if(anton.IsRequest(response,true)){
-                        let data = response.message;
+                        let data = response.message.json;
                         let arr = [["SERVICE DATE","STS NUMBER","OLD METER","SERVICE TYPE","DOC"]]
                         let tr = ``;
                         data.forEach(item => {
                             console.table(item)
-                            arr.push([item.service_date,item.new_meter_no,item.old_meter_no,item.service_type.name,item.contractor.company])
+                            //arr.push([item.service_date,item.new_meter_no,item.old_meter_no,item.service_type.name,item.contractor.company])
                             tr += `
                                 <tr><td>${item.service_date}</td><td>${item.new_meter_no}</td><td>${item.old_meter_no}</td><td>${item.service_type.name}</td><td>${item.contractor.company}</td></tr>`;`
                             `
@@ -4528,7 +4528,7 @@ class SSML {
 
 
                         $('#export_service').click(function(){
-                            anton.downloadCSV('services.csv',anton.convertToCSV(arr))
+                            anton.viewFile(`/${response.message.file}`)
                         })
                     } else {
                         loader.hide()

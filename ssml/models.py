@@ -937,6 +937,7 @@ class ServiceOrder(models.Model):
     phase = models.CharField(unique=False,null=True,blank=True,max_length=255,default="1 phase")
     is_boxed = models.BooleanField(default=False)
     box_no = models.IntegerField(max_length=100,default=0)
+    final_readings = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     
 

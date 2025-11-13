@@ -176,6 +176,12 @@ def interface(request):
                         # print(sn,spn)
                          # print(box.box_no)
                         RetiredMetersTransactions.objects.filter(old_meter_no=old_meter_no).delete()
+
+                        try:
+                            final_readings = float(final_readings)
+                        except (ValueError, TypeError):
+                            final_readings = 0
+
                         if RetiredMetersTransactions.objects.filter(spn=spn).count() == 0:
                         
                             # Example: get contractor with company like foc
@@ -216,8 +222,12 @@ def interface(request):
                                         date_removed = ServiceOrder.objects.filter(spn=spn).last().service_date
                                         ServiceOrder.objects.filter(spn=spn).update(
                                             is_boxed = True,
-                                            box_no = data.get('box_no')
+                                            box_no = data.get('box_no'),
+                                            final_readings=final_readings
+                                            
                                         )
+
+                                        print("FINAL READING SET:",final_readings)
                                         
                                         # print(f"THERE IS SPN {spn} {date_removed}")
 
@@ -1273,7 +1283,33 @@ def interface(request):
                 elif module == 'installed_meters':
                     start_date = data.get('start_date')
                     end_date = data.get('end_date')
-                    success_response['message'] = [serv.obj() for serv in ServiceOrder.objects.filter(service_date__gte=start_date, service_date__lte=end_date)]
+                    import openpyxl
+                    book = openpyxl.Workbook()
+                    sheet = book.active
+                    sheet.title = 'INSTALLATIONS'
+                    sheet.append(["SERVICE TYPE","INSTALLATION TYPE","SERVICE DATE","FOC","SPN","FINAL READINGS","NEW METER","OLD METER"])
+                    for service in ServiceOrder.objects.filter(service_date__gte=start_date, service_date__lte=end_date):
+                        print(service)
+                        li = [
+                            service.service_type.name,
+                            service.installation_type.name,
+                            service.service_date,
+                            service.contractor.company,
+                            service.spn,
+                            service.final_readings,
+                            service.new_meter,
+                            service.old_meter_no
+                            ]
+                        sheet.append(li)
+                    
+                    import uuid
+                    unique_id = uuid.uuid4()
+                    filename = f"static/general/tmp/installations_{unique_id}_{start_date}_to_{end_date}.xlsx"
+                    book.save(filename)
+                    success_response['message'] = {
+                        "json":[serv.obj() for serv in ServiceOrder.objects.filter(service_date__gte=start_date, service_date__lte=end_date)],
+                        "file":filename
+                        }
 
                 elif module == 'month_inv_report':
                     start_date = data.get('start_date')
