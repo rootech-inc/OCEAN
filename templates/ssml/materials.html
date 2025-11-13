@@ -284,6 +284,196 @@
 
         // getMaterials();
 
+        
+        $('#edit_material').click( async function () {
+                let id = $('#material_id').val();
+                
+                // get material
+                let payload = {
+                    module: 'material',
+                    data: {
+                        id: id
+                    }
+                };
+                await api.v2('VIEW', payload, '/ssml/api/').then(async material_res => {
+                    
+                    if (anton.IsRequest(material_res)) {
+                        // get groups
+                        let payload = {
+                            module: 'group',
+                            data: {
+                                id: '*'
+                            }
+                        };
+                        await api.v2('VIEW', payload, '/ssml/api/').then(group_res => {
+                            if (anton.IsRequest(group_res)) {
+                                let groups = group_res.message;
+                                let groupOptions = groups.map(group => `
+                                        <option value="${group.id}">${group.name}</option>
+                                    `).join('');
+                                let material = material_res.message;
+
+                                let is_is_opt = `<option value='0'>NO</option>
+                                               <option value='1'>Yes</option>`
+                                if(material.is_issue){
+                                    is_is_opt = `<option value='0'>NO</option>
+                                               <option selected value='1'>Yes</option>`
+                                }
+
+                                let is_ret = `<option value='0'>NO</option>
+                                               <option value='1'>Yes</option>`
+                                if(material.is_return){
+                                    is_ret = `<option value='0'>NO</option>
+                                               <option selected value='1'>Yes</option>`
+                                }
+
+                                let auto_issue = `<option value='0'>NO</option>
+                                               <option value='1'>Yes</option>`
+                                if(material.auto_issue){
+                                    auto_issue = `<option value='0'>NO</option>
+                                               <option selected value='1'>Yes</option>`
+                                }
+                                
+
+                                let form = `
+                                    <div class='container'>
+                                        <div class='row'>
+                                            <div class='col-sm-4'>
+                                                <div class="form-group mb-3">
+                                                    <label for="barcode">Barcode</label>
+                                                    <input type="text" readonly class="form-control" id="barcode" name="barcode" value="${material.barcode}">
+                                                </div>
+                                                <div class="form-group mb-3">
+                                                    <label for="name">Name</label>
+                                                    <input type="text" class="form-control" id="name" name="name" value="${material.name}">
+                                                </div>
+                                                <div class="form-group mb-3">
+                                                    <label for="group">Group</label>
+                                                    <select class="form-control" id="group" name="group">
+                                                            ${groupOptions}
+                                                    </select>
+                                                </div>                                            
+                                            </div>  
+                                            
+                                            <div class='col-sm-4'>
+                                                <div class="form-group mb-3">
+                                                    <label for="reorder_qty">Reorder Qty</label>
+                                                    <input type="number" class="form-control" id="reorder_qty" name="reorder_qty" value="${material.reorder_qty}">
+                                                </div>
+
+                                                <div class="form-group mb-3">
+                                                    <label for="required_qty">Required Qty</label>
+                                                    <input type="number" class="form-control" id="required_qty" name="required_qty" value="${material.required_qty}">
+                                                </div>
+                                                
+                                                <div class="form-group mb-3">
+                                                    <label for="value">Value</label>
+                                                    <input type="number" class="form-control" id="value" name="value" value="${material.value}">
+                                                </div>
+
+                                                <div class="form-group mb-3">
+                                                    <label for="is_return">Is Return?</label>
+                                                    <select class="form-control" id="is_return" name="is_return">
+                                                    ${is_ret}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class='col-sm-4'>
+                                                <div class="form-group mb-3">
+                                                    <label for="is_issue">Is Issue?</label>
+                                                    <select class="form-control" id="is_issue" name="is_issue">
+                                                    ${is_is_opt}
+                                                    </select>
+                                                </div>
+                                                <div class="form-group mb-3">
+                                                    <label for="auto_issue">Auto Issue?</label>
+                                                    <select class="form-control" id="auto_issue" name="is_issue">
+                                                    ${auto_issue}
+                                                    </select>
+                                                </div>
+                                                <div class="form-group mb-3">
+                                                    <label for="issue_qty">issue_qty</label>
+                                                    <input type="number" class="form-control" id="issue_qty" name="issue_qty" value="${material.issue_qty}">
+                                                </div>
+
+                                                <div class="form-group mb-3">
+                                                    <label for="item_type">Item Type</label>
+                                                    <select class="form-control" id="item_type" name="item_type">
+                                                        <option value='gen'>Genral</option>
+                                                        <option value='pri'>Primary</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            
+                                        </div>    
+                                    </div>
+                                        
+                                `;
+                                console.table(material);
+                                amodal.setTitleText('Edit Material');
+                                amodal.setBodyHtml(form);
+                                amodal.setSize("XL")
+                                amodal.setFooterHtml('<button class="btn btn-primary" id="save-material">Save</button> <button class="btn btn-secondary" id="cancel-material">Cancel</button>');
+                                amodal.show();
+
+                                $('#save-material').click(async function () {
+                                    let ids = ['barcode', 'name','required_qty', 'group', 'reorder_qty', 'value','is_return','is_issue','issue_qty','auto_issue','item_type'];
+                                    if (anton.validateInputs(ids)) {
+                                        let payload = {
+                                            module: 'material',
+                                            data: {
+                                                id: id,
+                                                barcode: $('#barcode').val(),
+                                                name: $('#name').val(),
+                                                group: $('#group').val(),
+                                                reorder_qty: $('#reorder_qty').val(),
+                                                value: $('#value').val(),
+                                                is_return:$('#is_return').val(),
+                                                is_issue:$('#is_issue').val(),
+                                                issue_qty:$('#issue_qty').val(),
+                                                auto_issue:$('#auto_issue').val(),
+                                                item_type:$('#item_type').val(),
+                                                required_qty:$('#required_qty').val()
+                                            }
+                                        };
+
+                                        console.table(payload)
+
+                                        console.log("THIS IS WHERE WE HAVE FISHES")
+                                        await api.v2('PATCH', payload, '/ssml/api/').then(res => {
+                                            kasa.response(res);
+                                            getMaterials();
+                                            amodal.hide();
+                                            
+                                            $('#upload-image').submit();
+                                        }).catch(err => {
+                                            kasa.error(err.message || 'Failed to update material');
+                                        });
+                                    }
+                                });
+
+                                $('#cancel-material').click(function () {
+                                    amodal.hide();
+                                });
+
+                            } else {
+                                kasa.response(res);
+                            }
+                        }).catch(err => {
+                            kasa.error(err.message || 'Failed to get material');
+                        });
+
+
+
+                    }
+                }).catch(err => {
+                    kasa.error(err.message || 'Failed to get material');
+                });
+            })
+
+            
+
         $('#view_cardex').click(function(){
             let barcode = $('#barcode').val();
 
@@ -553,191 +743,7 @@
         });
 
         document.addEventListener('click', async function (e) {
-            if (e.target.id.includes('edit_material')) {
-                let id = $('#material_id').val();
-
-                // get material
-                let payload = {
-                    module: 'material',
-                    data: {
-                        id: id
-                    }
-                };
-                await api.v2('VIEW', payload, '/ssml/api/').then(async material_res => {
-                    if (anton.IsRequest(material_res)) {
-                        // get groups
-                        let payload = {
-                            module: 'group',
-                            data: {
-                                id: '*'
-                            }
-                        };
-                        await api.v2('VIEW', payload, '/ssml/api/').then(group_res => {
-                            if (anton.IsRequest(group_res)) {
-                                let groups = group_res.message;
-                                let groupOptions = groups.map(group => `
-                                        <option value="${group.id}">${group.name}</option>
-                                    `).join('');
-                                let material = material_res.message;
-
-                                let is_is_opt = `<option value='0'>NO</option>
-                                               <option value='1'>Yes</option>`
-                                if(material.is_issue){
-                                    is_is_opt = `<option value='0'>NO</option>
-                                               <option selected value='1'>Yes</option>`
-                                }
-
-                                let is_ret = `<option value='0'>NO</option>
-                                               <option value='1'>Yes</option>`
-                                if(material.is_return){
-                                    is_ret = `<option value='0'>NO</option>
-                                               <option selected value='1'>Yes</option>`
-                                }
-
-                                let auto_issue = `<option value='0'>NO</option>
-                                               <option value='1'>Yes</option>`
-                                if(material.auto_issue){
-                                    auto_issue = `<option value='0'>NO</option>
-                                               <option selected value='1'>Yes</option>`
-                                }
-                                
-
-                                let form = `
-                                    <div class='container'>
-                                        <div class='row'>
-                                            <div class='col-sm-4'>
-                                                <div class="form-group mb-3">
-                                                    <label for="barcode">Barcode</label>
-                                                    <input type="text" readonly class="form-control" id="barcode" name="barcode" value="${material.barcode}">
-                                                </div>
-                                                <div class="form-group mb-3">
-                                                    <label for="name">Name</label>
-                                                    <input type="text" class="form-control" id="name" name="name" value="${material.name}">
-                                                </div>
-                                                <div class="form-group mb-3">
-                                                    <label for="group">Group</label>
-                                                    <select class="form-control" id="group" name="group">
-                                                            ${groupOptions}
-                                                    </select>
-                                                </div>                                            
-                                            </div>  
-                                            
-                                            <div class='col-sm-4'>
-                                                <div class="form-group mb-3">
-                                                    <label for="reorder_qty">Reorder Qty</label>
-                                                    <input type="number" class="form-control" id="reorder_qty" name="reorder_qty" value="${material.reorder_qty}">
-                                                </div>
-
-                                                <div class="form-group mb-3">
-                                                    <label for="required_qty">Required Qty</label>
-                                                    <input type="number" class="form-control" id="required_qty" name="required_qty" value="${material.required_qty}">
-                                                </div>
-                                                
-                                                <div class="form-group mb-3">
-                                                    <label for="value">Value</label>
-                                                    <input type="number" class="form-control" id="value" name="value" value="${material.value}">
-                                                </div>
-
-                                                <div class="form-group mb-3">
-                                                    <label for="is_return">Is Return?</label>
-                                                    <select class="form-control" id="is_return" name="is_return">
-                                                    ${is_ret}
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div class='col-sm-4'>
-                                                <div class="form-group mb-3">
-                                                    <label for="is_issue">Is Issue?</label>
-                                                    <select class="form-control" id="is_issue" name="is_issue">
-                                                    ${is_is_opt}
-                                                    </select>
-                                                </div>
-                                                <div class="form-group mb-3">
-                                                    <label for="auto_issue">Auto Issue?</label>
-                                                    <select class="form-control" id="auto_issue" name="is_issue">
-                                                    ${auto_issue}
-                                                    </select>
-                                                </div>
-                                                <div class="form-group mb-3">
-                                                    <label for="issue_qty">issue_qty</label>
-                                                    <input type="number" class="form-control" id="issue_qty" name="issue_qty" value="${material.issue_qty}">
-                                                </div>
-
-                                                <div class="form-group mb-3">
-                                                    <label for="item_type">Item Type</label>
-                                                    <select class="form-control" id="item_type" name="item_type">
-                                                        <option value='gen'>Genral</option>
-                                                        <option value='pri'>Primary</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            
-                                        </div>    
-                                    </div>
-                                        
-                                `;
-                                console.table(material);
-                                amodal.setTitleText('Edit Material');
-                                amodal.setBodyHtml(form);
-                                amodal.setSize("XL")
-                                amodal.setFooterHtml('<button class="btn btn-primary" id="save-material">Save</button> <button class="btn btn-secondary" id="cancel-material">Cancel</button>');
-                                amodal.show();
-
-                                $('#save-material').click(async function () {
-                                    let ids = ['barcode', 'name','required_qty', 'group', 'reorder_qty', 'value','is_return','is_issue','issue_qty','auto_issue','item_type'];
-                                    if (anton.validateInputs(ids)) {
-                                        let payload = {
-                                            module: 'material',
-                                            data: {
-                                                id: id,
-                                                barcode: $('#barcode').val(),
-                                                name: $('#name').val(),
-                                                group: $('#group').val(),
-                                                reorder_qty: $('#reorder_qty').val(),
-                                                value: $('#value').val(),
-                                                is_return:$('#is_return').val(),
-                                                is_issue:$('#is_issue').val(),
-                                                issue_qty:$('#issue_qty').val(),
-                                                auto_issue:$('#auto_issue').val(),
-                                                item_type:$('#item_type').val(),
-                                                required_qty:$('#required_qty').val()
-                                            }
-                                        };
-
-                                        console.table(payload)
-
-                                        console.log("THIS IS WHERE WE HAVE FISHES")
-                                        await api.v2('PATCH', payload, '/ssml/api/').then(res => {
-                                            kasa.response(res);
-                                            getMaterials();
-                                            amodal.hide();
-                                            
-                                            $('#upload-image').submit();
-                                        }).catch(err => {
-                                            kasa.error(err.message || 'Failed to update material');
-                                        });
-                                    }
-                                });
-
-                                $('#cancel-material').click(function () {
-                                    amodal.hide();
-                                });
-
-                            } else {
-                                kasa.response(res);
-                            }
-                        }).catch(err => {
-                            kasa.error(err.message || 'Failed to get material');
-                        });
-
-
-
-                    }
-                }).catch(err => {
-                    kasa.error(err.message || 'Failed to get material');
-                });
-            }  
+            
 
             if(e.target.classList.contains('see-cardex')){
                 let id = $('#material_id').val();

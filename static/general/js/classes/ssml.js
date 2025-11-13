@@ -2859,6 +2859,7 @@ class SSML {
                 $('#stock').val(data.stock)
                 $('#next-material').val(data.next)
                 $('#prev-material').val(data.prev)
+                $('#material_id').val(pk)
                 let services = data.services;
                 console.table(services)
 
@@ -2963,7 +2964,7 @@ class SSML {
                 //         })
                 //         $('#cardex_table').html(card_rows)
                 //         $('#download-cardex').attr('href',`/${excel}`)
-                //         $('#material_id').val(pk)
+                       
                 //     } else {
                 //         kasa.response(response)
                 //     }
