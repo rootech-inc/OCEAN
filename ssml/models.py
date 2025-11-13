@@ -229,7 +229,7 @@ class InventoryMaterial(models.Model):
             material=self,
             service_order__service_date__gte=start_date,
             service_order__service_date__lte=end_date,
-            material_type='is',service_order__is_boxed=is_boxed
+            material_type='is'
             ).aggregate(total_qty=models.Sum('quantity'))['total_qty'] or 0
     
     def cardex(self,loc='*'):
