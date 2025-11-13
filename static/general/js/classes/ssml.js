@@ -2864,13 +2864,17 @@ class SSML {
 
                 let srv_tr = ``;
                 services.map(srv => {
+                    console.table(srv)
                     srv_tr += `
                         <tr>
                                         <td>${srv.service}</td>
                                         <td>${srv.qty}</td>
+                                        <td><a onclick=ssml.DeleteServiceLine(${srv.id}) class='text-danger del_linked_service' href='javascript:void(0)' data-pk='${srv.id}'><i class='fa fa-trash'></i><a><td/>
                                     </tr>
                     `
                 })
+
+                
 
                 $('#service_linked').html(srv_tr)
 
@@ -2981,6 +2985,22 @@ class SSML {
             kasa.error(error)
             loader.hide()
         })
+    }
+
+    DeleteServiceLine(pk){
+       
+        if(confirm("Are You Sure?")){
+            let srpayload = {
+                module:'linked_service',
+                data:{
+                    id:pk
+                }
+            }
+
+            kasa.response(api.call('DELETE',srpayload,'/ssml/api/'))
+
+            ssml.loadMaterial($('#material_id'))
+        }
     }
 
 

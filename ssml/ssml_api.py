@@ -3063,6 +3063,11 @@ def interface(request):
                 MaterialOrderItem.objects.get(id=id).delete()
                 success_response['message'] = "Material Deleted"
 
+            elif module == 'linked_service':
+                id = data.get('id')
+                ServiceMaterials.objects.get(id=id).delete()
+                success_response['message'] = "Service Deleted"
+
             elif module == 'service_order_return':
                 id = data.get('id')
                 ServiceOrderReturns.objects.get(id=id).delete()
