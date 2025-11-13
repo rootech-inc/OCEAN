@@ -1292,7 +1292,7 @@ def interface(request):
                         print(service)
                         li = [
                             service.service_type.name,
-                            service.installation_type.name if service.installation_type.name else 'unknown',
+                            service.installation_type.name if service.installation_type else 'unknown',
                             service.service_date,
                             service.contractor.company,
                             service.spn,
