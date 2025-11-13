@@ -1307,7 +1307,7 @@ def interface(request):
                     filename = f"static/general/tmp/installations_{unique_id}_{start_date}_to_{end_date}.xlsx"
                     book.save(filename)
                     success_response['message'] = {
-                        "json":[serv.obj() for serv in ServiceOrder.objects.filter(service_date__gte=start_date, service_date__lte=end_date)],
+                        # "json":[serv.obj() for serv in ServiceOrder.objects.filter(service_date__gte=start_date, service_date__lte=end_date)],
                         "file":filename
                         }
 

@@ -4506,23 +4506,24 @@ class SSML {
 
                     if(anton.IsRequest(response,true)){
                         let data = response.message.json;
-                        let arr = [["SERVICE DATE","STS NUMBER","OLD METER","SERVICE TYPE","DOC"]]
-                        let tr = ``;
-                        data.forEach(item => {
-                            console.table(item)
-                            //arr.push([item.service_date,item.new_meter_no,item.old_meter_no,item.service_type.name,item.contractor.company])
-                            tr += `
-                                <tr><td>${item.service_date}</td><td>${item.new_meter_no}</td><td>${item.old_meter_no}</td><td>${item.service_type.name}</td><td>${item.contractor.company}</td></tr>`;`
-                            `
-                        })
+                        anton.viewFile(`/${response.message.file}`)
+                        // let arr = [["SERVICE DATE","STS NUMBER","OLD METER","SERVICE TYPE","DOC"]]
+                        // let tr = ``;
+                        // data.forEach(item => {
+                        //     console.table(item)
+                        //     //arr.push([item.service_date,item.new_meter_no,item.old_meter_no,item.service_type.name,item.contractor.company])
+                        //     tr += `
+                        //         <tr><td>${item.service_date}</td><td>${item.new_meter_no}</td><td>${item.old_meter_no}</td><td>${item.service_type.name}</td><td>${item.contractor.company}</td></tr>`;`
+                        //     `
+                        // })
 
-                        let table = `
-                            <table id="x_tab" class="table table-bordered"><thead><tr><th>DATE</th><th>NEW METER</th><th>OLD METER</th><th>SERVICE TYPE</th><th>FOC</th></tr></thead><tbody>${tr}</tbody></table>
-                        `;
-                        amodal.setBodyHtml(table)
-                        amodal.setTitleText('Installed Meters')
-                        amodal.setSize("L")
-                        amodal.setFooterHtml(fom.button('export_service','button','success'))
+                        // let table = `
+                        //     <table id="x_tab" class="table table-bordered"><thead><tr><th>DATE</th><th>NEW METER</th><th>OLD METER</th><th>SERVICE TYPE</th><th>FOC</th></tr></thead><tbody>${tr}</tbody></table>
+                        // `;
+                        // amodal.setBodyHtml(table)
+                        // amodal.setTitleText('Installed Meters')
+                        // amodal.setSize("L")
+                        // amodal.setFooterHtml(fom.button('export_service','button','success'))
                         loader.hide()
 
 
