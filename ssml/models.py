@@ -1790,6 +1790,8 @@ class RetiredMetersTransactions(models.Model):
     has_breaker = models.CharField(max_length=10, blank=True, null=True)
     foc = models.ForeignKey(Contractor, on_delete=models.CASCADE, related_name='foc')
     created_at = models.DateTimeField(auto_now_add=True)
+    gps_address = models.CharField(max_length=100, blank=True, null=True)
+    installation_type = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
         unique_together = ('box', 'old_meter_no')

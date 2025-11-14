@@ -1320,6 +1320,24 @@ def interface(request):
                     import openpyxl
                     book = openpyxl.Workbook()
 
+                    print("Updating Returns...")
+                    rr = 1
+                    all_ct = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date).count()
+                    for rt in RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date):
+                        spn = rt.spn
+                        rrm = f"{rr} / {all_ct}"
+                        try:
+                            service = ServiceOrder.objects.get(spn=spn)
+                            rt.foc = service.contractor
+                            rt.gps_address = service.gps_code
+                            rt.installation_type = service.installation_type.name if service.installation_type else 'NONE'
+                            rt.save()
+                            print(rrm, rt.box.box_no, "-", rt.sn, "Updated",service.installation_type.name if service.installation_type else 'NONE')
+
+                        except Exception as e:
+                            print(rrm, rt.box.box_no, "-", rt.sn, "Err: ", str(e))
+                        rr += 1
+
                     if for_invoice == 'YES':
                     
                         from datetime import datetime
@@ -1344,6 +1362,7 @@ def interface(request):
                         foc_summ.append(foc_sum_hd)
 
                         fosn = 1
+                        print("FOC SUMMARY....")
                         for foc in Contractor.objects.filter(is_installer=True).order_by('company'):
                             total_jobs = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc).count()
                             
@@ -1365,8 +1384,8 @@ def interface(request):
 
 
                         sheet = book.create_sheet(title = "Installations")
-                        
 
+                        print("INSTALLATIONS")
                         sheet.append(["DATE","METER","OLD METER","SPN","JOB TYPE","FOC"])
                         for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
                             sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
@@ -1388,6 +1407,7 @@ def interface(request):
 
                         # summary consumption
                         mcs = book.create_sheet(title="Consumption Summary")
+                        print("Consumption Summary")
                         mcs.append(["ITEM NAME","UNIT","CONCUMNED","WASTAGE","WASTAGE QTY","TOTAL CONSUMPTION","AVG CONSUMPTION"])
                         for mat in InventoryMaterial.objects.all():
                             from django.db.models import Sum
@@ -1409,6 +1429,7 @@ def interface(request):
                         ## create material consumption
                         
                         ms = book.create_sheet(title="3.2 Material Consumption")
+                        print("Materials Consumption")
                         hd = ["SN","DISTRICT","FOC","SPN","INSTALL DATE","METER TYPE","GPS","INSTALLATION TYPE"]
                         for mtn in InventoryMaterial.objects.filter(is_issue=True).order_by('name'):
                             hd.append(mtn.name)
@@ -1452,6 +1473,7 @@ def interface(request):
 
                         # service count
                         sc = book.create_sheet(title="Count By Service")
+                        print("Service Count")
                         sc.append(["NAME","TOTAL"])
                         for st in ServiceType.objects.all():
                             name = st.name
@@ -1461,6 +1483,7 @@ def interface(request):
 
                         # 3.3 Material Inventory Reciept
                         mir = book.create_sheet(title="3.3 Inventory Reciept")
+                        print("Inventory Reciept")
                         from datetime import date, timedelta
                         mirhd = ["No","Material Description","Unit of Measurement","Total Request"]
                         
@@ -1509,6 +1532,7 @@ def interface(request):
 
                         # 3.4 Inventory Tracking
                         itr = book.create_sheet(title="3.4 Inventory Tracking")
+                        print("Inventory Tracking")
                         itrhd = ["No","Material Description","UNIT","TOTAL RECIEPT"]
                         for mt in months_data:
                             itrhd.append(mt.get('name'))
@@ -1516,8 +1540,12 @@ def interface(request):
                         itrhd.append("Stock Balance with Supplier")
                         itr.append(itrhd)
                         mirsn = 1
+                        from datetime import date
+
+                        first_day = date(date.today().year, 1, 1)
+
                         for mirmat in InventoryMaterial.objects.filter(is_issue=True):
-                            total_recieved =  mirmat.in_by_date_range(mt.get('start'),mt.get('end'))
+                            total_recieved =  mirmat.in_by_date_range(first_day,data.get('end_date'))
                             legend_usage = 0
 
                             li = [mirsn,mirmat.name,mirmat.uom,total_recieved]
@@ -1536,6 +1564,7 @@ def interface(request):
 
                         #4.1 Summary_Retired Materials
                         srm_sheet = book.create_sheet(title='4.1 Summary Retired Materials')
+                        print("Retired Materials Summary")
                         srm_hd = ["No","Disctict","Energy Meter","Meter Enclosure","MCB/ MCCB/ FUSE","Cables etc","Burnt Meters","Stolen Meters"]
                         srm_sheet.append(srm_hd)
 
@@ -1557,6 +1586,7 @@ def interface(request):
 
                         # 4.2 Retiring Material
                         rm_sheet = book.create_sheet("4.2 Retiring Material")
+                        print("Retiring Materials")
                         rm_hd = ["No","Disctrict","FOC Company Name","SPN","OLD METER NUMBER","Meter Phase(1Ø/3Ø)",
                         "Meter Year of Manufacturing",
                         "GPS/Digital Address",
@@ -1575,12 +1605,13 @@ def interface(request):
                             removed = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date,box__location=loc)
                             if removed.count() > 0:
                                 for rem in removed:
-                                    li = [rmline,loc.loc_name,rem.foc.company,rem.spn,rem.old_meter_no,rem.phase,rem.make_year,"GPS ADDRESS","","ON",rem.manufacturere,"NO","YES","0"]
+                                    li = [rmline,loc.loc_name,rem.foc.company,rem.spn,rem.old_meter_no,rem.phase,rem.make_year,rem.gps_address,rem.installation_type,"ON",rem.manufacturere,"NO","YES","0"]
                                     rm_sheet.append(li)
                                     rmline += 1
 
                         #4.3 Old Meter Reading
                         omr_sheet = book.create_sheet(title="4.3 Old Meter Reading")
+                        print("Old Meter Readings")
                         omr_hd = ["NO","District","SPN","Old Meter Number","Meter Phase(1Ø/3Ø)","Installation Type(Faulty/Illegal Meter Replacement)","Meter Display ON/OFF"," Record Final KWh Reading from Meter Display"]
                         omr_sheet.append(omr_hd)
                         omrline = 1
@@ -1589,12 +1620,13 @@ def interface(request):
                             removed = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date,box__location=loc)
                             if removed.count() > 0:
                                 for rem in removed:
-                                    li = [omrline,loc.loc_name,rem.spn,rem.old_meter_no,rem.phase,"","ON",rem.final_readings]
+                                    print('installation type',rem.installation_type)
+                                    li = [omrline,loc.loc_name,rem.spn,rem.old_meter_no,rem.phase,rem.installation_type,"ON",rem.final_readings]
                                     omr_sheet.append(li)
                                     omrline += 1
 
                         # districts data
-                        
+                        print("Districk Pointers")
                         for loc in Location.objects.all():
                             name = loc.loc_name
                             code = loc.loc_id
@@ -1604,14 +1636,16 @@ def interface(request):
                             mx = 1
                             for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,location=loc):
                                 if len(service.old_meter_no) > 0:
+                                    is_x = service.installation_type.name
+                                    print("ISX:",service.installation_type.name)
                                     if True:
                                         rr = "YES" if service.is_routing else "NO"
                                         is_same = service.sn_same_as_wo().get('is_same')
-                                        li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,service.service_type.name,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
+                                        li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,service.installation_type.name,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
                                         mx += 1
                                         this_sheet.append(li)
                                 else:
-                                    li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,service.service_type.name,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
+                                    li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,service.installation_type.name,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
                                     mx += 1
                                     this_sheet.append(li)
                     
@@ -1621,7 +1655,9 @@ def interface(request):
                         sn = 1
                         sheet.append(["SN","DATE INSTALLED","SERVICE","INSTALLATION TYPE","METER","SPN","OLD METER","PHASE","FOC","BOX","ROUTING","IS BOXED"])
                         for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
-                            li = [sn,service.service_date,service.service_type.name,service.installation_type.name,service.new_meter,service.spn,service.old_meter_no,service.phase,service.contractor.company,service.box_no,service.is_routing]
+                            li = [sn,service.service_date,service.service_type.name,
+                                  service.installation_type.name if service.installation_type else 'Unknown'
+                                ,service.new_meter,service.spn,service.old_meter_no,service.phase,service.contractor.company,service.box_no,service.is_routing]
                             sheet.append(li)
                             sn += 1
                     
@@ -3423,6 +3459,7 @@ def interface(request):
                 updated = 0
                 created = 0
 
+
                 # for meterial in InventoryMaterial.objects.filter(is_issue=True,auto_issue=True):
                     
                 #     issue_qty = meterial.issue_qty
@@ -3438,11 +3475,18 @@ def interface(request):
                 #     print (mt.name, mt.issue_qty, '\n')
 
                 if True:
+
+
                     for service in ServiceOrder.objects.all():
                         service_type = service.service_type
                         # get linked materials
-                        
-                        for mt in ServiceMaterials.objects.filter(service=service_type):
+                        pk = data.get('pk', '*')
+                        if pk == '*':
+                            material = ServiceMaterials.objects.filter(service=service_type)
+                        else:
+                            item = InventoryMaterial.objects.get(pk=pk)
+                            material =ServiceMaterials.objects.filter(service=service_type,material=item)
+                        for mt in material:
                             try:
                             # create
                                 MaterialOrderItem.objects.create(
@@ -3459,6 +3503,26 @@ def interface(request):
                                 print("NO NEED")
 
                 success_response['message'] = f"UPDATED {updated}, CREATED:{created}"
+
+            elif module == 'update_retired_owner':
+                start_date = data.get('start_date')
+                end_date = data.get('end_date')
+                all_ct = RetiredMetersTransactions.objects.filter(date_removed__in_range[start_date,end_date]).count()
+                rr = 1
+                for rt in RetiredMetersTransactions.objects.all():
+                    spn = rt.spn
+                    rrm = f"{rr} / {all_ct}"
+                    try:
+                        service = ServiceOrder.objects.get(spn=spn)
+                        rt.foc = service.contractor
+                        rt.save()
+                        print(rrm,rt.box.box_no,"-",rt.sn,"Updated")
+
+                    except Exception as e:
+                        print(rrm,rt.box.box_no, "-", rt.sn, "Err: ",str(e))
+                    rr += 1
+
+                success_response['message'] = "Retired Records Updated Successfully"
 
             elif module == 'post_invoice':
                 entry_no = data.get('entry_no')

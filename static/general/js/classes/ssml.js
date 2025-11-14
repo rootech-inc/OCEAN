@@ -4371,6 +4371,35 @@ class SSML {
         })
     }
 
+    async updateConsumed(pk){
+        let payload = {
+            module:'issue_def_qty',
+            data:{
+                pk:pk
+            }
+        }
+        loader.show()
+        await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+            kasa.response(response)
+            loader.hide()
+        }).catch(error => {kasa.error(error);loader.hide()})
+    }
+
+    async updateRetiredFoc(){
+        let payload = {
+            module:'update_retired_owner',
+            data:{}
+        }
+
+        loader.show()
+        await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+            kasa.response(response);
+            loader.hide()
+        }).catch(error => {
+            kasa.error(error);
+            loader.hide()
+        })
+    }
 
     async newServiceOrderType(){
         let form = "";

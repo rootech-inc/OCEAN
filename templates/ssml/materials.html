@@ -37,6 +37,7 @@
             <button class="btn btn-sm btn-primary ms-2" id="prev-material"><i class="fas fa-arrow-left"></i></button>
             <button class="btn btn-sm btn-primary ms-2" id="next-material"><i class="fas fa-arrow-right"></i></button>
             <button class="btn btn-info ms-2" id="view_cardex">Cardex</button>
+            <button class="btn btn-info ms-2" id="update_consumed">Up Consumed</button>
 
             {% if request.user.is_superuser %}
             <button title="Rates" class="btn btn-sm btn-primary ms-2" id="rates"><i class="fa fa-money-bill"></i></button>
@@ -283,6 +284,11 @@
     $(document).ready(function () {
 
         // getMaterials();
+
+        $('#update_consumed').click(function(){
+            let pk = $('#material_id').val();
+            ssml.updateConsumed(pk)
+        })
 
         
         $('#edit_material').click( async function () {
