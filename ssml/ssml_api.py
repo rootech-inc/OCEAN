@@ -1273,6 +1273,138 @@ def interface(request):
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
 
+                elif module == 'print_petty_cash':
+                    from fpdf import FPDF
+                    import datetime
+
+                    class PettyCashPDF(FPDF):
+                        def header(self):
+                            # Logo (ensure this path is correct in your project)
+                            self.image('static/general/logo.png', 10, 8, 33)
+                            self.set_font('Arial', 'B', 16)
+                            self.cell(0, 12, 'PETTY CASH VOUCHER', ln=True, align='C')
+                            self.ln(2)
+
+                        def footer(self):
+                            # Position 50 units from bottom
+                            self.set_y(-50)
+                            page_width = self.w - 20
+                            cell_w = page_width / 4
+                            self.set_font('Arial', '', 10)
+                            y = self.get_y()
+
+                            # Header row for signatories
+                            self.cell(cell_w, 6, 'Prepared By', align='C', border=0)
+                            self.cell(cell_w, 6, "Receiver's Signature", align='C', border=0)
+                            self.cell(cell_w, 6, 'Checked by / Dept. Head', align='C', border=0)
+                            self.cell(cell_w, 6, 'Authorised Signatory', align='C', border=0)
+                            self.ln(12)
+
+                            # Draw signature lines
+                            sig_line_length = cell_w - 10
+                            line_y = self.get_y()
+                            x = 10
+                            for _ in range(4):
+                                self.line(x, line_y, x + sig_line_length, line_y)
+                                x += cell_w
+                            self.ln(10)
+
+                    entry_no = data.get('entry_no')
+                    petty = PettyCash.objects.get(entry_no=entry_no)
+                    rows = list(Expense.objects.filter(entry_no=entry_no).order_by('id'))
+
+
+
+                    pdf = PettyCashPDF()
+                    pdf.add_page()
+                    th = pdf.font_size_pt * 0.6 + 1
+
+                    # Top Info: Paid to, Voucher No., Dept, Date
+                    pdf.set_font('Arial', '', 11)
+                    left_x = 12
+                    col_margin = 100
+
+                    y = pdf.get_y()
+                    pdf.set_xy(left_x, y)
+                    pdf.cell(24, 7, 'Paid to:', 0, 0)
+                    pdf.set_font('Arial', 'U', 11)
+                    pdf.cell(64, 7, '', 0, 0)
+                    pdf.set_font('Arial', '', 11)
+                    pdf.cell(10, 7, '', 0, 0)
+                    pdf.cell(22, 7, 'Voucher No.:', 0, 0)
+                    pdf.set_font('Arial', 'U', 11)
+                    pdf.cell(30, 7, str(petty.entry_no), 0, 1)
+                    pdf.set_font('Arial', '', 11)
+
+                    y = pdf.get_y()
+                    pdf.set_xy(left_x, y)
+                    pdf.cell(24, 7, 'Dept:', 0, 0)
+                    pdf.set_font('Arial', 'U', 11)
+                    pdf.cell(64, 7, '', 0, 0)
+                    pdf.set_font('Arial', '', 11)
+                    pdf.cell(10, 7, '', 0, 0)
+                    pdf.cell(22, 7, 'Date:', 0, 0)
+                    pdf.set_font('Arial', 'U', 11)
+                    date_str = petty.date.strftime("%d/%m/%y") if petty.date else ''
+                    pdf.cell(30, 7, date_str, 0, 1)
+                    pdf.ln(3)
+
+                    # Table header
+                    pdf.set_font('Arial', 'B', 11)
+                    col_widths = [15, 105, 40]
+                    pdf.cell(col_widths[0], th * 1.4, 'Sr. No.', border=1, align='C')
+                    pdf.cell(col_widths[1], th * 1.4, 'PARTICULARS', border=1, align='C')
+                    pdf.cell(col_widths[2], th * 1.4, 'AMOUNT GHS', border=1, ln=1, align='C')
+
+                    # Table rows, support multi-page output
+                    pdf.set_font('Arial', '', 11)
+                    total_amt = 0.0
+                    for idx, txn in enumerate(rows):
+                        sr = str(idx+1)
+                        particulars = str(txn.description)
+                        amount = "{:.2f}".format(float(txn.amount))
+
+                    file_name = f'static/general/tmp/{entry_no}.pdf'
+                    pdf.output(file_name)
+
+                    success_response['message'] = file_name
+
+                    
+                elif module == 'export_petty_cash':
+                    entry_no = data.get('entry_no')
+                    import openpyxl
+                    book = openpyxl.Workbook()
+                    sheet = book.active
+                    sheet.title = "Transactions"
+
+                    sheet.append([
+                        "DIRECTION","CATEGORY","TYPE","DATE","REFERENCE","DESCRIPTION","AMOUNT","EVIDENCE"
+                    ])
+
+                    for transaction in Expense.objects.filter(entry_no=entry_no):
+                        evidence = transaction.evidence()
+                        x_file = ""
+                        if len(evidence) > 0:
+                            lx = evidence.split(',')
+                            
+                            for lu in lx:
+                                file = lu.split('|')[-1].lstrip('/')
+                                file_url = f"{BASE_URL}{file}"
+                                short_link = shorten_url(file_url)
+                                x_file += f"{short_link},"
+
+                            x_file = x_file.rstrip(',')    
+                            print(x_file)
+                        li = [transaction.direction,transaction.category,transaction.transaction_type,transaction.date,transaction.reference,transaction.description,transaction.amount,x_file]
+                        sheet.append(li)
+                        
+                    import uuid
+                    unique_id = uuid.uuid4()
+                    filename = f"static/general/tmp/petty_cash_{unique_id}.xlsx"
+                    book.save(filename)
+                    success_response['message'] = filename
+                        
+
                 elif module == 'retired_meters':
                     pk = data.get('pk','*')
                     if pk == '*':
@@ -1950,7 +2082,7 @@ def interface(request):
                             import openpyxl
                             wb = openpyxl.Workbook()
                             ws = wb.active
-                            header = ['DIRECTION',"TYPE",'AMOUNT','DATE','REF',"DESCRIPTION"]
+                            header = ['DIRECTION',"TYPE",'AMOUNT','DATE','REF',"DESCRIPTION","EVIDENCE"]
                             ws.append(header)
                             
 

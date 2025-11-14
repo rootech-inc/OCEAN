@@ -3,19 +3,20 @@
 
 {% block body %}
 
-    <div class="card h-100">
+    <div style="height:90vh" class="card">
         <div class="card-header">
-            <div class="w-100 d-flex">
-                <div class="w-50 d-flex">
-                    <button class="btn btn-info" id="new"><i class="fa fa-plus"></i> Create</button>
-                </div>
-                <div class="w-50 d-flex"></div>
+            <div class="w-100 d-flex flex-wrap">
+                <button id="new" class="btn btn-primary btn-sm ms-2"><i class="fa fa-plus"></i> New</button>
+                <button class="btn btn-info btn-sm ms-2">Previous</button>
+                <button class="btn btn-info btn-sm ms-2">Next</button>
+                <button id="print" class="btn btn-secondary btn-sm ms-2"><i class="fa fa-print"></i> Print</button>
             </div>
         </div>
-        <div class="card-body">
-            <div class="container-fluid py-2 h-100">
-                <div class="row bg-info text-light py-3 h-25">
-                    <div class="col-sm-4">
+        <div class="card-body p-2 overflow-hidden">
+            <div class="w-100 h-25 bg-info overflow-hidden">
+                <div class="container py-3">
+                    <div class="row">
+                        <div class="col-sm-4">
                         <div class="row mb-2">
                             <div class="col-sm-4"><label for="entry_no">Entry No.</label></div>
                             <div class="col-sm-8">
@@ -55,17 +56,21 @@
                             </div>
                         </div>
                     </div>
+                    </div>
                 </div>
-                <div class="w-100 h-75 table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Date</th><th>Direction</th><th>Reference</th><th>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="petty_cash_table"></tbody>
-                    </table>
-                </div>
+            </div>
+            <div class="w-100 h-75 overflow-auto pb-5">
+                <table class="table table-sm table-hover table-bordered table-bordered">
+                    <thead>
+                        <tr>
+                            <th>DATE</th>
+                            <th>DESCRIPTION</th>
+                            <th>REFERENCE</th>
+                            <th>AMOUNT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="petty_cash_table"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -76,6 +81,10 @@
             ssml.loadPettyCash(`{{ last_petty_cash_entry }}`)
             $('#new').click(function () {
                 ssml.newPettyCash()
+            })
+
+            $("#print").click(function(){
+                ssml.printPetterCash($('#entry_no').val())
             })
         })
     </script>

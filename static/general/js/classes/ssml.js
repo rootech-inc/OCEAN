@@ -4510,6 +4510,25 @@ class SSML {
         }).catch(error => {kasa.error(error);loader.hide()})
     }
 
+    async printPetterCash(entry_no){
+        let payload = {
+            module:'export_petty_cash',
+            data:{
+                entry_no:entry_no
+            }
+        }
+        
+        loader.show()
+        await api.v2('VIEW',payload,'/ssml/api/').then(response => {
+            if(anton.IsRequest(response,true)){
+                let file = response.message;
+                anton.viewFile(`/${file}`)
+                loader.hide()
+            }
+        }).catch(error => {kasa.error(error);loader.hide()})
+
+    }
+
     async getPettyCash(entry_no) {
         return api.call('VIEW',{module:'petty_cash',data:{entry_no:entry_no}},'/ssml/api/')
     }
