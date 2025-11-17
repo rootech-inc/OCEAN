@@ -1325,6 +1325,7 @@ class Expense(models.Model):
     transaction_type_choices = [
         ('cash', 'Cash'),
         ('momo', 'MoMo'),
+        ('other', 'Other'),
     ]
     transaction_type = models.CharField(max_length=255, choices=transaction_type_choices)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -1338,6 +1339,10 @@ class Expense(models.Model):
     is_posted = models.BooleanField(default=False)
     is_rejected = models.BooleanField(default=False)
     entry_no = models.CharField(max_length=255)
+
+    
+    # class Meta:
+    #     unique_together = (('date','reference','amount'),)
 
     def evidence(self):
         # INSERT_YOUR_CODE

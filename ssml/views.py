@@ -520,7 +520,7 @@ def upload_service_order(request):
         loc_id = request.POST['loc_id']
         loc = Location.objects.get(loc_id=loc_id)
 
-        headers = [cell.value for cell in sheet[1]] 
+        
         sample_data = []
 
         # service_rates = ServiceTypeServices.objects.filter(service_type=service)
@@ -1363,3 +1363,58 @@ def cardex(request,barcode):
         'cardex': Cardex.objects.filter(material=material)
     }
     return render(request, 'ssml/cardex.html', context)
+
+
+@login_required
+@csrf_exempt
+def import_expensis(request):
+    # INSERT_YOUR_CODE
+    from django.http import JsonResponse
+    import openpyxl
+
+    if request.method == "POST" and request.FILES.get('expensis_file'):
+        expensis_file = request.FILES['expensis_file']
+        try:
+            wb = openpyxl.load_workbook(expensis_file, data_only=True)
+            if "Expensis Log" not in wb.sheetnames:
+                return JsonResponse({'status_code': '400', 'message': 'Sheet "Expensis Log" not found.'})
+            sheet = wb["Expensis Log"]
+
+            headers = [cell.value for cell in sheet[1]] 
+            print("HEADER",headers)
+            data = []
+            for row in sheet.iter_rows(min_row=2,values_only=True):
+                rowd = dict(zip(headers, row))
+                if rowd['DATE']:
+                    tran_date = rowd['DATE']
+                    direction = rowd['DIRECION']
+                    title = rowd['TITLE']
+                    description = rowd['DESCRIPTION']
+                    amount = rowd['ISSUED']
+                    # li = [tran_date,direction,title,description,amount]
+                    # print(li)
+                    try:
+                        Expense.objects.create(
+                            direction=direction.lower(),
+                            date=tran_date,
+                            category='other',
+                            transaction_type='other',
+                            amount=amount,
+                            reference=title,
+                            description=description,
+                            created_by=request.user
+
+                        )
+
+
+
+                        li = [tran_date,direction,title,description,amount]
+                        print(li)
+                    except Exception as e:
+                        print(e)
+                
+            return JsonResponse({'status_code': '200', 'message': 'Success', 'data': data})
+        except Exception as e:
+            return JsonResponse({'status_code': '500', 'message': str(e)})
+    else:
+        return JsonResponse({'status_code': '400', 'message': 'No file uploaded or wrong method.'})

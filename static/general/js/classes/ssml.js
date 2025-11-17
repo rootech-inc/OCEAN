@@ -3091,7 +3091,11 @@ class SSML {
         `
         amodal.setTitleText('Add Expense Transaction')
         amodal.setBodyHtml(form)
-        amodal.setFooterHtml(`<button class="btn btn-primary" id="save_transaction">Save</button>`)
+        amodal.setFooterHtml(`
+            <button class="btn btn-secondary" id="import_transactions">Import</button>
+            <button class="btn btn-primary" id="save_transaction">Save</button>
+            `
+        )
         amodal.show()
 
 
@@ -3117,6 +3121,66 @@ class SSML {
                 kasa.error('Please fill all the fields')
             }
         })
+
+        $('#import_transactions').click(function(){
+        // INSERT_YOUR_CODE
+
+            // Show a modal for importing expenses via file upload
+            let importForm = `
+                <form id="expenseImportForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="expensis_file" class="form-label">Import Expense Transactions (Excel)</label>
+                        <input class="form-control" type="file" id="expensis_file" name="expensis_file" accept=".xlsx" required>
+                    </div>
+                </form>
+            `;
+            amodal.setTitleText('Import Expense Transactions');
+            amodal.setBodyHtml(importForm);
+            amodal.setFooterHtml(`
+                <button class="btn btn-secondary" id="cancel_import">Cancel</button>
+                <button class="btn btn-success" id="submit_expense_import">Import</button>
+            `);
+            amodal.show();
+
+            $('#cancel_import').off('click').on('click', function() {
+                amodal.hide();
+            });
+
+            $('#submit_expense_import').off('click').on('click', function(){
+                let fileInput = document.getElementById('expensis_file');
+                if (!fileInput.files.length) {
+                    kasa.error('Please select a file to import.');
+                    return;
+                }
+                let formData = new FormData();
+                formData.append('expensis_file', fileInput.files[0]);
+                kasa.info('Importing...');
+
+                $.ajax({
+                    url: '/ssml/import-expensis/',
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res){
+                        kasa.response(res);
+                        if(res.status_code == '200') {
+                            ssml.loadExpenses();
+                            amodal.hide();
+                        }
+                    },
+                    error: function(xhr){
+                        kasa.error("Import failed. Please try again.");
+                    },
+                    complete: function(){
+                        
+                    }
+                });
+            });
+
+        })
+
+
 
     }
 
@@ -3488,19 +3552,25 @@ class SSML {
         amodal.show()
 
         $('#exp_expensis').click(async function(){
+            loader.show()
+            
             if(anton.validateInputs(['as_of','direction'])){
                 await ssml.getExpenses('*',10000,'approved',$('#as_of').val(),'excel',$('#direction').val()).then(response => {
                     if(anton.IsRequest(response)){
                         console.table(response)
                         anton.viewFile(`/${response.message.expenses}`)
+                        loader.hide()
                     } else {
                         kasa.response(response)
+                        loader.hide()
                     }
                 }).catch(error=>{
                     kasa.error(error)
+                    loader.hide()
                 })
             } else {
                 kasa.info("Set Fields")
+                loader.hide()
             }
             
         })

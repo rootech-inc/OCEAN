@@ -2063,11 +2063,11 @@ def interface(request):
                         filt = data.get('filter','pending')
                         print(filt)
                         if filt == 'approved':
-                            expenses = Expense.objects.filter(is_approved=True).order_by('-created_at')
+                            expenses = Expense.objects.filter(is_approved=True).order_by('date')
                         elif filt == 'pending':
-                            expenses = Expense.objects.filter(is_approved=False).order_by('-created_at')
+                            expenses = Expense.objects.filter(is_approved=False).order_by('date')
                         else:
-                            expenses = Expense.objects.all().order_by('-created_at')
+                            expenses = Expense.objects.all().order_by('date')
                         # if direction == '*':
                         #     direction = 'all'
                         #     expenses = expenses.filter(is_approved=False).order_by('date')
@@ -2082,13 +2082,31 @@ def interface(request):
                             import openpyxl
                             wb = openpyxl.Workbook()
                             ws = wb.active
-                            header = ['DIRECTION',"TYPE",'AMOUNT','DATE','REF',"DESCRIPTION","EVIDENCE"]
+                            header = [
+                                "DIRECTION","CATEGORY","TYPE","DATE","REFERENCE","DESCRIPTION","AMOUNT","EVIDENCE"
+                            ]
                             ws.append(header)
                             
 
                             for expense in expenses:
+                                transaction = expense
                                 tr = [expense.direction,expense.category,expense.amount,expense.date,expense.reference,expense.description]
-                                ws.append(tr)
+                                evidence = expense.evidence()
+                                x_file = ""
+                                if len(evidence) > 0:
+                                    lx = evidence.split(',')
+                                    
+                                    for lu in lx:
+                                        file = lu.split('|')[-1].lstrip('/')
+                                        file_url = f"{BASE_URL}{file}"
+                                        short_link = shorten_url(file_url)
+                                        x_file += f"{short_link},"
+
+                                    x_file = x_file.rstrip(',')    
+                                    print(x_file)
+
+                                li = [transaction.direction,transaction.category,transaction.transaction_type,transaction.date,transaction.reference,transaction.description,transaction.amount,x_file]
+                                ws.append(li)
 
                             dir_name = direction if direction != '*' else 'all'
                             file_name = f'static/general/tmp/{dir_name}_expensis_as_of_{str(as_of)}.xlsx'
