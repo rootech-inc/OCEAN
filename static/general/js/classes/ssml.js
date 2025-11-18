@@ -3208,7 +3208,8 @@ class SSML {
                     let status = expense['status'];
                     let approved = expense['approval']
                     
-                    let men = `<a href='javascript:void(0)' class="dropdown-item approve" data-id='${expense.id}'><i class="bi bi-check"></i> Approve</a>`;
+                    let men = `<a href='javascript:void(0)' class="dropdown-item text-success approve" data-id='${expense.id}'><i class="bi bi-check"></i> Approve</a>`;
+                    men += `<a href='javascript:void(0)' class="dropdown-item reject text-danger" data-id='${expense.id}'><i class="bi bi-check"></i> Reject</a>`;
                     if(!status){
                         // create approval menu
                         men = ``
@@ -3296,12 +3297,29 @@ class SSML {
                         ssml.loadExpenses($('#filter_by').val())
                     }
                 })
-            } else {
-                kasa.response(response)
+                $('.reject').click(async function(){
+                    if(confirm("Are You Sure to Reject this Expense?")){
+                        let payload = {
+                            module:'reject_expense',
+                            data:{
+                                pk:$(this).data('id')
+                            }
+                        }
+                        loader.show()
+                        await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+                            kasa.response(response)
+                            ssml.loadExpenses($('#filter_by').val())
+                            loader.hide()
+                        }).catch(error => {
+                            kasa.error(error)
+                            loader.hide()
+                        })
+                    } else {
+                        kasa.info("Operation Cancelled")
+                        loader.hide()
+                    }
+                })
             }
-        })
-        .catch(error => {
-            kasa.error(error)
         })
     }
 

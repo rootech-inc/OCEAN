@@ -2065,7 +2065,9 @@ def interface(request):
                         if filt == 'approved':
                             expenses = Expense.objects.filter(is_approved=True).order_by('date')
                         elif filt == 'pending':
-                            expenses = Expense.objects.filter(is_approved=False).order_by('date')
+                            expenses = Expense.objects.filter(is_approved=False,is_rejected=False).order_by('date')
+                        elif filt == 'rejected':
+                            expenses = Expense.objects.filter(is_rejected=True).order_by('date')
                         else:
                             expenses = Expense.objects.all().order_by('date')
                         # if direction == '*':
@@ -3486,6 +3488,15 @@ def interface(request):
                                                 recipient='solomon@snedaghana.com',
                                                 cc='',mail_key=make_md5_hash(f"{subject}{body}"))
                     mail.save()
+
+            elif module == 'reject_expense':
+                pk = data.get('pk','*')
+                
+                expenses = Expense.objects.get(id=pk)
+                expenses.is_rejected = True
+                expenses.save()
+                success_response['message'] = "Expense Rejected Successfully"
+                response = success_response
 
             elif module == 'update_cardex_tally':
                 from django.db.models import Sum
