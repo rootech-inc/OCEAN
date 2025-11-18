@@ -3203,7 +3203,7 @@ class SSML {
                 $('#total_out').text(response.message.total_out)
                 let rows = ``;
                 response.message.expenses.forEach(expense => {
-                    // console.table(expense)
+                    console.table(expense)
 
                     let status = expense['status'];
                     let approved = expense['approval']
@@ -3220,7 +3220,8 @@ class SSML {
                             <td>${expense.category}</td>
                             <td>${expense.amount}</td>
                             <td>${expense.created_at}</td>
-                            <td>${expense.reference}</td>
+                            <td>${expense.reference}<br>${expense.description}</td>
+
                             <td>
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="dropdownMenu${expense.id}" data-bs-toggle="dropdown" aria-expanded="false">
