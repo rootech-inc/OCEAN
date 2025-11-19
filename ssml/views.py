@@ -520,6 +520,8 @@ def upload_service_order(request):
         loc_id = request.POST['loc_id']
         loc = Location.objects.get(loc_id=loc_id)
 
+        headers = [cell.value for cell in sheet[1]]
+
         
         sample_data = []
 
