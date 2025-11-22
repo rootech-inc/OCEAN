@@ -1,0 +1,41 @@
+{% extends 'ssml/ssmlbase.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div style="height: 90vh; overflow-y: scroll;" class="card">
+                <div class="card-body mb-5">
+                    <table class="table datatable">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Phase</th>
+                                <th>Material</th>
+                                <th>Quantity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for linked_model in linked_models %}
+                            <tr>
+                                <td>{{ linked_model.service.name }}</td>
+                                <td>{{ linked_model.phase.description }}</td>
+                                <td>{{ linked_model.material.name }}</td>
+                                <td>{{ linked_model.qty }}</td>
+                                <td>
+                                    <a href="" class="btn btn-sm btn-info">Edit</a>
+                                    <a href="javascript:void(0)"
+                                        onclick="ssml.DeleteServiceLine('{{ linked_model.id }}',false);location.reload()"
+                                        class="btn btn-sm btn-danger">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

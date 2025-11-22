@@ -885,11 +885,12 @@ class ServiceMaterialRates(models.Model):
 class ServiceMaterials(models.Model):
     service = models.ForeignKey(ServiceType,on_delete=models.CASCADE,null=False,blank=False,related_name='material_service_x')
     material = models.ForeignKey(InventoryMaterial,on_delete=models.CASCADE,null=False,blank=False,related_name='rate_material_x',verbose_name='rate_material')
+    phase = models.ForeignKey('Phase',on_delete=models.SET_NULL,null=True,blank=True,related_name='material_phase_x')
     qty = models.DecimalField(decimal_places=2,default=0.00,max_digits=10)
 
 
     class Meta:
-        unique_together = (('service','material'),)
+        unique_together = (('service','material','phase'),)
 
 
     def obj(self):
@@ -897,7 +898,8 @@ class ServiceMaterials(models.Model):
             'id':self.id,
             'service':self.service.name,
             'qty':self.qty,
-
+            'phase':self.phase.description if self.phase else 'Not',
+            'material':self.material.name,
         }
 
 class ServiceOrder(models.Model):

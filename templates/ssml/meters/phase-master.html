@@ -2,16 +2,53 @@
 {% load static %}
 
 {% block body %}
-    <div style="height: 90vh !important;" class="card h-100">
-        <div class="card-header">
-            <button id="new_phase" class="btn btn-info">NEW PHASE</button>
-            <!-- INSERT_YOUR_CODE -->
-            <button id="update_meter_phase" class="btn btn-warning">UPDATE METER PHASE</button>
-            <button id="update_meter_phase" class="btn btn-danger">UNPHASED {{unphased_total}}</button>
-        
+<div class="modal fade" id="unphasedMetersModal" tabindex="-1" aria-labelledby="unphasedMetersModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="unphasedMetersModalLabel">Unphased Meters</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered table-striped" id="unphasedMetersTable">
+                    <thead>
+                        <tr>
+                            <th>Meter Number</th>
+                            <th>Location</th>
+                            <th>Phase</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Unphased meters will be loaded here dynamically -->
+                        {% for meter in unphased %}
+                        <tr>
+                            <td>{{ meter.meter_no }}</td>
+                            <td>{{ meter.location.loc_name }}</td>
+                            <td>{{ meter.phase }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
+    </div>
+</div>
 
-        <div class="card-body">
+<div style="height: 90vh !important;" class="card h-100">
+    <div class="card-header">
+        <button id="new_phase" class="btn btn-info">NEW PHASE</button>
+        <!-- INSERT_YOUR_CODE -->
+        <button id="update_meter_phase" class="btn btn-warning">UPDATE METER PHASE</button>
+        <button id="update_meter_phase" data-bs-toggle="modal" data-bs-target="#unphasedMetersModal"
+            class="btn btn-danger">UNPHASED {{unphased_total}}</button>
+
+    </div>
+
+    <div class="card-body">
         <!-- INSERT_YOUR_CODE -->
         <table class="table table-bordered table-striped" id="phaseTable">
             <thead>
@@ -36,12 +73,15 @@
                     <td>{{ phase.created_at|date:"Y-m-d H:i" }}</td>
                     <td>
                         <div class="dropdown">
-                            <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn btn-secondary btn-sm dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                                 Actions
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" data-phase-id="{{ phase.id }}" onclick="editPhase(this)">Edit</a></li>
-                                <li><a class="dropdown-item" href="#" data-phase-id="{{ phase.id }}" onclick="deletePhase(this)">Delete</a></li>
+                                <li><a class="dropdown-item" href="#" data-phase-id="{{ phase.id }}"
+                                        onclick="editPhase(this)">Edit</a></li>
+                                <li><a class="dropdown-item" href="#" data-phase-id="{{ phase.id }}"
+                                        onclick="deletePhase(this)">Delete</a></li>
                             </ul>
                         </div>
                     </td>
@@ -55,7 +95,7 @@
         </table>
         <script>
             // Initialize DataTable after DOM loads
-            $(document).ready(function() {
+            $(document).ready(function () {
                 $('#phaseTable').DataTable();
             });
 
@@ -67,21 +107,21 @@
             function deletePhase(element) {
                 var phaseId = $(element).data('phase-id');
                 // Implementation for deletion (show confirmation, send API, etc.)
-                kasa.confirm("Are you sure you want to delete this phase?", 1, function() {
+                kasa.confirm("Are you sure you want to delete this phase?", 1, function () {
                     // API call to delete (to implement)
                     kasa.info("Delete functionality coming soon for Phase ID: " + phaseId);
                 });
             }
         </script>
-        </div>
     </div>
+</div>
 
-    <script>
-        $(document).ready(function(){
+<script>
+    $(document).ready(function () {
 
-            $('#new_phase').on('click', function() {
-                // Create the HTML for the form
-                var formHtml = `
+        $('#new_phase').on('click', function () {
+            // Create the HTML for the form
+            var formHtml = `
                     
                         <div class="mb-3">
                             <label for="phase_number" class="form-label">Phase Number</label>
@@ -92,52 +132,52 @@
                             <input type="text" class="form-control" id="phase_description" name="phase_description" required>
                         </div>
                 `;
-                // Show the form in an amodal using the Modal class
-                amodal.setTitleText('Add New Phase');
-                amodal.setBodyHtml(formHtml);
-                amodal.setFooterHtml(`
+            // Show the form in an amodal using the Modal class
+            amodal.setTitleText('Add New Phase');
+            amodal.setBodyHtml(formHtml);
+            amodal.setFooterHtml(`
                     <button type="submit" form="phaseMasterForm" id="savePhaseBtn" class="btn btn-success">Save</button>
                     <button type="button" id="cancelPhaseBtn" class="btn btn-secondary">Cancel</button>
                 `);
-                amodal.show();
+            amodal.show();
 
-                // Cancel button closes the modal
-                $('#cancelPhaseBtn').off('click').on('click', function(){
-                    amodal.hide();
-                });
-
-                // Save button (form submit)
-                $('#savePhaseBtn').click(async function(){
-                    let ids = ['phase_number','phase_description','mypk']
-                    if(anton.validateInputs(ids)){
-                        let payload = {
-                            module:'phase',
-                            data:anton.Inputs(ids)
-                        }
-
-                        await api.v2("PUT",payload,'/ssml/api/').then(response => {
-                            if(anton.IsRequest(response,true)){
-                                kasa.confirm(response.message,1,'here')
-                            }
-                        }).catch(error => {kasa.error(error);})
-
-
-                    }
-                })
+            // Cancel button closes the modal
+            $('#cancelPhaseBtn').off('click').on('click', function () {
+                amodal.hide();
             });
 
-            $('#update_meter_phase').click(async function(){
-                let payload = {
-                    module:'meter_phase',
-                    data:{}
-                }
+            // Save button (form submit)
+            $('#savePhaseBtn').click(async function () {
+                let ids = ['phase_number', 'phase_description', 'mypk']
+                if (anton.validateInputs(ids)) {
+                    let payload = {
+                        module: 'phase',
+                        data: anton.Inputs(ids)
+                    }
 
-                loader.show()
-                await api.v2("PATCH",payload,'/ssml/api/').then(response => {
-                    kasa.confirm(response.message,1,'here')
-                    loader.hide()
-                }).catch(error => {kasa.error(error);loader.hide()})
+                    await api.v2("PUT", payload, '/ssml/api/').then(response => {
+                        if (anton.IsRequest(response, true)) {
+                            kasa.confirm(response.message, 1, 'here')
+                        }
+                    }).catch(error => { kasa.error(error); })
+
+
+                }
             })
+        });
+
+        $('#update_meter_phase').click(async function () {
+            let payload = {
+                module: 'meter_phase',
+                data: {}
+            }
+
+            loader.show()
+            await api.v2("PATCH", payload, '/ssml/api/').then(response => {
+                kasa.confirm(response.message, 1, 'here')
+                loader.hide()
+            }).catch(error => { kasa.error(error); loader.hide() })
         })
-    </script>
+    })
+</script>
 {%endblock%}

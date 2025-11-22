@@ -461,14 +461,22 @@ def interface(request):
                 material = InventoryMaterial.objects.get(barcode=barcode)
                 ser_id = data.get('service')
                 qty = data.get('qty')
+                phase = data.get('phase')
 
-                ServiceMaterials.objects.create(
-                    service_id=ser_id,
-                    material=material,
-                    qty=qty
-                )
+                errors = 0
+                for p in phase:
+                    try:
+                        ServiceMaterials.objects.create(
+                            service_id=ser_id,
+                            material=material,
+                            qty=qty,
+                            phase=Phase.objects.get(id=p)
+                    )
+                    except Exception as e:
+                        print(e)
+                        errors += 1
 
-                success_response['message'] = "Created"
+                success_response['message'] = "Created with " + str(errors) + " errors"
                 response = success_response
 
             elif module == 'location':
@@ -3719,13 +3727,17 @@ def interface(request):
 
                     for service in ServiceOrder.objects.all():
                         service_type = service.service_type
+                        meter_no = service.new_meter
+                        meter = Meter.objects.get(meter_no=meter_no)
+
+                        phase = meter.linked_phase
                         # get linked materials
                         pk = data.get('pk', '*')
                         if pk == '*':
-                            material = ServiceMaterials.objects.filter(service=service_type)
+                            material = ServiceMaterials.objects.filter(service=service_type,phase=phase)
                         else:
                             item = InventoryMaterial.objects.get(pk=pk)
-                            material =ServiceMaterials.objects.filter(service=service_type,material=item)
+                            material =ServiceMaterials.objects.filter(service=service_type,material=item,phase=phase)
                         for mt in material:
                             try:
                             # create

@@ -37,7 +37,7 @@
   <!-- Template Main CSS File -->
   <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
   <link href="{% static 'general/css/recorder.css' %}" rel="stylesheet">
-    <link rel="manifest" href="{% static 'general/manifest.json' %}">
+  <link rel="manifest" href="{% static 'general/manifest.json' %}">
 
 
 
@@ -63,23 +63,23 @@
   <script src="{% static 'general/js/record.js' %}"></script>
   <script src="{% static 'general/js/classes/user.js' %}"></script>
   <script src="{% static 'general/js/classes/po.js' %}"></script>
-    <script src="{% static 'general/js/classes/sales.js' %}"></script>
-    <script src="{% static 'general/js/classes/sms.js' %}"></script>
-    <script src="{% static 'general/js/classes/cmms.js' %}"></script>
-    <script src="{% static 'general/js/trigger.js' %}"></script>
-    <script src="{% static 'general/js/classes/api.js' %}"></script>
-    <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
-    <script src="{% static 'general/js/classes/ticket.js' %}"></script>
-    <script src="{% static 'general/js/classes/app.js' %}"></script>
-    <script src="{% static 'general/js/classes/docs.js' %}"></script>
-    <script src="{% static 'general/js/classes/anton.js' %}"></script>
-    <script src="{% static 'general/js/classes/reminder.js' %}"></script>
-    <script src="{% static 'general/js/classes/contact.js' %}"></script>
-    <script src="{% static 'general/js/classes/modal.js' %}"></script>
-    <script src="{% static 'general/js/classes/form.js' %}"></script>
-    <script src="{% static 'general/js/classes/maintenance.js' %}"></script>
-    <script src="{% static 'general/js/classes/ssml.js' %}"></script>
-    <script src="{% static 'general/js/loader.js' %}"></script>
+  <script src="{% static 'general/js/classes/sales.js' %}"></script>
+  <script src="{% static 'general/js/classes/sms.js' %}"></script>
+  <script src="{% static 'general/js/classes/cmms.js' %}"></script>
+  <script src="{% static 'general/js/trigger.js' %}"></script>
+  <script src="{% static 'general/js/classes/api.js' %}"></script>
+  <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
+  <script src="{% static 'general/js/classes/ticket.js' %}"></script>
+  <script src="{% static 'general/js/classes/app.js' %}"></script>
+  <script src="{% static 'general/js/classes/docs.js' %}"></script>
+  <script src="{% static 'general/js/classes/anton.js' %}"></script>
+  <script src="{% static 'general/js/classes/reminder.js' %}"></script>
+  <script src="{% static 'general/js/classes/contact.js' %}"></script>
+  <script src="{% static 'general/js/classes/modal.js' %}"></script>
+  <script src="{% static 'general/js/classes/form.js' %}"></script>
+  <script src="{% static 'general/js/classes/maintenance.js' %}"></script>
+  <script src="{% static 'general/js/classes/ssml.js' %}"></script>
+  <script src="{% static 'general/js/loader.js' %}"></script>
 
 
 
@@ -91,62 +91,63 @@
 
   </script>
 
-    <style>
-        .install-button {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-        .tox-promotion{
-            display: none !important;
-        }
-    </style>
+  <style>
+    .install-button {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: #333;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    .tox-promotion {
+      display: none !important;
+    }
+  </style>
 </head>
 
 <body>
-    <!-- MODALS -->
-    <div id="g_modal" class="modal fade">
-        <div id="g_modal_size" class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="g_modal_title"></h5>
-                    <button class="close btn btn-outline-danger" data-bs-dismiss="modal">X</button>
-                </div>
-                <div class="modal-body">
-                    <div class="w-100" id="g_modal_body">
+  <!-- MODALS -->
+  <div id="g_modal" class="modal fade">
+    <div id="g_modal_size" class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="g_modal_title"></h5>
+          <button class="close btn btn-outline-danger" data-bs-dismiss="modal">X</button>
+        </div>
+        <div class="modal-body">
+          <div class="w-100" id="g_modal_body">
 
-                    </div>
-                </div>
-                <div class="modal-footer" id="g_footer"></div>
-            </div>
+          </div>
         </div>
+        <div class="modal-footer" id="g_footer"></div>
+      </div>
     </div>
-    <div class="modal" id="loader">
-        <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
-            <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
-            <div class="w-100 text-center">
-                <br>
-                <small class="text-info" id="error_msg"></small>
-            </div>
-            <div id="loader_message" class="text-info">Loading....</div>
-        </div>
+  </div>
+  <div class="modal" id="loader">
+    <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
+      <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
+      <div class="w-100 text-center">
+        <br>
+        <small class="text-info" id="error_msg"></small>
+      </div>
+      <div id="loader_message" class="text-info">Loading....</div>
     </div>
-    <script>
-        $('#loader').modal('show')
-    </script>
+  </div>
+  <script>
+    $('#loader').modal('show')
+  </script>
 
   <input type="hidden" id="autos_url" value="{% url 'autos' 'ajax' %}">
   <input type="hidden" id="search_url" value="{% url 'search' %}">
   <input type="hidden" value="{{ request.user.pk }}" id="mypk">
 
   <!-- ======= Header ======= -->
-  <header {% if nav != True %} style="display: none" {% endif %} id="header" class="header fixed-top d-flex align-items-center">
+  <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
       <a href="{% url 'home' %}" class="logo d-flex align-items-center">
@@ -157,7 +158,7 @@
     </div><!-- End Logo -->
 
     <div class="search-bar">
-      <div class="search-form d-flex align-items-center" >
+      <div class="search-form d-flex align-items-center">
         <input type="text" name="searchQuery" id="searchQuery" placeholder="Search" title="Enter search keyword">
         <button type="button" id="{{ searchButton }}" title="Search"><i class="bi bi-search"></i></button>
       </div>
@@ -390,20 +391,20 @@
 
   <!-- ======= Sidebar ======= -->
 
-  <aside {% if page.nav != True %} style="display: none" {% endif %} id="sidebar" class="sidebar">
+  <aside id="sidebar" class="sidebar">
 
     <div class="form-group mb-3 px-3 pt-3">
       <label for="sidebar-location-select" class="form-label">Location</label>
       <select class="form-select" id="sidebar-location-select" name="location">
         <option value="">Select Location</option>
         {% for location in locations %}
-          <option value="{{ location.id }}">{{ location.loc_name }}</option>
+        <option value="{{ location.id }}">{{ location.loc_name }}</option>
         {% endfor %}
       </select>
     </div>
     <hr>
     <ul class="sidebar-nav" id="sidebar-nav">
-      
+
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'admin_panel' %}">
           <i class="bi bi-grid"></i>
@@ -418,7 +419,7 @@
         </a>
       </li>
 
-        <li class="nav-item">
+      <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'ssml' %}">
           <i class="bi bi-grid"></i>
           <span>Landing</span>
@@ -441,13 +442,13 @@
             </a>
           </li>
 
-            <li>
+          <li>
             <a href="{% url 'ssml-petty-cash' %}">
               <i class="bi bi-circle"></i><span>Petty Cash</span>
             </a>
           </li>
 
-          
+
 
         </ul>
       </li>
@@ -457,10 +458,10 @@
           <i class="bi bi-megaphone"></i><span>Meter Master</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="Master-meter" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          
 
-         
-         
+
+
+
 
           <li>
             <a href="{% url 'phase-master' %}">
@@ -479,9 +480,9 @@
             </a>
           </li>
 
-          
 
-          
+
+
 
         </ul>
       </li>
@@ -530,9 +531,9 @@
             </a>
           </li>
 
-          
 
-          
+
+
 
           <li>
             <a href="{% url 'contractor_errors' %}">
@@ -557,9 +558,9 @@
             </a>
           </li>
 
-          
 
-          
+
+
 
         </ul>
       </li>
@@ -569,36 +570,36 @@
           <i class="bi bi-megaphone"></i><span>Tools</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="tools-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          
+
           <li>
             <a href="javascript:void(0)" onclick="ssml.updateIssued()">
               <i class="bi bi-circle"></i><span>Update Issued</span>
             </a>
-            </li>
-            <li>
+          </li>
+          <li>
             <a href="javascript:void(0)" onclick="ssml.updateRetiredFoc()">
               <i class="bi bi-circle"></i><span>Update Retired FOC</span>
             </a>
           </li>
 
-            <li>
-              <a href="javascript:void(0)" onclick="ssml.update_returns_as_of()">
-                <i class="bi bi-circle"></i><span>Update Returns</span>
-              </a>
-              </li>
+          <li>
+            <a href="javascript:void(0)" onclick="ssml.update_returns_as_of()">
+              <i class="bi bi-circle"></i><span>Update Returns</span>
+            </a>
+          </li>
 
-              <li>
-                <a href="javascript:void(0)" onclick="ssml.syncRetiredMeter()">
-                  <i class="bi bi-circle"></i><span>Sync Retirement</span>
-                </a>
-              </li>
-          
+          <li>
+            <a href="javascript:void(0)" onclick="ssml.syncRetiredMeter()">
+              <i class="bi bi-circle"></i><span>Sync Retirement</span>
+            </a>
+          </li>
 
-          
+
+
 
         </ul>
       </li>
-    
+
 
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#Community-nav" data-bs-toggle="collapse" href="#">
@@ -640,11 +641,16 @@
             </a>
           </li>
           <li>
+            <a href="{% url 'linked_models' %}">
+              <i class="bi bi-circle"></i><span>Linked Models</span>
+            </a>
+          </li>
+          <li>
             <a href="{% url 'grn' %}">
               <i class="bi bi-circle"></i><span>GRN</span>
             </a>
           </li>
-            <li>
+          <li>
             <a href="{% url 'ssml_transfer' %}">
               <i class="bi bi-arrow-up"></i><span>Transfer</span>
             </a>
@@ -660,14 +666,14 @@
               <i class="bi bi-circle"></i><span>REDEEM</span>
             </a>
           </li>
-          
+
 
         </ul>
       </li>
 
 
 
-     
+
 
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#report-nav" data-bs-toggle="collapse" href="#">
@@ -680,18 +686,18 @@
             </a>
           </li>
 
-        </li>
-          
-        <a href="javascript:void(0)" onclick="ssml.materialUsage()">
-          <i class="bi bi-circle"></i><span>Consumption</span>
-        </a>
-        <li>
-          <a href="javascript:void(0)" onclick="ssml.ContractorsExport()">
-            <i class="bi bi-circle"></i><span>Contractors</span>
-          </a>
-        </li>
       </li>
-      
+
+      <a href="javascript:void(0)" onclick="ssml.materialUsage()">
+        <i class="bi bi-circle"></i><span>Consumption</span>
+      </a>
+      <li>
+        <a href="javascript:void(0)" onclick="ssml.ContractorsExport()">
+          <i class="bi bi-circle"></i><span>Contractors</span>
+        </a>
+      </li>
+      </li>
+
 
       <li>
         <a href="javascript:void(0)" onclick="ssml.contractorIssueScreen()">
@@ -699,7 +705,7 @@
         </a>
       </li>
 
-        <li>
+      <li>
         <a href="javascript:void(0)" id="installed_meters_report">
           <i class="bi bi-circle"></i><span>Installations</span>
         </a>
@@ -711,19 +717,19 @@
         </a>
       </li>
 
-        <li>
+      <li>
         <a href="javascript:void(0)" id="retired_to_return">
           <i class="bi bi-circle"></i><span>Retired To Return</span>
         </a>
       </li>
 
-      
 
 
-          
 
-        </ul>
-      </li>
+
+
+    </ul>
+    </li>
 
 
 
@@ -747,11 +753,11 @@
 
     <section class="section h-100" style="height: 85vh !important">
       <div class="w-100 h-100 overflow-hidden">
-          <button id="install-button" class="install-button">Install App</button>
+        <button id="install-button" class="install-button">Install App</button>
 
-          {% block body %}
+        {% block body %}
 
-          {% endblock %}
+        {% endblock %}
       </div>
 
 
@@ -778,125 +784,123 @@
   <!-- Template Main JS File -->
   <script src="{% static 'assets/js/main.js' %}"></script>
 
-    <script>
+  <script>
 
-        $('#loader').delay(5000).modal('hide')
+    $('#loader').delay(5000).modal('hide')
 
-        async function locadLocations(){
-          await ssml.getLocations().then(response => {
-            if(anton.IsRequest(response)){
-              let messages = response['message'];
-              let options = ``
-              messages.map(location => {
-                console.table(location)
-                if(location.is_default){
-                  options += `<option value='${location.pk}'>${location.name}</option>`
-                } else {
-                  options += `<option value='${location.pk}'>${location.name}</option>`
-                }
-                
-              })
-
-              $('#sidebar-location-select').html(options)
+    async function locadLocations() {
+      await ssml.getLocations().then(response => {
+        if (anton.IsRequest(response)) {
+          let messages = response['message'];
+          let options = ``
+          messages.map(location => {
+            console.table(location)
+            if (location.is_default) {
+              options += `<option value='${location.pk}'>${location.name}</option>`
+            } else {
+              options += `<option value='${location.pk}'>${location.name}</option>`
             }
-          }).catch(error => {
-            
+
           })
+
+          $('#sidebar-location-select').html(options)
         }
+      }).catch(error => {
 
-        $(document).ready(function(){
-          locadLocations()
-            $('#installed_meters_report').click(function(){
+      })
+    }
 
-                ssml.InstalledMeters()
-            })
-            $('#month_inv_report').click(function(){
-                ssml.monthInvReport()
-            })
+    $(document).ready(function () {
+      locadLocations()
+      $('#installed_meters_report').click(function () {
 
-            $('#retired_to_return').click(function(){
-                ssml.retired2Return()
-            })
-        })
+        ssml.InstalledMeters()
+      })
+      $('#month_inv_report').click(function () {
+        ssml.monthInvReport()
+      })
 
-    </script>
+      $('#retired_to_return').click(function () {
+        ssml.retired2Return()
+      })
+    })
+
+  </script>
 
 
-{% if messages %}
+  {% if messages %}
   <script>
     {% for message in messages %}
-      kasa.info(`{{ message }}`)
+    kasa.info(`{{ message }}`)
     {% endfor %}
   </script>
-{% endif %}
+  {% endif %}
 
-    <script>
-        let deferredPrompt;
+  <script>
+    let deferredPrompt;
 
-window.addEventListener('beforeinstallprompt', (event) => {
-    // Prevent the default prompt
-    console.log('beforeinstallprompt event fired');
-    event.preventDefault();
+    window.addEventListener('beforeinstallprompt', (event) => {
+      // Prevent the default prompt
+      console.log('beforeinstallprompt event fired');
+      event.preventDefault();
 
-    // Stash the event so it can be triggered later
-    deferredPrompt = event;
+      // Stash the event so it can be triggered later
+      deferredPrompt = event;
 
-    // Automatically trigger the install prompt
-    deferredPrompt.prompt();
+      // Automatically trigger the install prompt
+      deferredPrompt.prompt();
 
-    // Wait for the user to respond to the prompt
-    deferredPrompt.userChoice.then((choiceResult) => {
+      // Wait for the user to respond to the prompt
+      deferredPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted the install prompt');
+          console.log('User accepted the install prompt');
         } else {
-            console.log('User dismissed the install prompt');
+          console.log('User dismissed the install prompt');
         }
 
         // Reset the deferredPrompt for future prompts
         deferredPrompt = null;
+      });
     });
-});
 
-window.addEventListener('load', () => {
-    const installButton = document.getElementById('install-button');
-    if (deferredPrompt) {
+    window.addEventListener('load', () => {
+      const installButton = document.getElementById('install-button');
+      if (deferredPrompt) {
         installButton.style.display = 'block';
 
         installButton.addEventListener('click', () => {
-            // Show the browser's install prompt
-            deferredPrompt.prompt();
+          // Show the browser's install prompt
+          deferredPrompt.prompt();
 
-            // Wait for the user to respond to the prompt
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('User accepted the install prompt');
-                } else {
-                    console.log('User dismissed the install prompt');
-                }
+          // Wait for the user to respond to the prompt
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('User accepted the install prompt');
+            } else {
+              console.log('User dismissed the install prompt');
+            }
 
-                // Reset the deferredPrompt for future prompts
-                deferredPrompt = null;
+            // Reset the deferredPrompt for future prompts
+            deferredPrompt = null;
 
-                // Hide the custom install button
-                installButton.style.display = 'none';
-            });
+            // Hide the custom install button
+            installButton.style.display = 'none';
+          });
         });
-    }
-});
+      }
+    });
 
-    </script>
+  </script>
 
 
-<script>
-  $(document).ready(function(){
-    $('#availability-report').click(function(){
-      ssml.itemAvailability()
+  <script>
+    $(document).ready(function () {
+      $('#availability-report').click(function () {
+        ssml.itemAvailability()
+      })
     })
-  })
-</script>
+  </script>
 
 </body>
 
 </html>
-
-

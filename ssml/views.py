@@ -532,6 +532,7 @@ def upload_service_order(request):
         r_count = 1
         r_len = sheet.max_row - 1 
         for row in sheet.iter_rows(min_row=2, values_only=True):
+            print("#" * 20)
             cts += 1
             row_dict = dict(zip(headers, row))
             # print(row_dict)
@@ -561,12 +562,17 @@ def upload_service_order(request):
             address = row_dict['DIGITAL ADDRESS']
             phase = row_dict['REQUESTED METER PHASE'].lower() if row_dict.get('REQUESTED METER PHASE') else False
             if not phase:
-                phase = row_dict['METER PHASE'].lower() if row_dict.get('METER PHASE') else 'other'
+                phase = row_dict['METER PHASE'].lower() if row_dict.get('METER PHASE') else '1'
 
             # create meter
+            print('FILE PHASE:',phase)
+            first_char = phase[0] if len(str(phase)) > 0 else 1
+            print("FiRST CHAR",first_char)
+            phase_by_desc = Phase.objects.filter(number=first_char).order_by('id').first()
+            if not phase_by_desc:
+                phase_by_desc = Phase.objects.filter(number=1).order_by('id').first()
             if not Meter.objects.filter(meter_no=meter_no).exists():
-                phase = meter_phase[0] if meter_phase[0] else ''
-                phase_by_desc = Phase.objects.filter(number=first_char).order_by('id').first()
+                
 
                 Meter.objects.create(
                     meter_no=meter_no,
@@ -583,6 +589,14 @@ def upload_service_order(request):
                 )
 
                 phase = phase_by_desc.description
+                print("Phase created for", meter_no, "to", phase)
+
+            else:
+                # update phase
+                meter = Meter.objects.get(meter_no=meter_no)
+                meter.linked_phase = phase_by_desc
+                meter.save()
+                print("Phase updated to", phase_by_desc.description)
 
             old_meter = row_dict['OLD METER NUMBER'] if row_dict.get('OLD METER NUMBER') else meter_no
             spn = row_dict['SERVICE POINT NUMBER'] if row_dict.get('SERVICE POINT NUMBER') else row_dict.get('SERVICE POINT NUMBER')
@@ -635,7 +649,7 @@ def upload_service_order(request):
             if True:
                 hd = [service_order_type,customer,customer_phone,contractor.company,resolved_on,meter_no,ip_address]
 
-                print("#" * 20)
+                
                 print(r_count , "/" , r_len)
                 print("SPN",spn)
                 print("SERVICE TYPE",service.name)
@@ -779,15 +793,16 @@ def upload_service_order(request):
                         # print("Material Not Found Here")
                 # default issues    
                 MaterialOrderItem.objects.filter(service_order=met_service)    
-                for mat in ServiceMaterials.objects.filter(service=service):
+                for mat in ServiceMaterials.objects.filter(service=service,phase=phase_by_desc):
                     # print(mat.material.name,mat.qty)
                     try:
-                        MaterialOrderItem(
+                        MaterialOrderItem.objects.create(
                                     service_order=met_service,material=mat.material,quantity=mat.qty,rate=0,amount=0
-                                ).save()
+                                )
+                        print(f"{mat.material.name} - {mat.qty} Added")
                     except Exception as e:
                         pass
-                        # print(e)
+                        print(e)
                         
                     
                 # update total amount
@@ -1445,3 +1460,15 @@ def phase_master(request):
      }
     
     return render(request, 'ssml/meters/phase-master.html', context)
+
+@login_required
+def linked_models(request):
+    page = {
+        'title':"Linked Models",
+        'nav':True
+    }
+    context = {
+        'page':page,
+        'linked_models':ServiceMaterials.objects.all()
+    }
+    return render(request, 'ssml/inventory/linked-models.html', context)

@@ -43,6 +43,7 @@ urlpatterns = [
     path('inventory/issue/edit/<int:id>/', views.issue_edit, name='issue_edit'),
     path('inventory/redeem/',views.redeem,name='redeem'),
     path('inventory/redeem/new/',views.new_redemption,name='new_redemption'),
+    path('inventory/linked-models/',views.linked_models,name='linked_models'),
     path('api/', ssml_api.interface, name='api'),
     path('upload_image/', views.upload_image, name='upload_image'),
     path('work-order/plots/', views.plots, name='plots'),
