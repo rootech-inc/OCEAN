@@ -1,0 +1,143 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+{% block body %}
+    <div style="height: 90vh !important;" class="card h-100">
+        <div class="card-header">
+            <button id="new_phase" class="btn btn-info">NEW PHASE</button>
+            <!-- INSERT_YOUR_CODE -->
+            <button id="update_meter_phase" class="btn btn-warning">UPDATE METER PHASE</button>
+            <button id="update_meter_phase" class="btn btn-danger">UNPHASED {{unphased_total}}</button>
+        
+        </div>
+
+        <div class="card-body">
+        <!-- INSERT_YOUR_CODE -->
+        <table class="table table-bordered table-striped" id="phaseTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Phase Number</th>
+                    <th>Description</th>
+                    <th>Total Meters</th>
+                    <th>Created By</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for phase in phases %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ phase.number }}</td>
+                    <td>{{ phase.description }}</td>
+                    <td>{{ phase.total_meters }}</td>
+                    <td>{{ phase.created_by }}</td>
+                    <td>{{ phase.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Actions
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" data-phase-id="{{ phase.id }}" onclick="editPhase(this)">Edit</a></li>
+                                <li><a class="dropdown-item" href="#" data-phase-id="{{ phase.id }}" onclick="deletePhase(this)">Delete</a></li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No phases found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <script>
+            // Initialize DataTable after DOM loads
+            $(document).ready(function() {
+                $('#phaseTable').DataTable();
+            });
+
+            function editPhase(element) {
+                var phaseId = $(element).data('phase-id');
+                // Implementation for editing (open a modal or redirect, as needed)
+                kasa.info("Edit functionality coming soon for Phase ID: " + phaseId);
+            }
+            function deletePhase(element) {
+                var phaseId = $(element).data('phase-id');
+                // Implementation for deletion (show confirmation, send API, etc.)
+                kasa.confirm("Are you sure you want to delete this phase?", 1, function() {
+                    // API call to delete (to implement)
+                    kasa.info("Delete functionality coming soon for Phase ID: " + phaseId);
+                });
+            }
+        </script>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+
+            $('#new_phase').on('click', function() {
+                // Create the HTML for the form
+                var formHtml = `
+                    
+                        <div class="mb-3">
+                            <label for="phase_number" class="form-label">Phase Number</label>
+                            <input type="number" class="form-control" id="phase_number" name="phase_number" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phase_description" class="form-label">Phase Description</label>
+                            <input type="text" class="form-control" id="phase_description" name="phase_description" required>
+                        </div>
+                `;
+                // Show the form in an amodal using the Modal class
+                amodal.setTitleText('Add New Phase');
+                amodal.setBodyHtml(formHtml);
+                amodal.setFooterHtml(`
+                    <button type="submit" form="phaseMasterForm" id="savePhaseBtn" class="btn btn-success">Save</button>
+                    <button type="button" id="cancelPhaseBtn" class="btn btn-secondary">Cancel</button>
+                `);
+                amodal.show();
+
+                // Cancel button closes the modal
+                $('#cancelPhaseBtn').off('click').on('click', function(){
+                    amodal.hide();
+                });
+
+                // Save button (form submit)
+                $('#savePhaseBtn').click(async function(){
+                    let ids = ['phase_number','phase_description','mypk']
+                    if(anton.validateInputs(ids)){
+                        let payload = {
+                            module:'phase',
+                            data:anton.Inputs(ids)
+                        }
+
+                        await api.v2("PUT",payload,'/ssml/api/').then(response => {
+                            if(anton.IsRequest(response,true)){
+                                kasa.confirm(response.message,1,'here')
+                            }
+                        }).catch(error => {kasa.error(error);})
+
+
+                    }
+                })
+            });
+
+            $('#update_meter_phase').click(async function(){
+                let payload = {
+                    module:'meter_phase',
+                    data:{}
+                }
+
+                loader.show()
+                await api.v2("PATCH",payload,'/ssml/api/').then(response => {
+                    kasa.confirm(response.message,1,'here')
+                    loader.hide()
+                }).catch(error => {kasa.error(error);loader.hide()})
+            })
+        })
+    </script>
+{%endblock%}

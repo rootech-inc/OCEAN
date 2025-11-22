@@ -23,7 +23,7 @@ urlpatterns = [
     path('', views.index, name='ssml'),
     path('inventory/materials/', views.materials, name='materials'),
     # path('ssml/',include('ssml.urls')),
-    path('master/meters/',views.meters,name='meters'),
+   
     path('master/retired_meters/',views.retired_meters,name='retired_meters'),
     path('accounts/finlog/',views.accounts,name='accounts'),
     path('accounts/invoice/',views.invoice,name='cont-invoice'),
@@ -71,6 +71,9 @@ urlpatterns = [
     path('service/tools/', views.service_tools, name='ssml_service_tools'),
     path('forms/ulbm/',views.ulbm,name='ssml_form_ulbm'),# update boxing meta data
     path('inventory/cardex/<barcode>/',views.cardex, name='ssml_cardex'),
-    path('import-expensis/',views.import_expensis,name='import-expensis')
+    path('import-expensis/',views.import_expensis,name='import-expensis'),
+    ## meter master
+     path('meters/',views.meters,name='meters'),
+    path('meters/phase-master/',views.phase_master,name='phase-master')
 
 ]

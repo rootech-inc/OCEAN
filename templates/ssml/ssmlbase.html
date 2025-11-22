@@ -453,6 +453,40 @@
       </li>
 
       <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#Master-meter" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-megaphone"></i><span>Meter Master</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="Master-meter" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+          
+
+         
+         
+
+          <li>
+            <a href="{% url 'phase-master' %}">
+              <i class="bi bi-circle"></i><span>Phase Master</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'meters' %}">
+              <i class="bi bi-circle"></i><span>Meters</span>
+            </a>
+          </li>
+
+          <li>
+            <a href="{% url 'retired_meters' %}">
+              <i class="bi bi-circle"></i><span>Retired Meters</span>
+            </a>
+          </li>
+
+          
+
+          
+
+        </ul>
+      </li>
+
+      <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#Master-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-megaphone"></i><span>Master</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
@@ -478,9 +512,15 @@
               <i class="bi bi-circle"></i><span>Locations</span>
             </a>
           </li>
+
           <li>
             <a href="{% url 'meters' %}">
-              <i class="bi bi-circle"></i><span>Meters XXX</span>
+              <i class="bi bi-circle"></i><span>Phase Master</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'meters' %}">
+              <i class="bi bi-circle"></i><span>Meters</span>
             </a>
           </li>
 

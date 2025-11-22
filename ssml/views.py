@@ -14,7 +14,7 @@ from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
     IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, \
     ServiceMaterials, ServiceOrder, \
-    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType,Cardex
+    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType,Cardex,Phase
 
 
 # Create your views here.
@@ -565,6 +565,9 @@ def upload_service_order(request):
 
             # create meter
             if not Meter.objects.filter(meter_no=meter_no).exists():
+                phase = meter_phase[0] if meter_phase[0] else ''
+                phase_by_desc = Phase.objects.filter(number=first_char).order_by('id').first()
+
                 Meter.objects.create(
                     meter_no=meter_no,
                     ip_address=ip_address,
@@ -576,7 +579,10 @@ def upload_service_order(request):
                     created_at=resolved_on,
                     updated_at=resolved_on,
                     is_issued=True,
+                    linked_phase=phase_by_desc
                 )
+
+                phase = phase_by_desc.description
 
             old_meter = row_dict['OLD METER NUMBER'] if row_dict.get('OLD METER NUMBER') else meter_no
             spn = row_dict['SERVICE POINT NUMBER'] if row_dict.get('SERVICE POINT NUMBER') else row_dict.get('SERVICE POINT NUMBER')
@@ -1420,3 +1426,22 @@ def import_expensis(request):
             return JsonResponse({'status_code': '500', 'message': str(e)})
     else:
         return JsonResponse({'status_code': '400', 'message': 'No file uploaded or wrong method.'})
+
+
+def phase_master(request):
+    page = {
+        'title':"Phase Master",
+        'nav':True
+    }
+
+    # delete all return materials in issued
+    #MaterialOrderItem.objects.filter(material__is_return=True,material_type='is').delete()
+    unphased = Meter.objects.filter(linked_phase__isnull=True)
+    context = {
+         'page':page,
+         'phases':Phase.objects.all(),
+         'unphased_total':unphased.count(),
+         'unphased':unphased
+     }
+    
+    return render(request, 'ssml/meters/phase-master.html', context)

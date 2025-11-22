@@ -60,7 +60,7 @@ def interface(request):
     from ssml.models import Cardex, Location, RequiredReturn, InvoiceHD, InvoiceTransactions, Contractor, Expense, \
         InventoryGroup, InventoryMaterial, Issue, IssueTransaction, Ledger, MaterialOrderItem, Meter, PaySlipHD, Plot, \
         RedeemTransactions, Reedem, Service, ServiceMaterials, ServiceOrder, ServiceOrderItem, ServiceOrderReturns, \
-        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash,RetiredMetersBox,RetiredMetersTransactions
+        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash,RetiredMetersBox,RetiredMetersTransactions,Phase
     from admin_panel.models import Emails, Locations, BusinessEntityTypes, MailSenders, MailQueues, MailAttachments, \
         Sms, SmsApi
     from admin_panel.anton import make_md5_hash
@@ -104,6 +104,20 @@ def interface(request):
                                           city=city,postal_code=postal_code,gh_card_no=gh_card_no,gh_post_code=gh_post_code,created_by=created_by)
 
                 success_response['message'] = "Contractor Created Successfully"
+
+            elif module == 'phase':
+                # INSERT_YOUR_CODE
+                phase_number = data.get('phase_number')
+                phase_description = data.get('phase_description')
+                owner = User.objects.get(pk=data.get('mypk'))
+
+                # Implement your logic here for adding a phase (e.g., saving to DB)
+                # Assuming you have a Phase model:
+                # from ssml.models import Phase
+
+                Phase.objects.create(number=phase_number, description=phase_description, created_by=request.user)
+
+                success_response['message'] = "Phase Created Successfully"
 
             elif module == 'sync_retired_meters':
                 
@@ -162,11 +176,12 @@ def interface(request):
                             worksheet = ws
                             break
                     if worksheet is None:
+                        print(f"Cannot Find WOrksheet {sheet_name}")
                         raise Exception(f"Worksheet '{sheet_name}' (case-insensitive) not found in the Google Sheet.")
                 
                     # Loop from row 7 to 31 (inclusive) and print each row's values
                     all_rows = worksheet.get_all_values()[6:]
-                    # print(sheet_name, "has",len(all_rows),'rows')
+                    print(sheet_name, "has",len(all_rows),'rows')
                     for row in all_rows:
                         empt,sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc = row[:22]
                         
@@ -185,8 +200,8 @@ def interface(request):
                         if RetiredMetersTransactions.objects.filter(spn=spn).count() == 0:
                         
                             # Example: get contractor with company like foc
-                            if Contractor.objects.filter(company__icontains=foc).exists():
-                                foc = "INTERNAL"
+                            # if not Contractor.objects.filter(company__icontains=foc).exists():
+                            #     foc = "INTERNAL"
                             
                             contractor = Contractor.objects.filter(company__icontains=foc).last()
                             
@@ -194,26 +209,7 @@ def interface(request):
                             # print("Before Date")
                             if len(box_no) > 0:
                                 try:
-                                    # if date_removed:
-                                    #     from datetime import datetime
-                                    #     try:
-                                    #         # Try MM/DD/YYYY HH:MM
-                                    #         date_removed = datetime.strptime(date_removed, '%m/%d/%Y %H:%M').date()
-                                    #     except ValueError:
-                                    #         try:
-                                    #             # Try MM/DD/YYYY
-                                    #             date_removed = datetime.strptime(date_removed, '%m/%d/%Y').date()
-                                    #         except ValueError:
-                                    #             try:
-                                    #                 # Try DD/MM/YYYY HH:MM
-                                    #                 date_removed = datetime.strptime(date_removed, '%d/%m/%Y %H:%M').date()
-                                    #             except ValueError:
-                                    #                 try:
-                                    #                     # Try DD/MM/YYYY
-                                    #                     date_removed = datetime.strptime(date_removed, '%d/%m/%Y').date()
-                                    #                 except Exception as e:
-                                    #                     print(f"Failed to parse date_removed '{date_removed}': {e}")
-                                    #                     date_removed = None
+                                    
 
                                     # print('date removed:',date_removed)
                                     # # get proper removed date
@@ -232,8 +228,27 @@ def interface(request):
                                         # print(f"THERE IS SPN {spn} {date_removed}")
 
                                     else:
-                                        date_removed = timezone.now().date()
-                                        # print("NO SPN")
+                                        # if date_removed:
+                                        from datetime import datetime
+                                        try:
+                                            # Try MM/DD/YYYY HH:MM
+                                            date_removed = datetime.strptime(date_removed, '%m/%d/%Y %H:%M').date()
+                                        except ValueError:
+                                            try:
+                                                # Try MM/DD/YYYY
+                                                date_removed = datetime.strptime(date_removed, '%m/%d/%Y').date()
+                                            except ValueError:
+                                                try:
+                                                    # Try DD/MM/YYYY HH:MM
+                                                    date_removed = datetime.strptime(date_removed, '%d/%m/%Y %H:%M').date()
+                                                except ValueError:
+                                                    try:
+                                                        # Try DD/MM/YYYY
+                                                        date_removed = datetime.strptime(date_removed, '%d/%m/%Y').date()
+                                                    except Exception as e:
+                                                        print(f"Failed to parse date_removed '{date_removed}': {e}")
+                                                        date_removed = None
+                                        print("NO SPN")
 
                                     if len(diff_old_meter_no) > 0:
                                         # print("There is different meter_no")
@@ -1502,10 +1517,8 @@ def interface(request):
                                 li = [fosn,foc.company,total_jobs]
                                 for so in InstallationType.objects.all().order_by('name'):
 
-                                    if so.name in ['Replacement', 'Regularization']:
-                                        this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,installation_type=so).count()
-                                    else:
-                                        this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,installation_type=so).count()
+                                    this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,installation_type=so).count()
+                                        
                                     print(foc.company,so.name,this_total)
                                     print("--------------------------------")
                                     li.append(this_total)
@@ -1768,16 +1781,16 @@ def interface(request):
                             mx = 1
                             for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,location=loc):
                                 if len(service.old_meter_no) > 0:
-                                    is_x = service.installation_type.name
-                                    print("ISX:",service.installation_type.name)
+                                    is_x = service.installation_type.name if service.installation_type else 'Unknown'
+                                    print("ISX:",is_x)
                                     if True:
                                         rr = "YES" if service.is_routing else "NO"
                                         is_same = service.sn_same_as_wo().get('is_same')
-                                        li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,service.installation_type.name,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
+                                        li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,is_x,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
                                         mx += 1
                                         this_sheet.append(li)
                                 else:
-                                    li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,service.installation_type.name,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
+                                    li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,is_x,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
                                     mx += 1
                                     this_sheet.append(li)
                     
@@ -1814,6 +1827,12 @@ def interface(request):
 
                     xr.append(["SENT", total_sent])
                     xr.append(["REMAINING", total_not_sent])
+
+                    foc_sheet  = book.create_sheet(title = "FOC")
+                    foc_sheet.append(["FOC","TOTAL"])
+                    for foc in Contractor.objects.all().order_by('company'):
+                        total = ServiceOrder.objects.filter(contractor=foc,service_type__name__in=['Replacement', 'Regularization'],is_boxed=False).count()
+                        foc_sheet.append([foc.company,total])
 
                     sheet = book.create_sheet(title = "RETIRED METERS")
                     sheet.title = "RETIRED METERS"
@@ -2069,14 +2088,8 @@ def interface(request):
                         elif filt == 'rejected':
                             expenses = Expense.objects.filter(is_rejected=True).order_by('date')
                         else:
-                            expenses = Expense.objects.all().order_by('date')
-                        # if direction == '*':
-                        #     direction = 'all'
-                        #     expenses = expenses.filter(is_approved=False).order_by('date')
-                        # else:
-                        #     expenses = expenses.filter(direction=direction,is_approved=False).order_by('date')
-                        # expenses.filter(date=as_of)
-                        # expenses.order_by('-date')[:limit]
+                            expenses = Expense.objects.flter(is_rejected=False).order_by('date')
+                        
                         if doc == 'json':
                             arr  = [expense.obj() for expense in expenses]
                         
@@ -2085,14 +2098,14 @@ def interface(request):
                             wb = openpyxl.Workbook()
                             ws = wb.active
                             header = [
-                                "DIRECTION","CATEGORY","TYPE","DATE","REFERENCE","DESCRIPTION","AMOUNT","EVIDENCE"
+                                "ID","DIRECTION","CATEGORY","TYPE","DATE","REFERENCE","DESCRIPTION","AMOUNT","EVIDENCE"
                             ]
                             ws.append(header)
                             
 
                             for expense in expenses:
                                 transaction = expense
-                                tr = [expense.direction,expense.category,expense.amount,expense.date,expense.reference,expense.description]
+                                tr = [expense.pk,expense.direction,expense.category,expense.amount,expense.date,expense.reference,expense.description]
                                 evidence = expense.evidence()
                                 x_file = ""
                                 if len(evidence) > 0:
@@ -2121,7 +2134,7 @@ def interface(request):
 
                     if filt == 'approved':
                         success_response['message'] = {
-                            'total': "{:,.2f}".format(Expense.objects.filter(is_approved=True).aggregate(total=Sum('amount'))['total'] or 0),
+                            'total': "{:,.2f}".format(Expense.objects.filter(is_approved=True,is_rejected=False).aggregate(total=Sum('amount'))['total'] or 0),
                             'total_in': "{:,.2f}".format(Expense.objects.filter(direction='in',is_approved=True).aggregate(total=Sum('amount'))['total'] or 0),
                             'total_out': "{:,.2f}".format(Expense.objects.filter(direction='out',is_approved=True).aggregate(total=Sum('amount'))['total'] or 0),
                             'expenses':arr
@@ -3355,6 +3368,72 @@ def interface(request):
 
                 material.save()
                 success_response['message'] = "Material Updated Successfully"
+
+            elif module == 'meter_phase':
+                # INSERT_YOUR_CODE
+                # PATCH method for 'meter_phase'
+                """
+                Update phase for all meters with a linked_phase, using the description
+                from the current linked Phase to find and re-link to the Phase with the same description.
+                """
+
+                # add meters from services
+                all_services = ServiceOrder.objects.all()
+                srv_count = all_services.count()
+                srv_s = 1
+                for service in all_services:
+                    meter_no = service.new_meter
+
+                    # INSERT_YOUR_CODE
+                    if not Meter.objects.filter(meter_no=meter_no).exists():
+                        
+                        try:
+                            Meter.objects.create(
+                                meter_no=meter_no,
+                                ip_address=service.spn,
+                                location=service.location,
+                                created_by=request.user,
+                                installation_address=service.spn,
+                                phase=service.phase,
+                                contractor=service.contractor,
+                                is_issued=True,
+                            )
+                            print("adding_met",srv_s,'/',srv_count)
+                        except Exception as e:
+                            print("adding_met",srv_s,'/',srv_count,"ERR:",str(e))
+
+                    
+                    srv_s += 1
+               
+
+                meters = Meter.objects.all()
+                updated_count = 0
+                antop = 1
+                all_count = meters.count()
+                for meter in meters:
+                    print(antop,'/',all_count)
+                    antop += 1
+                    # Find the Phase with the same description
+                    meter_phase = meter.phase
+                    print("PHASE FIRST",meter_phase)
+                    if meter_phase == 'others':
+                        # get phase from service
+                        meter_phase = ServiceOrder.objects.filter(new_meter=meter_no).first().phase
+                    
+
+                    print(meter.meter_no,meter_phase)
+                    # INSERT_YOUR_CODE
+                    first_char = meter_phase[0] if meter_phase else ''
+                    print("First character of meter_phase:", first_char)
+
+                    phase_by_desc = Phase.objects.filter(number=first_char).order_by('id').first()
+                    if phase_by_desc and meter.linked_phase_id != phase_by_desc.id:
+                        meter.linked_phase = phase_by_desc
+                        meter.save()
+                        updated_count += 1
+
+                success_response['message'] = f"Updated linked_phase for {updated_count} meters by phase description"
+                response = success_response
 
             elif module == 'clear_contractor_error':
                 from django.utils import timezone

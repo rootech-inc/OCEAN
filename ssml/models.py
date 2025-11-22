@@ -937,7 +937,7 @@ class ServiceOrder(models.Model):
     phase = models.CharField(unique=False,null=True,blank=True,max_length=255,default="1 phase")
     is_boxed = models.BooleanField(default=False)
     box_no = models.IntegerField(max_length=100,default=0)
-    final_readings = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    final_readings = models.DecimalField(max_digits=65, decimal_places=2, default=0)
 
     
 
@@ -1017,6 +1017,31 @@ class ServiceOrder(models.Model):
     
 
 
+class Phase(models.Model):
+    number = models.CharField(max_length=50, unique=True)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Phase {self.number}: {self.description}"
+
+    def total_meters(self):
+    # INSERT_YOUR_CODE
+        return Meter.objects.filter(linked_phase=self).count()
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'number': self.number,
+            'description': self.description,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+            'created_by': self.created_by.username if self.created_by else None
+        }
+
+
 class Meter(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL,null=True)
     meter_no = models.CharField(max_length=255,unique=True)
@@ -1031,10 +1056,20 @@ class Meter(models.Model):
         ('3 phase', 'Three Phase'),
         ('other', 'Other'),
     ]
+
+    linked_phase = models.ForeignKey(Phase,on_delete=models.SET_NULL,null=True)
     phase = models.CharField(max_length=255, choices=meter_type_choices, default='other')
+    phase_str = models.CharField(max_length=255, default='', help_text='Phase as plain text')
+
+    
+
+    
+
     location = models.ForeignKey(Location,on_delete=models.CASCADE,null=False)
     ip_address = models.CharField(max_length=255, default='0.0.0.0')
     installation_address = models.CharField(max_length=255, default='0')
+
+   
 
     def __str__(self):
         return self.meter_no
@@ -1828,3 +1863,4 @@ class RetiredMetersTransactions(models.Model):
             'foc': self.foc.company if self.foc else None,
             'created_at': self.created_at,
         }
+
