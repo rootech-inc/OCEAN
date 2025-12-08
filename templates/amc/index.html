@@ -1,0 +1,343 @@
+{% extends 'amc/base.html' %}
+{% load static %}
+
+
+{% block body %}
+
+    <div class="card-header">
+        <div class="w-50 d-flex flex-wrap">
+            <button id="new" class="btn btn-primary me-2">
+                <i class="bi bi-plus-circle"></i> New Asset
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+    
+        
+  
+        <div class="table-responsive">
+        <table class="table datatable table-striped table-hover align-middle">
+            <thead class="">
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Model</th>
+                <th scope="col">Serial</th>
+                <th scope="col">Group</th>
+                <th scope="col">Assigned To</th>
+                <th scope="col">Status</th>
+                <th scope="col">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% comment %}
+                Assume 'assets' is passed from the view as context.
+                Each asset should have fields: name, model, serial, type, assigned_to, status
+            {% endcomment %}
+            {% if assets %}
+                {% for asset in assets %}
+                <tr>
+                    <td>{{ asset.name }}</td>
+                    <td>{{ asset.model }}</td>
+                    <td>{{ asset.serial }}</td>
+                    <td>{{ asset.group }}</td>
+                    <td>{{ asset.assigned_to }}</td>
+                    <td>
+                    {% if asset.status == 'active' %}
+                        <span class="badge bg-success">Active</span>
+                    {% elif asset.status == 'inactive' %}
+                        <span class="badge bg-secondary">Inactive</span>
+                    {% elif asset.status == 'maintenance' %}
+                        <span class="badge bg-warning text-dark">Maintenance</span>
+                    {% else %}
+                        <span class="badge bg-light text-dark">{{ asset.status|capfirst }}</span>
+                    {% endif %}
+                    </td>
+                    <td>
+                    <!-- INSERT_YOUR_CODE -->
+                    <div class="dropdown">
+                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="assetActionDropdown{{ forloop.counter }}" data-bs-toggle="dropdown" aria-expanded="false">
+                            Action
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="assetActionDropdown{{ forloop.counter }}">
+                            {% if asset.is_assgned %}
+                            <li><a class="dropdown-item claim" data-pk="{{asset.pk}}" href="#">Claim</a></li>
+                            <li><a class="dropdown-item print_document" data-pk="{{asset.pk}}" href="#">Document</a></li>
+                            {% else %}
+                            <li><a class="dropdown-item assign" data-pk="{{asset.pk}}" href="#">Assign</a></li>
+                            {% endif %}
+                            
+                            <li><a class="dropdown-item specifications" data-pk="{{asset.pk}}" href="#">Specs</a></li>
+                            <li><a class="dropdown-item transactions" data-pk="{{asset.pk}}" href="#">Transactions</a></li>
+                            <li><a class="dropdown-item" href="#">Service Request</a></li>
+                        </ul>
+                    </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                <td colspan="6" class="text-center">No assets found.</td>
+                </tr>
+            {% endif %}
+            </tbody>
+        </table>
+        </div>
+
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('#new').click(async function(){
+
+                await api.v2('VIEW',{module:'group',data:{pk:'*'}},'/amc/api/').then(response => {
+
+                    if(anton.IsRequest(response)){
+
+                        let groups = response.message;
+                        let grp_options = [];
+                        groups.map(group => {
+                            grp_options.push({
+                                val:group.pk,
+                                desc:group.name
+                            })
+                        })
+
+                        let form = '';
+                        form += fom.selectv2('group',grp_options,'')
+                        form += fom.text('name','',true)
+                        form += fom.text('model','',true)
+                        form += fom.text('serial','',true)
+
+                        amodal.setBodyHtml(form)
+                        amodal.setTitleText("New Asse")
+                        amodal.setFooterHtml(`<button class='btn btn-success' id='save_new_asset'>SAVE</button>`)
+                        amodal.show()
+
+
+                        $('#save_new_asset').click(async function(){
+                            let ids = ['mypk','group','name','model','serial'];
+                            if(anton.validateInputs(ids)){
+                                let payload = {
+                                    module:'asset',
+                                    data:anton.Inputs(ids)
+                                }
+                                
+                                await api.v2('PUT',payload,'/amc/api/').then(response => {
+                                    kasa.confirm(response.message,1,'here')
+                                }).catch(error => {kasa.error(error)})
+                                
+                            } else {
+                                kasa.error("Invalid Input")
+                            }
+                        })
+                    
+
+                    } else {
+                        kasa.response(response)
+                    }
+                    
+                }).catch(error => {kasa.error(error)})
+
+                
+            
+            })
+
+            $('.assign').click(function(){
+                let users = user.allUsers(false);
+               if(anton.IsRequest(users)){
+                    
+                    let opt = []
+                    users.message.map(us => {
+                        
+                        opt.push({
+                            val:us.pk,
+                            desc:us.fullname
+                        })
+                    })
+
+                    let pk = $(this).data('pk');
+                    let form = "";
+                    form += fom.selectv2('user',opt,'',true)
+
+                    amodal.setBodyHtml(form)
+                    amodal.setTitleText("Assign Asset")
+                    amodal.setFooterHtml(`<button id='assign_asset'>Assign</button>`)
+                    amodal.show()
+
+                    $('#assign_asset').click(async function(){
+                        let ids = ['user','mypk'];
+
+                        if(anton.validateInputs(ids)){
+                            let payload = {
+                                module:'assign',
+                                data:anton.Inputs(ids)
+                            }
+                            payload['data']['asset'] = pk
+
+                            await api.v2('PUT',payload,'/amc/api/').then(response => {
+                                kasa.confirm(response.message,1,'here')
+                            }).catch(error => {kasa.error(error)})
+                            
+                        } else {
+                            kasa.error("Invalid Field")
+                        }
+                    })
+
+               } else {
+                kasa.response(users)
+               }
+                
+            })
+        
+            $('.print_document').click(async function(){
+                let pk = $(this).data('pk');
+                let payload = {
+                    module:'print_document',
+                    data:{
+                        pk:pk
+                    }
+                }
+
+                await api.v2('VIEW',payload,'/amc/api/').then(response => {
+                    if(anton.IsRequest(response)){
+                        anton.viewFile(`/${response.message}`)
+                    } else {
+                        kasa.response(response)
+                    }
+                }).catch(error => {
+                    kasa.error(error)
+                })
+
+            })
+            
+            $('.transactions').click(function(){
+                let pk = $(this).data('pk');
+                let payload = {
+                    module:'transactions',
+                    data:{
+                        pk:pk
+                    }
+                }
+            })
+
+            $('.specifications').click(async function(){
+                let pk = $(this).data('pk');
+                let payload = {
+                    module:'specifications',
+                    data:{
+                        pk:pk
+                    }
+                }
+                
+                await api.v2('VIEW',payload,'/amc/api/').then(response => {
+                    if(anton.IsRequest(response)){
+                        
+                        let specifications = response.message
+                        let table = `
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Key</th>
+                                    <th>Value</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${
+                                    specifications.length > 0
+                                    ? specifications.map(spec => `
+                                        <tr>
+                                            <td>${spec.key}</td>
+                                            <td>${spec.value}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-danger delete-specification" data-spec-id="${spec.pk}">Delete</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')
+                                    : `<tr><td colspan="3" class="text-center">No specifications found.</td></tr>`
+                                }
+                            </tbody>
+                        </table>
+                        `;
+
+                        amodal.setBodyHtml(table)
+                        amodal.setTitleText("Specifications")
+                        amodal.setFooterHtml(
+                            `<button id='upload_specification'>UPLOAD</button>`
+                        )
+                        amodal.show()
+
+                        $('#upload_specification').click(function () {
+                                let form = fom.file('specifications_file');
+                                amodal.setBodyHtml(form)
+                                amodal.setFooterHtml(
+                                `<button id='process_specification_file'>UPLOAD</button>`
+                                )
+
+                                $('#process_specification_file').click(async function(){
+                                
+                                    // Get the uploaded file from the input
+                                    var fileInput = document.getElementById('specifications_file');
+                                    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                                        kasa.error("No file selected.");
+                                        return;
+                                    }
+                                    var file = fileInput.files[0];
+                                    var reader = new FileReader();
+                                    reader.onload = async function(e) {
+                                        var text = e.target.result;
+                                        var lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+                                        if (lines.length < 2) {
+                                            kasa.error("CSV must have a header and at least one row.");
+                                            return;
+                                        }
+                                        // skip header
+                                        var specs = [];
+                                        for (var i = 1; i < lines.length; i++) {
+                                            var row = lines[i].split(',');
+                                            if (row.length < 2) continue;
+                                            var key = row[0].trim();
+                                            var value = row[1].trim();
+                                            if(key) {
+                                                specs.push({key: key, value: value});
+                                            }
+                                        }
+                                        // Now send specs array to backend as needed, e.g. via API call
+                                        
+                                        console.log("Extracted specifications:", specs);
+                                        
+                                        let payload = {
+                                            module:'specifications',
+                                            data:{
+                                                specifications:specs
+                                            }
+                                            
+                                        }
+
+                                        payload['data']['mypk'] = $('#mypk').val()
+                                        payload['data']['asset'] = pk;
+
+                                        await api.v2('PUT',payload,'/amc/api/').then(response => {
+                                            kasa.confirm(response.message,1,'here')
+                                        }).catch(error => {kasa.error(error)})
+
+
+
+                                    };
+                                    reader.readAsText(file);
+                                })
+                            }
+                            
+                        )
+
+                    } else {
+                        kasa.response(response)
+                    }
+                }).catch(error => {kasa.error(error)})
+            })
+
+        })
+    </script>
+
+{%endblock%}
