@@ -151,7 +151,7 @@ class InventoryMaterial(models.Model):
 
             # single query for all doc_types
             totals_qs = (
-                Cardex.objects.filter(material=self, doc_type__in=['ISS', 'GR', 'RET'], **location_filter)
+                Cardex.objects.filter(material=self, doc_type__in=['ISS', 'GR', 'RET','TRF'], **location_filter)
                 .values('doc_type')
                 .annotate(total_qty=Sum('qty'))
             )
@@ -163,6 +163,7 @@ class InventoryMaterial(models.Model):
             total_ISS = totals.get('ISS', 0)
             total_GR = totals.get('GR', 0)
             total_RET = totals.get('RET', 0)
+            total_TRF = totals.get('TRF',0)
 
             # issue is out - retuen
             # print(self.name)
@@ -243,6 +244,29 @@ class InventoryMaterial(models.Model):
             obj.append(item.obj())
             
         return obj
+
+    def in_and_out(self,as_of,loc_id='*'):
+        if loc_id == '*':
+            location_filter = {'location__in': Location.objects.all()}
+        else:
+            location_filter = {'location': Location.objects.get(loc_id=loc_id)}
+
+        in_trans = Cardex.objects.filter(
+                material=self,
+                created_at__lte=as_of,
+                **location_filter,qty__gt=0
+            ).aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
+        out_trans = Cardex.objects.filter(
+                material=self,
+                created_at__lte=as_of,
+                **location_filter,qty__lt=0
+            ).aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
+        return {
+            'in_trans': in_trans,
+            'out_trans': out_trans,
+            'balance':in_trans + out_trans
+        }
+            
 
     def stock_in(self):
         grn = Cardex.objects.filter(material=self,doc_type='GR').aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
@@ -802,7 +826,7 @@ class ServiceType(models.Model):
         return self.name
 
     def total_installations(self,date=datetime.now().date()):
-        return ServiceOrder.objects.filter(service_type=self,service_date__lte=date).count()
+        return ServiceOrder.objects.filter(service_type=self,service_date__range=('2000-01-01',date)).count()
     
 
     def today_jobs(self,date=datetime.now().date()):
@@ -949,6 +973,9 @@ class ServiceOrder(models.Model):
         for item in items:
             obj.append(item.obj())
         return obj
+
+    def meter_phase(self):
+        return Meter.objects.filter(meter_no=self.new_meter).first().linked_phase.description if Meter.objects.filter(meter_no=self.new_meter).exists() else "Not Set"
 
     def total_amount(self):
         return ServiceOrderItem.objects.filter(service_order=self).aggregate(total_amount=models.Sum('amount'))['total_amount'] or 0
@@ -1866,3 +1893,61 @@ class RetiredMetersTransactions(models.Model):
             'created_at': self.created_at,
         }
 
+class MaterialRequestHeader(models.Model):
+    request_no = models.CharField(max_length=255, unique=True, null=False, blank=False)
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    location = models.ForeignKey('Location', on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=50, default='Pending', choices=[
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+        ('Completed', 'Completed'),
+    ])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+
+    def __str__(self):
+        return self.request_no
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'request_no': self.request_no,
+            'requested_by': self.requested_by.get_full_name() if self.requested_by else None,
+            'location': self.location.obj() if hasattr(self.location, 'obj') else (self.location.id if self.location else None),
+            'status': self.status,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+            'transactions': [t.obj() for t in self.transactions.all()]
+        }
+    def save(self, *args, **kwargs):
+        self.request_no = self.generate_request_no()
+        super().save(*args, **kwargs)
+
+    def generate_request_no(self):
+        return f"MR-{self.id}"
+
+class MaterialRequestTransactions(models.Model):
+    header = models.ForeignKey(MaterialRequestHeader, on_delete=models.CASCADE, related_name='transactions')
+    # Assuming a Material model exists, otherwise use CharField for material_name
+    material = models.ForeignKey('InventoryMaterial', on_delete=models.CASCADE)
+    material_name = models.CharField(max_length=255, null=False, blank=False)
+    quantity_requested = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    quantity_approved = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.header.request_no} - {self.material_name}"
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'header_id': self.header.id,
+            'material_name': self.material_name,
+            'quantity_requested': self.quantity_requested,
+            'quantity_approved': self.quantity_approved,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+        }

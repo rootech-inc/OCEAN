@@ -1,2 +1,0 @@
-stunnel4 stunnel/dev_https &
-python3 manage.py runserver

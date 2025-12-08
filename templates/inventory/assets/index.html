@@ -4,40 +4,41 @@
 
 
 {% block body %}
-    <div  class="w-100 h-100 card">
+<div class="w-100 h-100 card">
 
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <button class="btn btn-primary new" data-asset_no="3" data-bs-toggle="modal" >New</button>
-                 <!-- pagination -->
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <button class="btn btn-primary new" data-asset_no="3" data-bs-toggle="modal">New</button>
+            <!-- pagination -->
             <nav aria-label="Vehicle pagination">
                 <ul class="pagination justify-content-center">
                     {% if vehicle_page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1" aria-label="First">
-                                <span aria-hidden="true">&laquo;</span>
-                                <span class="sr-only">First</span>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ vehicle_page_obj.previous_page_number }}" aria-label="Previous">
-                                <span aria-hidden="true">&#8249;</span>
-                                <span class="sr-only">Previous</span>
-                            </a>
-                        </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="sr-only">First</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ vehicle_page_obj.previous_page_number }}"
+                            aria-label="Previous">
+                            <span aria-hidden="true">&#8249;</span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                    </li>
                     {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-label="First">
-                                <span aria-hidden="true">&laquo;</span>
-                                <span class="sr-only">First</span>
-                            </span>
-                        </li>
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-label="Previous">
-                                <span aria-hidden="true">&#8249;</span>
-                                <span class="sr-only">Previous</span>
-                            </span>
-                        </li>
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-label="First">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="sr-only">First</span>
+                        </span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-label="Previous">
+                            <span aria-hidden="true">&#8249;</span>
+                            <span class="sr-only">Previous</span>
+                        </span>
+                    </li>
                     {% endif %}
 
                     <li class="page-item active">
@@ -48,31 +49,31 @@
                     </li>
 
                     {% if vehicle_page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ vehicle_page_obj.next_page_number }}" aria-label="Next">
-                                <span aria-hidden="true">&#8250;</span>
-                                <span class="sr-only">Next</span>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ vehicle_page_obj.paginator.num_pages }}" aria-label="Last">
-                                <span aria-hidden="true">&raquo;</span>
-                                <span class="sr-only">Last</span>
-                            </a>
-                        </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ vehicle_page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&#8250;</span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ vehicle_page_obj.paginator.num_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="sr-only">Last</span>
+                        </a>
+                    </li>
                     {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-label="Next">
-                                <span aria-hidden="true">&#8250;</span>
-                                <span class="sr-only">Next</span>
-                            </span>
-                        </li>
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-label="Last">
-                                <span aria-hidden="true">&raquo;</span>
-                                <span class="sr-only">Last</span>
-                            </span>
-                        </li>
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-label="Next">
+                            <span aria-hidden="true">&#8250;</span>
+                            <span class="sr-only">Next</span>
+                        </span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-label="Last">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="sr-only">Last</span>
+                        </span>
+                    </li>
                     {% endif %}
                 </ul>
 
@@ -81,12 +82,12 @@
                     <small>Page {{ vehicle_page_obj.number }} of {{ vehicle_page_obj.paginator.num_pages }}</small>
                 </div> -->
             </nav>
-            </div>
-         </div>
+        </div>
+    </div>
 
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
                 <thead class="table-white">
                     <tr>
                         <th>Company</th>
@@ -103,67 +104,71 @@
                 <tbody>
                     {% for vehicle in vehicle_page_obj %}
                     <tr>
-                        
-                        
-                            <td>{{vehicle.company.name}}</td>
-                            <td>{{vehicle.asset_no}}</td>
-                            <td>
-                                <img src="{{ vehicle.image.url }}" alt="Asset Image" style="max-width: 60px; max-height: 60px;">
-                            </td>
-                            <td>{{vehicle.vehicle_name}}</td>
-                            <td>{{vehicle.manufacturer}}</td>
-                            <td>{{vehicle.year}}</td>
-                            <td>{{vehicle.number}}</td>
-                            <td>{{vehicle.color}}</td>
-                            <td>
-                                <div class="dropdown d-inline"></div>
-                                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fa fa-bars">M</i>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                                        <li>
-                                            <button class="dropdown-item view-documents" type="button" data-asset_no="{{vehicle.pk}}" data-bs-toggle="modal" >
-                                                Document
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item view_asset" type="button" data-asset_no="{{vehicle.pk}}" data-bs-toggle="modal" >
-                                                View
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </div>
-                                
-                                
-                            </td>
-                    </tr>
-                     {% endfor %}
-                </tbody>
-            </table>
-           
-            </div>
-            
-        </div>
-    
 
-        <div class="card-footer"></div>
+
+                        <td>{{vehicle.company.name}}</td>
+                        <td>{{vehicle.asset_no}}</td>
+                        <td>
+                            <img src="{{ vehicle.image.url }}" alt="Asset Image"
+                                style="max-width: 60px; max-height: 60px;">
+                        </td>
+                        <td>{{vehicle.vehicle_name}}</td>
+                        <td>{{vehicle.manufacturer}}</td>
+                        <td>{{vehicle.year}}</td>
+                        <td>{{vehicle.number}}</td>
+                        <td>{{vehicle.color}}</td>
+                        <td>
+                            <div class="dropdown d-inline"></div>
+                            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
+                                id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa fa-bars">M</i>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                                <li>
+                                    <button class="dropdown-item view-documents" type="button"
+                                        data-asset_no="{{vehicle.pk}}" data-bs-toggle="modal">
+                                        Document
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item view_asset" type="button"
+                                        data-asset_no="{{vehicle.pk}}" data-bs-toggle="modal">
+                                        View
+                                    </button>
+                                </li>
+                            </ul>
+        </div>
+
+
+        </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        </table>
 
     </div>
 
+</div>
+
+
+<div class="card-footer"></div>
+
+</div>
+
 <script>
-    $(document).ready(function(){
+    $(document).ready(function () {
         // view button
-        $('.view_asset').click(function(){
+        $('.view_asset').click(function () {
             let asset_no = $(this).data('asset_no');
 
             payload = {
                 module: 'vehicleAssetDocument',
-                data: {pk: asset_no}
+                data: { pk: asset_no }
             }
 
             let docs = null
 
-            api.v2('VIEW', payload, '/inventory/api/' ).then(
+            api.v2('VIEW', payload, '/inventory/api/').then(
                 (response) => {
                     docs = response.message
 
@@ -204,32 +209,32 @@
                         </div>
                     </div>
                     `;
-            amodal.setBodyHtml(xhtml);
-            amodal.setTitleText("Vehicle Documents")
-            amodal.setSize('L')
-            amodal.show()
+                    amodal.setBodyHtml(xhtml);
+                    amodal.setTitleText("Vehicle Documents")
+                    amodal.setSize('L')
+                    amodal.show()
 
                 }
             ).catch((error) => {
                 console.log(error)
             })
-            
-           
-          // Use event delegation for dynamically created buttons with class 'read'
-                $(document).on('click', '.read-btn', function () {
-                    event.stopPropagation(); // prevent parent click handlers
-                    event.preventDefault();  // optional: prevents any default form/button behavior
-                    
-                    let btn = $(this);
-                    let fileName = btn.data('file-name')
-                    let  fileUrl = `${window.location.origin}/static/uploads/vehicle_assets_docs/${fileName}`
-                    
-                    fileExt = fileName.split(".").pop().toLowerCase()
-                    
-                    // iframe to view PDF
-                    if(fileExt === 'pdf') {
-                        amodal.setBodyHtml(
-                            `
+
+
+            // Use event delegation for dynamically created buttons with class 'read'
+            $(document).on('click', '.read-btn', function () {
+                event.stopPropagation(); // prevent parent click handlers
+                event.preventDefault();  // optional: prevents any default form/button behavior
+
+                let btn = $(this);
+                let fileName = btn.data('file-name')
+                let fileUrl = `${window.location.origin}/static/uploads/vehicle_assets_docs/${fileName}`
+
+                fileExt = fileName.split(".").pop().toLowerCase()
+
+                // iframe to view PDF
+                if (fileExt === 'pdf') {
+                    amodal.setBodyHtml(
+                        `
                               <iframe 
                                     src="${fileUrl}" 
                                     style="width: 100%; height: 600px; border: none;"
@@ -237,13 +242,13 @@
                                     <p>Your browser doesn't support iframes. <a href="${fileUrl}" target="_blank">Download the PDF</a></p>
                                </iframe>
                             `
-                        )
-                    }
-                    // supports public file urls
-                    else if(fileExt == 'docx'){
-                        const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
-                        amodal.setBodyHtml(
-                            `
+                    )
+                }
+                // supports public file urls
+                else if (fileExt == 'docx') {
+                    const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
+                    amodal.setBodyHtml(
+                        `
                              <div style="height: 100%; width: 100%;">
                                 <iframe 
                                     src="${officeViewerUrl}" 
@@ -253,28 +258,28 @@
                                 </iframe>
                             </div>
                             `
-                        )
-                    }   
+                    )
+                }
 
-                    amodal.setTitleText(fileName)
-                    
-                    amodal.setSize('L')
-                    amodal.show()
-                   
-                    // amodal.setTitleText("a text")
-                    //  amodal.show()
-                    //  amodal
-                    // amodal.setTitleText(fileName)
-                    // amodal.setBodyHtml(
-                    //     <iframe src={`https://docs.google.com/viewer?url=${fileUrl}&embedded=true`} width="100%" height="600"></iframe>
-                    // )
-                    // amodal.show()
-                    // amodal.setSize('L')
-                
-                    //  read the file
-                });
+                amodal.setTitleText(fileName)
 
-                })
+                amodal.setSize('L')
+                amodal.show()
+
+                // amodal.setTitleText("a text")
+                //  amodal.show()
+                //  amodal
+                // amodal.setTitleText(fileName)
+                // amodal.setBodyHtml(
+                //     <iframe src={`https://docs.google.com/viewer?url=${fileUrl}&embedded=true`} width="100%" height="600"></iframe>
+                // )
+                // amodal.show()
+                // amodal.setSize('L')
+
+                //  read the file
+            });
+
+        })
         // vehicle documents
         $('.view-documents').click(function () {
             let asset_no = $(this).data('asset_no');
@@ -338,23 +343,23 @@
 
             getdocs();
 
-    // delete doc
-    $(document).off('click', '.btn-delete-doc').on('click', '.btn-delete-doc', async function () {
-        let doc_id = $(this).data('docid');
-        let delPayload = { module: 'vehicleAssetDocument', data: { pk: doc_id } };
+            // delete doc
+            $(document).off('click', '.btn-delete-doc').on('click', '.btn-delete-doc', async function () {
+                let doc_id = $(this).data('docid');
+                let delPayload = { module: 'vehicleAssetDocument', data: { pk: doc_id } };
 
-        try {
-            let res = await api.v2('DELETE', delPayload, '/inventory/api/');
-            kasa.success("Document deleted successfully");
-            getdocs(); // refresh list
-        } catch (err) {
-            console.error(err);
-        }
-    });
+                try {
+                    let res = await api.v2('DELETE', delPayload, '/inventory/api/');
+                    kasa.success("Document deleted successfully");
+                    getdocs(); // refresh list
+                } catch (err) {
+                    console.error(err);
+                }
+            });
 
-    // upload document button click
-    $(document).off('click', '#uploadDoc').on('click', '#uploadDoc', function () {
-        amodal.setBodyHtml(`
+            // upload document button click
+            $(document).off('click', '#uploadDoc').on('click', '#uploadDoc', function () {
+                amodal.setBodyHtml(`
             <form id="uploadForm" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="pk" value="${asset_no}">
@@ -364,48 +369,48 @@
                 <button type="submit" class="btn btn-primary btn-sm mt-2">Upload Document</button>
             </form>
         `);
-        amodal.setTitleText("Upload Vehicle Documents");
-        amodal.setSize('L');
-        amodal.show();
-    });
-
-    // handle form submission without reload
-    $(document).off('submit', '#uploadForm').on('submit', '#uploadForm', async function (e) {
-        e.preventDefault();
-
-        let formData = new FormData(this);
-
-        try {
-            let res = await fetch("{% url 'upload_vhicle_assset_doc' %}", {
-                method: 'POST',
-                body: formData
+                amodal.setTitleText("Upload Vehicle Documents");
+                amodal.setSize('L');
+                amodal.show();
             });
-            if (res.ok) {
-                kasa.success("Document uploaded successfully!");
-                amodal.hide();
-                getdocs(); // refresh list
-            } else {
-                kasa.error("Upload failed.");
-            }
-        } catch (err) {
-            console.error(err);
-            kasa.error("Error uploading document.");
-        }
-    });
-});
+
+            // handle form submission without reload
+            $(document).off('submit', '#uploadForm').on('submit', '#uploadForm', async function (e) {
+                e.preventDefault();
+
+                let formData = new FormData(this);
+
+                try {
+                    let res = await fetch("{% url 'upload_vhicle_assset_doc' %}", {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (res.ok) {
+                        kasa.success("Document uploaded successfully!");
+                        amodal.hide();
+                        getdocs(); // refresh list
+                    } else {
+                        kasa.error("Upload failed.");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    kasa.error("Error uploading document.");
+                }
+            });
+        });
 
         // new vehicle asset
-        $('.new').click(async function(){
+        $('.new').click(async function () {
             let asset_no = $(this).data('asset_no');
 
-            let response = await api.v2('VIEW', {'module': 'company', 'data': {}}, '/adapi/');
+            let response = await api.v2('VIEW', { 'module': 'company', 'data': {} }, '/adapi/');
             let companies = response.message.map(c => ({
-                val: c.pk, 
-                desc: c.name 
+                val: c.pk,
+                desc: c.name
             }));
-            
+
             let company_select = fom.selectv2('company', companies, 'Select company', 'form-select form-select-sm', true);
-            
+
             // after api fetch of data
             let xhtml = `
                 <div class="container">
@@ -484,51 +489,51 @@
             amodal.show()
 
             // save button
-            $('#save').click( async function(){    
-                    let ids = ['company', 'owner', 'vehicle_name', 'manufacturer', 'year', 'color', 'number', 'descr', 'mypk', 'asset'];
+            $('#save').click(async function () {
+                let ids = ['company', 'owner', 'vehicle_name', 'manufacturer', 'year', 'color', 'number', 'descr', 'mypk', 'asset'];
 
-                        if (anton.validateInputs(ids)) {
-                            let data = {};
-                            ids.forEach(id => {
-                                data[id] = $('#' + id).val();
-                            });
-
-                            const payload = {
-                                module:"inventory",
-                                data: data
-                            }
-
-                            if ($("#image").val() === "") {
-                                        kasa.error("Please Upload Image")
-                                        return
-                            }
-                            // prevent creation of asset if image is not provided
-                                    
-                            api.v2('PUT', payload, '/inventory/api/' ).then(
-                                (response) => {
-                                    // returns a successful message and the pk for the newly created vehicle asset
-                                    const data = response.message
-                                    let assetPk = data.pk
-                                    console.log(assetPk)
-                                    let fileInput = document.getElementById('image')
-                                    $("#assetpk").val(data.pk)
-                                    $("#image-upload-form").submit();
-                                    
-                                
-                                }
-                            ).catch((error => {
-                                kasa.error(error);
-                            }))
-                        }
-                });
-
-                    
-                    // hide modal on cancel click
-                    $('#cancel').click(function(){
-                        amodal.hide();
+                if (anton.validateInputs(ids)) {
+                    let data = {};
+                    ids.forEach(id => {
+                        data[id] = $('#' + id).val();
                     });
 
-            })
+                    const payload = {
+                        module: "inventory",
+                        data: data
+                    }
+
+                    if ($("#image").val() === "") {
+                        kasa.error("Please Upload Image")
+                        return
+                    }
+                    // prevent creation of asset if image is not provided
+
+                    api.v2('PUT', payload, '/inventory/api/').then(
+                        (response) => {
+                            // returns a successful message and the pk for the newly created vehicle asset
+                            const data = response.message
+                            let assetPk = data.pk
+                            console.log(assetPk)
+                            let fileInput = document.getElementById('image')
+                            $("#assetpk").val(data.pk)
+                            $("#image-upload-form").submit();
+
+
+                        }
+                    ).catch((error => {
+                        kasa.error(error);
+                    }))
+                }
+            });
+
+
+            // hide modal on cancel click
+            $('#cancel').click(function () {
+                amodal.hide();
+            });
+
+        })
     })
 </script>
 

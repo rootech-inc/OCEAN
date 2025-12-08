@@ -2736,6 +2736,7 @@ class SSML {
             form += fom.selectv2('location', locs, '', true)
             form += fom.date('as_of_field', '', true)
             form += fom.selectv2('stock_only', [{ val: 'yes', desc: 'YES' }, { val: 'no', desc: 'NO' }], '', true)
+            form += fom.selectv2('re_order', [{ val: 'YES', desc: 'YES' }, { val: 'NO', desc: 'NO' }], '', true)
             amodal.setBodyHtml(form)
             amodal.setFooterHtml(`<button  id='ret_avai' class='btn btn-success rounded-0'>RETRIEVE</button>`)
             amodal.show()
@@ -2743,12 +2744,12 @@ class SSML {
             $('#ret_avai').click(async function () {
                 let locationName = $('#location option:selected').text();
 
-                if (anton.validateInputs(['as_of_field', 'location', 'stock_only'])) {
+                if (anton.validateInputs(['as_of_field', 'location', 'stock_only', 're_order'])) {
                     let as_of = $('#as_of_field').val()
                     loader.show()
                     let payload = {
                         module: 'item_availability',
-                        data: anton.Inputs(['as_of_field', 'location', 'stock_only'])
+                        data: anton.Inputs(['as_of_field', 'location', 'stock_only', 're_order'])
                     }
                     console.table(payload)
                     await api.v2('VIEW', payload,
@@ -2756,16 +2757,17 @@ class SSML {
 
                             if (anton.IsRequest(response)) {
                                 let data = response.message
-                                console.table(data)
+                                // console.table(data)
                                 let json = data.data
                                 let html = ``;
                                 for (let x = 0; x < json.length; x++) {
                                     let item = json[x];
+                                    console.table(item)
                                     html += `<tr>
                                     <td>${item.name}</td>
-                                    <td>${item.stock_qty}</td>
-                                    <td>${item.value}</td>
-                                    <td>${item.total_amount}</td>
+                                    <td>${item.in_out.in_trans}</td>
+                                    <td>${item.in_out.out_trans}</td>
+                                    <td>${item.in_out.balance}</td>
                                 </tr>`
 
                                 }
@@ -2911,9 +2913,7 @@ class SSML {
                                 </a>
                                 ${stk.location}
                             </td>
-                            <td>${stk.general_in} (<span class='text-muted' title='In Only'>${stk.total_in}</span>)</td>
-                            <td>${stk.total_out}</td>
-                            <td>${stk.total_consumed}</td>
+                          
                             <td>${stk.stock}</td>
                         </>
                     `
@@ -2930,7 +2930,6 @@ class SSML {
                 loc_stock_tr += `
                         <tr>
                             <td>Total</td>
-                            <td colspan="2"></td>
                             <td >${total_stock}</td>
                         </>
                     `

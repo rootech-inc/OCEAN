@@ -154,12 +154,21 @@ def interface(request):
                     # 2. Open the Google Sheet
                     sheet_url = 'https://docs.google.com/spreadsheets/d/1RrN2zKophgm3Dz9PzewqbNfdU8B8hbnFPdBwVoZv4YI/edit?usp=sharing'
                     sheet_url = location.boxing_file_link
-                    print("LINK:",sheet_url)
+                    # print("LINK:",sheet_url)
                     sh = gc.open_by_url(sheet_url)
 
-                    print("CONNECTED TO GOOGLE SHEET")
+                    # print("CONNECTED TO GOOGLE SHEET")
 
-                    print("BOX NUMBER:",box_no)
+                    print("\nBOX NUMBER:",box_no)
+                    ServiceOrder.objects.all().update(
+                                            is_boxed = False,
+                                            box_no = 0,
+                                            final_readings=0
+                                            
+                                        )
+                    RetiredMetersBox.objects.filter(box_no=box_no,location=location).delete()
+                    # RetiredMetersBox.objects.all().delete()
+
                     if not RetiredMetersBox.objects.filter(box_no=box_no,location=location).exists():
                                 RetiredMetersBox.objects.create(
                                     box_no=box_no,
@@ -183,124 +192,136 @@ def interface(request):
                     all_rows = worksheet.get_all_values()[6:]
                     print(sheet_name, "has",len(all_rows),'rows')
                     for row in all_rows:
-                        empt,sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc = row[:22]
-                        
-                                               
-                        
-                        li = [sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc]
-                        # print(sn,spn)
-                         # print(box.box_no)
-                        RetiredMetersTransactions.objects.filter(old_meter_no=old_meter_no).delete()
-
                         try:
-                            final_readings = float(final_readings)
-                        except (ValueError, TypeError):
-                            final_readings = 0
-
-                        if RetiredMetersTransactions.objects.filter(spn=spn).count() == 0:
-                        
-                            # Example: get contractor with company like foc
-                            # if not Contractor.objects.filter(company__icontains=foc).exists():
-                            #     foc = "INTERNAL"
+                            empt,sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc = row[:22]
                             
-                            contractor = Contractor.objects.filter(company__icontains=foc).last()
+                                                
                             
-                           
-                            # print("Before Date")
-                            if len(box_no) > 0:
-                                try:
-                                    
+                            li = [sn,box_no,spn,old_meter_no,diff_old_meter_no,ppm_cm,final_readings,rem_wattage,rem_cedis,make_year,manufacturere,has_uiu,phase,has_enclosure,has_sim_card,ret_cable_length,rating,date_removed,reason,has_breaker,foc]
+                            # print(sn,spn)
+                            # print(box.box_no)
+                            if RetiredMetersTransactions.objects.filter(old_meter_no=old_meter_no).exists():
+                                print("box",box_no,"LINE",sn,"Old Meter Is Duplicate")
+                                old_meter_no += "D"
+                                
 
-                                    # print('date removed:',date_removed)
-                                    # # get proper removed date
-                                    if ServiceOrder.objects.filter(spn=spn).exists():
-                                        ct = ServiceOrder.objects.filter(spn=spn).count()
-                                        date_removed = ServiceOrder.objects.filter(spn=spn).last().service_date
-                                        ServiceOrder.objects.filter(spn=spn).update(
-                                            is_boxed = True,
-                                            box_no = data.get('box_no'),
-                                            final_readings=final_readings
-                                            
-                                        )
+                            try:
+                                final_readings = float(final_readings)
+                            except (ValueError, TypeError):
+                                final_readings = 0
 
-                                        print("FINAL READING SET:",final_readings)
+                            if RetiredMetersTransactions.objects.filter(spn=spn).count() == 0:
+                            
+                                # Example: get contractor with company like foc
+                                # if not Contractor.objects.filter(company__icontains=foc).exists():
+                                #     foc = "INTERNAL"
+                                
+                                contractor = Contractor.objects.filter(company__icontains=foc).last()
+                                
+                            
+                                # print("Before Date")
+                                if len(box_no) > 0:
+                                    try:
                                         
-                                        # print(f"THERE IS SPN {spn} {date_removed}")
 
-                                    else:
-                                        # if date_removed:
-                                        from datetime import datetime
-                                        try:
-                                            # Try MM/DD/YYYY HH:MM
-                                            date_removed = datetime.strptime(date_removed, '%m/%d/%Y %H:%M').date()
-                                        except ValueError:
+                                        # print('date removed:',date_removed)
+                                        # # get proper removed date
+                                        if ServiceOrder.objects.filter(spn=spn).exists():
+                                            ct = ServiceOrder.objects.filter(spn=spn).count()
+                                            date_removed = ServiceOrder.objects.filter(spn=spn).last().service_date
+                                            ServiceOrder.objects.filter(spn=spn).update(
+                                                is_boxed = True,
+                                                box_no = data.get('box_no'),
+                                                final_readings=final_readings
+                                                
+                                            )
+
+                                            # print("FINAL READING SET:",final_readings)
+                                            
+                                            # print(f"THERE IS SPN {spn} {date_removed}")
+
+                                        else:
+                                            # if date_removed:
+                                            from datetime import datetime
                                             try:
-                                                # Try MM/DD/YYYY
-                                                date_removed = datetime.strptime(date_removed, '%m/%d/%Y').date()
+                                                # Try DD/MM/YYYY HH:MM
+                                                date_removed = datetime.strptime(date_removed, '%d/%m/%Y %H:%M').date()
                                             except ValueError:
                                                 try:
-                                                    # Try DD/MM/YYYY HH:MM
-                                                    date_removed = datetime.strptime(date_removed, '%d/%m/%Y %H:%M').date()
+                                                    # Try MM/DD/YYYY
+                                                    date_removed = datetime.strptime(date_removed, '%m/%d/%Y').date()
                                                 except ValueError:
                                                     try:
-                                                        # Try DD/MM/YYYY
-                                                        date_removed = datetime.strptime(date_removed, '%d/%m/%Y').date()
-                                                    except Exception as e:
-                                                        print(f"Failed to parse date_removed '{date_removed}': {e}")
-                                                        date_removed = None
-                                        print("NO SPN")
+                                                        # Try DD/MM/YYYY HH:MM
+                                                        # Try MM/DD/YYYY HH:MM
+                                                        date_removed = datetime.strptime(date_removed, '%m/%d/%Y %H:%M').date()
+                                                    except ValueError:
+                                                        try:
+                                                            # Try DD/MM/YYYY
+                                                            date_removed = datetime.strptime(date_removed, '%d/%m/%Y').date()
+                                                        except Exception as e:
+                                                            print(f"Failed to parse date_removed '{date_removed}': {e}")
+                                                            date_removed = None
+                                            print("NO SPN")
 
-                                    if len(diff_old_meter_no) > 0:
-                                        # print("There is different meter_no")
-                                        ServiceOrder.objects.filter(spn=spn).update(
-                                            is_boxed = True,
-                                            box_no = data.get('box_no')
-                                        )
-                                    else:
-                                        pass   
+                                        if len(diff_old_meter_no) > 0:
+                                            # print("There is different meter_no")
+                                            ServiceOrder.objects.filter(spn=spn).update(
+                                                is_boxed = True,
+                                                box_no = data.get('box_no')
+                                            )
+                                        else:
+                                            pass   
 
-                                    RetiredMetersTransactions(
-                                        box=box,
-                                        sn=sn,
-                                        spn=spn,
-                                        old_meter_no=old_meter_no,
-                                        diff_old_meter_no=diff_old_meter_no,
-                                        ppm_cm=ppm_cm,
-                                        final_readings=final_readings,
-                                        rem_wattage=rem_wattage,
-                                        rem_cedis=rem_cedis,
-                                        make_year=make_year,
-                                        manufacturere=manufacturere,
-                                        has_uiu=has_uiu,
-                                        phase=phase,
-                                        has_enclosure=has_enclosure,
-                                        has_sim_card=has_sim_card,
-                                        ret_cable_length=ret_cable_length,
-                                        rating=rating,
-                                        date_removed=date_removed,
-                                        reason=reason,
-                                        has_breaker=has_breaker,
-                                        foc=contractor
-                                    ).save()
+                                        RetiredMetersTransactions(
+                                            box=box,
+                                            sn=sn,
+                                            spn=spn,
+                                            old_meter_no=old_meter_no,
+                                            diff_old_meter_no=diff_old_meter_no,
+                                            ppm_cm=ppm_cm,
+                                            final_readings=final_readings,
+                                            rem_wattage=rem_wattage,
+                                            rem_cedis=rem_cedis,
+                                            make_year=make_year,
+                                            manufacturere=manufacturere,
+                                            has_uiu=has_uiu,
+                                            phase=phase,
+                                            has_enclosure=has_enclosure,
+                                            has_sim_card=has_sim_card,
+                                            ret_cable_length=ret_cable_length,
+                                            rating=rating,
+                                            date_removed=date_removed,
+                                            reason=reason,
+                                            has_breaker=has_breaker,
+                                            foc=contractor
+                                        ).save()
 
-                                    # print("DONE: ",li)
+                                        
+
+                                        this_record = RetiredMetersTransactions.objects.filter(spn=spn).last()
+                                    
+
+                                        #print("DONE: ",sn,spn,this_record.id)       
+                                    
+                                    
+                                    except Exception as e:
+                                        import sys
+                                        import traceback
+                                        exc_type, exc_value, exc_tb = sys.exc_info()
+                                        tb = traceback.extract_tb(exc_tb)
+                                        if tb:
+                                            line_number = tb[-1].lineno
+                                            print(f"[Exception on line {line_number}] {sn} {str(e)}")
+                                        else:
+                                            print(f"[Exception] {sn} {str(e)}")
+
                                 
-                                except Exception as e:
-                                    import sys
-                                    import traceback
-                                    exc_type, exc_value, exc_tb = sys.exc_info()
-                                    tb = traceback.extract_tb(exc_tb)
-                                    if tb:
-                                        line_number = tb[-1].lineno
-                                        print(f"[Exception on line {line_number}] {sn} {str(e)}")
-                                    else:
-                                        print(f"[Exception] {sn} {str(e)}")
-
                             else:
-                                print("Invalid Box Number")
-                        else:
-                            pass
-                            #print(spn,"SYNCED")
+                                pass
+                                print(spn,"SYNCED")
+                        except Exception as l:
+                            print(":LEGEND:",str(l))
                 except Exception as e:
                     #print(str(e))
                     raise Exception(e)
@@ -470,7 +491,7 @@ def interface(request):
                             service_id=ser_id,
                             material=material,
                             qty=qty,
-                            phase=Phase.objects.get(id=p)
+                            phase=Phase.objects.get(number=p)
                     )
                     except Exception as e:
                         print(e)
@@ -1606,7 +1627,7 @@ def interface(request):
                                     service.contractor.company,
                                     service.spn,
                                     service.service_date,
-                                    service.phase,
+                                    service.meter_phase(),
                                     service.gps_code,
                                     service.service_type.name
                                 ]
@@ -1794,11 +1815,11 @@ def interface(request):
                                     if True:
                                         rr = "YES" if service.is_routing else "NO"
                                         is_same = service.sn_same_as_wo().get('is_same')
-                                        li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,is_x,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
+                                        li = [mx,name,service.contractor.company,service.spn,service.service_date,service.meter_phase(),service.gps_code,is_x,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
                                         mx += 1
                                         this_sheet.append(li)
                                 else:
-                                    li = [mx,name,service.contractor.company,service.spn,service.service_date,service.phase,service.gps_code,is_x,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
+                                    li = [mx,name,service.contractor.company,service.spn,service.service_date,service.meter_phase(),service.gps_code,is_x,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
                                     mx += 1
                                     this_sheet.append(li)
                     
@@ -1810,7 +1831,7 @@ def interface(request):
                         for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
                             li = [sn,service.service_date,service.service_type.name,
                                   service.installation_type.name if service.installation_type else 'Unknown'
-                                ,service.new_meter,service.spn,service.old_meter_no,service.phase,service.contractor.company,service.box_no,service.is_routing]
+                                ,service.new_meter,service.spn,service.old_meter_no,service.meter_phase(),service.contractor.company,service.box_no,service.is_routing]
                             sheet.append(li)
                             sn += 1
                     
@@ -3135,6 +3156,7 @@ def interface(request):
                     as_of = data.get('as_of_field   ',timezone.now().date())
                     loc_id = data.get('location','*')
                     stock_only = data.get('stock_only','no')
+                    re_order = data.get('re_order','NO')
                     print(data)
                     if stock_only == 'yes':
                         stock_only = True
@@ -3145,6 +3167,12 @@ def interface(request):
                     print(as_of)
                     arr = []
 
+                    import openpyxl
+                    book = openpyxl.Workbook()
+                    sheet = book.active
+                    sheet.title = f"Item Availability {as_of}"
+                    sheet.append(["NAME","TOTAL IN","TOTAL OUT","BALANCE","RE-ORDER QTY"])
+
                     from fpdf import FPDF
                     pdf = FPDF('P','mm','A4')
                     pdf.add_page()
@@ -3154,9 +3182,9 @@ def interface(request):
 
                     pdf.set_font("Arial","B", size=10)
                     pdf.cell(100, 5, txt="Material", ln=False, align="L",border=1)
-                    pdf.cell(25, 5, txt="Stock Qty", ln=False, align="L",border=1)
-                    pdf.cell(30, 5, txt="Estmated Value", ln=False, align="L",border=1)
-                    pdf.cell(30, 5, txt="Total Amount", ln=True, align="L",border=1)
+                    pdf.cell(25, 5, txt="Total In", ln=False, align="L",border=1)
+                    pdf.cell(30, 5, txt="Total Out", ln=False, align="L",border=1)
+                    pdf.cell(30, 5, txt="Balance", ln=True, align="L",border=1)
 
                     pdf.set_font("Arial","", size=10)
 
@@ -3166,6 +3194,12 @@ def interface(request):
 
                     materials = InventoryMaterial.objects.all().order_by('name')
                     for material in materials:
+
+                        in_and_out = material.in_and_out(as_of,loc_id)
+                        print("#" * 4)
+                        print(in_and_out)
+                        print("#" * 4)
+
                         total_qty = material.stock(as_of,loc_id)
                         print(total_qty,as_of,loc_id)
                         ql = False
@@ -3179,10 +3213,31 @@ def interface(request):
 
                         if ql:
                             total_amount = total_qty * material.value
-                            pdf.cell(100, 5, txt=f"{material.name[:30]}", ln=False, align="L",border=1)
-                            pdf.cell(25, 5, txt=f"{total_qty}", ln=False, align="L",border=1)
-                            pdf.cell(30, 5, txt=f"{'{:,.2f}'.format(material.value)}", ln=False, align="L",border=1)
-                            pdf.cell(30, 5, txt=f"{'{:,.2f}'.format(total_amount)}", ln=True, align="L",border=1)
+                            # pdf.cell(100, 5, txt=f"{material.name[:30]}", ln=False, align="L",border=1)
+                            # pdf.cell(25, 5, txt=f"{in_and_out.get('in_trans')}", ln=False, align="L",border=1)
+                            # pdf.cell(30, 5, txt=f"{'{:,.2f}'.format(in_and_out.get('out_trans'))}", ln=False, align="L",border=1)
+                            # pdf.cell(30, 5, txt=f"{'{:,.2f}'.format(in_and_out.get('balance'))}", ln=True, align="L",border=1)
+
+                            if re_order == 'YES':
+                                if material.reorder_qty > in_and_out.get('balance'):
+                                    pdf.set_font("Arial","B", size=10)
+                                    pdf.cell(100, 5, txt=f"{material.name[:30]}", ln=False, align="L",border=1)
+                                    pdf.cell(25, 5, txt=f"{in_and_out.get('in_trans')}", ln=False, align="L",border=1)
+                                    pdf.cell(30, 5, txt=f"{'{:,.2f}'.format(in_and_out.get('out_trans'))}", ln=False, align="L",border=1)
+                                    pdf.cell(30, 5, txt=f"{'{:,.2f}'.format(in_and_out.get('balance'))}", ln=True, align="L",border=1)
+
+                                    sheet.append([
+                                        material.name,in_and_out.get('in_trans'),in_and_out.get('out_trans'),in_and_out.get('balance')
+                                    ])
+                            else:
+                                pdf.set_font("Arial","B", size=10)
+                                pdf.cell(100, 5, txt=f"{material.name[:30]}", ln=False, align="L",border=1)
+                                pdf.cell(25, 5, txt=f"{in_and_out.get('in_trans')}", ln=False, align="L",border=1)
+                                pdf.cell(30, 5, txt=f"{'{:,.2f}'.format(in_and_out.get('out_trans'))}", ln=False, align="L",border=1)
+                                pdf.cell(30, 5, txt=f"{'{:,.2f}'.format(in_and_out.get('balance'))}", ln=True, align="L",border=1)
+                                sheet.append([
+                                        material.name,in_and_out.get('in_trans'),in_and_out.get('out_trans'),in_and_out.get('balance'),material.reorder_qty
+                                    ])
 
                             total += total_amount
                             tq += total_qty
@@ -3192,15 +3247,17 @@ def interface(request):
                                 'name':material.name,
                                 'stock_qty':total_qty,
                                 'value':material.value,
-                                'total_amount':total_amount
+                                'total_amount':total_amount,
+                                'in_out':in_and_out
                             })
                         
-
+                    xfile = f"static/general/tmp/{as_of}.xlsx"
+                    book.save(xfile)
                     file_name = f"Item Availability As Of {as_of}.pdf"
                     file = f"static/general/tmp/{file_name}"
                     pdf.output(file)
                     success_response['message'] = {
-                        'file':file,
+                        'file':xfile,
                         'data':arr
                     }
                         

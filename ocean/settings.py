@@ -61,7 +61,8 @@ INSTALLED_APPS = [
     'maintenance.apps.MaintenanceConfig',
     'ssml.apps.SsmlConfig',
     'employee.apps.EmployeeConfig',
-    'logistics.apps.LogisticsConfig'
+    'logistics.apps.LogisticsConfig',
+    'amc.apps.AmcConfig'
 ]
 
 MIDDLEWARE = [

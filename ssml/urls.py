@@ -44,6 +44,8 @@ urlpatterns = [
     path('inventory/redeem/',views.redeem,name='redeem'),
     path('inventory/redeem/new/',views.new_redemption,name='new_redemption'),
     path('inventory/linked-models/',views.linked_models,name='linked_models'),
+    path('inventory/material-request/',views.material_request,name='ssml_material_request'),
+    path('inventory/material-request/new/',views.new_material_request_screen,name='ssml_new_material_request'),
     path('api/', ssml_api.interface, name='api'),
     path('upload_image/', views.upload_image, name='upload_image'),
     path('work-order/plots/', views.plots, name='plots'),
@@ -75,6 +77,7 @@ urlpatterns = [
     path('import-expensis/',views.import_expensis,name='import-expensis'),
     ## meter master
      path('meters/',views.meters,name='meters'),
-    path('meters/phase-master/',views.phase_master,name='phase-master')
+    path('meters/phase-master/',views.phase_master,name='phase-master'),
+    path('meters/import-shipment-file/',views.import_shipment_file,name='import_shipment_file')
 
 ]

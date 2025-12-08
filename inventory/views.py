@@ -97,9 +97,9 @@ def new_grn(request):
 def assets(request):
     page['title'] = 'AssetsX'
 
-    vehiclePaginator = Paginator(VehicleAsset.objects.all(), 10)
-    page_number = request.GET.get("page")
-    vehicle_page_obj = vehiclePaginator.get_page(page_number)
+    # vehiclePaginator = Paginator(VehicleAsset.objects.all(), 10)
+    # page_number = request.GET.get("page")
+    # vehicle_page_obj = vehiclePaginator.get_page(page_number)
 
     context = {
         'page': page,
@@ -109,7 +109,7 @@ def assets(request):
         'po': PoHd.objects.filter(status=1),
         'assgrp': AssetGroup.objects.all(),
         'assets': Assets.objects.all(),
-        'vehicle_page_obj':  vehicle_page_obj,
+        # 'vehicle_page_obj':  vehicle_page_obj,
     }
 
     return render(request, 'inventory/assets/index.html', context=context)

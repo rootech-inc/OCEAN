@@ -14,7 +14,8 @@ from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
     IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, \
     ServiceMaterials, ServiceOrder, \
-    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType,Cardex,Phase
+    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType,Cardex,Phase,MaterialRequestHeader
+from dolphine.models import Documents
 
 
 # Create your views here.
@@ -1472,3 +1473,115 @@ def linked_models(request):
         'linked_models':ServiceMaterials.objects.all()
     }
     return render(request, 'ssml/inventory/linked-models.html', context)
+
+@login_required
+def new_material_request_screen(request):
+    
+    page = {
+        'title': "New Material Request",
+        'nav': True
+    }
+    context = {
+        'page': page,
+        # 'form': MaterialRequestForm() # Assuming a form exists
+    }
+    return render(request, 'ssml/inventory/new-material-request.html', context)
+
+@login_required
+def material_request(request):
+    if request.GET.get('entry_no'):
+        request_no = request.GET.get('entry_no')
+        
+    else:
+        if MaterialRequestHeader.objects.all().count() > 0:
+            request_no = MaterialRequestHeader.objects.all().last().request_no
+        else:
+            return redirect('ssml_new_material_request')
+    page = {
+        'title': "Material Request",
+        'nav': True
+    }
+    context = {
+        'page': page,
+        'request_no':request_n  
+    }
+    return render(request, 'ssml/inventory/material-request.html', context)
+
+@csrf_exempt
+@login_required
+def import_shipment_file(request):
+    if request.method == 'POST':
+        file = request.FILES.get('shipment_file')
+        if 'shipment_file' not in request.FILES:
+            return HttpResponseBadRequest("No file uploaded.")
+
+        print(request.POST)
+        phase = Phase.objects.get(number=request.POST.get('phase'))
+        
+        excel_files = request.FILES.getlist('shipment_file')
+        files_count = len(excel_files)
+        fk = 1
+        for excel_file in excel_files:
+        
+            file_name = excel_file.name
+            file_updates = 0
+            file_creations = 0
+            file_errors = []
+            
+            import openpyxl
+            wb = openpyxl.load_workbook(excel_file)
+            sheet = wb.active
+            headers = [cell.value for cell in sheet[1]]
+            all_rows_len = sheet.max_row - 1
+            ct = 1
+            for row in sheet.iter_rows(min_row=2,values_only=True):
+                
+                row_dict = dict(zip(headers, row))
+                meter_no = row_dict['MFG Serial Number']
+                
+                try:
+                    if len(str(meter_no)) > 0:
+                        if Meter.objects.filter(meter_no=meter_no).exists():
+                            meter = Meter.objects.get(meter_no=meter_no)
+                            meter.linked_phase = phase
+                            meter.save()
+                            print("FILE: ",fk,'/',files_count,' ROW: ',ct,'/',all_rows_len,meter_no,phase.description,'updated')
+                        else:
+                            try:
+                                Meter.objects.create(
+                                    meter_no=meter_no,
+                                    linked_phase=phase,
+                                    contractor=Contractor.objects.get(company='INTERNAL ISSUE'),
+                                    created_by=request.user,
+                                    location=Location.objects.get(is_default=True)
+                                )
+                            except Exception as e:
+                                pass
+                            print("FILE: ",fk,'/',files_count,' ROW: ',ct,'/',all_rows_len,meter_no,phase.description,'created')
+                    else:
+                        print("FILE: ",fk,'/',files_count,' ROW: ',ct,'/',all_rows_len,meter_no,phase.description,meter_no,'not found')
+                except Meter.DoesNotExist:
+                    
+                    print("FILE: ",fk,'/',files_count,' ROW: ',ct,'/',all_rows_len,meter_no,phase.description,str(e))
+
+                ct += 1
+
+            fk += 1
+
+            # Documents.objects.create(
+            #     doc='SHP',
+            #     title=file_name,
+            #     entry_no=f'{phase.description} SHIPMENT FILE',
+            #     file=excel_file,
+            #     description=f'{phase.description} SHIPMENT FILE',
+            # )
+
+        return JsonResponse({
+            'status_code':'202','message':'Done'
+        })
+            
+            
+        
+    else:
+        return JsonResponse({'status_code': '400', 'message': 'Invalid method'})
+            

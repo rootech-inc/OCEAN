@@ -1,59 +1,59 @@
 class Form {
-    input(type='text',ini,comment = '',required=false,max_value=100){
+    input(type = 'text', ini, comment = '', required = false, max_value = 100) {
         let req = ''
-        if(required){
+        if (required) {
             req = `<span class="text-danger">*</span>`
         }
         return `
                 <div class="input-group mb-2">
-                <label class="w-100 text-info" for="${ini}">${ini.toUpperCase().replace('_',' ')} ${req}</label>
+                <label class="w-100 text-info" for="${ini}">${ini.toUpperCase().replace('_', ' ')} ${req}</label>
                 <input type="${type}" maxlength="${max_value}" id="${ini}" name="${ini}" required="${required}" class="form-control w-100 rounded-0"  />
                 <small class="text-muted">${comment}</small>
                 </div>
                 `
     }
-    text(ini,comment='',required=false,max_val=100){
-        return this.input('text',ini,comment,required,max_val)
+    text(ini, comment = '', required = false, max_val = 100) {
+        return this.input('text', ini, comment, required, max_val)
     }
 
-    email(ini,comment='',required=false){
-        return this.input('email',ini,comment,required)
+    email(ini, comment = '', required = false) {
+        return this.input('email', ini, comment, required)
     }
 
-    phone(ini,comment='',required=false){
-        return this.input('tel',ini,comment,required)
+    phone(ini, comment = '', required = false) {
+        return this.input('tel', ini, comment, required)
     }
 
-    date(ini,comment='',required=false){
-        return this.input('date',ini,comment,required)
+    date(ini, comment = '', required = false) {
+        return this.input('date', ini, comment, required)
     }
 
-    date_local(ini,comment='',required=false){
-        return this.input('datetime-local',ini,comment,required)
+    date_local(ini, comment = '', required = false) {
+        return this.input('datetime-local', ini, comment, required)
     }
 
-    time(ini,comment='',required=false){
-        return this.input('time',ini,comment,required)
+    time(ini, comment = '', required = false) {
+        return this.input('time', ini, comment, required)
     }
 
-    color(ini,comment='',required=false){
-        return this.input('color',ini,comment,required);
+    color(ini, comment = '', required = false) {
+        return this.input('color', ini, comment, required);
 
     }
 
-    select(ini,options,comment='',required=false){
+    select(ini, options, comment = '', required = false) {
         let req = ''
-        if(required){
+        if (required) {
             req = `<span class="text-danger">*</span>`
         }
         return `
-                <label class="text-muted" for="${ini}">${ini.toUpperCase().replace('_',' ')} ${req}</label>
+                <label class="text-muted" for="${ini}">${ini.toUpperCase().replace('_', ' ')} ${req}</label>
                 <select id="${ini}" name="${ini}" required="${required}" class="form-control mb-2 rounded-0"><${options}</select><i class="text-muted">${comment}</i>
                 `
     }
 
-    selectv2(ini,options=[],comment='',required=false, ){
-        let opxt = `<option disabled selected >--- ${ini.toUpperCase().replace('_',' ')} ---</option>`;
+    selectv2(ini, options = [], comment = '', required = false,) {
+        let opxt = `<option disabled selected >--- ${ini.toUpperCase().replace('_', ' ')} ---</option>`;
         for (let i = 0; i < options.length; i++) {
             let option = options[i];
             console.table(option)
@@ -61,21 +61,21 @@ class Form {
         }
 
         let req = ''
-        if(required){
+        if (required) {
             req = `<span class="text-danger">*</span><br>`
         }
         return `
-                <label class="text-info" for="${ini}">${ini.toUpperCase().replace('_',' ')} ${req}</label>
+                <label class="text-info" for="${ini}">${ini.toUpperCase().replace('_', ' ')} ${req}</label>
                 <select id="${ini}" name="${ini}" required="${required}" class="form-control mb-2 rounded-0"><${opxt}</select><i class="text-muted">${comment}</i><br>
                 `
     }
 
-    button(ini,type,color='info',margin=2,onclick=''){
-        return `<button class="btn btn-${color}" style="border-radius: 0px !important; margin-left: .2rem" id="${ini}" onclick="${onclick}" type="${type}">${ini.toUpperCase().replace('_',' ')}</button>`
+    button(ini, type, color = 'info', margin = 2, onclick = '') {
+        return `<button class="btn btn-${color}" style="border-radius: 0px !important; margin-left: .2rem" id="${ini}" onclick="${onclick}" type="${type}">${ini.toUpperCase().replace('_', ' ')}</button>`
     }
-    textarea(ini,rows=3,required=false,comment=''){
+    textarea(ini, rows = 3, required = false, comment = '') {
         let req = ''
-        if(required){
+        if (required) {
             req = `<span class="text-danger">*</span>`
         }
         return `
@@ -85,32 +85,32 @@ class Form {
                 `
     }
 
-    file(ini,comment='',required=false){
-        return this.input('file',ini,comment,required)
+    file(ini, comment = '', required = false) {
+        return this.input('file', ini, comment, required)
     }
 
-    locations(key='code') {
+    locations(key = 'code') {
         let loc_payload = {
-            module:'location_master',
-            data:{}
+            module: 'location_master',
+            data: {}
         }
-        let locations = api.call('VIEW',loc_payload,'/retail/api/')
+        let locations = api.call('VIEW', loc_payload, '/retail/api/')
         let locs = locations.message
         let l_optons = ""
-        for(let l = 0; l < locs.length; l++){
+        for (let l = 0; l < locs.length; l++) {
             let lc = locs[l]
             l_optons += `<option value="${lc[`${key}`]}">${lc['code']} - ${lc['name']}</option>`
         }
 
-        return this.select('location',l_optons,'',true)
+        return this.select('location', l_optons, '', true)
     }
 
-    number(ini,comment='',required=false,max_val=100){
-        return this.input('number',ini,comment,required,max_val)
+    number(ini, comment = '', required = false, max_val = 100) {
+        return this.input('number', ini, comment, required, max_val)
     }
 
-    password(ini,comment='',required=false,max_val=100) {
-        return this.input('password',ini,comment,required,max_val)
+    password(ini, comment = '', required = false, max_val = 100) {
+        return this.input('password', ini, comment, required, max_val)
     }
 
     multiselect(ini, options = [], comment = '', required = false) {
