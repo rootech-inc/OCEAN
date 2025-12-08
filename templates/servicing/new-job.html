@@ -323,7 +323,9 @@
                 };
 
                 let request = api.call('VIEW',ticket_payload,'/apiv2/');
+                console.table(request);
                 if(request['status_code'] === 200){
+                    
                     let tickets = request['message'];
                     let req_option = `<option value="0"> GENERATE TICKET </option>`;
 

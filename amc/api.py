@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from admin_panel.anton import make_md5_hash
 from amc.models import *
 from django.utils import timezone
-from admin_panel.models import Sms, SmsApi, UserAddOns, MailQueues, MailSenders
+from admin_panel.models import Sms, SmsApi, UserAddOns, MailQueues, MailSenders,TicketHd
 from ocean.settings import AMC_ASSIGN_COPIES
 
 
@@ -86,6 +86,25 @@ def amc_interface(request):
                 )
 
 
+                response = success_response
+
+            elif module == 'service_request':
+                description = data.get('description')
+                
+                asset = Asset.objects.get(pk=data.get('asset'))
+                owner = asset.assigned_to if asset.assigned_to else None
+                if not owner:
+                    owner = User.objects.get(pk=data.get('mypk'))
+
+
+                ref = asset.serial
+                TicketHd(title=f"Service Request for {asset.name}", descr=description, owner=owner, app='AMC', ref=ref).save()
+                        # sms
+                smsapi = SmsApi.objects.get(is_default=1)
+                Sms(api=smsapi, to='0546310011',
+                            message=f"There is an issue with title 'Service Request for {asset.name}' reported by {owner.username}").save()
+
+                success_response['message'] = "Service Request Reported"
                 response = success_response
 
             elif module == 'assign':
@@ -464,6 +483,16 @@ def amc_interface(request):
                 success_response['message'] = [img.obj() for img in AssetImages.objects.filter(asset=asset)]
                 response = success_response
 
+                response = success_response
+
+            elif module == 'transactions':
+                asset = Asset.objects.get(pk=data.get('asset'))
+                success_response['message'] = [tx.obj() for tx in AssetTransaction.objects.filter(asset=asset)]
+                response = success_response
+
+            elif module == 'service_request':
+                asset = Asset.objects.get(pk=data.get('asset'))
+                success_response['message'] = [ticket.obj() for ticket in TicketHd.objects.filter(ref=asset.serial)]
                 response = success_response
 
             else:

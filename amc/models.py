@@ -88,7 +88,6 @@ class AssetTransaction(models.Model):
             'asset_name': self.asset.name,
             'action': self.action,
             'performed_by': self.performed_by.username if self.performed_by else None,
-            'assigned_to': self.assigned_to.username if self.assigned_to else None,
             'date': self.date.isoformat() if self.date else "",
             'notes': self.notes or ""
         }

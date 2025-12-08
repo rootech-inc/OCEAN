@@ -644,8 +644,21 @@ class TicketHd(models.Model):
     status = models.IntegerField(default=0)
     app = models.TextField(default='Unknown')
 
+    ref = models.CharField(max_length=255, null=True, blank=True)
+
     def transactions(self):
         return TicketTrans.objects.filter(ticket=self).order_by('-pk')
+
+    def obj(self):
+        return {
+            'pk':self.pk,
+            'title':self.title,
+            'descr':self.descr,
+            'owner':self.owner.username,
+            'created_on':self.created_on,
+            'edited_on':self.edited_on,
+            'status':self.status,
+        }
 
 
 class TicketTrans(models.Model):

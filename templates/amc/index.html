@@ -16,7 +16,7 @@
     
         
   
-        <div class="table-responsive">
+        <div class="table-responsive h-100">
         <table class="table datatable table-striped table-hover align-middle">
             <thead class="">
             <tr>
@@ -41,7 +41,7 @@
                     <td>{{ asset.model }}</td>
                     <td>{{ asset.serial }}</td>
                     <td>{{ asset.group }}</td>
-                    <td>{{ asset.assigned_to }}</td>
+                    <td>{{ asset.assigned_to.get_full_name }}</td>
                     <td>
                     {% if asset.status == 'active' %}
                         <span class="badge bg-success">Active</span>
@@ -70,7 +70,7 @@
                             <li><a class="dropdown-item specifications" data-pk="{{asset.pk}}" href="#">Specs</a></li>
                             <li><a class="dropdown-item images" data-pk="{{asset.pk}}" href="#">Images</a></li>
                             <li><a class="dropdown-item transactions" data-pk="{{asset.pk}}" href="#">Transactions</a></li>
-                            <li><a class="dropdown-item" href="#">Service Request</a></li>
+                            <li><a class="dropdown-item service_request" data-pk="{{asset.pk}}" href="#">Service Request</a></li>
                         </ul>
                     </div>
                     </td>
@@ -212,14 +212,88 @@
 
             })
             
-            $('.transactions').click(function(){
+            $('.transactions').click(async function(){
                 let pk = $(this).data('pk');
                 let payload = {
                     module:'transactions',
                     data:{
-                        pk:pk
+                        asset:pk
                     }
                 }
+
+            
+                await api.v2('VIEW', payload, '/amc/api/').then(response => {
+                    if (anton.IsRequest(response)) {
+                        let transactions = response.message;
+                        let table = `
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                        <th>Actor By</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${
+                                        transactions.length > 0
+                                        ? transactions.map(tx => `
+                                            <tr>
+                                                <td>${tx.date ? tx.date : ''}</td>
+                                                <td>${tx.action ? tx.action : ''}</td>
+                                                <td>${tx.performed_by ? tx.performed_by : ''}</td>
+                                                <td>${tx.notes ? tx.notes : ''}</td>
+                                            </tr>
+                                        `).join('')
+                                        : `<tr><td colspan="4" class="text-center">No transactions found.</td></tr>`
+                                    }
+                                </tbody>
+                            </table>
+                        `;
+
+                        amodal.setBodyHtml(`
+                            ${table}
+                           
+                        `);
+                        amodal.setTitleText("Asset Transactions");
+                        amodal.setFooterHtml("");
+                        amodal.setSize('lg');
+                        amodal.show();
+
+                        $('#add_transaction_form').on('submit', async function(e){
+                            e.preventDefault();
+                            let action = $(this).find('input[name="action"]').val();
+                            let notes = $(this).find('textarea[name="notes"]').val();
+
+                            let addPayload = {
+                                module: 'transactions',
+                                data: {
+                                    pk: pk,
+                                    action: action,
+                                    notes: notes
+                                }
+                            };
+
+                            await api.v2('PUT', addPayload, '/amc/api/').then(resp => {
+                                if(anton.IsRequest(resp)){
+                                    kasa.success("Transaction added!");
+                                    amodal.hide();
+                                } else {
+                                    kasa.error(resp.message || "Failed to add transaction");
+                                }
+                            }).catch(err => {
+                                kasa.error(err);
+                            });
+                        });
+
+                    } else {
+                        kasa.response(response);
+                    }
+                }).catch(error => {
+                    kasa.error(error);
+                });
+
             })
 
             $('.specifications').click(async function(){
@@ -419,6 +493,73 @@
                 });
             })
 
+            $('.service_request').click(async function(){
+                let pk = $(this).data('pk');
+                let payload = {
+                    module:'service_request',
+                    data:{
+                        asset:pk
+                    }
+                }
+                await api.v2('VIEW',payload,'/amc/api/').then(response => {
+                    if(anton.IsRequest(response)){
+                        let service_request = response.message;
+                        let table = `
+                            <div class="row">
+                            ${
+                                service_request.length > 0
+                                ? service_request.map(sr => `
+                                    <div class="col-md-12 mb-3">
+                                        <div class="card border-primary">
+                                            <div class="card-body">
+                                                <h5 class="card-title mb-2">${sr.title ? sr.title : ''}</h5>
+                                                <h6 class="card-subtitle mb-2 text-muted">${sr.created_on ? sr.created_on : ''}</h6>
+                                                <p class="card-text">${sr.descr ? sr.descr : ''}</p>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                `).join('')
+                                : `<div class="col-12"><div class="card"><div class="card-body text-center">No service requests found.</div></div></div>`
+                            }
+                            </div>
+                        `;
+
+                        amodal.setBodyHtml(table)
+                        amodal.setTitleText("Service Requests")
+                        amodal.setFooterHtml(`<button class="btn btn-primary" id="add_service_request">Add Service Request</button>`)
+                        amodal.show()
+
+                    $('#add_service_request').click(async function(){
+                        let form = fom.textarea('description','',true)
+                        amodal.setBodyHtml(form)
+                        amodal.setTitleText("Add Service Request")
+                        amodal.setFooterHtml(`<button class="btn btn-primary" id="save_service_request">Save</button>`)
+                        amodal.show()
+
+                        $('#save_service_request').click(async function(){
+                            let ids = ['description','mypk']
+                            if(anton.validateInputs(ids)){
+                                let payload = {
+                                    module:'service_request',
+                                    data:anton.Inputs(ids)
+                                }
+                               
+                                payload['data']['asset'] = pk;
+                                await api.v2('PUT',payload,'/amc/api/').then(response => {
+                                    kasa.confirm(response.message,1,'here')
+                                }).catch(error => {kasa.error(error)})
+                            } else {
+                                kasa.error("Invalid Input")
+                            }
+                        })
+                    })
+
+                    } else {
+                        kasa.response(response)
+                    }
+                }).catch(error => {kasa.error(error)})
+            })
         })
     </script>
 
