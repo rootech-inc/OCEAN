@@ -10,8 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from admin_panel.anton import make_md5_hash
 from amc.models import *
 from django.utils import timezone
-from admin_panel.models import Sms, SmsApi, UserAddOns
-
+from admin_panel.models import Sms, SmsApi, UserAddOns, MailQueues, MailSenders
 
 
 @csrf_exempt
@@ -123,12 +122,61 @@ def amc_interface(request):
                     
                     # INSERT_YOUR_CODE
                     message = f"Dear {assignee.get_full_name() if hasattr(assignee, 'get_full_name') and assignee.get_full_name() else assignee.username}, an asset ({asset.name}) has been assigned to you in the system."
-
+                    # INSERT_YOUR_CODE
+                    # Compose an HTML-formatted email message with assign message and device details
+                    message = f"""
+                    <html>
+                      <body>
+                        <p>
+                          Dear {assignee.get_full_name() if hasattr(assignee, 'get_full_name') and assignee.get_full_name() else assignee.username},
+                        </p>
+                        <p>
+                          An asset has been <b>assigned</b> to you in the system.
+                        </p>
+                        <hr>
+                        <h3>Asset Details</h3>
+                        <table style="border-collapse: collapse;">
+                          <tr>
+                            <th align="left" style="border-bottom: 1px solid #ddd; padding: 6px;">Name</th>
+                            <td style="padding: 6px;">{asset.name}</td>
+                          </tr>
+                          <tr>
+                            <th align="left" style="border-bottom: 1px solid #ddd; padding: 6px;">Category</th>
+                            <td style="padding: 6px;">{asset.group.name}</td>
+                          </tr>
+                          <tr>
+                            <th align="left" style="border-bottom: 1px solid #ddd; padding: 6px;">Serial Number</th>
+                            <td style="padding: 6px;">{asset.serial}</td>
+                          </tr>
+                          <tr>
+                            <th align="left" style="border-bottom: 1px solid #ddd; padding: 6px;">Model</th>
+                            <td style="padding: 6px;">{asset.model}</td>
+                          </tr>
+                        </table>
+                        <hr>
+                        <p>
+                          Please acknowledge receiving the asset and ensure its care and proper usage as per company policies.
+                        </p>
+                        <p style="margin-top: 24px;">
+                          Regards,<br>
+                          Asset Management Team
+                        </p>
+                      </body>
+                    </html>
+                    """
                     # send sms
                     Sms.objects.create(
                         api=SmsApi.objects.get(is_default=True),
                         to=phone,
                         message=message
+                    )
+
+                    MailQueues.objects.create(
+                        sender=MailSenders.objects.get(is_default=True),
+                        recipient=email,
+                        subject="Issue Of Company Asset",
+                        body=message,
+                        cc='ajay@snedaghana.com,bharat@snedaghana.com,nanayaa@snedamotors.com'
                     )
 
                     notif = "Notification Sent"
