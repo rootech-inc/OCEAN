@@ -289,3 +289,5 @@ LOGISTIC_CONTACT = {
     'phone':'0546310011'
 }
 
+AMC_ASSIGN_COPIES = os.environ.get('REST_DB_HOST','uyinsolomon2@gmail.com')
+

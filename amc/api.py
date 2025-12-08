@@ -11,6 +11,7 @@ from admin_panel.anton import make_md5_hash
 from amc.models import *
 from django.utils import timezone
 from admin_panel.models import Sms, SmsApi, UserAddOns, MailQueues, MailSenders
+from ocean.settings import AMC_ASSIGN_COPIES
 
 
 @csrf_exempt
@@ -177,7 +178,7 @@ def amc_interface(request):
                         subject="Issue Of Company Asset",
                         body=message,
                         mail_key=em_un,
-                        cc='ajay@snedaghana.com,bharat@snedaghana.com,nanayaa@snedamotors.com'
+                        cc=AMC_ASSIGN_COPIES
                     )
 
                     notif = "Notification Sent"
