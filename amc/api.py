@@ -295,7 +295,7 @@ def amc_interface(request):
                 # Save file (output as a saved file)
             
                
-                filename = f"static/tmp/asset_{asset.pk}_details.pdf"
+                filename = f"static/general/tmp/asset_{asset.pk}_details.pdf"
                 pdf.output(filename)
 
                 # Inform frontend of location
@@ -305,6 +305,13 @@ def amc_interface(request):
             elif module == 'specifications':
                 asset = Asset.objects.get(pk=data.get('pk'))
                 success_response['message'] = [sp.obj() for sp in AssetSpecifications.objects.filter(asset=asset)]
+
+                response = success_response
+
+            elif module == 'images':
+                asset = Asset.objects.get(pk=data.get('asset'))
+                success_response['message'] = [img.obj() for img in AssetImages.objects.filter(asset=asset)]
+                response = success_response
 
                 response = success_response
 
