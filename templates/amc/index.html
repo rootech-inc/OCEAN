@@ -68,6 +68,7 @@
                             {% endif %}
                             
                             <li><a class="dropdown-item specifications" data-pk="{{asset.pk}}" href="#">Specs</a></li>
+                            <li><a class="dropdown-item images" data-pk="{{asset.pk}}" href="#">Images</a></li>
                             <li><a class="dropdown-item transactions" data-pk="{{asset.pk}}" href="#">Transactions</a></li>
                             <li><a class="dropdown-item" href="#">Service Request</a></li>
                         </ul>
@@ -335,6 +336,86 @@
                         kasa.response(response)
                     }
                 }).catch(error => {kasa.error(error)})
+            })
+
+            $('.images').click(async function(){
+            
+               
+
+                let pk = $(this).data('pk');
+                amodal.setBodyHtml("<div>Loading images...</div>");
+                amodal.setTitleText("Asset Images");
+                amodal.setFooterHtml("");
+                amodal.show();
+
+                // Example: fetch and display images for the asset
+                await api.v2('VIEW', {module: 'images', data: {asset: pk}}, '/amc/api/').then(response => {
+                    if (anton.IsRequest(response)) {
+                        console.table(response);
+                        let images = response.message;
+                        let html = '';
+                        if(images && images.length) {
+                            html += '<div class="row">';
+                            images.forEach(img => {
+                                html += `
+                                    <div class="col-4 mb-3">
+                                        <div class="card h-100 shadow-sm">
+                                            <img src="${img.image}" class="card-img-top img-fluid rounded" alt="Asset Image">
+                                            <div class="card-body p-2">
+                                                <p class="card-text text-center small mb-0">${img.caption ? img.caption : ''}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            html += '</div>';
+                        } else {
+                            html = '<div>No images available.</div>';
+                        }
+                        amodal.setBodyHtml(html);
+                        amodal.setFooterHtml('<button class="btn btn-primary" id="add_new_image">Upload Image</button>');
+                    } else {
+                        amodal.setBodyHtml(`<div class="text-danger">${request.message}.</div>`);
+                    }
+                }).catch(error => {
+                    amodal.setBodyHtml(`<div class="text-danger">${error}.</div>`);
+                });
+
+                // Optional: Add handler for uploading a new image
+                $(document).on('click', '#add_new_image', function() {
+                    // You would create your form/modal for image upload here
+                    amodal.setBodyHtml('<input type="file" id="image_file" class="form-control mb-2"/><input type="text" id="image_caption" class="form-control mb-2" placeholder="Caption (optional)"/><button class="btn btn-success" id="upload_image_btn">Upload</button>');
+                    amodal.setFooterHtml('');
+
+                    $(document).on('click', '#upload_image_btn', function() {
+                        let fileInput = document.getElementById('image_file');
+                        let caption = $('#image_caption').val();
+                        if (fileInput.files.length === 0) {
+                            kasa.error("Please select an image to upload.");
+                            return;
+                        }
+                        let file = fileInput.files[0];
+                        let formData = new FormData();
+                        formData.append('image', file);
+                        formData.append('caption', caption);
+                        formData.append('asset', pk);
+
+                        $.ajax({
+                            url: "/amc/upload_image/", // This endpoint should exist on your backend
+                            type: "POST",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function(response) {
+                                kasa.confirm("Image uploaded successfully.");
+                                amodal.hide();
+                            },
+                            error: function() {
+                                kasa.error("Image upload failed.");
+                            }
+                        });
+                    });
+                });
             })
 
         })

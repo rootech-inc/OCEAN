@@ -113,3 +113,20 @@ class AssetSpecifications(models.Model):
         }
 
 
+class AssetImages(models.Model):
+    asset = models.ForeignKey(Asset,on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='static/uploads/amc/assets/')
+    caption = models.CharField(max_length=255,null=True,blank=True)
+    created_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, related_name='asset_images_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def obj(self):
+        return {
+            'pk': self.pk,
+            'asset_pk': self.asset.pk,
+            'asset_name': self.asset.name,
+            'image': self.image.url,
+            'caption': self.caption,
+            'created_by': self.created_by.username if self.created_by else None,
+            'created_at': self.created_at.isoformat() if self.created_at else ""
+        }
