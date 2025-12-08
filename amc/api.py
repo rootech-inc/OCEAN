@@ -170,12 +170,13 @@ def amc_interface(request):
                         to=phone,
                         message=message
                     )
-
+                    em_un = make_md5_hash(f"{email}-{message}-{asset.name}-{asset.serial}-{asset.model}-{asset.group.name}")
                     MailQueues.objects.create(
                         sender=MailSenders.objects.get(is_default=True),
                         recipient=email,
                         subject="Issue Of Company Asset",
                         body=message,
+                        mail_key=em_un,
                         cc='ajay@snedaghana.com,bharat@snedaghana.com,nanayaa@snedamotors.com'
                     )
 
@@ -326,21 +327,116 @@ def amc_interface(request):
                 offset = 8
 
                 pdf.set_font("Arial", 'B', 11)
-                pdf.cell(col_width, 10, "Director", border=0, align='C')
+                pdf.cell(col_width, 10, "Issued By", border=0, align='C')
                 pdf.cell(20, 10, "", border=0)
-                pdf.cell(col_width, 10, "HOD", border=0, align='C')
+                pdf.cell(col_width, 10, "Witness", border=0, align='C')
                 pdf.cell(20, 10, "", border=0)
                 pdf.cell(col_width, 10, "Asset Owner", border=0, align='C')
                 pdf.ln(18)
                 # Lines
                 x_start = pdf.l_margin
                 line_y = pdf.get_y()
+
+                
                 for i in range(3):
                     pdf.set_xy(x_start + i * (col_width + 20), line_y)
                     pdf.cell(col_width, 8, "_" * 26, border=0, align='C')
                 pdf.ln(20)
 
                 # Save file (output as a saved file)
+
+                # INSERT_YOUR_CODE
+                # Add a new page for asset images, if asset images exist
+
+                images = list(AssetImages.objects.filter(asset=asset))
+                if images:
+                    pdf.add_page()
+                    pdf.set_font("Arial", 'B', 13)
+                    pdf.cell(0, 10, "Asset Images", ln=1)
+                    pdf.ln(6)
+                    # Display images in rows, e.g. 3 per row
+                    import os
+                    images_per_row = 3
+                    image_w = 50
+                    image_h = 50
+                    cell_margin = 5  # space between images
+                    col_width = image_w + cell_margin
+
+                    num_images = len(images)
+                    row_images = []
+                    for idx, img in enumerate(images):
+                        try:
+                            # Show caption, creator and created_at
+                            caption = img.caption or ""
+                            created_by = img.created_by.get_full_name() if img.created_by and hasattr(img.created_by, 'get_full_name') and img.created_by.get_full_name() else (img.created_by.username if img.created_by else "")
+                            created_at = img.created_at.strftime('%Y-%m-%d %H:%M:%S') if img.created_at else ""
+                            meta = f"Uploaded by: {created_by}, at: {created_at}"
+
+                            # Gather per-image data
+                            img_data = {
+                                'caption': caption,
+                                'meta': meta,
+                                'img': img,
+                            }
+                            row_images.append(img_data)
+
+                            # When row full or last image, print the row
+                            if len(row_images) == images_per_row or idx == num_images - 1:
+                                y_start = pdf.get_y()
+                                x_start = pdf.l_margin
+
+                                # Find max image height in the row (for consistency)
+                                max_height = image_h
+
+                                # Draw images for this row
+                                for i, row_img_data in enumerate(row_images):
+                                    img_obj = row_img_data['img']
+                                    img_path = img_obj.image.path if hasattr(img_obj.image, "path") else img_obj.image.url
+                                    this_x = x_start + i * col_width
+                                    pdf.set_xy(this_x, y_start)
+
+                                    if os.path.exists(img_path):
+                                        try:
+                                            pdf.image(img_path, x=this_x, y=y_start, w=image_w, h=image_h)
+                                        except Exception as e:
+                                            pdf.set_font("Arial", 'I', 10)
+                                            pdf.set_xy(this_x, y_start)
+                                            pdf.set_text_color(255, 0, 0)
+                                            pdf.multi_cell(image_w, 8, "[Img load error]", border=0)
+                                            pdf.set_text_color(0, 0, 0)
+                                    else:
+                                        pdf.set_font("Arial", 'I', 10)
+                                        pdf.set_xy(this_x, y_start)
+                                        pdf.set_text_color(255, 0, 0)
+                                        pdf.multi_cell(image_w, 8, "[Image file missing]", border=0)
+                                        pdf.set_text_color(0, 0, 0)
+
+                                # Print captions below images
+                                y_caption = y_start + image_h + 2
+                                for i, row_img_data in enumerate(row_images):
+                                    caption = row_img_data['caption']
+                                    if caption:
+                                        pdf.set_font("Arial", 'B', 10)
+                                        pdf.set_xy(x_start + i * col_width, y_caption)
+                                        pdf.multi_cell(image_w, 6, caption, border=0)
+                                # Print metadata below captions
+                                y_meta = y_caption + 10
+                                for i, row_img_data in enumerate(row_images):
+                                    meta = row_img_data['meta']
+                                    pdf.set_font("Arial", '', 8)
+                                    pdf.set_xy(x_start + i * col_width, y_meta)
+                                    pdf.multi_cell(image_w, 5, meta, border=0)
+                                # Move to next row after images, captions, meta
+                                pdf.set_y(y_meta + 15)
+                                pdf.ln(4)
+                                row_images = []
+                        except Exception as e:
+                            pdf.set_font("Arial", 'I', 10)
+                            pdf.set_text_color(255, 0, 0)
+                            pdf.cell(0, 8, f"[Error loading image: {e}]", ln=1)
+                            pdf.set_text_color(0, 0, 0)
+                            pdf.ln(8)
+
             
                
                 filename = f"static/general/tmp/asset_{asset.pk}_details.pdf"

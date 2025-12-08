@@ -409,6 +409,7 @@
                             success: function(response) {
                                 kasa.confirm("Image uploaded successfully.");
                                 amodal.hide();
+                                loacation.reload()
                             },
                             error: function() {
                                 kasa.error("Image upload failed.");
