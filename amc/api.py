@@ -92,6 +92,8 @@ def amc_interface(request):
                 # INSERT_YOUR_CODE
                 asset_pk = data.get('asset')
                 user_pk = data.get('user')
+                inform_management = data.get('inform_management','NO')
+
                 performer = User.objects.get(pk=data.get('mypk'))
                 if not asset_pk or not user_pk:
                     raise Exception("Asset and user must be provided for assignment.")
@@ -172,13 +174,17 @@ def amc_interface(request):
                         message=message
                     )
                     em_un = make_md5_hash(f"{email}-{message}-{asset.name}-{asset.serial}-{asset.model}-{asset.group.name}")
+                    if inform_management == 'YES':
+                        cc = AMC_ASSIGN_COPIES
+                    else:
+                        cc = ''
                     MailQueues.objects.create(
                         sender=MailSenders.objects.get(is_default=True),
                         recipient=email,
                         subject="Issue Of Company Asset",
                         body=message,
                         mail_key=em_un,
-                        cc=AMC_ASSIGN_COPIES
+                        cc=cc
                     )
 
                     notif = "Notification Sent"
