@@ -1,0 +1,39 @@
+{% extends 'employee/emp_base.html' %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header text-center">
+                    <h4>Record Attendance</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="/company/submit-attendce/" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="punch_stage" class="form-label">Punch Stage</label>
+                            <select class="form-select" id="punch_stage" name="punch_stage" required>
+                                <option value="">-- Select Stage --</option>
+                                <option value="IN">Punch In</option>
+                                <option value="OUT">Punch Out</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="remarks" class="form-label">Remarks</label>
+                            <textarea class="form-control" id="remarks" name="remarks" rows="3" placeholder="Optional remark"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Image (for verification)</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Record Attendance</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

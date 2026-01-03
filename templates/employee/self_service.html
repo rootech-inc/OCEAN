@@ -1,0 +1,30 @@
+{% extends 'employee/emp_base.html' %}
+
+{% block body %}
+    <div class="card-body">
+        <div class="container mt-5">
+            <div class="row g-4">
+              <div class="col-sm-4">
+                <a href="{% url 'hrm_my_attendance' %}" class="text-decoration-none">
+                  <div class="card shadow-sm text-center h-100">
+                    <div class="card-body">
+                      <i class="bi bi-fingerprint display-3 mb-3 text-primary"></i>
+                      <h5 class="card-title">Attendance</h5>
+                    </div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-4">
+                <a href="{% url 'staff_leave' %}" class="text-decoration-none">
+                  <div class="card shadow-sm text-center h-100">
+                    <div class="card-body">
+                      <i class="bi bi-calendar-check display-3 mb-3 text-success"></i>
+                      <h5 class="card-title">My Leave</h5>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'employee/emp_base.html' %}
+{% load static %}
+{% block body %}
+
+<div class="card-header">
+    <button class="btn btn-primary" id="new_document">New</button>
+</div>
+<div class="card-body">
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for document in documents %}
+                <tr>
+                    <td>{{ document.title }}</td>
+                    <td>{{ document.description }}</td>
+                    <td>
+                        {{document.required}}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    $(document).ready(function(){
+        $('#new_document').click(function(){
+            let form = "";
+            form += fom.text('title','',true)
+            form += fom.text('description','',true)
+            form += fom.selectv2('required',[{val:'YES',desc:'Required'},{val:'NO',desc:'Optional'}])
+
+
+
+            amodal.setBodyHtml(form)
+            amodal.setTitleText('New Document')
+            amodal.setFooterHtml('<button class="btn btn-primary" id="save_document">Save</button>')
+            amodal.show()
+
+            $('#save_document').click(async function(){
+                let ids = ['title','description','required','mypk'];
+                if(anton.validateInputs(ids)){
+                    let payload = {
+                        module:'document',
+                        data:anton.Inputs(ids)
+                    }
+                    console.table(payload)
+
+                    await api.v2('PUT',payload,'/company/api/').then(response => {
+                        kasa.confirm(response.message,1,'here')
+                    }).catch(error=>{kasa.error(error)})
+                    
+                } else {
+                    kasa.error('Please fill all fields')
+                }
+            })
+
+        });
+    });
+</script>
+{% endblock %}
