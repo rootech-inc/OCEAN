@@ -34,6 +34,7 @@ from meeting.models import MeetingHD, MeetingTalkingPoints, MeetingTrans
 from ocean.settings import EMAIL_HOST_USER
 from .models import Company
 from servicing.models import ServiceTechnicians
+from admin_panel.anton import validateDocuments
 
 
 def today(what='none'):  # get time
@@ -115,6 +116,10 @@ def index(request):
     #     if UserAddOns.objects.filter(user=request.user.pk).count() != 1:
     #         messages.error(request, 'error%%Please configure your profile')
     #         return redirect('profile')
+
+    if not validateDocuments(request):
+        messages.error(request, 'Please validate your documents')
+        return redirect('user_compliance')
 
     notifications = {
         'unread': Notifications.objects.filter(owner=request.user, read=0).order_by('-pk'),
@@ -2575,3 +2580,22 @@ def organization(request):
         'companies': Company.objects.all().order_by('name'),
     }
     return render(request,'console/organization.html',context=context)
+
+@login_required
+def user_compliance(request):
+    user = request.user
+    from employee.models import Documents,EmployeeDocuments
+    # Assuming there is a UserCompliance model that tracks compliance per user
+    # and that each compliance item has a name, description, and status for this user.
+   
+    
+    context = {
+        'nav': True,
+        'page': {
+            'title': 'User Compliance'
+        },
+        'compliance_types':Documents.objects.all(),
+        'compliance_items':EmployeeDocuments.objects.filter(user=request.user)
+        
+    }
+    return render(request, 'console/user_compliance.html', context=context)

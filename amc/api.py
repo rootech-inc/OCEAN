@@ -12,6 +12,8 @@ from amc.models import *
 from django.utils import timezone
 from admin_panel.models import Sms, SmsApi, UserAddOns, MailQueues, MailSenders,TicketHd
 from ocean.settings import AMC_ASSIGN_COPIES
+from employee.models import Documents,EmployeeDocuments
+from ocean.settings import SHOW_ERROR_LINE
 
 
 @csrf_exempt
@@ -44,6 +46,25 @@ def amc_interface(request):
                     created_by=created_by
                 )
                 response = success_response
+
+            elif module == 'group_requirement':
+                document_select = data.get('document_select')
+                group_id = data.get('group_id')
+                mypk = data.get('mypk')
+
+                created_by = User.objects.get(pk=mypk)
+                document = Documents.objects.get(pk=document_select)
+                group = Groups.objects.get(pk=group_id)
+
+                GroupCompliance.objects.create(
+                    document=document,
+                    group=group,
+                    created_by=created_by
+                )
+
+                # save
+
+
 
             elif module == 'asset':
                 # INSERT_YOUR_CODE
@@ -119,6 +140,17 @@ def amc_interface(request):
 
                 asset = Asset.objects.get(pk=asset_pk)
                 assignee = User.objects.get(pk=user_pk)
+
+            
+                # Check if the group has compliance requirements before allowing assignment
+               
+                group_compliancec = GroupCompliance.objects.filter(group=asset.group)
+                if group_compliancec.exists():
+                    for compliance in group_compliancec:
+                        # check if user has compliance
+                        if EmployeeDocuments.objects.filter(user=assignee,document=compliance.document).count() == 0:
+                           raise Exception(f"{assignee.get_full_name()} does not have all required compliance documents ({compliance.document.title}).")
+
                 # Save old assignee (if needed for logs)
                 old_assignee = asset.assigned_to.username if asset.assigned_to else None
 
@@ -285,191 +317,196 @@ def amc_interface(request):
 
             elif module == 'print_document':
                 asset_pk = data.get('pk')
-                # INSERT_YOUR_CODE
-                import os
-                from fpdf import FPDF
-                from django.conf import settings
+                
 
                 asset = Asset.objects.get(pk=asset_pk)
-                specifications = AssetSpecifications.objects.filter(asset=asset)
+                if asset.is_signed:
+                    success_response['message'] = asset.signed_document.url.lstrip("/")if asset.signed_document else None
+                    
 
-                class PDF(FPDF):
-                    def header(self):
-                        self.set_font('Arial', 'B', 16)
-                        self.cell(0, 10, 'Asset Issue Note', ln=1, align='C')
-                        self.ln(10)
+                else :
+                    import os
+                    from fpdf import FPDF
+                    from django.conf import settings
+                    specifications = AssetSpecifications.objects.filter(asset=asset)
 
-                pdf = PDF(format='A4')
-                pdf.add_page()
-                pdf.set_auto_page_break(auto=True, margin=15)
-                pdf.set_font("Arial", size=12)
+                    class PDF(FPDF):
+                        def header(self):
+                            self.set_font('Arial', 'B', 16)
+                            self.cell(0, 10, 'Asset Issue Note', ln=1, align='C')
+                            self.ln(10)
 
-                def label_value(label, value,line=0):
-                    pdf.set_font("Arial", style='B', size=11)
-                    pdf.cell(47, 8, label, border=0)
-                    pdf.set_font("Arial", style='', size=11)
-                    pdf.cell(47, 8, value, border=0, ln=line)
+                    pdf = PDF(format='A4')
+                    pdf.add_page()
+                    pdf.set_auto_page_break(auto=True, margin=15)
+                    pdf.set_font("Arial", size=12)
 
-                # Asset Details Section
-                label_value("Asset Name:", asset.name)
-                label_value("Model:", asset.model,1)
-                label_value("Serial Number:", asset.serial)
-                label_value("Group:", asset.group.name if asset.group else "",1)
-                label_value("Assigned To:", asset.assigned_to.get_full_name() if asset.assigned_to and hasattr(asset.assigned_to, "get_full_name") and asset.assigned_to.get_full_name() else (asset.assigned_to.username if asset.assigned_to else ""))
-                label_value("Status:", asset.status,1)
-                label_value("Created By:", asset.created_by.get_full_name() if asset.created_by and hasattr(asset.created_by, "get_full_name") and asset.created_by.get_full_name() else (asset.created_by.username if asset.created_by else ""))
-                label_value("Created At:", asset.created_at.strftime('%Y-%m-%d %H:%M:%S') if asset.created_at else "",1)
+                    def label_value(label, value,line=0):
+                        pdf.set_font("Arial", style='B', size=11)
+                        pdf.cell(47, 8, label, border=0)
+                        pdf.set_font("Arial", style='', size=11)
+                        pdf.cell(47, 8, value, border=0, ln=line)
 
-                pdf.ln(8)
-                pdf.set_font("Arial", 'B', 13)
-                pdf.cell(0, 10, "Specifications", ln=1)
-                pdf.set_font("Arial", size=11)
+                    # Asset Details Section
+                    label_value("Asset Name:", asset.name)
+                    label_value("Model:", asset.model,1)
+                    label_value("Serial Number:", asset.serial)
+                    label_value("Group:", asset.group.name if asset.group else "",1)
+                    label_value("Assigned To:", asset.assigned_to.get_full_name() if asset.assigned_to and hasattr(asset.assigned_to, "get_full_name") and asset.assigned_to.get_full_name() else (asset.assigned_to.username if asset.assigned_to else ""))
+                    label_value("Status:", asset.status,1)
+                    label_value("Created By:", asset.created_by.get_full_name() if asset.created_by and hasattr(asset.created_by, "get_full_name") and asset.created_by.get_full_name() else (asset.created_by.username if asset.created_by else ""))
+                    label_value("Created At:", asset.created_at.strftime('%Y-%m-%d %H:%M:%S') if asset.created_at else "",1)
 
-                # Specifications table header
-                row_height = 8
-                col_width_key = 60
-                col_width_val = 130
-                pdf.set_fill_color(200, 220, 255)
-                pdf.set_font("Arial", 'B', 11)
-                pdf.cell(col_width_key, row_height, "Key", border=1, fill=True)
-                pdf.cell(col_width_val, row_height, "Value", border=1, fill=True)
-                pdf.ln(row_height)
+                    pdf.ln(8)
+                    pdf.set_font("Arial", 'B', 13)
+                    pdf.cell(0, 10, "Specifications", ln=1)
+                    pdf.set_font("Arial", size=11)
 
-                pdf.set_font("Arial", '', 11)
-                for spec in specifications:
-                    pdf.cell(col_width_key, row_height, str(spec.key), border=1)
-                    pdf.cell(col_width_val, row_height, str(spec.value), border=1)
+                    # Specifications table header
+                    row_height = 8
+                    col_width_key = 60
+                    col_width_val = 130
+                    pdf.set_fill_color(200, 220, 255)
+                    pdf.set_font("Arial", 'B', 11)
+                    pdf.cell(col_width_key, row_height, "Key", border=1, fill=True)
+                    pdf.cell(col_width_val, row_height, "Value", border=1, fill=True)
                     pdf.ln(row_height)
 
-                pdf.ln(16)
-                # Signature places
-                pdf.set_font("Arial", 'B', 13)
-                pdf.cell(190, 10, "Signatures", ln=1,align='C')
-                pdf.ln(10)
-                sig_y = pdf.get_y()
-                width = 150
-                # Create three columns: Director, HOD, Asset Owner
-                col_width = width / 3.0
-                offset = 8
+                    pdf.set_font("Arial", '', 11)
+                    for spec in specifications:
+                        pdf.cell(col_width_key, row_height, str(spec.key), border=1)
+                        pdf.cell(col_width_val, row_height, str(spec.value), border=1)
+                        pdf.ln(row_height)
 
-                pdf.set_font("Arial", 'B', 11)
-                pdf.cell(col_width, 10, "Issued By", border=0, align='C')
-                pdf.cell(20, 10, "", border=0)
-                pdf.cell(col_width, 10, "Witness", border=0, align='C')
-                pdf.cell(20, 10, "", border=0)
-                pdf.cell(col_width, 10, "Asset Owner", border=0, align='C')
-                pdf.ln(18)
-                # Lines
-                x_start = pdf.l_margin
-                line_y = pdf.get_y()
-
-                
-                for i in range(3):
-                    pdf.set_xy(x_start + i * (col_width + 20), line_y)
-                    pdf.cell(col_width, 8, "_" * 26, border=0, align='C')
-                pdf.ln(20)
-
-                # Save file (output as a saved file)
-
-                # INSERT_YOUR_CODE
-                # Add a new page for asset images, if asset images exist
-
-                images = list(AssetImages.objects.filter(asset=asset))
-                if images:
-                    pdf.add_page()
+                    pdf.ln(16)
+                    # Signature places
                     pdf.set_font("Arial", 'B', 13)
-                    pdf.cell(0, 10, "Asset Images", ln=1)
-                    pdf.ln(6)
-                    # Display images in rows, e.g. 3 per row
-                    import os
-                    images_per_row = 3
-                    image_w = 50
-                    image_h = 50
-                    cell_margin = 5  # space between images
-                    col_width = image_w + cell_margin
+                    pdf.cell(190, 10, "Signatures", ln=1,align='C')
+                    pdf.ln(10)
+                    sig_y = pdf.get_y()
+                    width = 150
+                    # Create three columns: Director, HOD, Asset Owner
+                    col_width = width / 3.0
+                    offset = 8
 
-                    num_images = len(images)
-                    row_images = []
-                    for idx, img in enumerate(images):
-                        try:
-                            # Show caption, creator and created_at
-                            caption = img.caption or ""
-                            created_by = img.created_by.get_full_name() if img.created_by and hasattr(img.created_by, 'get_full_name') and img.created_by.get_full_name() else (img.created_by.username if img.created_by else "")
-                            created_at = img.created_at.strftime('%Y-%m-%d %H:%M:%S') if img.created_at else ""
-                            meta = f"Uploaded by: {created_by}, at: {created_at}"
+                    pdf.set_font("Arial", 'B', 11)
+                    pdf.cell(col_width, 10, "Issued By", border=0, align='C')
+                    pdf.cell(20, 10, "", border=0)
+                    pdf.cell(col_width, 10, "Witness", border=0, align='C')
+                    pdf.cell(20, 10, "", border=0)
+                    pdf.cell(col_width, 10, "Asset Owner", border=0, align='C')
+                    pdf.ln(18)
+                    # Lines
+                    x_start = pdf.l_margin
+                    line_y = pdf.get_y()
 
-                            # Gather per-image data
-                            img_data = {
-                                'caption': caption,
-                                'meta': meta,
-                                'img': img,
-                            }
-                            row_images.append(img_data)
+                    
+                    for i in range(3):
+                        pdf.set_xy(x_start + i * (col_width + 20), line_y)
+                        pdf.cell(col_width, 8, "_" * 26, border=0, align='C')
+                    pdf.ln(20)
 
-                            # When row full or last image, print the row
-                            if len(row_images) == images_per_row or idx == num_images - 1:
-                                y_start = pdf.get_y()
-                                x_start = pdf.l_margin
+                    # Save file (output as a saved file)
 
-                                # Find max image height in the row (for consistency)
-                                max_height = image_h
+                    # INSERT_YOUR_CODE
+                    # Add a new page for asset images, if asset images exist
 
-                                # Draw images for this row
-                                for i, row_img_data in enumerate(row_images):
-                                    img_obj = row_img_data['img']
-                                    img_path = img_obj.image.path if hasattr(img_obj.image, "path") else img_obj.image.url
-                                    this_x = x_start + i * col_width
-                                    pdf.set_xy(this_x, y_start)
+                    images = list(AssetImages.objects.filter(asset=asset))
+                    if images:
+                        pdf.add_page()
+                        pdf.set_font("Arial", 'B', 13)
+                        pdf.cell(0, 10, "Asset Images", ln=1)
+                        pdf.ln(6)
+                        # Display images in rows, e.g. 3 per row
+                        import os
+                        images_per_row = 3
+                        image_w = 50
+                        image_h = 50
+                        cell_margin = 5  # space between images
+                        col_width = image_w + cell_margin
 
-                                    if os.path.exists(img_path):
-                                        try:
-                                            pdf.image(img_path, x=this_x, y=y_start, w=image_w, h=image_h)
-                                        except Exception as e:
+                        num_images = len(images)
+                        row_images = []
+                        for idx, img in enumerate(images):
+                            try:
+                                # Show caption, creator and created_at
+                                caption = img.caption or ""
+                                created_by = img.created_by.get_full_name() if img.created_by and hasattr(img.created_by, 'get_full_name') and img.created_by.get_full_name() else (img.created_by.username if img.created_by else "")
+                                created_at = img.created_at.strftime('%Y-%m-%d %H:%M:%S') if img.created_at else ""
+                                meta = f"Uploaded by: {created_by}, at: {created_at}"
+
+                                # Gather per-image data
+                                img_data = {
+                                    'caption': caption,
+                                    'meta': meta,
+                                    'img': img,
+                                }
+                                row_images.append(img_data)
+
+                                # When row full or last image, print the row
+                                if len(row_images) == images_per_row or idx == num_images - 1:
+                                    y_start = pdf.get_y()
+                                    x_start = pdf.l_margin
+
+                                    # Find max image height in the row (for consistency)
+                                    max_height = image_h
+
+                                    # Draw images for this row
+                                    for i, row_img_data in enumerate(row_images):
+                                        img_obj = row_img_data['img']
+                                        img_path = img_obj.image.path if hasattr(img_obj.image, "path") else img_obj.image.url
+                                        this_x = x_start + i * col_width
+                                        pdf.set_xy(this_x, y_start)
+
+                                        if os.path.exists(img_path):
+                                            try:
+                                                pdf.image(img_path, x=this_x, y=y_start, w=image_w, h=image_h)
+                                            except Exception as e:
+                                                pdf.set_font("Arial", 'I', 10)
+                                                pdf.set_xy(this_x, y_start)
+                                                pdf.set_text_color(255, 0, 0)
+                                                pdf.multi_cell(image_w, 8, "[Img load error]", border=0)
+                                                pdf.set_text_color(0, 0, 0)
+                                        else:
                                             pdf.set_font("Arial", 'I', 10)
                                             pdf.set_xy(this_x, y_start)
                                             pdf.set_text_color(255, 0, 0)
-                                            pdf.multi_cell(image_w, 8, "[Img load error]", border=0)
+                                            pdf.multi_cell(image_w, 8, "[Image file missing]", border=0)
                                             pdf.set_text_color(0, 0, 0)
-                                    else:
-                                        pdf.set_font("Arial", 'I', 10)
-                                        pdf.set_xy(this_x, y_start)
-                                        pdf.set_text_color(255, 0, 0)
-                                        pdf.multi_cell(image_w, 8, "[Image file missing]", border=0)
-                                        pdf.set_text_color(0, 0, 0)
 
-                                # Print captions below images
-                                y_caption = y_start + image_h + 2
-                                for i, row_img_data in enumerate(row_images):
-                                    caption = row_img_data['caption']
-                                    if caption:
-                                        pdf.set_font("Arial", 'B', 10)
-                                        pdf.set_xy(x_start + i * col_width, y_caption)
-                                        pdf.multi_cell(image_w, 6, caption, border=0)
-                                # Print metadata below captions
-                                y_meta = y_caption + 10
-                                for i, row_img_data in enumerate(row_images):
-                                    meta = row_img_data['meta']
-                                    pdf.set_font("Arial", '', 8)
-                                    pdf.set_xy(x_start + i * col_width, y_meta)
-                                    pdf.multi_cell(image_w, 5, meta, border=0)
-                                # Move to next row after images, captions, meta
-                                pdf.set_y(y_meta + 15)
-                                pdf.ln(4)
-                                row_images = []
-                        except Exception as e:
-                            pdf.set_font("Arial", 'I', 10)
-                            pdf.set_text_color(255, 0, 0)
-                            pdf.cell(0, 8, f"[Error loading image: {e}]", ln=1)
-                            pdf.set_text_color(0, 0, 0)
-                            pdf.ln(8)
+                                    # Print captions below images
+                                    y_caption = y_start + image_h + 2
+                                    for i, row_img_data in enumerate(row_images):
+                                        caption = row_img_data['caption']
+                                        if caption:
+                                            pdf.set_font("Arial", 'B', 10)
+                                            pdf.set_xy(x_start + i * col_width, y_caption)
+                                            pdf.multi_cell(image_w, 6, caption, border=0)
+                                    # Print metadata below captions
+                                    y_meta = y_caption + 10
+                                    for i, row_img_data in enumerate(row_images):
+                                        meta = row_img_data['meta']
+                                        pdf.set_font("Arial", '', 8)
+                                        pdf.set_xy(x_start + i * col_width, y_meta)
+                                        pdf.multi_cell(image_w, 5, meta, border=0)
+                                    # Move to next row after images, captions, meta
+                                    pdf.set_y(y_meta + 15)
+                                    pdf.ln(4)
+                                    row_images = []
+                            except Exception as e:
+                                pdf.set_font("Arial", 'I', 10)
+                                pdf.set_text_color(255, 0, 0)
+                                pdf.cell(0, 8, f"[Error loading image: {e}]", ln=1)
+                                pdf.set_text_color(0, 0, 0)
+                                pdf.ln(8)
 
-            
-               
-                filename = f"static/general/tmp/asset_{asset.pk}_details.pdf"
-                pdf.output(filename)
+                
+                
+                    filename = f"static/general/tmp/asset_{asset.pk}_details.pdf"
+                    pdf.output(filename)
 
-                # Inform frontend of location
-                success_response['message'] = filename
+                    # Inform frontend of location
+                    success_response['message'] = filename
                 response = success_response
 
             elif module == 'specifications':
@@ -512,7 +549,10 @@ def amc_interface(request):
         tb_path = traceback.tb_frame.f_code.co_filename
         line_number = traceback.tb_lineno
         response["status_code"] = 500
-        response[
-            "message"] = f"An error occurred on line {line_number} in file {tb_path}. Details: {e}"
+        if SHOW_ERROR_LINE:
+            response[
+                "message"] = f"An error occurred on line {line_number} in file {tb_path}. Details: {e}"
+        else:
+            response['message'] = str(e)
 
     return JsonResponse(response, safe=False)

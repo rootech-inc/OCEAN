@@ -67,6 +67,35 @@ class User {
         return api.call('VIEW', payload, '/adapi/');
     }
 
+    updateInfo(pk){
+        let form = `
+            <label for='emp_code'>Emp. Code</label>
+            <input id='emp_code' type='text' class='form-control rounded-0' >
+        `;
+        amodal.setBodyHtml(form)
+        amodal.setFooterHtml(`<button class='btn btn-success' id='update'>UPDATE</button>`)
+        amodal.show()
+
+        $('#update').click(async function(){
+            let ids = ['emp_code'];
+            if(anton.validateInputs(ids)){
+                let payload = {
+                    module:'user',
+                    data:anton.Inputs(ids)
+                }
+
+                payload['data']['pk'] = pk
+
+
+                await api.v2('PATCH',payload,'/adapi/').then(response => {
+                    kasa.confirm(response.message,1,'here')
+                }).catch(error => {kasa.error(error)})
+            } else {
+                kasa.error("Invalid Form")
+            }
+        })
+    }
+
     resetPassword(key) {
         let payload = {
             'module':'rest_password',

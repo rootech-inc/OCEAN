@@ -428,9 +428,72 @@ class Staff {
         )
     }
 
-    async getAttendance(dt=today) {
+
+    async loadManualPunch(dt=today) {
+
+        await this.getAttendance(dt,false).then(response => {
+            loader.show()
+            if(anton.IsRequest(response)){
+
+                
+                let attds = response.message.array;
+                let file = response.message.file;
+                let tr = "";
+                let st = "";
+                let attd_data = [
+                    ["NAME","LOCATION","CHECK IN","STATUS"]
+                ]
+                let ontime_count = 0
+                let late_count = 0
+                let absent_count = 0
+
+                attds.map(attd => {
+                    
+                    console.log("ED")
+                    console.table(attd)
+                    console.log("ED")
+
+
+                    tr += `
+                        <tr >
+                            <td>${attd.name}</td>
+                            <td>${attd.position}</td>
+                            <td>${attd.status}</td>
+                            <td>${attd.date}</td>
+                            <td>${attd.time}</td>
+</tr>
+                    `
+                })
+
+                $('#absent-count').text(absent_count)
+                $('#late-count').text(late_count)
+                $('#ontime-count').text(ontime_count)
+
+
+
+                $('#att_bd').html(tr)
+                $('#attd_table').DataTable();
+                loader.hide()
+                $('#exp_attendance').click(async function () {
+                    anton.viewFile(`/${response.message.file}`)
+                })
+            } else {
+                kasa.response(response)
+                // loader.hide()
+            }
+        }).catch(error=>{
+            kasa.error(error);
+            loader.hide()}
+        )
+    }
+
+    
+
+    async getAttendance(dt=today,is_live=true) {
+        console.log(is_live)
         return api.call('PUT',{module:'sync_attendance',data:{
-            date:dt
+            date:dt,
+            is_live:is_live
         }},'/company/api/')
     }
 
@@ -784,6 +847,52 @@ class Staff {
             }
             loader.hide()
         }).catch(error => {kasa.error(error)})
+    }
+
+    async syncAttendance(){
+       
+        let form = "";
+        form += fom.date('start_date','',true)
+        form += fom.date('end_date','',true)
+
+        amodal.setBodyHtml(form);
+        amodal.setTitleHtml("SYNC ATTENDANCE")
+        amodal.setFooterHtml(`<button id='sync_attendance'>SYNC</button>`)
+        amodal.show()
+
+        $('#sync_attendance').click(async function(){
+            loader.show()
+            let ids = ['start_date','end_date'];
+            if(anton.validateInputs(ids)){
+                let data = anton.Inputs(ids);
+                let start = new Date(data.start_date);
+                let end = new Date(data.end_date);
+                let current = new Date(start);
+    
+                // Helper function to format date as 'YYYY-MM-DD'
+                function formatDate(dt) {
+                    let y = dt.getFullYear();
+                    let m = (dt.getMonth() + 1).toString().padStart(2, '0');
+                    let d = dt.getDate().toString().padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                }
+    
+                while (current <= end) {
+                    let dtStr = formatDate(current);
+                    console.log(dtStr)
+                    await staff.loadAttendance(dtStr)
+    
+                    current.setDate(current.getDate() + 1);
+                }
+                loader.hide()
+            } else {
+                kasa.error("Fill Form")
+                loader.hide()
+            }
+
+            
+        })
+        
     }
 }
 

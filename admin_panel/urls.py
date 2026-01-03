@@ -90,6 +90,7 @@ urlpatterns = [
 
     path('adminapi/<module>/<action>/', views.api, name='api'),
     path('profile/', views.profile, name='profile'),
+    path('profile/compliance/', views.user_compliance, name='user_compliance'),
     path('profile/restpwrod/<token>/', views.resetpasswordview, name='resetpasswordview'),
     path('profile/resetpword/', views.resetpassword, name='resetpassword'),
     path('logout_view/', views.logout_view, name='logout'),

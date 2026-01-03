@@ -1,12 +1,16 @@
 import json
+from ocean.settings import ATTENDANCE_URL
 
 
 def token(username,password):
-    url = 'http://192.168.2.15/jwt-api-token-auth/'
+    url = f'{ATTENDANCE_URL}jwt-api-token-auth/'
+    print(f"AUTH_URL: {url}")
     data = {
         'username':username,
         'password':password
     }
+
+
 
     header = {
         'Content-Type':'application/json'

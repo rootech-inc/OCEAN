@@ -12,103 +12,105 @@
 
     <div class="container-fluid">
 
-        <div id="car_type" class="d-flex flex-wrap justify-content-center align-content-center" style="height: 100vh">
-            <div class="card">
-                <div class="card-header"><div class="col-sm-12"><strong class="text-muted">Car Type</strong></div></div>
-                <div class="card-body py-2">
-                    <div id="car_type" class="row d-flex flex-wrap mb-5">
-
-                            <div class="col-6 mb-4">
-                                <button data-info="suv" class="btn btn-light car_class shadow-sm car_btn">
-                                    <i class="fa fa-2x fa-car"></i><br>
-                                    <small>SUV</small>
-                                </button>
-                            </div>
-
-                            <div class="col-6">
-                                <button data-info="truck" class="btn btn-light car_class shadow-sm car_btn">
-                                    <i class="fa fa-2x fa-truck"></i><br>
-                                    <small>Truck</small>
-                                </button>
-                            </div>
-
-                            <div class="col-6">
-                                <button data-info="bus" class="btn btn-light car_class shadow-sm car_btn">
-                                    <i class="fa fa-2x fa-bus"></i><br>
-                                    <small>Bus</small>
-                                </button>
-                            </div>
-                            <div class="col-6">
-                                <button data-info="pickup" class="btn btn-light car_class shadow-sm car_btn">
-                                    <i class="fa fa-2x fa-truck-pickup"></i><br>
-                                    <small>Pickup</small>
-                                </button>
-                            </div>
-                    </div>
+        <div id="car_type" class="d-flex justify-content-center align-items-center" style="min-height: 100vh; width: 100vw; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);">
+            <div class="card shadow rounded-4" style="width: 100%; max-width: 420px; background: #fff;">
+                <div class="card-header text-center bg-white border-0 pb-0">
+                    <h4 class="fw-bold text-primary mb-0">Car Type</h4>
                 </div>
-            </div>
-        </div>
-
-        <div id="service_type" style="height: 100vh" class="d-flex flex-wrap justify-content-center align-content-center">
-            <div class="card">
-                <div class="card-header"><strong>Service Type</strong></div>
-                <div class="card-body py-2">
-                    <div class="container">
-                        <div class="row d-flex flex-wrap mb-5">
-                            <div class="col-6 mb-3">
-                                <button data-info="engine" class="btn btn-light serv_type shadow-sm car_btn">
-                                    <i class="fa fa-2x text-danger fa-toolbox"></i><br>
-                                    <small>Engine</small>
-                                </button>
-                            </div>
-
-                            <div class="col-6">
-                                <button data-info="interior" class="btn btn-light serv_type shadow-sm car_btn">
-                                    <i class="fa fa-2x fa-door-open"></i><br>
-                                    <small>Interior</small>
-                                </button>
-                            </div>
-
-                            <div class="col-6">
-                                <button data-info="exterior" class="btn btn-light serv_type shadow-sm car_btn">
-                                    <i class="fa fa-2x text-info fa-door-closed"></i><br>
-                                    <small>Exterior</small>
-                                </button>
-                            </div>
-                            <div class="col-6">
-                                <button data-info="others" class="btn btn-light serv_type shadow-sm car_btn">
-                                    <i class="fa fa-2x fa-truck-pickup"></i><br>
-                                    <small>Others</small>
-                                </button>
-                            </div>
+                <div class="card-body py-4 d-flex flex-column justify-content-center align-items-center">
+                    <div class="row w-100 g-4">
+                        <div class="col-6 d-flex justify-content-center">
+                            <button data-info="suv" class="btn btn-outline-primary car_class shadow-sm car_btn w-100 h-100 rounded-3">
+                                <i class="fa fa-2x fa-car mb-2"></i><br>
+                                <span class="fw-semibold">SUV</span>
+                            </button>
+                        </div>
+                        <div class="col-6 d-flex justify-content-center">
+                            <button data-info="truck" class="btn btn-outline-secondary car_class shadow-sm car_btn w-100 h-100 rounded-3">
+                                <i class="fa fa-2x fa-truck mb-2"></i><br>
+                                <span class="fw-semibold">Truck</span>
+                            </button>
+                        </div>
+                        <div class="col-6 d-flex justify-content-center">
+                            <button data-info="bus" class="btn btn-outline-info car_class shadow-sm car_btn w-100 h-100 rounded-3">
+                                <i class="fa fa-2x fa-bus mb-2"></i><br>
+                                <span class="fw-semibold">Bus</span>
+                            </button>
+                        </div>
+                        <div class="col-6 d-flex justify-content-center">
+                            <button data-info="pickup" class="btn btn-outline-danger car_class shadow-sm car_btn w-100 h-100 rounded-3">
+                                <i class="fa fa-2x fa-truck-pickup mb-2"></i><br>
+                                <span class="fw-semibold">Pickup</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <div 
+            id="service_type" 
+            class="d-flex justify-content-center align-items-center"
+            style="height: 100vh; min-height: 100vh; width: 100vw; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);"
+        >
+            <div class="card shadow rounded-4" style="width: 100%; max-width: 400px; background: #fff;">
+                <div class="card-header text-center bg-white border-0 pb-0">
+                    <h4 class="fw-bold text-primary mb-0">Service Type</h4>
+                </div>
+                <div class="card-body py-4 d-flex flex-column justify-content-center align-items-center">
+                    <div class="row w-100 g-3">
+                        <div class="col-6 d-flex justify-content-center">
+                            <button data-info="engine" class="btn btn-outline-danger serv_type shadow-sm car_btn w-100 h-100 rounded-3">
+                                <i class="fa fa-2x fa-toolbox mb-2"></i><br>
+                                <span class="fw-semibold">Engine</span>
+                            </button>
+                        </div>
+                        <div class="col-6 d-flex justify-content-center">
+                            <button data-info="interior" class="btn btn-outline-secondary serv_type shadow-sm car_btn w-100 h-100 rounded-3">
+                                <i class="fa fa-2x fa-door-open mb-2"></i><br>
+                                <span class="fw-semibold">Interior</span>
+                            </button>
+                        </div>
+                        <div class="col-6 d-flex justify-content-center">
+                            <button data-info="exterior" class="btn btn-outline-info serv_type shadow-sm car_btn w-100 h-100 rounded-3">
+                                <i class="fa fa-2x fa-door-closed mb-2"></i><br>
+                                <span class="fw-semibold">Exterior</span>
+                            </button>
+                        </div>
+                        <div class="col-6 d-flex justify-content-center">
+                            <button data-info="others" class="btn btn-outline-primary serv_type shadow-sm car_btn w-100 h-100 rounded-3">
+                                <i class="fa fa-2x fa-truck-pickup mb-2"></i><br>
+                                <span class="fw-semibold">Others</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <div id="fuel_type" style="height: 100vh" class="d-flex flex-wrap justify-content-center align-content-center">
-            <div class="card">
-                <div class="card-header"><strong class="card-title">Fuel</strong></div>
-                <div class="card-body py-2">
-                    <div class="row d-flex justify-content-center flex-wrap mb-5">
-                        <div class="col-6 mb-5">
-                            <button data-info="petrol" class="btn btn-light fuel_type shadow-sm car_btn">
+        </div>
+
+
+        <div id="fuel_type" class="d-flex justify-content-center align-items-center" style="min-height: 100vh; width: 100vw;">
+            <div class="card w-100" style="max-width: 400px;">
+                <div class="card-header text-center"><strong class="card-title">Fuel</strong></div>
+                <div class="card-body py-2 d-flex flex-column justify-content-center align-items-center">
+                    <div class="row w-100 d-flex justify-content-center flex-wrap mb-5">
+                        <div class="col-12 mb-4 d-flex justify-content-center">
+                            <button data-info="petrol" class="btn btn-light fuel_type shadow-sm car_btn w-75">
                                 <i class="fa fa-2x text-info fa-gas-pump"></i><br>
                                 <small>Petrol</small>
                             </button>
                         </div>
 
-                        <div class="col-6 mb-5">
-                            <button data-info="disel" class="btn btn-light fuel_type shadow-sm car_btn">
+                        <div class="col-12 mb-4 d-flex justify-content-center">
+                            <button data-info="disel" class="btn btn-light fuel_type shadow-sm car_btn w-75">
                                 <i class="fa fa-2x fa-gas-pump"></i><br>
                                 <small>Disel</small>
                             </button>
                         </div>
 
-                        <div class="col-6">
-                            <button data-info="gas" class="btn btn-light fuel_type shadow-sm car_btn">
+                        <div class="col-12 d-flex justify-content-center">
+                            <button data-info="gas" class="btn btn-light fuel_type shadow-sm car_btn w-75">
                                 <i class="fa fa-2x text-danger fa-gas-pump"></i><br>
                                 <small>Gas</small>
                             </button>
@@ -121,237 +123,78 @@
 
 
 
-        <strong id="other_details" class="text-muted">Customer Details</strong>
-        <div class="mb-5 pb-2 col-sm-6">
-
-            <div class="input-group mb-2">
-                <label for="company_name" class="text-info">Organization</label>
-                <input type="text" id="company_name" placeholder="company name / individual" class="form-control w-100 rounded-0">
+        <div id="other_details" class="container d-flex flex-column align-items-center justify-content-center my-5" style="max-width: 600px;">
+            <div class="card shadow rounded-4 w-100 mb-4" style="background: #f9fbfd;">
+                <div class="card-body px-4 py-4">
+                    <h4 class="mb-3 text-center text-info fw-bold">
+                        <i class="fa fa-user-circle me-1"></i>Customer Details
+                    </h4>
+                    <div class="mb-3">
+                        <label for="company_name" class="form-label text-secondary fw-semibold">Organization</label>
+                        <input type="text" id="company_name" class="form-control rounded-3 py-2" placeholder="Company name or individual name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="driver_name" class="form-label text-secondary fw-semibold">Driver Name</label>
+                        <input type="text" id="driver_name" class="form-control rounded-3 py-2" placeholder="e.g. John Doe">
+                    </div>
+                    <div class="mb-3">
+                        <label for="driver_phone" class="form-label text-secondary fw-semibold">Driver's Contact</label>
+                        <input type="tel" id="driver_phone" class="form-control rounded-3 py-2" placeholder="Phone number">
+                    </div>
+                </div>
             </div>
 
-            <div class="input-group mb-2">
-                <label for="drive_name" class="text-info">Driver Name</label>
-                <input type="text" id="driver_name" placeholder="" class="form-control w-100 rounded-0">
+            <div class="card shadow rounded-4 w-100 mb-4" style="background: #f9fbfd;">
+                <div class="card-body px-4 py-4">
+                    <h4 class="mb-3 text-center text-info fw-bold">
+                        <i class="fa fa-car me-1"></i>Car Details
+                    </h4>
+                    <div class="mb-3">
+                        <label for="car_brand" class="form-label text-secondary fw-semibold">Brand</label>
+                        <select id="car_brand" class="form-select rounded-3 py-2">
+                            <option value="" selected disabled>Select brand</option>
+                            <option value="toyota">Toyota</option>
+                            <option value="nissan">Nissan</option>
+                            <option value="proton">Proton</option>
+                            <option value="benz">Benz</option>
+                            <option value="others">Others</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="car_model" class="form-label text-secondary fw-semibold">Model</label>
+                        <input type="text" id="car_model" class="form-control rounded-3 py-2" placeholder="Car model">
+                    </div>
+                    <div class="mb-3">
+                        <label for="reg_no" class="form-label text-secondary fw-semibold">Reg. No.</label>
+                        <input type="text" id="reg_no" class="form-control rounded-3 py-2" placeholder="Registration number">
+                    </div>
+                </div>
             </div>
 
-            <div class="input-group mb-2">
-                <label for="driver_phone" class="text-info">Driver's Contact</label>
-                <input type="tel" id="driver_phone" placeholder="" class="form-control w-100 rounded-0">
+            <div class="card shadow rounded-4 w-100 mb-4" style="background: #f9fbfd;">
+                <div class="card-body px-4 py-4">
+                    <h4 class="mb-3 text-center text-info fw-bold">
+                        <i class="fa fa-exclamation-circle me-1"></i>Problem
+                    </h4>
+                    <div class="mb-3">
+                        <label for="problem" class="form-label text-secondary fw-semibold">Describe Issue</label>
+                        <textarea id="problem" class="form-control rounded-3 py-2" rows="4" placeholder="Describe the issue..."></textarea>
+                    </div>
+                </div>
             </div>
-
         </div>
-
-        <strong class="text-muted">Car Details</strong>
-        <div class="mb-5 pb-2 col-sm-6">
-
-            <div class="input-group mb-2">
-                <label for="car_brand" class="text-info">Brand</label>
-                <select name="" id="car_brand" class="form-control w-100 rounded-0">
-                    <option value="toyota">Toyota</option>
-                    <option value="nissan">Nissan</option>
-                    <option value="proton">Proton</option>
-                    <option value="benz">Benz</option>
-                    <option value="others">Others</option>
-                </select>
-            </div>
-
-            <div class="input-group mb-2">
-                <label for="car_model" class="text-info">Model</label>
-                <input type="text" id="car_model" placeholder="" class="form-control w-100 rounded-0">
-            </div>
-
-            <div class="input-group mb-2">
-                <label for="reg_no" class="text-info">Reg. No.</label>
-                <input type="text" id="reg_no" placeholder="" class="form-control w-100 rounded-0">
-            </div>
-
-        </div>
-
-        <strong class="text-muted">Problem</strong>
-        <div class="col-sm-6">
-
-            <div class="input-group mb-2">
-
-                <textarea name="" placeholder="describe issue" id="problem" cols="30" rows="5" class="form-control w-100 rounded-0"></textarea>
-            </div>
-
-        </div>
-
-        <hr>
     <div class="container pb-5">
-        <div class="row d-flex flex-wrap justify-content-center">
-            <div class="col-sm-6"><div class="col-sm-4"><button id="submit" class="btn btn-success w-100">SUBMIT</button></div></div>
+        <div class="row justify-content-center">
+            <div class="col-12 d-flex justify-content-center">
+                <button id="submit" class="btn btn-success px-5 py-3 fw-bold rounded-pill shadow" style="font-size: 1.25rem; letter-spacing: 1px; transition: background 0.2s;">
+                    <i class="fa fa-paper-plane me-2"></i>SUBMIT
+                </button>
+            </div>
         </div>
     </div>
 
     </div>
 
-{#    <div class="card-header">#}
-{#        <div class="w-100 d-flex flex-wrap">#}
-{#            <div class="w-50">#}
-{#                <ul class="nav nav-tabs">#}
-{#              <li class="nav-item">#}
-{#                <a class="nav-link active" data-toggle="tab" href="#home">Job Details</a>#}
-{#              </li>#}
-{#              <li class="nav-item">#}
-{#                <a class="nav-link" data-toggle="tab" href="#menu1">Attachments</a>#}
-{#              </li>#}
-{#            </ul>#}
-{#            </div>#}
-{#            <div class="w-50 d-flex justify-content-end">#}
-{#                <button onclick="location.href='{% url 'cmms_servicing' %}'" id="cancel" class="btn btn-sm btn-danger"><i class="fa fa-backspace"></i> CANCEL</button>#}
-{#                <button id="save_jc" class="btn btn-sm btn-success"><i class="fa fa-save"></i> SAVE</button>#}
-{##}
-{#            </div>#}
-{##}
-{#        </div>#}
-{#    </div>#}
-{#    <div class="card-body">#}
-{#        <!-- Nav tabs -->#}
-{##}
-{##}
-{#        <!-- Tab panes -->#}
-{#        <div class="tab-content">#}
-{#          <div class="tab-pane container p-2 active" id="home">#}
-{##}
-{#              <div class="row overflow-auto">#}
-{##}
-{#                <div class="col-sm-12 col-md-12 col-lg-6 h-100">#}
-{#                    <div class="card">#}
-{#                        <div class="card-header">#}
-{#                            <strong class="card-title">Customer Details</strong>#}
-{#                        </div>#}
-{#                        <div class="card-body p-2">#}
-{#                            <div class="input-group mb-2">#}
-{#                              <div class="input-group-prepend">#}
-{#                                  <label for="entry_date" class="input-group-text rounded-0">Entry Date</label>#}
-{#                              </div>#}
-{#                              <input type="date" value="" id="entry_date" class="form-control rounded-0">#}
-{#                          </div>#}
-{#                            <!--CUSTOMER -->#}
-{#                          <div class="input-group mb-2">#}
-{#                              <div class="input-group-prepend">#}
-{#                                  <label for="company" class="input-group-text rounded-0">Company</label>#}
-{#                              </div>#}
-{#                              <input type="text" id="company" class="form-control rounded-0">#}
-{#                          </div>#}
-{#                            <!-- REP -->#}
-{#                            <div class="input-group mb-2">#}
-{#                              <div class="input-group-prepend">#}
-{#                                  <label for="driver" class="input-group-text rounded-0">Driver</label>#}
-{#                              </div>#}
-{#                              <input type="text" id="driver" class="form-control rounded-0">#}
-{#                          </div>#}
-{##}
-{#                            <!-- REP CONTACT -->#}
-{#                            <div class="input-group mb-2">#}
-{#                              <div class="input-group-prepend">#}
-{#                                  <label for="contact" class="input-group-text rounded-0">Contact</label>#}
-{#                              </div>#}
-{#                              <input type="tel" id="contact" class="form-control rounded-0">#}
-{#                          </div>#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{##}
-{#                <div class="col-sm-12 col-md-12 col-lg-6 h-100">#}
-{#                    <div class="card">#}
-{#                        <div class="card-header">#}
-{#                            <strong class="card-title">Car Details</strong>#}
-{#                        </div>#}
-{#                        <div class="card-body p-2">#}
-{#                            <!--CUSTOMER -->#}
-{#                          <div class="input-group mb-2">#}
-{#                              <div class="input-group-prepend">#}
-{#                                  <label for="brand" class="input-group-text rounded-0">Brand</label>#}
-{#                              </div>#}
-{#                              <input type="text" id="brand" placeholder="Toyota" class="form-control rounded-0">#}
-{#                          </div>#}
-{#                            <!-- REP -->#}
-{#                            <div class="input-group mb-2">#}
-{#                              <div class="input-group-prepend">#}
-{#                                  <label for="model" class="input-group-text rounded-0">Model</label>#}
-{#                              </div>#}
-{#                              <input type="text" id="model" placeholder="Lexus 2021" class="form-control rounded-0">#}
-{#                          </div>#}
-{##}
-{#                            <!-- REP CONTACT -->#}
-{#                            <div class="input-group mb-2">#}
-{#                              <div class="input-group-prepend">#}
-{#                                  <label for="car_number" class="input-group-text rounded-0">Number</label>#}
-{#                              </div>#}
-{#                              <input type="text" id="car_number" placeholder="Number Plate" class="form-control rounded-0">#}
-{#                          </div>#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{##}
-{#                <div class="col-sm-12 h-100">#}
-{#                    <div class="card">#}
-{#                        <div class="card-header"><strong class="card-title">Customer Report</strong></div>#}
-{#                        <div class="card-body p-1">#}
-{#                            <textarea name="" class="form-control rounded-0" id="report"  rows="6"></textarea>#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{##}
-{#            </div>#}
-{##}
-{#          </div>#}
-{#          <div class="tab-pane container p-2 fade" id="menu1">#}
-{#              <div class="card h-100">#}
-{#                <div class="card-header">#}
-{#                    <button id='add_img_line' class="btn btn-info">ADD IMAGE</button>#}
-{#                </div>#}
-{#                  <div class="row mb-3">#}
-{#                      <div class="col-6 col-sm-4 col-md-3 col-lg-2 p-1">#}
-{#                          <a href="#" class="card h-100">#}
-{#                              <div style="padding-bottom: 100%; position: relative;">#}
-{#                                  <img src="{% static 'img/car-placeholder.jpg' %}" class="card-img-top"#}
-{#                                       style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">#}
-{#                              </div>#}
-{#                          </a>#}
-{#                      </div>#}
-{#                      <div class="col-6 col-sm-4 col-md-3 col-lg-2 p-1">#}
-{#                          <a href="#" class="card h-100">#}
-{#                              <div style="padding-bottom: 100%; position: relative;">#}
-{#                                  <img src="{% static 'img/car-placeholder.jpg' %}" class="card-img-top"#}
-{#                                       style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">#}
-{#                              </div>#}
-{#                          </a>#}
-{#                      </div>#}
-{#                      <div class="col-6 col-sm-4 col-md-3 col-lg-2 p-1">#}
-{#                          <a href="#" class="card h-100">#}
-{#                              <div style="padding-bottom: 100%; position: relative;">#}
-{#                                  <img src="{% static 'img/car-placeholder.jpg' %}" class="card-img-top"#}
-{#                                       style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">#}
-{#                              </div>#}
-{#                          </a>#}
-{#                      </div>#}
-{#                  </div>#}
-{#                  <div class="card-body overflow-hidden">#}
-{#                    <div class="container-fluid py-2 h-100 overflow-auto">#}
-{#                        <div class="row">#}
-{#                            <form action="{% url 'save_serv_job_images' %}" method="post" enctype="multipart/form-data" class="col-sm-12 col-md-12 col-lg-4" id="images_que">#}
-{#                                {% csrf_token %}#}
-{#                                <input type="hidden" name="job_id" id="job_id">#}
-{#                                <input type="file" name="file[]" class="form-control">#}
-{#                                <hr>#}
-{#                            </form>#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
-{#          </div>#}
-{#        </div>#}
-{#        <div class="container-fluid p-2 h-100">#}
-{##}
-{##}
-{#        <div style="height: 65%" class="overflow-hidden">#}
-{##}
-{#        </div>#}
-{#    </div>#}
-{#    </div>#}
 
     <!-- Confirmation Modal -->
     <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
@@ -413,7 +256,7 @@
 
                 // Get form values
                 let companyName = $('#company_name').val();
-                let driverName = $('#drive_name').val();
+                let driverName = $('#driver_name').val();
                 let driverPhone = $('#driver_phone').val();
                 let carBrand = $('#car_brand').val();
                 let carModel = $('#car_model').val();
@@ -468,15 +311,19 @@
                     amodal.show()
 
                     $('#confirmSubmit').click(async function () {
+                        loader.show('Requesting Job Card...')
                         await api.v2('PUT', payload, '/cmms/api/').then(res => {
                             if (anton.IsRequest(res)) {
                                 kasa.confirm('Job Card Submitted Successfully',1,`/cmms/servcing/track/${res.message}/`)
+                                loader.hide()
 
                             } else {
                                 kasa.response(res)
+                                loader.hide()
                             }
                         }).catch(err => {
                             kasa.error('Something went wrong')
+                            loader.hide()
                         })
                     })
                 } else {

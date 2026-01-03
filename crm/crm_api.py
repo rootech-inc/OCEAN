@@ -1044,6 +1044,19 @@ SELECT phone,'',phone,cust_name FROM customer
                 success_response['message'] = "Campaign Deleted"
                 response = success_response
 
+            elif module == 'sector':
+                pk = data.get('pk')
+                Sector.objects.filter(pk=pk).delete()
+                response = success_response
+
+            elif module == 'position':
+                pk = data.get('pk')
+                Positions.objects.filter(pk=pk).delete()
+                response = success_response
+
+            else:
+                raise Exception("Invalid Module")
+
     except Exception as e:
         error_type, error_instance, traceback = sys.exc_info()
         tb_path = traceback.tb_frame.f_code.co_filename

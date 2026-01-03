@@ -18,7 +18,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from fpdf import FPDF
 
-from admin_panel.anton import make_md5_hash, format_currency
+from admin_panel.anton import make_md5_hash, format_currency,shorten_url
 from admin_panel.models import MailQueues, MailSenders, MailAttachments, Sms, SmsApi
 from cmms.forms import NewSalesCustomer, NewSaleTransactions
 from crm.models import Logs
@@ -31,6 +31,7 @@ from django.contrib import messages
 
 from cmms.extra import db
 from servicing.views import jobcard
+from ocean.settings import BASE_URL
 
 
 @csrf_exempt
@@ -1611,7 +1612,7 @@ def api(request):
                 
                 else:
                     response['status_code'] = 500
-                    response['message'] = "Invalid Module"
+                    response['message'] = f"Invalid Module {module}"
 
             except Exception as e:
                 error_type, error_instance, traceback = sys.exc_info()
@@ -1834,7 +1835,7 @@ def api(request):
                     reg_no = data.get('reg_no')
                     problem = data.get('problem')
 
-                    next_entry_no = JobRequest.objects.all().last().pk + 1
+                    next_entry_no = JobRequest.objects.all().last().pk + 1 if JobRequest.objects.all().count() > 0 else 1
                     entry_no = f"WO{next_entry_no}"
                     JobRequest(
                         entry_no = entry_no,
@@ -1851,17 +1852,21 @@ def api(request):
                     ).save()
 
                     # send sms
+                    trak_link = shorten_url(f"{BASE_URL}cmms/servcing/track/{entry_no}/")
+                    sms_message = f"Your job request no. {entry_no} is created. Please check your vehicle details."
+                    sms_message += f"\n\n{trak_link}"
+
                     Sms(
                         api=SmsApi.objects.get(is_default=True),
                         to=driver_phone,
-                        message=f"Your job request no. {entry_no} is created. Please check your vehicle details."
+                        message=sms_message
                     ).save()
 
                     response['status_code'] = 200
                     response['message'] = entry_no
 
 
-                if module == 'check_service_due_date':
+                elif module == 'check_service_due_date':
                     JobCard.objects.all().update(service_follow_up_log=False)
                     ServiceFollowup.objects.all().delete()
                     ServiceFollowupLog.objects.all().delete()
@@ -2237,7 +2242,7 @@ def api(request):
 
                 else:
                     response['status_code'] = 404
-                    response['message'] = "Invalid Module"
+                    response['message'] = f"Invalid Module {module}"
             except Exception as e:
                 response['status_code'] = 505
                 response['message'] = str(e)
@@ -2746,7 +2751,7 @@ def api(request):
                     response['message'] = "Feedback Recorded"
 
                 else:
-                    raise Exception("Invalid Module")
+                    raise Exception(f"Invalid Module {module}")
             
             except Exception as e:
                 error_type, error_instance, traceback = sys.exc_info()

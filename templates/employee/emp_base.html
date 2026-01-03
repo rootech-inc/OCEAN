@@ -425,6 +425,21 @@
               <span>Attendance</span>
             </a>
           </li>
+
+          <li class="nav-item">
+            <a class="nav-link collapsed" href="{% url 'hrm_manual_punch' %}">
+              <i class="bi bi-grid"></i>
+              <span>Manual Punch</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link collapsed" href="{% url 'employee_documents' %}">
+              <i class="bi bi-grid"></i>
+              <span>Documents</span>
+            </a>
+          </li>
+
             <li class="nav-item">
             <a class="nav-link collapsed" href="{% url 'master_leave' %}">
               <i class="bi bi-grid"></i>
@@ -454,6 +469,13 @@
             </a>
           </li>
         </ul>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'hrm_self_service' %}">
+          <i class="bi bi-grid"></i>
+          <span>Self Service</span>
+        </a>
       </li>
 
       <li class="nav-item">
@@ -506,7 +528,7 @@
     </div><!-- End Page Title -->
 
     <section class="section h-100" >
-      <div class="w-100 h-100 card overflow-auto">
+      <div class="w-100 h-100 overflow-auto">
           <button id="install-button" class="install-button">Install App</button>
 
           {% block body %}

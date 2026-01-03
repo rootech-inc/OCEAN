@@ -4,12 +4,46 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0a6085f9-92ce-410b-ac8a-bafcccfb80d8" name="Changes" comment="Add new fields to the vehicle model, update Fleet UI with navigation buttons, and enhance JavaScript for dynamic fleet loading and shortcut creation.">
+    <list default="true" id="0a6085f9-92ce-410b-ac8a-bafcccfb80d8" name="Changes" comment="amc">
+      <change afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/dashboard/profile/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/9ffd5153-6b92-4f85-9779-5c6d8e10871e.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/9ffd5153-6b92-4f85-9779-5c6d8e10871e.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/data_source_mapping.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ssml/ssml_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/ssml/ssml_api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/general/js/classes/anton.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/general/js/classes/anton.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/general/js/classes/logistics.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/general/js/classes/logistics.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/ssml/foc-potal.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/ssml/foc-potal.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/admin_panel/admin_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/admin_panel/admin_api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/admin_panel/anton.py" beforeDir="false" afterPath="$PROJECT_DIR$/admin_panel/anton.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/admin_panel/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/admin_panel/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/admin_panel/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/admin_panel/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/admin_panel/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/admin_panel/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amc/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/amc/api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amc/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/amc/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amc/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/amc/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amc/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/amc/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmms/cmms_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/cmms/cmms_api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmms/migrations/0001_initial.py" beforeDir="false" afterPath="$PROJECT_DIR$/cmms/migrations/0001_initial.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/crm/crm_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/crm/crm_api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/employee/employee_api - Copy.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/employee_api - Copy.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/employee/employee_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/employee_api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/employee/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/employee/modric.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/modric.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/employee/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/employee/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/employee/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ocean/settings - Copy (2).py" beforeDir="false" afterPath="$PROJECT_DIR$/ocean/settings - Copy (2).py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ocean/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/ocean/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ssml/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/ssml/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/general/js/classes/staff.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/general/js/classes/staff.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/general/js/classes/user.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/general/js/classes/user.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/amc/groups.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/amc/groups.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/amc/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/amc/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/cmms/service/new.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/cmms/service/new.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/crm/crm-tools.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/crm/crm-tools.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/dashboard/company/all-users.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/dashboard/company/all-users.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/dashboard/profile/profile.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/dashboard/profile/profile.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/employee/emp_base.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/employee/emp_base.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,6 +52,10 @@
   </component>
   <component name="DjangoConsoleOptions" custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform))&#10;import django; print('Django %s' % django.get_version())&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;if 'setup' in dir(django): django.setup()&#10;import django_manage_shell; django_manage_shell.run(PROJECT_ROOT)">
     <option name="myCustomStartScript" value="import sys; print('Python %s on %s' % (sys.version, sys.platform))&#10;import django; print('Django %s' % django.get_version())&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;if 'setup' in dir(django): django.setup()&#10;import django_manage_shell; django_manage_shell.run(PROJECT_ROOT)" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="39677" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -57,27 +95,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenDjangoStructureViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;django.template.preview.state&quot;: &quot;SHOW_EDITOR&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/Development/WORKSPACE/ocean_live/logistics&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.AIAssistantPromptsLibrary&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenDjangoStructureViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "django.template.preview.state": "SHOW_EDITOR",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/github/ocean_live/templates/dashboard/profile",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "ml.llm.AIAssistantPromptsLibrary",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/templates/dashboard/profile" />
       <recent name="D:\Development\WORKSPACE\ocean_live\logistics" />
     </key>
   </component>
@@ -95,6 +135,7 @@
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="RUN_TOOL" value="" />
       <option name="launchJavascriptDebuger" value="false" />
       <option name="port" value="8000" />
       <option name="host" value="" />
@@ -110,8 +151,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-256f9dae541f-JavaScript-PY-253.20558.58" />
-        <option value="bundled-python-sdk-7e710ed067e7-8e468156c80b-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.20558.58" />
+        <option value="bundled-python-sdk-f79232025321-b1aafe368c7f-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.28294.256" />
       </set>
     </attachedChunks>
   </component>
@@ -134,6 +174,23 @@
       <workItem from="1759244271452" duration="4247000" />
       <workItem from="1759311019934" duration="4054000" />
       <workItem from="1759394601791" duration="1126000" />
+      <workItem from="1759742272798" duration="5948000" />
+      <workItem from="1760604396615" duration="8000" />
+      <workItem from="1760605677660" duration="308000" />
+      <workItem from="1760606053312" duration="2713000" />
+      <workItem from="1760654746574" duration="4581000" />
+      <workItem from="1761486515518" duration="3301000" />
+      <workItem from="1762636497588" duration="310000" />
+      <workItem from="1762658032395" duration="50000" />
+      <workItem from="1762674759829" duration="49000" />
+      <workItem from="1763065549019" duration="8211000" />
+      <workItem from="1763124614311" duration="474000" />
+      <workItem from="1763444036410" duration="1742000" />
+      <workItem from="1763799667954" duration="214000" />
+      <workItem from="1763821412685" duration="5000" />
+      <workItem from="1764267504929" duration="3000" />
+      <workItem from="1764592943071" duration="33000" />
+      <workItem from="1765184633217" duration="16000" />
     </task>
     <task id="LOCAL-00001" summary="copy righted and some bonus">
       <option name="closed" value="true" />
@@ -199,7 +256,55 @@
       <option name="project" value="LOCAL" />
       <updated>1759240352549</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Enhance contractor data retrieval and display in FOC portal&#10;&#10;Integrate contractor's job statistics, monthly job distribution, and total issued meters into the FOC portal. Update backend models with supporting methods and front-end UI with dynamic data rendering. Refine OTP verification logic and improve chart content layout. Adjust database configuration for local development.">
+      <option name="closed" value="true" />
+      <created>1759748056516</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1759748056516</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Add initial inventory and contractor management models: define `InventoryMaterial`, `InventoryGroup`, `Location`, `Contractor`, `Supplier`, and related classes for handling materials, locations, contractors, GRNs, transactions, and stock tracking.">
+      <option name="closed" value="true" />
+      <created>1760607251911</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1760607251911</updated>
+    </task>
+    <task id="LOCAL-00011" summary="brucy bonus">
+      <option name="closed" value="true" />
+      <created>1763125045703</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1763125045703</updated>
+    </task>
+    <task id="LOCAL-00012" summary="hello">
+      <option name="closed" value="true" />
+      <created>1763799806802</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1763799806802</updated>
+    </task>
+    <task id="LOCAL-00013" summary="hello">
+      <option name="closed" value="true" />
+      <created>1765185281428</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1765185281429</updated>
+    </task>
+    <task id="LOCAL-00014" summary="amc">
+      <option name="closed" value="true" />
+      <created>1765188377483</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1765188377483</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -215,6 +320,11 @@
     <MESSAGE value="Enhance fleet management UI with new details card and dynamic dropdown actions. Add modals for Trips, Compliance, and Images with export functionality." />
     <MESSAGE value="Add manufacturer and fuel type fields to vehicle model. Update Fleet page with dynamic vehicle details including image, year, and new properties. Enhance JavaScript to support image click interaction and preload fleet data." />
     <MESSAGE value="Add new fields to the vehicle model, update Fleet UI with navigation buttons, and enhance JavaScript for dynamic fleet loading and shortcut creation." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add new fields to the vehicle model, update Fleet UI with navigation buttons, and enhance JavaScript for dynamic fleet loading and shortcut creation." />
+    <MESSAGE value="Enhance contractor data retrieval and display in FOC portal&#10;&#10;Integrate contractor's job statistics, monthly job distribution, and total issued meters into the FOC portal. Update backend models with supporting methods and front-end UI with dynamic data rendering. Refine OTP verification logic and improve chart content layout. Adjust database configuration for local development." />
+    <MESSAGE value="Add initial inventory and contractor management models: define `InventoryMaterial`, `InventoryGroup`, `Location`, `Contractor`, `Supplier`, and related classes for handling materials, locations, contractors, GRNs, transactions, and stock tracking." />
+    <MESSAGE value="brucy bonus" />
+    <MESSAGE value="hello" />
+    <MESSAGE value="amc" />
+    <option name="LAST_COMMIT_MESSAGE" value="amc" />
   </component>
 </project>

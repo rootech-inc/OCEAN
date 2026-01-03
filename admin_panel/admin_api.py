@@ -1043,8 +1043,10 @@ def index(request):
                                f"Password:{new_password}")
                 mail_api = MailSenders.objects.get(is_default=True)
                 user.save()
+                mail_enc = make_md5_hash(email_template)
                 MailQueues(sender=mail_api, recipient=user.email, cc='solomon@snedaghana.com',
                            subject="PASSWORD RESET FOR OCEAN", body=email_template).save()
+                           
                 Sms(api=SmsApi.objects.get(is_default=1), to=addon.phone, message=sms_message).save()
 
             elif module == 'all_password_reset':
@@ -1146,7 +1148,23 @@ def index(request):
                 response = success_response
                 response['message'] = f"Company '{company.name}' updated successfully"
 
+            elif module == 'user':
 
+                try:
+                    pk = data.get('pk')
+                    user = User.objects.get(pk=pk)
+
+                    addon = UserAddOns.objects.get(user=user)
+                    addon.bio_id = data.get('emp_code')
+                    addon.save()
+
+                    response['status_code'] = 200
+                    response['message'] = f"Updated"
+                    return JsonResponse(response)
+                except Exception as e:
+                    response['status_code'] = 500
+                    response['message'] = str(e)
+                    return JsonResponse(response)
 
             else:
                 response['status_code'] = 503

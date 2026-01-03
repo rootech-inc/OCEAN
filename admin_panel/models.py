@@ -730,6 +730,21 @@ class UserAddOns(models.Model):
     def dept(self):
         return self.department.name if self.department.name else "NOT ASSIGNED"
 
+    def required_documents_pending(self):
+        from employee.models import EmployeeDocuments as ed, Documents as docs
+        from django.db.models import Count
+
+        # Step 1: Get all required documents
+        required_docs = docs.objects.filter(required=True)
+
+        # Step 2: Get the documents the user has already uploaded
+        uploaded_docs = ed.objects.filter(user=self.user).values_list('document', flat=True)
+
+        # Step 3: Filter required documents the user has not uploaded
+        missing_docs = required_docs.exclude(id__in=uploaded_docs)
+
+        # Step 4: Return the count of missing documents
+        return missing_docs.count()
 
 class PasswordResetToken(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

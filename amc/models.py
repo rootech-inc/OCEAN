@@ -40,6 +40,8 @@ class Asset(models.Model):
 
     created_by = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='assets_created')
     created_at = models.DateTimeField(auto_now_add=True)
+    is_signed = models.BooleanField(default=False)
+    signed_document = models.ImageField(upload_to='static/uploads/amc/assets/')
 
     def __str__(self):
         return self.name
@@ -129,3 +131,13 @@ class AssetImages(models.Model):
             'created_by': self.created_by.username if self.created_by else None,
             'created_at': self.created_at.isoformat() if self.created_at else ""
         }
+
+class GroupCompliance(models.Model):
+    document = models.ForeignKey('employee.Documents',on_delete=models.CASCADE)
+    group = models.ForeignKey('Groups',on_delete=models.CASCADE)
+    created_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, related_name='compliance_crwator')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # INSERT_YOUR_CODE
+    class Meta:
+        unique_together = ('document', 'group')

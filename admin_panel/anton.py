@@ -116,6 +116,22 @@ def shorten_url(url):
 
     return new_url
 
+def validateDocuments(request):
+    user = request.user
+    user_addons = UserAddOns.objects.get(user=user)
+
+    pending = user_addons.required_documents_pending()
+
+
+    print(pending)
+
+    if pending > 0:
+        return False
+    else:
+        return True
+    
+  
+
 def make_md5_hash(text):
     from datetime import datetime
     current_datetime = timezone.now()

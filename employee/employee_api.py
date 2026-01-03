@@ -5,7 +5,7 @@ from datetime import datetime, date, timedelta, timezone
 
 from openpyxl.workbook import Workbook
 
-from admin_panel.anton import create_new_user, staffs, get_week_of_month, month_by_name, md5only
+from admin_panel.anton import create_new_user, staffs, get_week_of_month, month_by_name, md5only,make_md5_hash
 from admin_panel.models import Sms, SmsApi, UserAddOns
 from ocean.settings import ATTENDANCE_URL
 from .modric import token
@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.contrib.auth.models import User
 
-from employee.models import Attendance, Leave
+from employee.models import Attendance, Leave,Documents,ManualPunc
 
 
 @csrf_exempt
@@ -62,6 +62,33 @@ def interface(request):
 
 
                 success_response['message'] = "Area Created Successfully"
+
+            elif module == 'document':
+                title = data.get('title')
+                description = data.get('description')
+                required = data.get('required')
+                mypk = data.get('mypk')
+
+                if required == 'YES':
+                    required = True
+                else:
+                    required = False
+
+                created_by = User.objects.get(pk=mypk)
+                enc = make_md5_hash(f"{title}{description}{required}{mypk}")
+
+                Documents.objects.create(
+                    title=title,
+                    description=description,
+                    enc=enc,
+                    created_by=created_by,
+                    required=required
+                )
+
+                response = success_response
+
+
+
 
             elif module == 'leave':
                 emp_code = data.get('emp_code')
@@ -142,182 +169,213 @@ def interface(request):
 
             elif module == 'sync_attendance':
                 # get workers
-                tk = token('solomon', 'Szczesny@411')
+                is_live=data.get('is_live',True)
                 date_ini = data.get('date',datetime.now().strftime('%Y-%m-%d'))
-                current_datetime = date_ini
-                start = f"{str(current_datetime)} 00:00:00"
-                end = f"{str(current_datetime)} 23:59:59"
-                import requests
+                print(data)
+                print(is_live)
                 url = f"{ATTENDANCE_URL}personnel/api/employees/?page_size=10000"
+                print(f"URL:{url}")
 
-                payload = json.dumps({
-                    "start_time": "2024-01-01",
-                    "end_time": "2024-12-01",
-                    "emp_code": 1,
-                    "page_size": 500000,
-                    "terminal_sn": ""
-                })
-                headers = {
-                    'Authorization': f"JWT {tk}",
-                    'Content-Type': 'application/json'
-                }
+                if is_live:
+                    print("OK 0")
+                    tk = token('solomon', 'Szczesny@411')
+                    print("OK 1")
+                    current_datetime = date_ini
+                    start = f"{str(current_datetime)} 00:00:00"
+                    end = f"{str(current_datetime)} 23:59:59"
+                    import requests
+                    print("OK 2")
+                    
 
-                resp = requests.request("GET", url, headers=headers, data=payload)
-                j_resp = json.loads(resp.text)
+                    payload = json.dumps({
+                        "start_time": "2024-01-01",
+                        "end_time": "2024-12-01",
+                        "emp_code": 1,
+                        "page_size": 500000,
+                        "terminal_sn": ""
+                    })
+                    print("OK 3")
+                    headers = {
+                        'Authorization': f"JWT {tk}",
+                        'Content-Type': 'application/json'
+                    }
 
-                gl = []
-                count = j_resp['count']
-                data = j_resp['data']
-                js = []
-                ps = 0
-                abs = 0
-                for i in data:
-                    print(i)
-                    enable_attendance = i['attemployee']['enable_attendance']
-                    emp_code = i['emp_code']
-                    if enable_attendance:
+                    resp = requests.request("GET", url, headers=headers, data=payload)
+                    j_resp = json.loads(resp.text)
+                    print("OK 4")
 
-                        first_name = i['first_name']
-                        last_name = i['last_name']
-                        department = i['department']
+                    gl = []
+                    count = j_resp['count']
+                    data = j_resp['data']
+                    js = []
+                    ps = 0
+                    abs = 0
+                    print("OK 5")
+                    for i in data:
+                        print(i)
+                        enable_attendance = i['attemployee']['enable_attendance']
+                        emp_code = i['emp_code']
+                        if enable_attendance:
 
-                        dep_name = department.get('dept_name')
-                        position = i['position']
+                            first_name = i['first_name']
+                            last_name = i['last_name']
+                            department = i['department']
 
-                        position_name = position.get('position_name') if position else ''
-                        contact = i['contact_tel']
-                        mobile = i['mobile']
-                        email = i['email']
+                            dep_name = department.get('dept_name')
+                            position = i['position']
 
-                        li = [emp_code,f"{first_name} {last_name}",dep_name,position_name,contact,email]
-                        # print(li)
+                            position_name = position.get('position_name') if position else ''
+                            contact = i['contact_tel']
+                            mobile = i['mobile']
+                            email = i['email']
 
-                        # get attendance
-                        url = f"{ATTENDANCE_URL}iclock/api/transactions/?start_time={start}&end_time={end}&page_size=10000&emp_code={emp_code}"
+                            li = [emp_code,f"{first_name} {last_name}",dep_name,position_name,contact,email]
+                            print(li)
 
-                        payload = json.dumps({
-                            "start_time": "2024-01-01T00:00:00",
-                            "end_time": "2024-01-30T00:00:00",
-                            "emp_code": 1,
-                            "page_size": 500000
-                        })
-                        headers = {
-                            'Authorization': f"JWT {tk}",
-                            'Content-Type': 'application/json'
-                        }
+                            # get attendance
+                            url = f"{ATTENDANCE_URL}iclock/api/transactions/?start_time={start}&end_time={end}&page_size=10000&emp_code={emp_code}"
 
-                        att_response = requests.request("GET", url, headers=headers, data=payload)
-                        attendance = json.loads(att_response.text)
+                            payload = json.dumps({
+                                "start_time": "2024-01-01T00:00:00",
+                                "end_time": "2024-01-30T00:00:00",
+                                "emp_code": 1,
+                                "page_size": 500000
+                            })
+                            headers = {
+                                'Authorization': f"JWT {tk}",
+                                'Content-Type': 'application/json'
+                            }
 
-                        # print(attendance)
-                        att_count = attendance['count']
-                        att_data = attendance['data']
+                            att_response = requests.request("GET", url, headers=headers, data=payload)
+                            attendance = json.loads(att_response.text)
 
-
-                        check_in = ""
-                        check_out = ""
-                        minutes_diff = 0
-                        present = False
-                        if attendance['count'] == 0:
-                            check_in = "00:00:00"
-                            check_out = "00:00:00"
-                            abs += 1
-                        else:
-                            first_record = att_data[0]
-                            last_record = att_data[len(att_data) - 1]
-
-                            first_date_time = datetime.strptime(str(first_record['punch_time']), '%Y-%m-%d %H:%M:%S')
-                            first_time_only = first_date_time.time()
-
-                            last_date_time = datetime.strptime(str(last_record['punch_time']), '%Y-%m-%d %H:%M:%S')
-                            last_time_only = last_date_time.time()
-
-                            total_time = last_date_time - first_date_time
-                            minutes_diff = "{:.2f}".format(total_time.total_seconds() / 60)
-
-                            check_in = first_time_only
-                            check_out = last_time_only
-                            present = True
-                            ps += 1
-
-                        st = 'absent'
-                        is_late = False
-                        late_duration = {
-                            "SHOP": datetime.strptime('10:06', '%H:%M').time(),
-                            "MOTORS": datetime.strptime('08:06', '%H:%M').time(),
-                            "METERS": datetime.strptime('08:06', '%H:%M').time()
-                        }
-
-                        import calendar
-                        dept_str = late_duration.get(dep_name, '00:00')
-                        dept = datetime.strptime(dept_str, '%H:%M').time() if isinstance(dept_str,
-                                                                                         str) else dept_str
-                        day = calendar.day_name[datetime.strptime(start.split(' ')[0], '%Y-%m-%d').weekday()]
+                            # print(attendance)
+                            att_count = attendance['count']
+                            att_data = attendance['data']
 
 
-                        
-                        
+                            check_in = ""
+                            check_out = ""
+                            minutes_diff = 0
+                            present = False
+                            if attendance['count'] == 0:
+                                check_in = "00:00:00"
+                                check_out = "00:00:00"
+                                abs += 1
+                            else:
+                                first_record = att_data[0]
+                                last_record = att_data[len(att_data) - 1]
 
-                        if present:
-                            st = 'present'
-                            print(department)
-                            # dept = late_duration.get(dep_name,'00:00')
+                                first_date_time = datetime.strptime(str(first_record['punch_time']), '%Y-%m-%d %H:%M:%S')
+                                first_time_only = first_date_time.time()
+
+                                last_date_time = datetime.strptime(str(last_record['punch_time']), '%Y-%m-%d %H:%M:%S')
+                                last_time_only = last_date_time.time()
+
+                                total_time = last_date_time - first_date_time
+                                minutes_diff = "{:.2f}".format(total_time.total_seconds() / 60)
+
+                                check_in = first_time_only
+                                check_out = last_time_only
+                                present = True
+                                ps += 1
+
+                            st = 'absent'
+                            is_late = False
+                            late_duration = {
+                                "SHOP": datetime.strptime('10:06', '%H:%M').time(),
+                                "MOTORS": datetime.strptime('08:06', '%H:%M').time(),
+                                "METERS": datetime.strptime('08:06', '%H:%M').time()
+                            }
+
                             import calendar
                             dept_str = late_duration.get(dep_name, '00:00')
                             dept = datetime.strptime(dept_str, '%H:%M').time() if isinstance(dept_str,
-                                                                                             str) else dept_str
-                            if calendar.day_name[
-                                datetime.strptime(start.split(' ')[0], '%Y-%m-%d').weekday()] == 'Sunday':
-                                dept = (datetime.combine(datetime.today(), dept) + timedelta(hours=1)).time()
+                                                                                            str) else dept_str
+                            day = calendar.day_name[datetime.strptime(start.split(' ')[0], '%Y-%m-%d').weekday()]
 
-                            if check_in > dept:
-                                is_late = True
-                            else:
-                                if(check_in == '00:00:00'):
+
+                            
+                            
+
+                            if present:
+                                st = 'present'
+                                print(department)
+                                # dept = late_duration.get(dep_name,'00:00')
+                                import calendar
+                                dept_str = late_duration.get(dep_name, '00:00')
+                                dept = datetime.strptime(dept_str, '%H:%M').time() if isinstance(dept_str,
+                                                                                                str) else dept_str
+                                if calendar.day_name[
+                                    datetime.strptime(start.split(' ')[0], '%Y-%m-%d').weekday()] == 'Sunday':
+                                    dept = (datetime.combine(datetime.today(), dept) + timedelta(hours=1)).time()
+
+                                if check_in > dept:
                                     is_late = True
                                 else:
-                                    is_late = False
+                                    if(check_in == '00:00:00'):
+                                        is_late = True
+                                    else:
+                                        is_late = False
 
 
 
-                        ali = [f"{first_name} {last_name}", dep_name, position_name, str(check_in), str(check_out), st,
-                              minutes_diff,is_late]
-                        js.append(ali)
-                        dt = start.split(' ')[0]
-                        if Attendance.objects.filter(date=dt,emp_code=emp_code).exists():
-                            # update
-                            Attendance.objects.filter(date=dt,emp_code=emp_code).update(
-                                emp_code=emp_code,
-                                date=dt,
-                                time_in=check_in,
-                                time_out=check_out,
-                                time_diff=minutes_diff,
-                                name=f"{first_name} {last_name}",
-                                status=st,
-                                is_late=is_late,
-                                dep_text = dep_name
-                            )
+                            ali = [f"{first_name} {last_name}", dep_name, position_name, str(check_in), str(check_out), st,
+                                minutes_diff,is_late]
+                            js.append(ali)
+                            dt = start.split(' ')[0]
+                            if Attendance.objects.filter(date=dt,emp_code=emp_code).exists():
+                                # update
+                                Attendance.objects.filter(date=dt,emp_code=emp_code).update(
+                                    emp_code=emp_code,
+                                    date=dt,
+                                    time_in=check_in,
+                                    time_out=check_out,
+                                    time_diff=minutes_diff,
+                                    name=f"{first_name} {last_name}",
+                                    status=st,
+                                    is_late=is_late,
+                                    dep_text = dep_name
+                                )
+                            else:
+                                Attendance(
+                                    emp_code=emp_code,
+                                    date=dt,
+                                    time_in=check_in,
+                                    time_out=check_out,
+                                    time_diff=minutes_diff,
+                                    name=f"{first_name} {last_name}",
+                                    status=st,
+                                    is_late=is_late,
+                                    dep_text=dep_name
+                                ).save()
+
                         else:
-                            Attendance(
-                                emp_code=emp_code,
-                                date=dt,
-                                time_in=check_in,
-                                time_out=check_out,
-                                time_diff=minutes_diff,
-                                name=f"{first_name} {last_name}",
-                                status=st,
-                                is_late=is_late,
-                                dep_text=dep_name
-                            ).save()
+                            Attendance.objects.filter(date=dt, emp_code=emp_code).delete()
 
-                    else:
-                        Attendance.objects.filter(date=dt, emp_code=emp_code).delete()
+                    dat = {
+                        "present":ps,
+                        'absent':abs,
+                        'array':js
+                    }
+                else:
+                    print("OK X")
+                    dat = {}
+                    dt = ManualPunc.objects.filter(created_at__date=date_ini)
 
-                dat = {
-                    "present":ps,
-                    'absent':abs,
-                    'array':js
-                }
+                    import openpyxl
+                    book = openpyxl.Workbook()
+                    sheet = book.active
+
+                    sheet.append(['Employee ID','Punch Time','Punch State'])
+
+                    for d in dt:
+                        sheet.append([d.employee.pk,d.created_at.time(),d.state])
+
+                    dat['array'] = [mp.obj() for mp in dt]
+                    file = 'static/tmp/attendance.xls'
+                    book.save(file)
+                    dat['file'] = file
                 success_response['message'] = dat
                 response = success_response
 

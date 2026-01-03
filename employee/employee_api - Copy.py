@@ -41,7 +41,7 @@ def interface(request):
             if module == 'area':
                 import requests
 
-                url = "http://192.168.2.15/personnel/api/areas/"  # Replace with actual domain
+                url = "http://41.222.234.59/personnel/api/areas/"  # Replace with actual domain
 
                 headers = {
                     "Content-Type": "application/json",
@@ -109,7 +109,7 @@ def interface(request):
                 start = f"{str(current_datetime)} 00:00:00"
                 end = f"{str(current_datetime)} 23:59:59"
                 import requests
-                url = "http://192.168.2.15/personnel/api/employees/?page_size=10000"
+                url = "http://41.222.234.59/personnel/api/employees/?page_size=10000"
 
                 payload = json.dumps({
                     "start_time": "2024-01-01",
@@ -306,7 +306,7 @@ def interface(request):
 
         elif method == 'VIEW':
             if module == 'area':
-                url = 'http://192.168.2.15/personnel/api/areas/'
+                url = 'http://41.222.234.59/personnel/api/areas/'
 
                 tk = token('solomon','Szczesny@411')
                 headers = {

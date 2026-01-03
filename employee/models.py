@@ -119,3 +119,57 @@ class Leave(models.Model):
             'reliever':self.reliever,
             'type':self.leave_type,
         }
+
+
+class Documents(models.Model):
+    enc = models.CharField(max_length=255,null=False,blank=False,unique=True)
+    title = models.CharField(max_length=255,null=False,blank=False,unique=True)
+    description = models.TextField()
+    created_by = models.ForeignKey(User,on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    required = models.BooleanField(default=False)
+
+class EmployeeDocuments(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    document = models.ForeignKey(Documents,on_delete=models.CASCADE)
+    file = models.ImageField(upload_to='static/uploads/amc/assets/')
+    created_at = models.DateTimeField(auto_now_add=True)
+    remark = models.TextField()
+    status_type = [
+        ('pending',"Pending"),
+        ('approved',"Approved"),
+        ('rejected',"Rejected")
+    ]
+
+    status = models.CharField(max_length=255,choices=status_type,null=False,blank=False,default='pending')
+
+    class Meta:
+        unique_together = ('user', 'document')
+
+
+class ManualPunc(models.Model):
+    employee = models.ForeignKey(User,on_delete=models.CASCADE)
+    status_choices = [
+        ('IN',"Check In"),
+        ("OUT","Check Out")
+    ]
+    state = models.CharField(max_length=255,choices=status_choices,null=False,blank=False)
+    remarks = models.TextField()
+    selfie = models.ImageField(upload_to='static/uploads/amc/assets/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'name':self.employee.get_full_name() if self.employee else 'No Name',
+            'position':"Unknown",
+            "company":"Unknown",
+            'employee': self.employee.id if self.employee else None,
+            'status': self.state,
+            'remarks': self.remarks,
+            'selfie': self.selfie.url if self.selfie else None,
+            'created_at': self.created_at,
+            'date': self.created_at.date() if self.created_at else None,
+            'time': self.created_at.time() if self.created_at else None,
+        }

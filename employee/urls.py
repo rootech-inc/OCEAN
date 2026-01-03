@@ -24,7 +24,13 @@ urlpatterns = [
     path('employees/', views.employees, name='staffs'),
     path('api/', employee_api.interface, name='reports_api'),
     path('master/attendance/',views.attendance,name='staff_attendance'),
+    path('master/manual-punch/',views.manual_punch,name='hrm_manual_punch'),
     path('self-service/leave/', views.leave, name='staff_leave'),
     path('master/leave/',views.master_leave,name='master_leave'),
     path('master/monthly-attendance/',views.monthly_attendance,name='monthly_attendance'),
+    path('master/documents/',views.employee_documents,name='employee_documents'),
+    path('upload-document/',views.upload_document,name='uplaod_compliance_document'),
+    path('self-service/',views.self_service,name='hrm_self_service'),
+    path('self-service/attendance/',views.my_attendance,name='hrm_my_attendance'),
+    path('submit-attendce/',views.submit_attendance,name='hrm_submit_attendance')
 ]

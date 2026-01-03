@@ -1272,7 +1272,7 @@ def foc_portal(request):
 def my_company(request):
     stage = request.COOKIES.get('stage', None)
     if not stage:
-        return redirect('foc_portal')
+        return redirect('ssml_foc_portal')
 
     foc_code = request.COOKIES.get('foc_id')
     # print(foc_code)
