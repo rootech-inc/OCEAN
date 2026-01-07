@@ -1662,7 +1662,7 @@ def interface(request):
                         mirhd = ["No","Material Description","Unit of Measurement","Total Request"]
                         
                         months_data = []
-                        year = date.today().year
+                        year = 2025
                         from datetime import datetime
                         if isinstance(end_date, str):
                             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -1716,7 +1716,7 @@ def interface(request):
                         mirsn = 1
                         from datetime import date
 
-                        first_day = date(date.today().year, 1, 1)
+                        first_day = date(2025, 1, 1)
 
                         for mirmat in InventoryMaterial.objects.filter(is_issue=True):
                             total_recieved =  mirmat.in_by_date_range(first_day,data.get('end_date'))
@@ -2517,7 +2517,10 @@ def interface(request):
                         grns = Grn.objects.all()
                         success_response['message'] = [grn.obj() for grn in grns]
                     else:
-                        grn = Grn.objects.get(id=id)
+                        if id.isdigit():
+                            grn = Grn.objects.get(id=id)
+                        else:
+                            grn = Grn.objects.get(grn_no=id)
                         success_response['message'] = grn.obj()
 
                 elif module == 'plot':

@@ -319,6 +319,14 @@
                 kasa.info("Operation Canceled")
             }
         });
+
+        $('#searchQuery').on('keyup', function(event){
+            let key = event.key;
+            if(key === 'Enter'){
+                let value = $(this).val();
+                load_grn(value);
+            }
+        });
         
     });
 </script>

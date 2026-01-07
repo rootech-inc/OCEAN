@@ -218,12 +218,25 @@ class InventoryMaterial(models.Model):
         return Cardex.objects.filter(material=self).aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
 
     def in_by_date_range(self,start_date,end_date):
-        return Cardex.objects.filter(
+        print(
+            "Material: ",self.name,
+            "\nStart Date:",start_date,
+            "\nEnd Date:",end_date,
+        )
+        total =  Cardex.objects.filter(
             material=self,
             created_at__gte=start_date,
             created_at__lte=end_date,
             doc_type='GR'
             ).aggregate(total_qty=models.Sum('qty'))['total_qty'] or 0
+        print(
+            "Material: ", self.name,
+            "\nStart Date:", start_date,
+            "\nEnd Date:", end_date,
+            "\nTotal Received:", total,
+        )
+
+        return total
 
     def used_by_date_range(self,start_date,end_date,is_boxed=False):
         return MaterialOrderItem.objects.filter(
