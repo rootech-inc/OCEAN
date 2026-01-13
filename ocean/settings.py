@@ -106,11 +106,11 @@ WSGI_APPLICATION = 'ocean.wsgi.application'
 DATABASE_ENGINE = os.environ.get('DB_ENGINE', 'django.db.backends.mysql')
 # DATABASE_NAME = os.environ.get('DB_NAME', 'meters')
 
-DATABASE_NAME = os.environ.get('DB_NAME', 'meters')
+DATABASE_NAME = os.environ.get('DB_NAME', 'ocean')
 DATABASE_USER = os.environ.get('DB_USER', 'root')
 
 DATABASE_PASSWORD = os.environ.get('DB_PASSWORD', 'Sunderland@411')
-BASE_URL = os.environ.get('BASE_URL', 'http://ec2-16-16-212-223.eu-north-1.compute.amazonaws.com/')
+BASE_URL = os.environ.get('BASE_URL', 'https://ocean.rootechits.com/')
 
 DATABASE_HOST = os.environ.get('DB_HOSTJ', '127.0.0.1')
 DATABASE_PORT = os.environ.get('DB_PORT', '3306')

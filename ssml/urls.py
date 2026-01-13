@@ -78,6 +78,7 @@ urlpatterns = [
     ## meter master
      path('meters/',views.meters,name='meters'),
     path('meters/phase-master/',views.phase_master,name='phase-master'),
-    path('meters/import-shipment-file/',views.import_shipment_file,name='import_shipment_file')
+    path('meters/import-shipment-file/',views.import_shipment_file,name='import_shipment_file'),
+    path('ecg/reports/',views.ecg_reports,name='ecg_reports'),
 
 ]

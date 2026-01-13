@@ -1584,4 +1584,17 @@ def import_shipment_file(request):
         
     else:
         return JsonResponse({'status_code': '400', 'message': 'Invalid method'})
-            
+
+
+def ecg_reports(request):
+    page = {
+        "title":"ECG Reports"
+    }
+
+    context = {
+        'nav':True,
+        'page':page
+    }
+
+
+    return render(request,'ssml/ecg/monthly_reports.html',context=context)
