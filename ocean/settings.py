@@ -28,7 +28,12 @@ DEBUG = True
 SHOW_ERROR_LINE = os.environ.get('DB_PASSWORD', False)
 
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'ocean.rootechits.com',    # The ERP subdomain
+    'rootechits.com',          # The main domain (if OCEAN uses it)
+    '127.0.0.1',               # Localhost for internal proxying
+    'localhost',
+]
 
 LOGIN_URL = '/login/'
 
