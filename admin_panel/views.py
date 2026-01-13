@@ -19,7 +19,9 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from fpdf import FPDF
+from tifffile.tifffile import unique_strings
 
+import ocean.settings
 from admin_panel.anton import push_notification, is_valid_password, generate_random_password
 from admin_panel.form import NewProduct, NewLocation, LogIn, NewTicket, UploadFIle, SignUp, NewOu, NewUM, NewSMSApi, \
     NewBulkSms, NewDepartments
@@ -176,6 +178,13 @@ def login_view(request):
 
                 auth_login(request, auth)
                 # create user api token
+                # create user adon if nor exist
+                if not UserAddOns.objects.filter(user=us).exists():
+                    UserAddOns.objects.create(
+                        user=us,
+                        phone=generate_random_password(),
+
+                    )
                 return redirect(next)
             else:
                 messages.error(request,

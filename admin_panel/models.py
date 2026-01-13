@@ -714,7 +714,7 @@ class UserAddOns(models.Model):
     Address = models.TextField()
     news = models.IntegerField(default=1)
     phone = models.CharField(max_length=14, unique=True)
-    app_version = models.ForeignKey('appconfig.VersionHistory', on_delete=models.CASCADE)
+
     profile_pic = models.FileField(upload_to=f'static/uploads/users/')
     pword_reset = models.IntegerField(default=1)
     api_token = models.TextField(null=True)
