@@ -27,7 +27,9 @@ SECRET_KEY = 'django-insecure-q^#wfi0xy1z-7nv9vj9r^137i=j@zzij8na9q4zr!dsg$-&q!b
 DEBUG = True
 SHOW_ERROR_LINE = os.environ.get('DB_PASSWORD', False)
 
-
+CSRF_TRUSTED_ORIGINS = [
+    'https://ocean.rootechits.com',
+]
 ALLOWED_HOSTS = [
     'ocean.rootechits.com',    # The ERP subdomain
     'rootechits.com',          # The main domain (if OCEAN uses it)
