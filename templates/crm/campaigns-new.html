@@ -2,79 +2,130 @@
 {% load static %}
 
 {% block crm %}
-    <div class="card-header">
-        <div class="w-100 d-flex">
-            <div class="w-50"><strong class="card-title">{{ page.title }}</strong></div>
-            <div class="w-50 d-flex flex-wrap justify-content-end">
-                <button onclick="crm.saveCampaign()" class="btn btn-info">SAVE</button>
+    <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 w-100">
+            <div class="fw-bold text-primary fs-5">{{ page.title }}</div>
+            <button onclick="crm.saveCampaign()" class="btn btn-info d-flex align-items-center gap-2 px-4">
+                <i class="bi bi-save"></i>
+                <span class="d-none d-sm-inline">Save Campaign</span>
+                <span class="d-inline d-sm-none">Save</span>
+            </button>
+        </div>
+    </div>
+    <div class="card-body overflow-hidden p-2 p-md-4">
+        <div class="container-fluid">
+            <div class="row g-3 flex-lg-row flex-column-reverse">
+                <!-- Left Panel: Campaign Setup -->
+                <div class="col-12 col-lg-4">
+                    <div class="bg-light rounded-3 shadow-sm p-3 h-100">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold" for="type"><i class="bi bi-sliders"></i> Type</label>
+                            <select id="type" class="form-select" aria-label="Select Type">
+                                <option value="">Select Type</option>
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold" for="title"><i class="bi bi-card-text"></i> Title</label>
+                            <input type="text" class="form-control" id="title" placeholder="Campaign Title">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold" for="description"><i class="bi bi-info-circle"></i> Description</label>
+                            <textarea id="description" class="form-control" rows="4" placeholder="Write a short description..."></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <button id="see_clients" class="btn btn-outline-info w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-person-lines-fill"></i>
+                                <span>Preview Clients</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Right Panel: Type-dependent Content -->
+                <div class="col-12 col-lg-8">
+                    <!-- EMAIL -->
+                    <div id="email_screen" style="display:none;" class="bg-white rounded-3 shadow-sm p-3 mb-3">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold" for="em_sender"><i class="bi bi-envelope-paper"></i> Email Sender</label>
+                            <select id="em_sender" class="form-select mb-1">
+                                {% for em in mss %}
+                                    <option value="{{ em.pk }}">{{ em.address }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold" for="subject"><i class="bi bi-envelope-fill"></i> Email Subject</label>
+                            <input type="text" class="form-control" id="subject" placeholder="Enter email subject">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold" for="email_template"><i class="bi bi-file-earmark-text"></i> Email Template</label>
+                            <textarea id="email_template" class="form-control" rows="8" placeholder="Write your email content..."></textarea>
+                        </div>
+                        <button onclick="crm.previewCampaignEmailTemplate()" class="btn btn-outline-info mt-1">
+                            <i class="bi bi-eye"></i> Preview Email
+                        </button>
+                    </div>
+                    <!-- SMS -->
+                    <div id="sms_screen" style="display:none;" class="bg-white rounded-3 shadow-sm p-3 mb-3">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold" for="sms_api"><i class="bi bi-chat-text"></i> SMS API</label>
+                            <select id="sms_api" class="form-select mb-1">
+                                {% for sm in smsapis %}
+                                    <option value="{{ sm.pk }}">{{ sm.sender_id }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold" for="sms_template"><i class="bi bi-chat-dots"></i> SMS Template</label>
+                            <textarea id="sms_template" class="form-control" rows="3" placeholder="Write your SMS content..."></textarea>
+                        </div>
+                    </div>
+                    <!-- Optional: Main Screen - displayed by default; JS can hide/show as needed -->
+                    <div id="main_screen" class="w-100 d-flex flex-column justify-content-center align-items-center text-secondary py-5" style="min-height:180px;">
+                        <i class="bi bi-megaphone display-4 mb-3"></i>
+                        <p class="m-0 fs-6 fw-semibold">Please select a campaign type to continue.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="card-body overflow-hidden p-2">
-        <div class="container h-100 overflow-auto">
-
-            <div class="row h-100">
-                <div class="col-sm-4">
-
-                    <div class="input-group mb-2">
-                        <label class="w-100 text-info" for="type">Type</label>
-                        <select name="" id="type" class="form-control rounded-0">
-                            <option value="">Select Type</option>
-                            <option value="email">EMAIL</option>
-                            <option value="sms">SMS</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group mb-2">
-                        <label class="w-100 text-info" for="title">Title</label>
-                        <input type="text" class="form-control rounded-0" id="title">
-                    </div>
-
-                    <div class="input-group mb-2">
-                        <label class="text-info w-100" for="description">Description</label>
-                        <textarea id="description" class="form-control rounded-0" cols="30" rows="5"></textarea>
-                    </div>
-                    <hr>
-                    <button id="see_clients" class="btn btn-info w-100">PREVIEW CLIENTS</button>
-
-
-
-                </div>
-                <div class="col-sm-8 h-100">
-{#                    <div id="main_screen h-100">#}
-{#                        <div class="w-100 h-100 d-flex flex-wrap justify-content-center align-content-center">#}
-{#                            <p class="enc">Select Type</p>#}
-{#                        </div>#}
-{#                    </div>#}
-                    <div id="email_screen" style="display: none;" class="w-100 shadow p-2">
-                        <label class="text-info" for="em_sender">Select Email Sender</label>
-                        <select name="" id="em_sender" class="form-control rounded-0 mb-2">
-                            {% for em in mss %}
-                                <option value="{{ em.pk }}">{{ em.address }}</option>
-                            {% endfor %}
-                        </select>
-                        <label class="text-info w-100" for="subject">Email Subject</label>
-                        <input type="text" class="form-control rounded-0 mb-2" id="subject">
-                        <label class="text-info" for="email_template">EMAIL Template</label>
-                        <textarea id="email_template" class="form-control rounded-0" cols="30" rows="10"></textarea>
-                        <button onclick="crm.previewCampaignEmailTemplate()" class="btn mt-2 btn-info">PREVIEW</button>
-                    </div>
-
-                    <div id="sms_screen" style="display: none" class="w-100 shadow p-2">
-
-                        <label class="text-info" for="sms_api">Select SMS APi</label>
-                        <select name="" id="sms_api" class="form-control rounded-0 mb-2">
-                            {% for sm in smsapis %}
-                                <option value="{{ sm.pk }}">{{ sm.sender_id }}</option>
-                            {% endfor %}
-                        </select>
-                        <label class="text-info" for="sms_template">SMS Template</label>
-                        <textarea id="sms_template" class="form-control rounded-0" cols="30" rows="3"></textarea>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <style>
+    /* Mobile responsive tweaks */
+    @media (max-width: 768px) {
+        .card-header, .card-body { padding-left: .7rem !important; padding-right: .7rem !important; }
+        .fs-5 { font-size: 1.15rem !important; }
+        .p-3 { padding: 1rem !important; }
+        .p-2 { padding: .6rem !important; }
+        #main_screen { min-height:120px !important; }
+    }
+    @media (max-width: 575px) {
+        .card-header, .card-body { padding-left: .5rem !important; padding-right: .5rem !important; }
+        .p-3, .rounded-3 { padding: .7rem !important; border-radius: .6rem !important; }
+        #main_screen { padding: 1.2rem .4rem; }
+    }
+    </style>
+    <script>
+    // Modern conditional panels and mobile adapt
+    function switchCampaignTypeScreen(type) {
+        // Hide all screens
+        $("#email_screen, #sms_screen, #main_screen").hide();
+        if (type === "email") {
+            $("#email_screen").show();
+        } else if (type === "sms") {
+            $("#sms_screen").show();
+        } else {
+            $("#main_screen").show();
+        }
+    }
+    // Initial state
+    $(document).ready(function() {
+        switchCampaignTypeScreen("");
+        $('#type').change(function() {
+            switchCampaignTypeScreen($(this).val());
+        });
+    });
+    </script>
 
     <script>
         let tr = `<tr><td>STATUS</td><td>TITLE</td><td>DATE CREATED</td><td>OWNER</td><td>ACTION</td></tr>`;

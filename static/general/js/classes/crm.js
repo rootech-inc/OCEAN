@@ -38,59 +38,143 @@ class Crm {
                 }
 
                 // create form now
-                let sector = fom.select('sector',sec_options,'',true);
-                let comp_name = fom.input('text','company_name','',true);
-                let secomp = `<div class="row">
-                                        <div class="col-sm-6">${sector}</div><div class="col-sm-6">${comp_name}</div>
-                                    </div>`
+                // Modern & mobile-friendly, focus on layout and html
 
+                // Section: Sector & Company Name
+                let secomp = `
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold text-primary" for="sector">
+                                <i class="fa fa-layer-group me-1"></i> Sector
+                            </label>
+                            <select id="sector" name="sector" class="form-select" required>
+                                ${sec_options}
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold text-primary" for="company_name">
+                                <i class="fa fa-building me-1"></i> Company Name
+                            </label>
+                            <input type="text" id="company_name" name="company_name" class="form-control"
+                                placeholder="Company Name" required autocomplete="off">
+                        </div>
+                    </div>
+                `;
 
-                let city =  `<label class="text-info" for="city">CITY</label><select class="form-control rounded-0" id="city" onchange="crm.loadSuburbForLog()"></select>`
-                let area = fom.select('suburb','','',true)
-
-                let region = `<div class="row">
-                                        <div class="col-sm-6">${city}</div><div class="col-sm-6">${area}</div>
-                                    </div>`
-
-
-                let cont_per = fom.input('text','contact_person','',true);
-                let pos = fom.select('position',post_options,'',true);
-                let phone = fom.text('phone','',true,10);
-                let email = fom.email('email','',true);
+                // Section: Contact Person, Position, Phone, Email
                 let contact = `
-                    <div class="row">
-                        <div class="col-sm-6">${cont_per}</div><div class="col-sm-6">${pos}</div>
-                        <div class="col-sm-6">${phone}</div><div class="col-sm-6">${email}</div>
-                    </div><hr>
-                `
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold" for="contact_person">
+                                <i class="fa fa-user me-1"></i> Contact Person
+                            </label>
+                            <input type="text" id="contact_person" name="contact_person" class="form-control" 
+                                placeholder="Contact Person" required autocomplete="off">
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold" for="position">
+                                <i class="fa fa-briefcase me-1"></i> Position
+                            </label>
+                            <select id="position" name="position" class="form-select" required>
+                                ${post_options}
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold" for="phone">
+                                <i class="fa fa-phone me-1"></i> Phone
+                            </label>
+                            <input type="text" id="phone" name="phone" inputmode="numeric" maxlength="10"
+                                class="form-control" placeholder="10-digit Phone" required autocomplete="off">
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold" for="email">
+                                <i class="fa fa-envelope me-1"></i> Email
+                            </label>
+                            <input type="email" id="email" name="email" class="form-control"
+                                placeholder="Email Address" required autocomplete="off">
+                        </div>
+                    </div>
+                `;
+
+                // Section: City & Suburb
+                let region = `
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold text-info" for="city">
+                                <i class="fa fa-map-marker-alt me-1"></i> City
+                            </label>
+                            <select class="form-select" id="city" name="city" onchange="crm.loadSuburbForLog()" required></select>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold text-info" for="suburb">
+                                <i class="fa fa-street-view me-1"></i> Suburb
+                            </label>
+                            <select id="suburb" name="suburb" class="form-select" required></select>
+                        </div>
+                    </div>
+                `;
+
+                // Section: Address
+                let address = `
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="address">
+                            <i class="fa fa-location-arrow me-1"></i> Address
+                        </label>
+                        <textarea id="address" name="address" rows="3" class="form-control" required placeholder="Address"></textarea>
+                    </div>
+                `;
+
+                // Section: Flag/Follow-up
+                let flag = `
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-info" for="flag">
+                            <i class="fa fa-flag me-1"></i> Flag
+                        </label>
+                        <select id="flag" onchange="followUpCheck()" name="flag" class="form-select" required>
+                            <option value="0" selected disabled>Select Flag</option>
+                            <option value="success">Reachable</option>
+                            <option value="unreachable">Unreachable</option>
+                        </select>
+                    </div>
+                `;
+                let f_date = `<div id="f_date"></div>`;
+
+                let follow_flag = `
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">${flag}</div>
+                        <div class="col-md-6 col-12 align-self-end">${f_date}</div>
+                    </div>
+                `;
+
+                // Section: Subject
+                let subject = `
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="subject">
+                            <i class="fa fa-info-circle me-1"></i> Subject
+                        </label>
+                        <input type="text" id="subject" name="subject" class="form-control" required placeholder="Enter subject">
+                    </div>
+                `;
+
+                // Section: Details
+                let details = `
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="details">
+                            <i class="fa fa-align-left me-1"></i> Details / Description
+                        </label>
+                        <textarea id="details" name="details" rows="5" class="form-control" required placeholder="Enter details here"></textarea>
+                    </div>
+                `;
+
+                // Concatenate all sections in order (form markup)
                 form += secomp;
                 form += contact;
-                form += region
-                form += fom.textarea('address',3,true)
+                form += region;
+                form += address;
+                form += follow_flag;
+                form += subject;
+                form += details;
 
-                let flag = `<label class="text-info" for="flag">FLAG </label>
-                <select id="flag" onchange="followUpCheck()" name="flag" class="form-control mb-2 rounded-0"><
-                                    <option value="0" selected disabled>Select Flag</option>
-                                    <option value="success">Reachable</option>
-                                    <option value="unreachable">Unreachable</option></select>`;
-
-                console.log(flag)
-                let f_date = `<div id="f_date"></div>`
-
-                let ff = `
-                    <div class="row"><div class="col-sm-6">${flag}</div><div class="col-sm-6">${f_date}</div></div><hr>
-                `
-
-                form += ff;
-
-                let sub_options = `
-                    <option value="Car Sales">Car Sales</option>
-                    <option value="Spare Parts">Spare Parts</option>
-                    <option value="Servicing">Serving</option>
-                    <option value="Other">Others</option>
-                `
-                form += fom.select('subject',sub_options,'',true);
-                form += fom.textarea('details',5,true);
 
 
                 amodal.setTitleText("New Log");
@@ -640,7 +724,20 @@ class Crm {
     }
 
     newSectorScreen() {
-        let html = `<input type="text" id="sector" class="form-control rounded-0" />`;
+        let html = `
+            <div class="mb-3">
+                <label for="sector" class="form-label fw-bold text-primary">
+                    <i class="fa fa-layer-group me-1"></i> Enter New Sector
+                </label>
+                <input 
+                    type="text" 
+                    id="sector" 
+                    class="form-control rounded-3 shadow-sm"
+                    placeholder="e.g. Finance, Retail, Technology"
+                    autocomplete="off"
+                />
+            </div>
+        `;
         amodal.setTitleText("Creating Sector");
         amodal.setBodyHtml(html);
         amodal.setFooterHtml(`<button onclick="crm.saveNewSector()" class="btn btn-success">SAVE</button>`)
@@ -648,7 +745,20 @@ class Crm {
     }
 
     newPositionScreen() {
-        let html = `<input type="text" id="position" class="form-control rounded-0" />`;
+        let html = `
+            <div class="mb-3">
+                <label for="position" class="form-label fw-bold text-info">
+                    <i class="fa fa-briefcase me-1"></i> Enter New Position
+                </label>
+                <input 
+                    type="text" 
+                    id="position" 
+                    class="form-control rounded-3 shadow-sm"
+                    placeholder="e.g. Manager, Analyst, Developer"
+                    autocomplete="off"
+                />
+            </div>
+        `;
         amodal.setTitleText("Creating Position");
         amodal.setBodyHtml(html);
         amodal.setFooterHtml(`<button onclick="crm.saveNewPosition()" class="btn btn-success">SAVE</button>`)

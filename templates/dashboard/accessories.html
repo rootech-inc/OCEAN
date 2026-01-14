@@ -3,184 +3,428 @@
 
 {% block body %}
 
-    <div class="w-100 h-100">
-
-        <!-- TAGS -->
-        <button class="btn btn-info" data-toggle="modal" data-target="#tags">TAGS</button>
-        <div  class="modal" id="tags" data-backdrop="false">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <strong class="modal-title">Tags</strong>
-                        <button class="close" data-dismiss="modal">&times</button>
+    <div class="container-fluid py-4 pb-3 px-2 px-md-5 bg-light min-vh-100">
+        <!-- Responsive dashboard card navigation -->
+        <div class="row g-3 mb-4 justify-content-center">
+            <div class="col-12 col-sm-6 col-lg-4">
+                <a class="card card-action h-100 shadow-sm border-0 text-decoration-none dash-nav-card"
+                   data-bs-toggle="modal" data-bs-target="#tagsModal">
+                    <div class="card-body d-flex align-items-center gap-3 py-4 px-3">
+                        <div class="icon-wrap rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center me-2" style="width:52px; height:52px;">
+                            <i class="bi bi-tags-fill text-info fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-1 fw-semibold text-dark">TAGS</div>
+                            <div class="text-muted small">Manage and organize tag codes</div>
+                        </div>
                     </div>
-                    <form method="post" action="{% url 'save-tag' %}" class="modal-body">
-                    {% csrf_token %}
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>CODE</th><th>DESCRIPTION</th><th>Provider</th><th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><input type="text" required name="code" maxlength="3" class="form-control form-control-sm"></td>
-                                    <td><input type="text" required name="description" class="form-control form-control-sm"></td>
-                                    <td>
-                                        <select required name="provider" class="form-control form-control-sm" id="">
-                                            {% for provider in providers %}
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+                <a class="card card-action h-100 shadow-sm border-0 text-decoration-none dash-nav-card"
+                    data-bs-toggle="modal" data-bs-target="#providersModal">
+                    <div class="card-body d-flex align-items-center gap-3 py-4 px-3">
+                        <div class="icon-wrap rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-2" style="width:52px; height:52px;">
+                            <i class="bi bi-buildings-fill text-primary fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-1 fw-semibold text-dark">Providers</div>
+                            <div class="text-muted small">Edit and view provider details</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+                <a class="card card-action h-100 shadow-sm border-0 text-decoration-none dash-nav-card"
+                   data-bs-toggle="modal" data-bs-target="#mailGroupsModal">
+                    <div class="card-body d-flex align-items-center gap-3 py-4 px-3">
+                        <div class="icon-wrap rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center me-2" style="width:52px; height:52px;">
+                            <i class="bi bi-envelope-paper-fill text-warning fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-1 fw-semibold text-dark">Notifications List</div>
+                            <div class="text-muted small">Configure who gets notified</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+                <a class="card card-action h-100 shadow-sm border-0 text-decoration-none dash-nav-card"
+                   href="{% url 'loc_master' %}">
+                    <div class="card-body d-flex align-items-center gap-3 py-4 px-3">
+                        <div class="icon-wrap rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center me-2" style="width:52px; height:52px;">
+                            <i class="bi bi-geo-alt-fill text-success fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-1 fw-semibold text-dark">Location Master</div>
+                            <div class="text-muted small">Location group management</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+                <a class="card card-action h-100 shadow-sm border-0 text-decoration-none dash-nav-card"
+                   data-bs-toggle="modal" data-bs-target="#assetsModal">
+                    <div class="card-body d-flex align-items-center gap-3 py-4 px-3">
+                        <div class="icon-wrap rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center me-2" style="width:52px; height:52px;">
+                            <i class="bi bi-box-seam text-secondary fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-1 fw-semibold text-dark">Assets Group</div>
+                            <div class="text-muted small">Add or edit asset categories</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+                <a class="card card-action h-100 shadow-sm border-0 text-decoration-none dash-nav-card"
+                   href="{% url 'geo' %}">
+                    <div class="card-body d-flex align-items-center gap-3 py-4 px-3">
+                        <div class="icon-wrap rounded-circle bg-dark bg-opacity-10 d-flex align-items-center justify-content-center me-2" style="width:52px; height:52px;">
+                            <i class="bi bi-globe2 text-dark fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-1 fw-semibold text-dark">GEO</div>
+                            <div class="text-muted small">Geographic data master</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
 
-                                                <option value="{{ provider.pk }}">{{ provider.descr }}</option>
-
-                                            {% endfor %}
-                                        </select>
-                                    </td>
-                                    <td><button class="btn btn-success rounded-0">SAVE</button></td>
-                                </tr>
-                                {% for tag in comm_tags %}
-                                    <tr>
-                                        <td>{{ tag.tag_code }}</td>
-                                        <td>{{ tag.tag_dec }}</td>
-                                        <td colspan="2">{{ tag.provider.descr }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+        <!-- TAGS Modal -->
+        <div class="modal fade" id="tagsModal" tabindex="-1" aria-labelledby="tagsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content rounded-3">
+                    <div class="modal-header border-bottom-0 bg-light">
+                        <h5 class="modal-title fw-bold" id="tagsModalLabel"><i class="bi bi-tags-fill"></i> Tags</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="post" action="{% url 'save-tag' %}">
+                        <div class="modal-body">
+                            {% csrf_token %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>CODE</th>
+                                            <th>DESCRIPTION</th>
+                                            <th>Provider</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <input type="text" required name="code" maxlength="3" class="form-control form-control-sm" placeholder="e.g. TAG">
+                                            </td>
+                                            <td>
+                                                <input type="text" required name="description" class="form-control form-control-sm" placeholder="Description">
+                                            </td>
+                                            <td>
+                                                <select required name="provider" class="form-select form-select-sm">
+                                                    {% for provider in providers %}
+                                                        <option value="{{ provider.pk }}">{{ provider.descr }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-success btn-sm rounded-2 px-3">
+                                                    <i class="bi bi-check2-circle"></i> SAVE
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% for tag in comm_tags %}
+                                            <tr>
+                                                <td>{{ tag.tag_code }}</td>
+                                                <td>{{ tag.tag_dec }}</td>
+                                                <td colspan="2">{{ tag.provider.descr }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- PROVIDER -->
-        <button class="btn btn-info" data-toggle="modal" data-target="#providers">PROVIDERS</button>
-        <div  class="modal" id="providers" data-backdrop="false">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <strong class="modal-title">Providers</strong>
-                        <button class="close" data-dismiss="modal">&times</button>
+        <!-- PROVIDERS Modal -->
+        <div class="modal fade" id="providersModal" tabindex="-1" aria-labelledby="providersModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content rounded-3">
+                    <div class="modal-header border-bottom-0 bg-light">
+                        <h5 class="modal-title fw-bold" id="providersModalLabel"><i class="bi bi-buildings-fill"></i> Providers</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form method="post" action="{% url 'save-provider' %}" class="modal-body">
-                        {% csrf_token %}
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>CODE</th><th>DESCRIPTION</th><th>Mobile</th><th>Email</th><th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><input type="text" name="code" maxlength="3" required class="form-control form-control-sm"></td>
-                                    <td><input type="text" name="description" required class="form-control form-control-sm"></td>
-                                    <td><input type="tel" name="mobile" required class="form-control form-control-sm"></td>
-                                    <td><input type="email" name="email" required class="form-control form-control-sm"></td>
-                                    <td><button class="btn btn-success rounded-0">SAVE</button></td>
-                                </tr>
-                                {% for procider in providers %}
-
-                                    <tr>
-                                        <th>{{ procider.provider_code }}</th>
-                                        <th>{{ procider.descr }}</th>
-                                        <th>{{ procider.mobile }}</th>
-                                        <th colspan="2">{{ procider.email }}</th>
-                                    </tr>
-
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <form method="post" action="{% url 'save-provider' %}">
+                        <div class="modal-body">
+                            {% csrf_token %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>CODE</th>
+                                            <th>DESCRIPTION</th>
+                                            <th>Mobile</th>
+                                            <th>Email</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><input type="text" name="code" maxlength="3" required class="form-control form-control-sm" placeholder="e.g. PV1"></td>
+                                            <td><input type="text" name="description" required class="form-control form-control-sm" placeholder="Description"></td>
+                                            <td><input type="tel" name="mobile" required class="form-control form-control-sm" placeholder="Mobile"></td>
+                                            <td><input type="email" name="email" required class="form-control form-control-sm" placeholder="Email"></td>
+                                            <td>
+                                                <button class="btn btn-success btn-sm rounded-2 px-3">
+                                                    <i class="bi bi-check2-circle"></i> SAVE
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% for procider in providers %}
+                                            <tr>
+                                                <td>{{ procider.provider_code }}</td>
+                                                <td>{{ procider.descr }}</td>
+                                                <td>{{ procider.mobile }}</td>
+                                                <td colspan="2">{{ procider.email }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- EMAIL GROUPS -->
-        <a class="btn btn-info" data-toggle="modal" href="#mailGroups">Notifications List</a>
-        <div  class="modal" id="mailGroups" data-backdrop="false">
-            <div class="modal-dialog">
-                <div class="modal-content modal-lg">
-                    <div class="modal-header">
-                        <strong class="modal-title">Tags</strong>
-                        <button class="close" data-dismiss="modal">&times</button>
+        <!-- Notifications List Modal -->
+        <div class="modal fade" id="mailGroupsModal" tabindex="-1" aria-labelledby="mailGroupsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content rounded-3">
+                    <div class="modal-header border-bottom-0 bg-light">
+                        <h5 class="modal-title fw-bold" id="mailGroupsModalLabel"><i class="bi bi-envelope-paper-fill"></i> Notifications List</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form method="post" action="{% url 'add_notification_mem' %}" class="modal-body">
-                    {% csrf_token %}
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Full Name</th><th>Email</th><th>Mobile</th><th>Tag</th><th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><input type="text" autocomplete="off" required name="full_name" class="form-control form-control-sm"></td>
-                                    <td><input type="email" autocomplete="off" required name="email" class="form-control form-control-sm"></td>
-                                    <td><input type="tel" autocomplete="off" required name="phone" class="form-control form-control-sm"></td>
-                                    <td>
-                                        <select required name="provider" class="form-control form-control-sm" id="">
-                                            {% for provider in comm_tags %}
-
-                                                <option value="{{ provider.pk }}">{{ provider.tag_dec }}</option>
-
-                                            {% endfor %}
-                                        </select>
-                                    </td>
-                                    <td><button class="btn btn-success rounded-0">SAVE</button></td>
-                                </tr>
-                                {% for note in notomem %}
-
-                                    <tr>
-                                        <td>{{ note.full_name }}</td>
-                                        <td>{{ note.email_addr }}</td>
-                                        <td>{{ note.mobile_number }}</td>
-                                        <td>{{ note.domain.tag_dec }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <!-- LOCATIONS -->
-        <button onclick="location.href='{% url 'loc_master' %}'" class="btn btn-info" >Location Master</button>
-
-        <!-- ASSETS -->
-        <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#assets">Assets Group</button>
-        <div class="modal fade" id="assets">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <strong class="modal-title">Assets Category</strong>
-                    </div>
-                    <form action="{% url 'newgroup' %}" method="post" class="modal-body p-2">
-                        {% csrf_token %}
-                        <table class="table table-sm table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Description</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><input autocomplete="off" required type="text"placeholder="New Group" name="descr" class="form-control anton-form-tool"></td>
-                                    <td><button class="btn btn-success rounded-0">SAVE</button></td>
-                                </tr>
-                                {% for ass in assgrps %}
-                                <tr>
-                                    <td>{{ ass.descr }}</td>
-                                    <td><button class="btn btn-danger" type="button">DELETE</button></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <form method="post" action="{% url 'add_notification_mem' %}">
+                        <div class="modal-body">
+                            {% csrf_token %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Full Name</th>
+                                            <th>Email</th>
+                                            <th>Mobile</th>
+                                            <th>Tag</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <input type="text" autocomplete="off" required name="full_name" class="form-control form-control-sm" placeholder="Full Name">
+                                            </td>
+                                            <td>
+                                                <input type="email" autocomplete="off" required name="email" class="form-control form-control-sm" placeholder="Email">
+                                            </td>
+                                            <td>
+                                                <input type="tel" autocomplete="off" required name="phone" class="form-control form-control-sm" placeholder="Mobile">
+                                            </td>
+                                            <td>
+                                                <select required name="provider" class="form-select form-select-sm">
+                                                    {% for provider in comm_tags %}
+                                                        <option value="{{ provider.pk }}">{{ provider.tag_dec }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-success btn-sm rounded-2 px-3">
+                                                    <i class="bi bi-check2-circle"></i> SAVE
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% for note in notomem %}
+                                            <tr>
+                                                <td>{{ note.full_name }}</td>
+                                                <td>{{ note.email_addr }}</td>
+                                                <td>{{ note.mobile_number }}</td>
+                                                <td>{{ note.domain.tag_dec }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
 
-        <button onclick="location.href='{% url 'geo' %}'" class="btn btn-info" >GEO</button>
-
+        <!-- Assets Modal -->
+        <div class="modal fade" id="assetsModal" tabindex="-1" aria-labelledby="assetsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-md modal-dialog-centered">
+                <div class="modal-content rounded-3">
+                    <div class="modal-header border-bottom-0 bg-light">
+                        <h5 class="modal-title fw-bold" id="assetsModalLabel"><i class="bi bi-box-seam"></i> Assets Category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{% url 'newgroup' %}" method="post">
+                        <div class="modal-body">
+                            {% csrf_token %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Description</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <input autocomplete="off" required type="text" placeholder="New Group" name="descr" class="form-control form-control-sm anton-form-tool">
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-success btn-sm rounded-2 px-3">
+                                                    <i class="bi bi-check2-circle"></i> SAVE
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% for ass in assgrps %}
+                                        <tr>
+                                            <td>{{ ass.descr }}</td>
+                                            <td>
+                                                <button class="btn btn-danger btn-sm rounded-2" type="button">
+                                                    <i class="bi bi-trash"></i> DELETE
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <style>
+        .dash-nav-card {
+            border-radius: 1.4rem !important;
+            box-shadow: 0 .075rem .44rem rgba(0,90,185,0.05), 0 2px 8px rgba(19,87,126,0.07) !important;
+            min-height: 7.6rem;
+            transition: box-shadow .16s, transform .16s;
+            background: #fff;
+            cursor:pointer;
+        }
+        .dash-nav-card:hover,
+        .dash-nav-card:focus, 
+        .dash-nav-card:active {
+            box-shadow: 0 .12rem .66rem rgba(3,86,160,0.15);
+            background: linear-gradient(90deg,#e7f7fd,#f5fbff 90%);
+            text-decoration: none !important;
+            transform: translateY(-1.5px) scale(1.0125);
+        }
+        .dash-nav-card .icon-wrap {
+            font-size: 2.0em;
+            background: #fff;
+        }
+        .dash-nav-card .h5 {
+            font-size: 1.19rem;
+            letter-spacing: .01em;
+        }
+        @media (max-width: 991.98px) {
+            .container-fluid {
+                padding-left:.5rem !important;
+                padding-right:.5rem !important;
+            }
+            .row.g-3 {
+                --bs-gutter-x:1rem;
+            }
+        }
+        @media (max-width: 767.98px) {
+            .dash-nav-card .h5 { font-size: 1.11rem; }
+            .dash-nav-card .card-body { gap:1rem; padding:.95rem .6rem; }
+            .icon-wrap {
+                width:44px !important;
+                height:44px !important;
+                font-size: 1.33em !important;
+            }
+        }
+        @media (max-width: 575.98px) {
+            .dash-nav-card .h5 { font-size: .99rem; }
+            .dash-nav-card .card-body { padding:.85rem .3rem; }
+            .dash-nav-card {
+                min-height:5.2rem;
+            }
+        }
+        @media (max-width: 450px) {
+            .dash-nav-card .card-body {
+                gap:.7rem;
+                padding: .71rem .08rem;
+            }
+            .dash-nav-card .h5 { font-size: .96rem; }
+        }
+        .modal-content {
+            border-radius: 1rem;
+        }
+        .modal-header {
+            border-radius: 1rem 1rem 0 0;
+        }
+        .btn-close {
+            box-shadow: none;
+        }
+        .table th, .table td {
+            vertical-align: middle !important;
+        }
+        .table thead th {
+            font-size: 1rem;
+        }
+        .btn-info, .btn-light {
+            font-weight: 500;
+            letter-spacing: .02em;
+        }
+        .btn-success, .btn-danger {
+            letter-spacing: .02em;
+        }
+        @media (max-width: 991.98px) {
+            .modal-dialog {
+                width: 96vw;
+                max-width: 96vw;
+            }
+        }
+        @media (max-width: 767.98px) {
+            .modal-content {
+                padding: .37rem;
+                border-radius: .7rem;
+            }
+            .table th, .table td {
+                font-size: .96rem;
+                padding: .50rem .33rem;
+            }
+        }
+        @media (max-width: 450px) {
+            .modal-content {
+                padding: .12rem;
+            }
+            .modal-header {
+                padding: .6rem .7rem;
+            }
+            .btn {
+                font-size: .96em;
+                padding: .38em .6em;
+            }
+            .table th, .table td {
+                font-size: .93rem;
+                padding: .32rem .13rem;
+            }
+        }
+    </style>
 
 {% endblock %}

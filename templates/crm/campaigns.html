@@ -2,26 +2,57 @@
 {% load static %}
 
 {% block crm %}
-    <div class="card-header">
-        <div class="w-100 d-flex">
-            <div class="w-50"><strong class="card-title">{{ page.title }}</strong></div>
-            <div class="w-50 d-flex flex-wrap justify-content-end">
-                <button onclick="location.href='{% url 'new_campaign' %}'" class="btn btn-info">NEW CAMPAIGN</button>
+    <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom-0">
+        <div class="row align-items-center w-100">
+            <div class="col-12 col-md-6 mb-2 mb-md-0">
+                <strong class="card-title fs-5 text-primary">{{ page.title }}</strong>
+            </div>
+            <div class="col-12 col-md-6 d-flex flex-wrap justify-content-end">
+                <button onclick="location.href='{% url 'new_campaign' %}'" class="btn btn-info">
+                    <i class="bi bi-megaphone"></i> NEW CAMPAIGN
+                </button>
             </div>
         </div>
     </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table datatable">
-                <thead>
-                    <tr><th>TYPE</th><th>TITLE</th><th>DATE CREATED</th><th>SCHEDULE</th><th>HEAT</th><th>ACTION</th></tr>
+    <div class="card-body p-2 p-md-4 overflow-hidden">
+        <!-- Desktop Table -->
+        <div id="campaigns_container" class="table-responsive d-none d-md-block">
+            <table id="campaigns_table" class="table table-hover align-middle modern-logs-table mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="text-secondary fw-semibold">TYPE</th>
+                        <th class="text-secondary fw-semibold">TITLE</th>
+                        <th class="text-secondary fw-semibold">DATE CREATED</th>
+                        <th class="text-secondary fw-semibold">SCHEDULE</th>
+                        <th class="text-secondary fw-semibold">HEAT</th>
+                        <th class="text-secondary fw-semibold">ACTION</th>
+                    </tr>
                 </thead>
-                <tbody>
-
+                <tbody id="campaigns_body">
+                    <!-- Populated by JS -->
                 </tbody>
             </table>
         </div>
+        <!-- Mobile-friendly card list for campaigns -->
+        <div class="d-md-none">
+            <div id="campaigns_body_mobile">
+                <!-- Will be populated dynamically to match campaigns_body -->
+            </div>
+        </div>
     </div>
+    <style>
+        @media (max-width: 600px) {
+            .min-w-120px { min-width: 100px !important; }
+            #switch_campaigns { font-size: .95em !important; }
+        }
+        @media (max-width: 768px) {
+            .modern-logs-table th,
+            .modern-logs-table td {
+                font-size: 0.96rem !important;
+            }
+            .card-header, .card-body { padding-left: .5rem !important; padding-right: .5rem !important; }
+        }
+    </style>
 
     <script>
         let tr = `<tr><td>STATUS</td><td>TITLE</td><td>DATE CREATED</td><td>OWNER</td><td>ACTION</td></tr>`;

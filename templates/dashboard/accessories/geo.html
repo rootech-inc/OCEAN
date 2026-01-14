@@ -2,43 +2,81 @@
 {% load static %}
 
 {% block body %}
-    <div class="card-header">
-        <strong class="card-title">GEO LOCATIONS</strong>
-        <button onclick="newCity()" class="btn btn-info">NEW REGION</button>
+    <div class="card-header d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 py-3 px-3 bg-white border-bottom-0">
+        <strong class="card-title fs-5 text-primary mb-2 mb-sm-0">GEO LOCATIONS</strong>
+        <button onclick="newCity()" class="btn btn-info d-flex align-items-center gap-2 px-3 shadow-sm">
+            <i class="bi bi-plus-circle"></i>
+            <span class="d-none d-sm-inline">NEW REGION</span>
+            <span class="d-inline d-sm-none">New</span>
+        </button>
     </div>
 
-    <div class="card-body overflow-hidden p-2">
-        <div class="container h-100 overflow-hidden">
-
-            <div class="row h-100 overflow-hidden no-gutters">
-                <div id="" class="col-sm-3 h-100 overflow-auto shadow p-2">
-                    <div id="cities" class="w-100 h-100 pr-2 overflow-auto">
-
+    <div class="card-body px-1 px-md-3 py-2 py-md-3">
+        <div class="container-fluid px-0 h-100">
+            <div class="row gx-2 gy-3 h-100 flex-nowrap flex-sm-wrap">
+                <!-- Cities Sidebar -->
+                <div class="col-12 col-sm-4 col-md-3 mb-2 mb-sm-0 h-100 d-flex flex-column">
+                    <div class="rounded-3 bg-light shadow-sm flex-grow-1 d-flex flex-column p-0 h-100 overflow-auto" style="min-height:120px;">
+                        <div class="px-3 pt-3 pb-1 d-flex align-items-center justify-content-between gap-1 border-bottom">
+                            <span class="fw-semibold text-secondary"><i class="bi bi-geo-alt fs-5"></i> Regions</span>
+                        </div>
+                        <div id="cities" class="flex-grow-1 px-2 pt-2 pb-2 overflow-auto" style="max-height:65vh;">
+                            <!-- Cities will be injected here -->
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-sm-9 h-100">
-                    <div class="w-100 h-100 p-2 rounded">
-                        <div class="card h-100">
-                            <div class="card-header d-flex flex-wrap justify-content-end">
-                                <button onclick="newSub(this.value)" id="act_city" disabled class="btn btn-dark">ADD SUB</button>
-                            </div>
-
-                            <div id="subs" class="card-body p-2 overflow-auto">
-                                <div class="d-flex w-100 h-100 flex-wrap align-content-center justify-content-center">
-                                    <div class="alert alert-info">SELECT REGION</div>
-                                </div>
-                            </div>
-
+                <!-- Subs Content -->
+                <div class="col-12 col-sm-8 col-md-9 h-100 d-flex flex-column">
+                    <div class="rounded-3 h-100 flex-grow-1 d-flex flex-column bg-white shadow-sm p-0">
+                        <div class="card-header border-bottom-0 bg-white d-flex flex-wrap gap-2 justify-content-end align-items-center py-2 px-3">
+                            <button onclick="newSub(this.value)" id="act_city" disabled class="btn btn-dark d-flex align-items-center gap-2">
+                                <i class="bi bi-plus"></i>
+                                <span class="d-none d-sm-inline">ADD SUB</span>
+                                <span class="d-inline d-sm-none">Add</span>
+                            </button>
                         </div>
-
+                        <div id="subs" class="card-body p-2 overflow-auto flex-grow-1 d-flex">
+                            <div class="d-flex w-100 h-100 flex-wrap align-content-center justify-content-center">
+                                <div class="alert alert-info w-100 text-center">SELECT REGION</div>
+                            </div>
+                        </div>
                     </div>
-
                 </div>
             </div>
-
         </div>
     </div>
+
+    <style>
+        @media (max-width: 575.98px) {
+            .card-header {
+                padding-left: .7rem !important;
+                padding-right: .7rem !important;
+                padding-top: .7rem !important;
+                padding-bottom: .7rem !important;
+            }
+            .card-body {
+                padding-left: .5rem !important;
+                padding-right: .5rem !important;
+                padding-top: .7rem !important;
+                padding-bottom: .7rem !important;
+            }
+        }
+        @media (max-width: 767.98px) {
+            .col-sm-4, .col-sm-8, .col-md-3, .col-md-9 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            .card-header .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        @media (max-width: 450px) {
+            .card-title { font-size: 1.1em !important; }
+            .card-header, .card-body { padding: .4em .6em !important; }
+        }
+    </style>
 
     <script>
         function newCity() {

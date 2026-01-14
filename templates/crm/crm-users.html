@@ -2,29 +2,73 @@
 {% load static %}
 
 {% block crm %}
-    <div class="card-header">
-        <button onclick="crm.newUser()" class="btn btn-info">NEW</button>
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2 bg-white border-bottom-0 py-3 px-3 px-md-4">
+        <div class="fw-bold text-primary fs-5">Users</div>
+        <button onclick="crm.newUser()" class="btn btn-info d-flex align-items-center gap-2 px-3 shadow-sm">
+            <i class="bi bi-person-plus"></i>
+            <span class="d-none d-sm-inline">New User</span>
+            <span class="d-inline d-sm-none">New</span>
+        </button>
     </div>
-    <div class="card-body overflow-hidden">
-
-        <table class="table datatable">
-            <thead>
-                <tr>
-                    <th>NAME</th><th>LAST LOGGED</th><th>LOGS</th><th>ACTION</th>
-                </tr>
-            </thead>
-            <tbody>
+    <div class="card-body overflow-hidden p-2 p-md-4">
+        <div class="container-fluid">
+            <div class="row g-3">
                 {% for us in users %}
-                    <tr>
-                        <td>{{ us.user.pk }} || {{ us.user.username }} {{ us.user.last_name }}</td>
-                        <td>{{ us.last_logged }}</td>
-                        <td><kbd class="bg-info">today: {{ us.todaylogs }}</kbd></td>
-                        <td><button onclick="crm.bandUser(`{{ us.user.pk }}`)" class="btn btn-sm btn-danger"><i class="fa fa-recycle"></i></button></td>
-                    </tr>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="card shadow-sm h-100 border border-light">
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="fw-semibold text-primary fs-6 mb-1">
+                                    <i class="bi bi-person-circle me-1"></i>{{ us.user.username }} {{ us.user.last_name }}
+                                </div>
+                                <div class="text-muted small mb-2">
+                                    <i class="bi bi-hash me-1"></i>ID: {{ us.user.pk }}
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-light border text-dark">
+                                        <i class="bi bi-clock-history text-secondary me-1"></i>
+                                        <span>Last:</span>
+                                        <span>{{ us.last_logged|default:"Never" }}</span>
+                                    </span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-info text-white px-2 py-1">
+                                        <i class="bi bi-clipboard-check me-1"></i>
+                                        Today logs: {{ us.todaylogs }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 mt-3">
+                                <button onclick="crm.bandUser(`{{ us.user.pk }}`)" class="btn btn-sm btn-outline-danger flex-fill">
+                                    <i class="fa fa-recycle me-1"></i>
+                                    <span class="d-none d-sm-inline">Ban</span>
+                                    <span class="d-inline d-sm-none">Ban</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-people display-5 d-block mb-2"></i>
+                        <span>No users found.</span>
+                    </div>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
+            </div>
+        </div>
     </div>
+    <style>
+        @media (max-width: 575px) {
+            .card-header, .card-body { padding-left: .6rem !important; padding-right: .6rem !important; }
+            .fs-5 { font-size: 1.12rem !important; }
+            .card .card-body { padding: .9rem !important; }
+        }
+        @media (max-width: 400px) {
+            .fs-6 { font-size: 1.05rem !important; }
+        }
+    </style>
 
     <script src="{% static 'general/js/classes/crm.js' %}"></script>
 {% endblock %}

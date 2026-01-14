@@ -543,7 +543,7 @@ def send_to_provider(request):
 def accessories(request):
     context = {
         'nav': True,
-        'comm_tags': tags.objects.all(),
+
         'providers': Providers.objects.all(),
         'notomem': NotificationGroups.objects.all(),
         'assgrps': AssetGroup.objects.all()

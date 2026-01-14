@@ -2,55 +2,165 @@
 {% load static %}
 
 {% block crm %}
-    <div class="card-header">
-        <div class="w-100 d-flex">
-            <div class="w-50">
-                <strong class="card-title">Follow Ups</strong>
+    <div class="card-header bg-white border-bottom-0 py-3 px-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <span class="fs-5 fw-bold text-primary card-title"><i class="bi bi-flag me-2"></i>Follow Ups</span>
             </div>
-
         </div>
     </div>
-    <div class="card-body overflow-hidden">
-
-        <table class="table datatable">
-            <thead>
-                <tr >
-                    <th>COMPANY</th><th>PERSON</th><th>CONTACT</th><th>DATE</th><th>action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in logs %}
-                    <tr class="{% if log.daypass %}text-danger{% endif %}">
-                        <td>
-                            <small>{{ log.log.company }}</small><br>
-                            <small>{{ log.log.sector.name }}</small>
-                        </td>
-                        <td><small>{{ log.log.customer }} <br>{{ log.log.position.name }}</small></td>
-                        <td><i class="bx bx-phone"></i> <small>{{ log.log.phone }}</small> <br> <i class="bx bxs-inbox"></i> <small>{{ log.log.email }}</small></td>
-                        <td>
-                            <small class="bi bi-list-check"> {{ log.log.created_date }}</small>
-                            <br><small class="bi bi-broadcast"> {{ log.follow_date }}</small>
-                        </td>
-
-                        <td>
-                            <div class="dropdown dropdown-menu-left">
-                            <button class="btn btn-info btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-bars"></i>
-                            </button>
-                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                <a class="dropdown-item" onclick="Swal.fire({title:`{{ log.log.subject }}`,text:`{{ log.log.description }}`})" href="javascript:void(0)"><i class="fa fa-eye"></i> Preview</a>
-                                <a class="dropdown-item" onclick="crm.extendFollowUpScreen('{{ log.pk }}')" href="javascript:void(0)"><i class="fa fa-clock"></i> Extend</a>
-                                <a class="dropdown-item" onclick="crm.closeFollowUp({{ log.pk }})" href="javascript:void(0)"><i class="fa fa-window-close"></i> Close</a>
-                            </div>
-                        </div>
-
-
-
-                        </td>
+    <div class="card-body p-2 p-md-4 overflow-hidden">
+        <div class="table-responsive d-none d-md-block">
+            <table class="table align-middle table-hover table-borderless modern-logs-table mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Company</th>
+                        <th>Person</th>
+                        <th>Contact</th>
+                        <th>Date</th>
+                        <th>Action</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                        <tr class="border-bottom {% if log.daypass %}text-danger{% endif %}">
+                            <td>
+                                <div class="fw-semibold text-dark">{{ log.log.company }}</div>
+                                <div class="small text-secondary">{{ log.log.sector.name }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ log.log.customer }}</div>
+                                <div class="small text-secondary">{{ log.log.position.name }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <i class="bx bx-phone text-primary"></i>
+                                    <span class="small">{{ log.log.phone }}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bx bxs-inbox text-info"></i>
+                                    <span class="small">{{ log.log.email }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge bg-light text-dark mb-1">
+                                      <i class="bi bi-list-check text-success"></i>
+                                      <span class="small">{{ log.log.created_date }}</span>
+                                    </span>
+                                    <span class="badge bg-warning-subtle text-warning">
+                                      <i class="bi bi-broadcast"></i>
+                                      <span class="small">{{ log.follow_date }}</span>
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm rounded-circle p-1" type="button" id="dropdownMenuButton{{ forloop.counter }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ forloop.counter }}">
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="Swal.fire({title:`{{ log.log.subject|escapejs }}`,text:`{{ log.log.description|escapejs }}`})">
+                                                <i class="fa fa-eye me-1"></i> Preview
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="crm.extendFollowUpScreen('{{ log.pk }}')">
+                                                <i class="fa fa-clock me-1"></i> Extend
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#" onclick="crm.closeFollowUp({{ log.pk }})">
+                                                <i class="fa fa-window-close me-1"></i> Close
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No pending follow ups.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Mobile-friendly card list for follow ups -->
+        <div class="d-md-none">
+            {% for log in logs %}
+            <div class="card mb-3 shadow-sm {% if log.daypass %}border-danger{% endif %}">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold text-primary mb-1">{{ log.log.company }}</div>
+                            <div class="small text-secondary">{{ log.log.sector.name }}</div>
+                        </div>
+                        <div>
+                            <span class="badge bg-light text-dark border">
+                              <i class="bi bi-list-check text-success"></i>
+                              {{ log.log.created_date }}
+                            </span>
+                        </div>
+                    </div>
+                    <hr class="my-2"/>
+                    <div>
+                        <div class="fw-semibold small mb-1">{{ log.log.customer }} <span class="text-muted">| {{ log.log.position.name }}</span></div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-info text-white d-flex align-items-center gap-1">
+                                <i class="bx bx-phone"></i>
+                                {{ log.log.phone }}
+                            </span>
+                            <span class="badge bg-primary text-white d-flex align-items-center gap-1">
+                                <i class="bx bxs-inbox"></i>
+                                {{ log.log.email }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-warning-subtle text-warning mb-1">
+                          <i class="bi bi-broadcast"></i> {{ log.follow_date }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-2">
+                        <button class="btn btn-outline-info btn-sm" onclick="Swal.fire({title:`{{ log.log.subject|escapejs }}`,text:`{{ log.log.description|escapejs }}`})">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="crm.extendFollowUpScreen('{{ log.pk }}')">
+                            <i class="fa fa-clock"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="crm.closeFollowUp({{ log.pk }})">
+                            <i class="fa fa-window-close"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+                <div class="text-center text-muted py-4">No pending follow ups.</div>
+            {% endfor %}
+        </div>
+        <style>
+            /* Responsive and modern enhancements for .modern-logs-table */
+            .modern-logs-table th, .modern-logs-table td {
+                vertical-align: middle;
+            }
+            .modern-logs-table th {
+                font-weight: 600;
+                letter-spacing: .02em;
+                font-size: 1rem;
+            }
+            .modern-logs-table td small, .modern-logs-table td span, .modern-logs-table td div {
+                font-size: 0.96em;
+            }
+            @media (max-width: 991px) {
+                .card-header, .card-body { padding-left: 0.8rem !important; padding-right: 0.8rem !important;}
+            }
+            @media (max-width: 576px) {
+                .table-responsive { display: none !important; }
+                .card-header, .card-body { padding-left: 0.5rem !important; padding-right: 0.5rem !important;}
+            }
+        </style>
     </div>
 
 

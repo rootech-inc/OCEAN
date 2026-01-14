@@ -2,12 +2,12 @@
 {% load  static %}
 
 {% block crm %}
-    <div class="card-header">
-        <div class="w-100 d-flex">
-            <div class="w-50"></div>
-            <div class="w-50 d-flex flex-wrap justify-content-end">
-                <label for="switch_contacts">Contact Type: </label>
-                <select name="" id="switch_contacts" class="form-control w-25 form-control-sm">
+    <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom-0">
+        <div class="row align-items-center w-100">
+            <div class="col-12 col-md-6 mb-2 mb-md-0"></div>
+            <div class="col-12 col-md-6 d-flex flex-wrap justify-content-end gap-2">
+                <label for="switch_contacts" class="fw-semibold me-2 mb-0 text-secondary">Contact Type:</label>
+                <select name="" id="switch_contacts" class="form-control form-control-sm w-auto min-w-120px" style="min-width:130px;max-width:150px;">
                     <option value="email">Emails</option>
                     <option value="sms">SMS</option>
                 </select>
@@ -15,22 +15,104 @@
         </div>
     </div>
 
-    <div class="card-body overflow-hidden">
-        <div id="container" class="table-responsive overflow-auto h-100">
-            <table id="contacts_table" class="table table-hover">
-                <thead>
+    <div class="card-body p-2 p-md-4 overflow-hidden">
+        <!-- Desktop Table -->
+        <div id="container" class="table-responsive d-none d-md-block">
+            <table id="contacts_table" class="table table-hover align-middle modern-logs-table mb-0">
+                <thead class="bg-light">
                     <tr>
-                        <th>NAME</th>
-                        <th>CONTACT</th>
-                        <th>SOURCE</th>
+                        <th class="text-secondary fw-semibold">NAME</th>
+                        <th class="text-secondary fw-semibold">CONTACT</th>
+                        <th class="text-secondary fw-semibold">SOURCE</th>
                     </tr>
                 </thead>
                 <tbody id="contacts_body">
-                    
+                    <!-- Populated by JS -->
                 </tbody>
             </table>
         </div>
+        <!-- Mobile Card List -->
+        <div class="d-md-none">
+            <div id="contacts_body_mobile">
+                <!-- Will be populated dynamically to match contacts_body -->
+            </div>
+        </div>
     </div>
+    <style>
+        @media (max-width: 600px) {
+            .min-w-120px { min-width: 100px !important; }
+            #switch_contacts { font-size: .95em !important; }
+        }
+        @media (max-width: 768px) {
+            .modern-logs-table th,
+            .modern-logs-table td {
+                font-size: 0.96rem !important;
+            }
+            .card-header, .card-body { padding-left: .5rem !important; padding-right: .5rem !important; }
+        }
+    </style>
+    <script>
+        // Keep ids for table and tbody, but also update cards for mobile
+        function renderMobileContacts(data){
+            // expects [{name:'',contact:'',source:''}]
+            let html = '';
+            if(data.length === 0){
+                html = '<div class="text-center text-muted py-4">No contacts found.</div>';
+            } else {
+                data.forEach(function(row){
+                    html += `
+                    <div class="card mb-2 shadow-sm border border-light">
+                        <div class="card-body py-2 px-3">
+                            <div class="fw-semibold text-primary mb-1">
+                                <i class="bi bi-person me-1"></i>${row.name}
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="bx bx-envelope text-info"></i>
+                                <span class="small">${row.contact}</span>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="bi bi-database-fill me-1"></i>
+                                <span>${row.source}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            }
+            document.getElementById('contacts_body_mobile').innerHTML = html;
+        }
+
+        // Patch crm.PreviewContacts to update both table and mobile cards
+        const _origPreviewContacts = crm.PreviewContacts;
+        crm.PreviewContacts = function(type) {
+            _origPreviewContacts.call(crm, type);
+            setTimeout(function(){
+                // try to extract from table
+                let $rows = $('#contacts_body').find('tr');
+                let data = [];
+                $rows.each(function(){
+                    let $tds = $(this).find('td');
+                    if($tds.length >= 3){
+                        data.push({
+                            name: $tds.eq(0).text().trim(),
+                            contact: $tds.eq(1).text().trim(),
+                            source: $tds.eq(2).text().trim()
+                        });
+                    }
+                });
+                renderMobileContacts(data);
+            }, 150); // slight delay for JS-populated table
+        };
+
+        // Initial render
+        crm.PreviewContacts('email');
+
+        $(document).ready(function () {
+            $('#switch_contacts').change(function () {
+                let val = this.value;
+                crm.PreviewContacts(val)
+            });
+        });
+    </script>
 
 
     <script>
