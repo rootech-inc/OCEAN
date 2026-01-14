@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from admin_panel.models import SmsApi, MailSenders
-from crm.models import Logs, CrmUsers, FollowUp
+from crm.models import Logs, CrmUsers, FollowUp, LeadStreams
 
 
 # Create your views here.
@@ -122,3 +122,16 @@ def new_campaign(request):
         'smsapis': SmsApi.objects.all(),
         'mss':MailSenders.objects.all()
     })
+
+@login_required()
+def crm_lead_stream(request):
+
+    return render(
+        request,
+        'crm/lead_stram.html',
+        context={
+            'nav': True,
+            'page': {'title': "CRM Lead Stream"},
+            'leads':LeadStreams.objects.all(),
+        }
+    )

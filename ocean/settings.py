@@ -299,3 +299,5 @@ LOGISTIC_CONTACT = {
 
 AMC_ASSIGN_COPIES = os.environ.get('REST_DB_HOST','uyinsolomon2@gmail.com')
 
+
+CRM_NOTIFICATION_EMAIL = 'rootech.inc@proton.me'

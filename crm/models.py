@@ -283,5 +283,23 @@ class Contacts(models.Model):
     is_active = models.BooleanField(default=True)
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+
+
+class LeadStreams(models.Model):
+    name = models.TextField()
+    source = models.CharField(max_length=255,unique=False,blank=False)
+    phone = models.CharField(max_length=255,unique=False,blank=False)
+    email = models.CharField(max_length=255,unique=False,blank=False)
+    subject = models.CharField(max_length=255,unique=False,blank=False)
+    message = models.TextField()
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    is_attended_to = models.BooleanField(default=False)
+
+    def status(self):
+        if self.is_attended_to:
+            return 'attended'
+        else:
+            return 'unattended'
     
     

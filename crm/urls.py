@@ -27,7 +27,8 @@ urlpatterns = [
     path('follow-up/',views.follows,name='follows'),
     path('contacts/',views.contacts,name='crm_contacts'),
     path('campaigns/',views.campaigns,name='campaigns'),
-    path('campaigns/new/',views.new_campaign,name='new_campaign')
+    path('campaigns/new/',views.new_campaign,name='new_campaign'),
+    path('lead-stream/',views.crm_lead_stream,name='crm_lead_stream'),
 
 ]
 

@@ -521,6 +521,11 @@
     {% if user.is_superuser %}
         <hr>
         <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'crm_lead_stream' %}">
+          <i class="bi bi-person-rolodex"></i> <span>Leads Stream</span>
+        </a>
+        </li>
+        <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'crm_contacts' %}">
           <i class="bi bi-person-rolodex"></i> <span>Contacts</span>
         </a>

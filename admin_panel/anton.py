@@ -143,11 +143,11 @@ def md5only(text):
     return hashlib.md5(str(text).encode('utf-8')).hexdigest()
 
 
-def generate_random_password():
+def generate_random_password(length=8):
     import secrets
     import string
     characters = string.ascii_letters + string.digits  # Use letters and digits
-    random_password = ''.join(secrets.choice(characters) for i in range(8))
+    random_password = ''.join(secrets.choice(characters) for i in range(length))
     return random_password
 
 
