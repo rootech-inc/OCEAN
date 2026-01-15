@@ -2,302 +2,401 @@
 {% load static %}
 
 {% block body %}
-    <div class="modal" id="newDepartment">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form action="{% url 'save-department' %}" method="post" class="modal-body">
-                    {% csrf_token %}
-                    <label for="name">NAME OF DEPARTMENT</label><input required type="tel" class="form-control rounded-0 mb-2" autocomplete="off" name="name" id="name">
-                    <hr>
-                    <label for="name_of_head">NAME OF HEAD</label><input required type="text" class="form-control rounded-0 mb-2" autocomplete="off" name="name_of_head" id="name_of_head">
-                    <label for="email_of_head">EMAIL OF HEAD</label><input required type="email" class="form-control rounded-0 mb-2" autocomplete="off" name="email_of_head" id="email_of_head">
-                    <label for="phone_of_head">PHONE OF HEAD</label><input required type="tel" class="form-control rounded-0 mb-2" autocomplete="off" name="phone_of_head" id="phone_of_head">
-                    <hr>
-                    <label for="description">Description</label><textarea required name="description" id="description" cols="30" rows="5" class="form-control rounded-0"></textarea>
+    <!-- Modern, Responsive & Mobile-Friendly Redesign using Bootstrap 5 utility classes and modern cards -->
+    <style>
+      /* Slight card shadow for modern look */
+      .modern-card { box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 4px 24px rgba(0,0,0,0.05); border-radius: 1rem; }
+      .modern-table th, .modern-table td { vertical-align: middle; }
+      @media (max-width: 767px) {
+        .responsive-table-header th, .responsive-table-header td { white-space: nowrap; }
+      }
+      /* Modal inputs spacing */
+      .modal-form-group label { font-weight: 500; }
+      .modal-form-group input, .modal-form-group textarea, .modal-form-group select {
+        margin-bottom: 1rem;
+      }
+    </style>
 
-                    <button class="btn mt-2 btn-success">SAVE</button>
+    <!-- New Department Modal -->
+    <div class="modal fade" id="newDepartment" tabindex="-1" aria-labelledby="newDepartmentLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <form action="{% url 'save-department' %}" method="post" class="p-4">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="newDepartmentLabel">Add Department</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    {% csrf_token %}
+                    <div class="modal-body p-0 pt-3">
+                        <div class="modal-form-group">
+                            <label for="name" class="form-label">Name of Department</label>
+                            <input required type="text" class="form-control" autocomplete="off" name="name" id="name">
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="name_of_head" class="form-label">Head's Name</label>
+                            <input required type="text" class="form-control" autocomplete="off" name="name_of_head" id="name_of_head">
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="email_of_head" class="form-label">Head's Email</label>
+                            <input required type="email" class="form-control" autocomplete="off" name="email_of_head" id="email_of_head">
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="phone_of_head" class="form-label">Head's Phone</label>
+                            <input required type="tel" class="form-control" autocomplete="off" name="phone_of_head" id="phone_of_head">
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea required name="description" id="description" rows="3" class="form-control"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button class="btn btn-success px-4">Save</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-    <div class="w-100 h-100">
 
-        <div class="container-fluid p-0" style="height: 75vh; overflow: hidden">
-            <div class="row">
-                <div class="col-sm-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <strong class="card-title">Users</strong>
-                        </div>
-
-                        <div class="card-header">
-                            <button data-bs-target="#newUser" data-bs-toggle="modal" class="btn btn-sm btn-info" style="height: fit-content">NEW USER</button>
-                            <button onclick="user.resetAllPasswords()" class="btn btn-danger">RESET ALL PASSWORD</button>
-                            <button class="btn btn-danger ms-2" id="select_deleted">Delete</button>
-                            <div id="newUser" class="modal fade">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-
-                                        <div class="modal-header">
-                                            <strong class="modal-title">Creating User</strong>
-                                        </div>
-
-                                        <div class="modal-body p-2">
-                                            <form action="{% url 'create_account' %}" method="post">
-                                                {% csrf_token %}
-
-
-                                                <input type="hidden" name="password" value="1111111">
-
-
-
-
-                                                <div class="container">
-
-
-                                                        <div class="row mb-3">
-                                                            <div class="col-sm-6">
-                                                                <label for="first_name">First Name</label><input name="first_name" type="text" class="form-control" id="first_name" value="">
-                                                            </div>
-                                                            <div class="col-sm-6">
-                                                                <label for="last_name">Last Name</label><input name="last_name" type="text" class="form-control" id="last_name" value="">
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="row mb-3">
-                                                            <div class="col-sm-6">
-                                                                <label for="company">Company</label><input name="company" type="text" class="form-control" id="company" value="">
-                                                            </div>
-                                                            <div class="col-sm-6">
-                                                                <label for="position">Position</label><input name="position" type="text" class="form-control" id="position" value="">
-                                                            </div>
-                                                        </div>
-
-
-                                                        <div class="row mb-3">
-                                                            <div class="col-sm-6">
-                                                                <label for="email">Email</label><input name="email" type="email" class="form-control" id="email" value="">
-                                                            </div>
-                                                            <div class="col-sm-6">
-                                                                <label for="mobile">Phone</label><input name="mobile" type="text" class="form-control" id="mobile" value="">
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="row">
-                                                            <div class="col-sm-6">
-                                                                <label for="notify">NOTIFICATION</label><select name="notify" id="notify" class="form-control mb-2">
-                                                                    <option value="NO">NO</option>
-                                                                    <option value="YES">YES</option>
-                                                                </select>
-                                                            </div>
-                                                            <div class="col-sm-6">
-                                                                <button class="btn btn-success w-100 h-100">REGISTER</button>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-
-
-
-
-                                            </form>
-                                        </div>
-
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-body overflow-auto">
-
-                            <table class="table mb-0 table-striped table-hover table-sm datatable">
-                                <thead>
-                                    <tr>
-                                        <th>First Name</th><th>Last Name</th><th>Username</th><th>Status</th><th>Last Login</th><th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for this_user in users %}
-                                        <tr style="cursor: pointer;">
-                                            <td><input type="checkbox" id="selected_user" value="{{ this_user.pk }}"></td>
-                                            <td>{{ this_user.first_name }}</td>
-                                            <td>{{ this_user.last_name }}</td>
-                                            <td>{{ this_user.username}}</td>
-                                            <td><span class="text-success">ac</span></td>
-                                            <td>{{ this_user.last_login }}</td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <span data-toggle="dropdown" class="bx bx-collapse-horizontal"></span>
-                                                    <div class="dropdown-menu">
-                                                        <a class="dropdown-item text-danger" onclick="user.Delete('{{ this_user.pk }}')" href="javascript:void(0)">Disable</a>
-                                                        <a class="dropdown-item text-warning" onclick="user.resetPassword('{{ this_user.pk }}')" href="javascript:void(0)">Reset Password</a>
-                                                        <a class="dropdown-item text-secondary" data-bs-target="#chgDept{{ this_user.pk }}" data-bs-toggle="modal" href="javascript:void(0)">Department Set</a>
-                                                        <a class="dropdown-item text-primary" onclick="location.href='{% url 'user_permissions' this_user.username %}'"  href="javascript:void(0)">UAL</a>
-                                                        <a class="dropdown-item text-info" onclick="user.makeApprovalScreen('{{ this_user.pk }}')"  href="javascript:void(0)">Make Approver</a>
-                                                        <a class="dropdown-item text-info" onclick="user.updateInfo('{{ this_user.pk }}')"  href="javascript:void(0)">Update Info</a>
-
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                        <div class="modal" id="chgDept{{ this_user.pk }}">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content p-2">
-                                                    <div class="modal-header"><strong class="modal-title">CHANGE DEPARTMENT FOR {{ this_user.first_name }} {{ this_user.last_name }}</strong></div>
-                                                    <form method="post" action="{% url 'set_department' %}" class="modal-body">
-                                                    {% csrf_token %}
-                                                        <input type="hidden" name="user" value="{{ this_user.pk }}">
-                                                        <label for="dept" class="">DEPARTMENT</label>
-                                                        <select name="dept" id="dept" class="form-control rounded-0">
-                                                            {% for dep in depts %}
-                                                                <option value="{{ dep.pk }}">{{ dep.name }}</option>
-                                                            {% endfor %}
-                                                        </select>
-                                                        <hr>
-                                                        <button class="btn btn-success m-2">COMMIT</button>
-                                                    </form>
-
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-4">
-
-                    <div class="card">
-                        <div class="card-header">
-                            <strong class="card-title">DEPARTMENTS</strong> <button data-bs-toggle="modal" data-bs-target="#newDepartment" class="btn btn-sm btn-info">ADD</button>
-                        </div>
-                        <div class="card-body p-1">
-                            <ul>
-                                {% for dept in depts %}
-                                <li><i title="delete" class="fa fa-recycle text-danger pointer"></i> {{ dept.name }}</li>
-                                {% endfor %}
+    <div class="container-fluid py-4 px-2 bg-light min-vh-100">
+      <div class="row g-4">
+        <!-- USERS TABLE & ACTIONS -->
+        <div class="col-lg-8 col-12">
+          <div class="card modern-card mb-4">
+            <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2 bg-white">
+              <h5 class="card-title mb-0 fw-bold">Users</h5>
+              <div class="d-flex flex-wrap gap-2">
+                <button data-bs-target="#newUser" data-bs-toggle="modal" class="btn btn-info btn-sm d-flex align-items-center gap-1">
+                  <i class="bi bi-person-plus"></i><span class="d-none d-md-inline">New User</span>
+                </button>
+                <button onclick="user.resetAllPasswords()" class="btn btn-danger btn-sm d-flex align-items-center gap-1">
+                  <i class="bi bi-lock"></i><span class="d-none d-md-inline">Reset All Passwords</span>
+                </button>
+                <button class="btn btn-secondary btn-sm ms-1 d-flex align-items-center gap-1" id="select_deleted">
+                  <i class="bi bi-trash"></i><span class="d-none d-md-inline">Delete</span>
+                </button>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover table-striped table-bordered table-sm align-middle mb-0 modern-table">
+                  <thead class="responsive-table-header text-nowrap">
+                    <tr class="bg-light">
+                      <th class="text-center" style="width:32px"><input type="checkbox" id="select_all_users"></th>
+                      <th>First Name</th>
+                      <th>Last Name</th>
+                      <th>Username</th>
+                      <th>Status</th>
+                      <th>Last Login</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for this_user in users %}
+                      <tr>
+                        <td class="text-center">
+                          <input type="checkbox" name="selected_user" value="{{ this_user.pk }}">
+                        </td>
+                        <td class="text-nowrap">{{ this_user.first_name }}</td>
+                        <td class="text-nowrap">{{ this_user.last_name }}</td>
+                        <td class="text-nowrap">{{ this_user.username }}</td>
+                        <td>
+                          <span class="badge rounded-pill bg-success bg-opacity-75">Active</span>
+                        </td>
+                        <td>
+                          <small class="text-muted">{{ this_user.last_login|date:"Y-m-d H:i" }}</small>
+                        </td>
+                        <td>
+                          <!-- Dropdown for actions (mobile-friendly) -->
+                          <div class="dropdown">
+                            <button class="btn btn-light btn-sm border dropdown-toggle" type="button" id="userMenu{{ this_user.pk }}" data-bs-toggle="dropdown" aria-expanded="false">
+                              <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu{{ this_user.pk }}">
+                              <li>
+                                <a class="dropdown-item text-danger" onclick="user.Delete('{{ this_user.pk }}')" href="javascript:void(0)">
+                                  <i class="bi bi-person-x"></i> Disable
+                                </a>
+                              </li>
+                              <li>
+                                <a class="dropdown-item text-warning" onclick="user.resetPassword('{{ this_user.pk }}')" href="javascript:void(0)">
+                                  <i class="bi bi-arrow-counterclockwise"></i> Reset Password
+                                </a>
+                              </li>
+                              <li>
+                                <a class="dropdown-item text-secondary" data-bs-target="#chgDept{{ this_user.pk }}" data-bs-toggle="modal" href="javascript:void(0)">
+                                  <i class="bi bi-diagram-3"></i> Set Department
+                                </a>
+                              </li>
+                              <li>
+                                <a class="dropdown-item text-primary" onclick="location.href='{% url 'user_permissions' this_user.username %}'" href="javascript:void(0)">
+                                  <i class="bi bi-sliders"></i> UAL
+                                </a>
+                              </li>
+                              <li>
+                                <a class="dropdown-item text-info" onclick="user.makeApprovalScreen('{{ this_user.pk }}')" href="javascript:void(0)">
+                                  <i class="bi bi-person-check"></i> Make Approver
+                                </a>
+                              </li>
+                              <li>
+                                <a class="dropdown-item text-info" onclick="user.updateInfo('{{ this_user.pk }}')" href="javascript:void(0)">
+                                  <i class="bi bi-pencil-square"></i> Update Info
+                                </a>
+                              </li>
                             </ul>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <strong class="card-title">O_MEMBERS</strong>
-                        </div>
-                        <div class="card-header">
-                            <form action="{% url 'save_um' %}" method="post">
-                            {% csrf_token %}
-                                            <input type="hidden" name="owner" value="{{ user.pk }}" class="hidden">
-                              <div class="row">
-                                <div class="col">
-                                    <select name="ou" id="" class="form-control form-control-sm">
-                                        <option selected disabled>SELECT OU</option>
-                                        {% for ou in ous %}
-                                            <option value="{{ ou.pk }}">{{ ou.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col">
-                                  <input type="text" autocomplete="off" class="form-control form-control-sm" placeholder="Name" name="name">
-                                </div>
-                                  <div class="col">
-                                  <input type="submit" class="btn btn-sm btn-success w-100 h-100" >
-                                </div>
+                          </div>
+                        </td>
+                      </tr>
+                      <!-- Change Department Modal for Each User -->
+                      <div class="modal fade" id="chgDept{{ this_user.pk }}" tabindex="-1" aria-labelledby="chgDeptModal{{ this_user.pk }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                          <div class="modal-content p-2">
+                            <form method="post" action="{% url 'set_department' %}" class="p-3">
+                              <div class="modal-header border-0 pb-0">
+                                <strong class="modal-title h6" id="chgDeptModal{{ this_user.pk }}">
+                                  Change Department for {{ this_user.first_name }} {{ this_user.last_name }}
+                                </strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                              </div>
+                              {% csrf_token %}
+                              <div class="modal-body pb-0">
+                                <input type="hidden" name="user" value="{{ this_user.pk }}">
+                                <label for="dept{{ this_user.pk }}" class="form-label">Department</label>
+                                <select name="dept" id="dept{{ this_user.pk }}" class="form-select mb-3">
+                                  {% for dep in depts %}
+                                    <option value="{{ dep.pk }}">{{ dep.name }}</option>
+                                  {% endfor %}
+                                </select>
+                              </div>
+                              <div class="modal-footer border-0 pt-0">
+                                <button class="btn btn-success" type="submit">Commit</button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                               </div>
                             </form>
+                          </div>
                         </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>OU</th>
-                                            <th>NAME</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for mem in unit_membs %}
-                                            <tr>
-                                                <td>{{ mem.ou.name }}</td>
-                                                <td>{{ mem.name }}</td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <strong class="card-title">O_UNITS</strong>
-                        </div>
-
-                        <div class="card-header">
-                            <button data-bs-target="#newOU" data-bs-toggle="modal" class="btn btn-sm btn-info">NEW</button>
-                            <div class="modal fade" id="newOU">
-                                <div class="modal-dialog">
-                                    <form method="post" action="{% url 'save_ou' %}" class="modal-content">
-                                        <div class="modal-header">
-                                            <span class="modal-title">Create New OU</span>
-                                        </div>
-                                        <div  class="modal-body p-2">
-
-
-                                            {% csrf_token %}
-                                            <input type="hidden" name="owner" value="{{ user.pk }}" class="hidden">
-                                            <label class="w-100">Name
-                                                <input type="text" required name="name" autocomplete="off" class="form-control mb-2 form-control-sm">
-                                            </label>
-                                            <label for="">Description</label><br><textarea required name="description" id="" cols="30" rows="5"
-                                                                            class="form-control form-control-sm"></textarea>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button class="btn btn-warning" data-bs-dismiss="modal" type="button">CANCEL</button>
-                                            <button class="btn btn-success" type="submit">SAVE</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>OU</th>
-                                            <th>CREATED_BU</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for ou in ous %}
-                                            <tr>
-                                                <td>{{ ou.name }}</td>
-                                                <td>{{ ou.description }}</td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-
-                </div>
-
+                      </div>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
+          </div>
         </div>
+        <!-- END USERS -->
 
-
-
-
+        <!-- SIDE PANEL: Departments, O_MEMBERS, O_UNITS -->
+        <div class="col-lg-4 col-12">
+          <!-- Departments Card -->
+          <div class="card modern-card mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between bg-white">
+              <span class="fw-bold">Departments</span>
+              <button data-bs-toggle="modal" data-bs-target="#newDepartment" class="btn btn-info btn-sm d-flex align-items-center gap-1">
+                <i class="bi bi-plus-square"></i> <span class="d-none d-md-inline">Add</span>
+              </button>
+            </div>
+            <div class="card-body">
+              <ul class="list-group list-group-flush">
+                {% for dept in depts %}
+                  <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
+                    <span>{{ dept.name }}</span>
+                    <i title="delete" class="fa fa-recycle text-danger pointer"></i>
+                  </li>
+                {% empty %}
+                  <li class="list-group-item text-muted">No Departments</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+          <!-- O_MEMBERS Card -->
+          <div class="card modern-card mb-4">
+            <div class="card-header bg-white">
+              <span class="fw-bold">OU Members</span>
+            </div>
+            <div class="card-header border-0 bg-white">
+              <form action="{% url 'save_um' %}" method="post" class="row g-2 align-items-end">
+                {% csrf_token %}
+                <input type="hidden" name="owner" value="{{ user.pk }}">
+                <div class="col-12 col-md-5">
+                  <select name="ou" class="form-select form-select-sm" required>
+                    <option selected disabled>Choose OU</option>
+                    {% for ou in ous %}
+                      <option value="{{ ou.pk }}">{{ ou.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-12 col-md-5">
+                  <input type="text" autocomplete="off" class="form-control form-control-sm" placeholder="Name" name="name" required>
+                </div>
+                <div class="col-12 col-md-2">
+                  <button type="submit" class="btn btn-sm btn-success w-100">
+                    <i class="bi bi-plus-lg"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div class="card-body pb-2">
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered modern-table mb-0">
+                  <thead>
+                    <tr class="bg-light">
+                      <th>OU</th>
+                      <th>Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for mem in unit_membs %}
+                      <tr>
+                        <td>{{ mem.ou.name }}</td>
+                        <td>{{ mem.name }}</td>
+                      </tr>
+                    {% empty %}
+                      <tr>
+                        <td colspan="2" class="text-center text-muted">No Members</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- O_UNITS Card -->
+          <div class="card modern-card mb-3">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between">
+              <span class="fw-bold">OU Units</span>
+              <button data-bs-target="#newOU" data-bs-toggle="modal" class="btn btn-info btn-sm d-flex align-items-center gap-1">
+                <i class="bi bi-plus-square"></i> <span class="d-none d-md-inline">New</span>
+              </button>
+            </div>
+            <!-- New OU Modal -->
+            <div class="modal fade" id="newOU" tabindex="-1" aria-labelledby="newOUModal" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <form method="post" action="{% url 'save_ou' %}" class="modal-content">
+                  <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="newOUModal">Create New OU</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="owner" value="{{ user.pk }}">
+                    <div class="mb-3">
+                      <label class="form-label">Name</label>
+                      <input type="text" required name="name" autocomplete="off" class="form-control form-control-sm mb-2">
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label">Description</label>
+                      <textarea required name="description" rows="3" class="form-control form-control-sm"></textarea>
+                    </div>
+                  </div>
+                  <div class="modal-footer border-0">
+                    <button class="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+                    <button class="btn btn-success px-4" type="submit">Save</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered modern-table mb-0">
+                  <thead>
+                    <tr class="bg-light">
+                      <th>OU</th>
+                      <th>Created By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for ou in ous %}
+                      <tr>
+                        <td>{{ ou.name }}</td>
+                        <td>{{ ou.description }}</td>
+                      </tr>
+                    {% empty %}
+                      <tr>
+                        <td colspan="2" class="text-center text-muted">No OU Units</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- NEW USER MODAL (Floating across the app root) -->
+    <div id="newUser" class="modal fade" tabindex="-1" aria-labelledby="newUserLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <form action="{% url 'create_account' %}" method="post" class="p-3">
+            <div class="modal-header border-0 pb-0">
+              <h5 class="modal-title fw-bold" id="newUserLabel">Create User</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 pt-3">
+              {% csrf_token %}
+              <input type="hidden" name="password" value="1111111">
+              <div class="container-fluid p-0">
+                <div class="row g-3">
+                  <div class="col-12 col-md-6">
+                    <label for="first_name" class="form-label">First Name</label>
+                    <input name="first_name" type="text" class="form-control" id="first_name" required>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="last_name" class="form-label">Last Name</label>
+                    <input name="last_name" type="text" class="form-control" id="last_name" required>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="company" class="form-label">Company</label>
+                    <input name="company" type="text" class="form-control" id="company">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="position" class="form-label">Position</label>
+                    <input name="position" type="text" class="form-control" id="position">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="email" class="form-label">Email</label>
+                    <input name="email" type="email" class="form-control" id="email" required>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="mobile" class="form-label">Phone</label>
+                    <input name="mobile" type="text" class="form-control" id="mobile">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="notify" class="form-label">Notification</label>
+                    <select name="notify" id="notify" class="form-select" required>
+                      <option value="NO" selected>No</option>
+                      <option value="YES">Yes</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-6 d-flex align-items-end">
+                    <button class="btn btn-success w-100" type="submit">Register</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Select/Deselect all users
+      document.getElementById('select_all_users')?.addEventListener('change', function(e) {
+        let checked = e.target.checked;
+        document.querySelectorAll('input[name="selected_user"]').forEach(cb => cb.checked = checked);
+      });
+
+      // Handle delete selected users (mobile friendly)
+      document.getElementById('select_deleted')?.addEventListener('click', function() {
+          const selectedUsers = [];
+          document.querySelectorAll('input[name="selected_user"]:checked').forEach(function (el) {
+              selectedUsers.push(el.value);
+              user.Delete(el.value);
+          });
+          kasa.confirm("Done",1,'here');
+      });
+    </script>
 
     <script>
         $('#select_deleted').click(function(){

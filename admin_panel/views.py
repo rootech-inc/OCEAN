@@ -348,10 +348,10 @@ def sign_up(request):
 
                     subject = 'ACCESS TO OCEAN'
                     message = f'Hi {first_name} {last_name}, thank you for registering in ocean. your username is {username} and password is {pass_w} logn at ocean t explore the power in collaboration '
-                    message = f"Hello {first_name} {last_name}, an account has been created for you buy sneda at ocean. " \
+                    message = f"Hello {first_name} {last_name}, an account has been created for in Ocean ERP. " \
                               f"<br>Use this platform for productivity." \
                               f"Reset your password and login with the link below <br>" \
-                              f"<a target='_blank' href='http://ocean.snedaghana.loc/profile/restpwrod/{resettoken}/'>http://ocean.snedaghana.loc/profile/restpwrod/{resettoken}/</a> "
+                              f"<a target='_blank' href='{ocean.settings.BASE_URL}profile/restpwrod/{resettoken}/'>Reset</a> "
                     email_from = settings.EMAIL_HOST_USER
 
                     # log sms
@@ -371,13 +371,13 @@ def sign_up(request):
                     
 
                     Best regards,
-                    SNEDA IT
+                    
                     """
 
                     sms_message = sms_template.replace("[User's Name]", f"{first_name} {last_name}")
                     sms_message = sms_message.replace("[Username]", username)
                     sms_message = sms_message.replace("[Password]", pass_w)
-                    sms_message = sms_message.replace("[Support Email]", "solomon@snedaghana.com")
+                    sms_message = sms_message.replace("[Support Email]", "support@rootechis.com")
                     sms_message = sms_message.replace("[Support Phone Number]", "054 631 0011 / 020 199 8184")
 
                     if notify == "YES":
@@ -681,7 +681,7 @@ def new_task(request):
                     xticket = TicketHd.objects.get(pk=ref)
                     useradon = UserAddOns.objects.get(user=owner)
                     xticket.status = 1
-                    sms_api = SmsApi.objects.get(sender_id='SNEDA SHOP')
+                    sms_api = SmsApi.objects.get(is_default=1)
 
                     text = f"Issues '{xticket.title}' has been logged by System Administrator. Issue will be checked " \
                            f"and resolved on time"
