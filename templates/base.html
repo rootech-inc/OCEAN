@@ -9,7 +9,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>OCEAN</title>
+  <title>OCEAN </title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -402,279 +402,307 @@
 
     <ul class="sidebar-nav" id="sidebar-nav">
 
+      <!-- Modernized Sidebar Navigation with Colored Icons -->
+
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'admin_panel' %}">
-          <i class="bi bi-grid"></i>
+          <i class="bi bi-speedometer2 text-primary fs-5 me-2"></i>
           <span>Dashboard</span>
         </a>
       </li><!-- End Dashboard Nav -->
-    <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'logistics-home' %}">
-              <i class="bi bi-shop"></i>
-              <span>LOGISTICS</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'asset_management_center' %}">
-              <i class="bi bi-shop"></i>
-              <span>AMC</span>
-            </a>
-          </li>
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="{% url 'my_tasks' %}">
-          <i class="bi bi-list-task"></i>
-          <span>TASK MANAGER</span>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'logistics-home' %}">
+          <i class="bi bi-truck text-warning fs-5 me-2"></i>
+          <span>Logistics</span>
         </a>
       </li>
 
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="{% url 'crm' %}">
-          <i class="bi bi-list-task"></i>
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'asset_management_center' %}">
+          <i class="bi bi-hdd-network text-info fs-5 me-2"></i>
+          <span>AMC</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'my_tasks' %}">
+          <i class="bi bi-check2-square text-success fs-5 me-2"></i>
+          <span>Task Manager</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'crm_logs' %}">
+          <i class="bi bi-person text-danger fs-5 me-2"></i>
           <span>CRM</span>
         </a>
       </li>
 
-    <li class="nav-item">
+      <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'company' %}">
-          <i class="bi bi-list-task"></i>
+          <i class="bi bi-people text-secondary fs-5 me-2"></i>
           <span>HRM</span>
         </a>
       </li>
 
-
-
+      <!-- Community Dropdown -->
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#Community-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-megaphone"></i><span>Community</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="bi bi-chat-left-dots text-info fs-5 me-2"></i>
+          <span>Community</span>
+          <i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="Community-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+        <ul id="Community-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'open-ticket' %}">
-              <i class="bi bi-circle"></i><span>Tickets</span>
+              <i class="bi bi-ticket-perforated text-warning me-2"></i>
+              <span>Tickets</span>
             </a>
           </li>
-            {% if user.is_superuser  %}
-            <li>
+          {% if user.is_superuser %}
+          <li>
             <a href="{% url 'reminder' %}">
-              <i class="bi bi-alarm-fill"></i><span>Reminder</span>
+              <i class="bi bi-alarm-fill text-danger me-2"></i>
+              <span>Reminder</span>
             </a>
           </li>
-            {% endif %}
-
+          {% endif %}
         </ul>
       </li><!-- End Community Nav -->
 
-
-
-    {% if perms.cmms.view_followup %}
-
-    <!-- CMMS -->
-    <li class="nav-item">
+      {% if perms.cmms.view_followup %}
+      <!-- CMMS -->
+      <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'car-jobs' %}">
-          <i class="bi bi-tools"></i>
+          <i class="bi bi-tools text-warning fs-5 me-2"></i>
           <span>CMMS</span>
         </a>
       </li>
-        {% endif %}
+      {% endif %}
+      <!-- CMMS -->
 
-    <!-- CMMS -->
-
-
+      <!-- Meetings Dropdown -->
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#Meetings-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-megaphone"></i><span>Meetings</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="bi bi-calendar-event text-primary fs-5 me-2"></i>
+          <span>Meetings</span>
+          <i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="Meetings-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+        <ul id="Meetings-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'meeting' %}">
-              <i class="bi bi-circle"></i><span>My Meetings</span>
+              <i class="bi bi-calendar-check text-success me-2"></i>
+              <span>My Meetings</span>
             </a>
           </li>
-            {% if perms.meeting.view_meetinghd %}
+          {% if perms.meeting.view_meetinghd %}
           <li>
             <a href="{% url 'new_meeting' %}">
-              <i class="bi bi-circle"></i><span>Create Meeting</span>
+              <i class="bi bi-plus-circle text-info me-2"></i>
+              <span>Create Meeting</span>
             </a>
           </li>
-                {% endif %}
+          {% endif %}
         </ul>
       </li>
 
+      {% if user.is_superuser %}
 
-
-      {% if user.is_superuser  %}
-
+      <!-- Inventory Dropdown -->
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#components-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-archive"></i><span>Inventory</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="bi bi-archive text-secondary fs-5 me-2"></i>
+          <span>Inventory</span>
+          <i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="components-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+        <ul id="components-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'assets' %}">
-              <i class="bi bi-circle"></i><span>Assets</span>
+              <i class="bi bi-box2 text-primary me-2"></i>
+              <span>Assets</span>
             </a>
           </li>
-            <li>
+          <li>
             <a href="{% url 'workstation' %}">
-              <i class="bi bi-circle"></i><span>Workstations</span>
+              <i class="bi bi-cpu text-dark me-2"></i>
+              <span>Workstations</span>
             </a>
           </li>
           <li>
             <a href="{% url 'inventory_tools' %}">
-              <i class="bi bi-circle"></i><span>Tools</span>
+              <i class="bi bi-tools text-warning me-2"></i>
+              <span>Tools</span>
             </a>
           </li>
           <li>
             <a href="{% url 'inventory' %}">
-              <i class="bi bi-circle"></i><span>Products Master</span>
+              <i class="bi bi-boxes text-info me-2"></i>
+              <span>Products Master</span>
             </a>
           </li>
           <li>
             <a href="{% url 'purchasing' %}">
-              <i class="bi bi-circle"></i><span>PO Entries</span>
+              <i class="bi bi-cart text-success me-2"></i>
+              <span>PO Entries</span>
             </a>
           </li>
           <li>
             <a href="{% url 'inventory-grn' %}">
-              <i class="bi bi-circle"></i><span>GRN Entries</span>
+              <i class="bi bi-card-checklist text-success me-2"></i>
+              <span>GRN Entries</span>
             </a>
           </li>
           <li>
             <a href="{% url 'transfer' %}">
-              <i class="bi bi-circle"></i><span>Transfer</span>
+              <i class="bi bi-arrow-left-right text-warning me-2"></i>
+              <span>Transfer</span>
             </a>
           </li>
           <li>
             <a href="{% url 'adjustment' %}">
-              <i class="bi bi-circle"></i><span>Adjustment</span>
+              <i class="bi bi-sliders text-muted me-2"></i>
+              <span>Adjustment</span>
             </a>
           </li>
-
-
-
         </ul>
       </li><!-- End Inventory Nav -->
+
+      <!-- Task Manager Dropdown (Admin Section) -->
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#task-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-calendar-check"></i><span>Task Manager</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="bi bi-kanban text-primary fs-5 me-2"></i>
+          <span>Task Manager</span>
+          <i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="task-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+        <ul id="task-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'new_task' %}">
-              <i class="bi bi-circle"></i><span>Create</span>
+              <i class="bi bi-plus-lg text-info me-2"></i>
+              <span>Create</span>
             </a>
           </li>
           <li>
             <a href="{% url 'all-ticket' %}">
-              <i class="bi bi-circle"></i><span>Tickets</span>
+              <i class="bi bi-ticket text-warning me-2"></i>
+              <span>Tickets</span>
             </a>
           </li>
           <li>
             <a href="{% url 'all_task' %}">
-              <i class="bi bi-circle"></i><span>All Task</span>
+              <i class="bi bi-list-check text-success me-2"></i>
+              <span>All Task</span>
             </a>
           </li>
-
-
         </ul>
-      </li><!-- End Task Manage Nav -->
+      </li><!-- End Task Manager Nav -->
+
+      <!-- Company Setup Dropdown -->
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#csetup-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-gear"></i><span>Company Setup</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="bi bi-buildings text-secondary fs-5 me-2"></i>
+          <span>Company Setup</span>
+          <i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="csetup-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+        <ul id="csetup-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'organization' %}">
-              <i class="bi bi-circle"></i><span>Organization</span>
+              <i class="bi bi-building text-info me-2"></i>
+              <span>Organization</span>
             </a>
           </li>
-            <li>
+          <li>
             <a href="{% url 'bank_accounts' %}">
-              <i class="bi bi-circle"></i><span>Accounts</span>
+              <i class="bi bi-credit-card-2-front text-warning me-2"></i>
+              <span>Accounts</span>
             </a>
           </li>
           <li>
             <a href="{% url 'accessories' %}">
-              <i class="bi bi-circle"></i><span>Add-Ons</span>
+              <i class="bi bi-puzzle text-success me-2"></i>
+              <span>Add-Ons</span>
             </a>
           </li>
           <li>
             <a href="{% url 'emails' %}">
-              <i class="bi bi-circle"></i><span>Emails</span>
+              <i class="bi bi-envelope text-danger me-2"></i>
+              <span>Emails</span>
             </a>
           </li>
-            <li>
+          <li>
             <a href="{% url 'sms' %}">
-              <i class="bi bi-circle"></i><span>SMS</span>
+              <i class="bi bi-chat-square-text text-info me-2"></i>
+              <span>SMS</span>
             </a>
           </li>
           <li>
             <a href="{% url 'all-users' %}">
-              <i class="bi bi-circle"></i><span>Users</span>
+              <i class="bi bi-person-lines-fill text-success me-2"></i>
+              <span>Users</span>
             </a>
           </li>
-            <li>
+          <li>
             <a href="{% url 'evat_keys' %}">
-              <i class="bi bi-circle"></i><span>EVAT Credentials</span>
+              <i class="bi bi-key-fill text-warning me-2"></i>
+              <span>EVAT Credentials</span>
             </a>
           </li>
-
-
         </ul>
       </li><!-- End Company Setup Nav -->
+
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'apps-center' %}">
-          <i class="bi bi-app"></i>
+          <i class="bi bi-grid-3x3-gap text-primary fs-5 me-2"></i>
           <span>Apps Center</span>
         </a>
-      </li> <!-- END OF APPS -->
-      <!-- SERVICING-->
+      </li>
+      <!-- END OF APPS -->
+
+      <!-- Servicing -->
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'service_jobcard' %}">
-          <i class="bi bi-app"></i>
+          <i class="bi bi-screwdriver text-success fs-5 me-2"></i>
           <span>Service Master</span>
         </a>
-      </li> 
+      </li>
       <!-- END OF SERVICING -->
       {% endif %}
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'ssml' %}">
-          <i class="bi bi-app"></i>
+          <i class="bi bi-code-slash text-warning fs-5 me-2"></i>
           <span>SSML</span>
         </a>
-      </li> 
+      </li>
 
-      <!-- SERVICING-->
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'maintenance' %}">
-          <i class="bi bi-app"></i>
+          <i class="bi bi-wrench-adjustable text-info fs-5 me-2"></i>
           <span>Maintenance</span>
         </a>
       </li>
 
-
-
-    <li class="nav-item">
+      <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'dolphine' %}">
-          <i class="bi bi-cloud"></i>
+          <i class="bi bi-cloud-upload text-primary fs-5 me-2"></i>
           <span>Dolphine</span>
         </a>
       </li>
 
-    <li class="nav-item">
+      <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'blog-home' %}">
-          <i class="bi bi-cloud"></i>
+          <i class="bi bi-journal-text text-info fs-5 me-2"></i>
           <span>Blog</span>
         </a>
       </li>
 
-    <li class="nav-item">
+      <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'reports' %}">
-          <i class="bx bx-analyse"></i>
-          <span>REPORTS</span>
+          <i class="bi bi-bar-chart-line-fill text-success fs-5 me-2"></i>
+          <span>Reports</span>
         </a>
       </li>
+
 
 
 
