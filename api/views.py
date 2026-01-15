@@ -1100,6 +1100,9 @@ def api_call(request, module, crud):
                             api_key = pending.api.api_key
                             sms_check_end = f"https://apps.mnotify.net/smsapi/balance?key={api_key}"
                             balance = requests.get(sms_check_end).json()
+                            print("BALANCE IS")
+                            print(balance)
+                            print("BALANCE IS")
                             act_balance = balance['sms_balance']
                             if act_balance > 0:
                                 endPoint = f"https://apps.mnotify.net/smsapi?key={api_key}&to={to}&msg={text}&sender_id={sender_id}"
