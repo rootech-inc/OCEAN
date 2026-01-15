@@ -190,21 +190,19 @@ class Sms {
                     status = api['status'];
                     timestamp = api['timestamp'];
                     clean_timestamp = `${timestamp['date']} ${timestamp['time']}`;
+                    let balance = api['balance'];
 
 
                     tr += `<tr>
                                             <td>${sender_id}</td>
                                             <td>${api_desc}</td>
-                                            <td><div class="w-100 d-flex flex-wrap">
-                                                <button onclick="sms.DelSmsApi('${api_key}')" class="btn btn-sm btn-danger rounded-0">DEL</button>
-                                                <button onclick="sms.EditSmsApi('${api_key}')" class="btn btn-sm btn-warning rounded-0">EDIT</button>
-                                            </div></td>
+                                            <td>${balance}</td>
                                         </tr>`;
 
                 }
             }
 
-            $('#smsTble').html(tr)
+            $('#smsTbl').html(tr)
 
         } else
         {

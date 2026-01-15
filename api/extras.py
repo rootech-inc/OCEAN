@@ -1,7 +1,7 @@
 import pyodbc
 from django.db.models import Sum
 
-from admin_panel.models import Locations, ProductTrans, ProductMaster
+from admin_panel.models import Locations, ProductTrans, ProductMaster, SmsApi
 from inventory.models import GrnTran
 from ocean.settings import DB_SERVER, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
@@ -76,3 +76,23 @@ def cardex(prod_id, legend=None):
         )
 
     return legend
+
+
+def sms_balance(api_key = ''):
+    import requests
+
+    endpoint = 'https://api.mnotify.com/api/balance/sms'
+
+    url = endpoint + '?key=' + api_key
+    print(url)
+    response = requests.get(url)
+    data = response.json()
+
+
+
+    if data.get('status') == 'success':
+        balance =  int(data.get('balance')) + int(data.get('bonus'))
+        SmsApi.objects.filter(api_key=api_key).update(balance=balance)
+        return balance
+    else:
+        return 0

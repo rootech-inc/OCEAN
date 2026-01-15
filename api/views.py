@@ -24,7 +24,7 @@ from admin_panel.models import Notifications, AuthToken, Locations, SuppMaster, 
 import json
 
 from inventory.models import PoHd, PoTran, PriceCenter, GrnHd, DocAppr, GrnTran
-from .extras import cmm_connect
+from .extras import cmm_connect, sms_balance
 
 # Create your views here.
 api_response = {
@@ -1000,7 +1000,7 @@ def api_call(request, module, crud):
                         status = sms_api.status
 
                         this = {'sender_id': this_sender_id, 'api_key': this_api_key, 'api_desc': this_api_desc,
-                                'user': this_api_owner, 'timestamp': timestamp, 'status': status, 'pk': sms_api.pk}
+                                'user': this_api_owner, 'timestamp': timestamp, 'status': status, 'pk': sms_api.pk,'balance':sms_api.balance}
                         rec.append(this)
                     response['message'] = rec
                 else:
@@ -1098,25 +1098,41 @@ def api_call(request, module, crud):
                             text = pending.message
                             sender_id = pending.api.sender_id
                             api_key = pending.api.api_key
-                            sms_check_end = f"https://apps.mnotify.net/smsapi/balance?key={api_key}"
-                            print(sms_check_end)
-                            balance = requests.get(sms_check_end).json()
+
+                            balance = sms_balance(api_key)
                             print("BALANCE IS")
                             print(balance)
                             print("BALANCE IS")
-                            act_balance = balance['sms_balance']
-                            if act_balance > 0:
-                                endPoint = f"https://apps.mnotify.net/smsapi?key={api_key}&to={to}&msg={text}&sender_id={sender_id}"
-                                resp = requests.post(endPoint)
-                                data = resp.json()
 
-                                status = data['status']
-                                code = data['code']
+                            if balance > 0:
+                                import requests
+
+                                endPoint = 'https://api.mnotify.com/api/sms/quick'
+
+                                url = endPoint + '?key=' + api_key
+
+                                data = {
+                                    "recipient": [to],
+                                    "sender": sender_id,
+                                    "message": text,
+                                    "is_schedule": False,
+                                    "schedule_date": "",
+
+                                }
+
+                                sms_response = requests.post(url, json=data)
+
+                                sms_response = sms_response.json()
+
+                                print(sms_response)
+
+                                status = sms_response['status']
+                                code = sms_response['code']
                                 resp_msg = f"{data['message']} - {endPoint}"
 
                                 print(resp_msg)
 
-                                if code == '1000':
+                                if code == '2000':
                                     # success
                                     sent = Sms.objects.get(pk=pk)
                                     sent.status = 1
@@ -1136,14 +1152,16 @@ def api_call(request, module, crud):
                                 SmsResponse(sms=Sms.objects.get(pk=pk), resp_code=code, resp_msg=resp_msg).save()
 
                                 response['status'] = 200
-                                response['message'] = data
+                                response['message'] = sms_response
                             else:
                                 print("No Balance")
-                                raise Exception (f"Insufficient Balance {act_balance}")
+                                raise Exception (f"Insufficient Balance {balance}")
                         except Exception as e:
-                            print(e)
+                            import traceback
+                            tb = traceback.format_exc()
+                            print(tb)
                             response['status'] = 505
-                            response['message'] = f"MARKED: {str(e)} {sms_check_end}"
+                            response['message'] = f"MARKED: {str(e)}\nTraceback:\n{tb}"
 
                     # end of sending pending sms
                     # response['status'] = 200
