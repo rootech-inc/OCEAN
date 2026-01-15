@@ -1143,7 +1143,7 @@ def api_call(request, module, crud):
                         except Exception as e:
                             print(e)
                             response['status'] = 505
-                            response['message'] = f"MARKED: {str(e)}"
+                            response['message'] = f"MARKED: {str(e)} {sms_check_end}"
 
                     # end of sending pending sms
                     # response['status'] = 200
