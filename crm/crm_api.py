@@ -67,8 +67,8 @@ def api_interface(request):
                 suburb = data.get('suburb')
                 address = data.get('address')
 
-                if not is_valid_email(email):
-                    raise exception("Invalid Email Address")
+                # if not is_valid_email(email):
+                #     raise Exception("Invalid Email Address")
 
                 if source == 'upload':
                     # get source by description
