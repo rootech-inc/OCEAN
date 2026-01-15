@@ -1100,7 +1100,8 @@ def api_call(request, module, crud):
                             api_key = pending.api.api_key
                             sms_check_end = f"https://apps.mnotify.net/smsapi/balance?key={api_key}"
                             balance = requests.get(sms_check_end).json()
-                            if balance['sms_balance'] > 0:
+                            act_balance = balance['sms_balance']
+                            if act_balance > 0:
                                 endPoint = f"https://apps.mnotify.net/smsapi?key={api_key}&to={to}&msg={text}&sender_id={sender_id}"
                                 resp = requests.post(endPoint)
                                 data = resp.json()
@@ -1134,11 +1135,11 @@ def api_call(request, module, crud):
                                 response['message'] = data
                             else:
                                 print("No Balance")
-                                raise Exception (f"Inssuficient Balance {balance['sms_balance']}")
+                                raise Exception (f"Insufficient Balance {act_balance}")
                         except Exception as e:
                             print(e)
                             response['status'] = 505
-                            response['message'] = str(e)
+                            response['message'] = f"MARKED: {str(e)}"
 
                     # end of sending pending sms
                     # response['status'] = 200
