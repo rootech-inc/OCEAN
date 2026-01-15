@@ -22,7 +22,7 @@ from fpdf import FPDF
 from tifffile.tifffile import unique_strings
 
 import ocean.settings
-from admin_panel.anton import push_notification, is_valid_password, generate_random_password
+from admin_panel.anton import push_notification, is_valid_password, generate_random_password, make_md5_hash
 from admin_panel.form import NewProduct, NewLocation, LogIn, NewTicket, UploadFIle, SignUp, NewOu, NewUM, NewSMSApi, \
     NewBulkSms, NewDepartments
 from admin_panel.models import *
@@ -335,7 +335,7 @@ def sign_up(request):
                     AuthToken(user=created_account, token=api_token).save()
 
                     use_ad_on = UserAddOns(user=created_account, company=company,
-                                           app_version=VersionHistory.objects.get(version=settings.APP_VERSION),
+
                                            position=position, phone=mobile)
 
                     md_mix = f" {first_name} {last_name} {username} "
@@ -347,50 +347,70 @@ def sign_up(request):
                     respwrd.save()
 
                     subject = 'ACCESS TO OCEAN'
-                    message = f'Hi {first_name} {last_name}, thank you for registering in ocean. your username is {username} and password is {pass_w} logn at ocean t explore the power in collaboration '
-                    message = f"Hello {first_name} {last_name}, an account has been created for in Ocean ERP. " \
-                              f"<br>Use this platform for productivity." \
-                              f"Reset your password and login with the link below <br>" \
-                              f"<a target='_blank' href='{ocean.settings.BASE_URL}profile/restpwrod/{resettoken}/'>Reset</a> "
-                    email_from = settings.EMAIL_HOST_USER
+                    message = f"""
+                    <html>
+                        <body style="background-color:#f3f6fa; padding:30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:550px; margin:auto; background:#fff; border-radius:10px; box-shadow:0 6px 24px 0 rgba(46,54,80,0.05); font-family:'Segoe UI',Arial,sans-serif;">
+                                <tr>
+                                    <td style="background-color:#2d89ef; padding:24px 0 0 0; color:#fff; text-align:center; border-radius:10px 10px 0 0;">
+                                        <img src="https://ocean.rootechis.com/static/logo.png" width="90" alt="Ocean ERP" style="display:block; margin:auto;"/>
+                                        <h2 style="margin:auto; font-weight:700; font-size:2em; letter-spacing:0.5px;">Welcome to Ocean ERP</h2>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:36px 36px 0 36px; color:#444;">
+                                        <h3 style="margin-top:0;">Hello {first_name} {last_name},</h3>
+                                        <p style="font-size:1.05em; color:#444;">
+                                            We're excited to let you know that an account has been created for you in <b>Ocean ERP</b>.<br>
+                                            Empower your productivity, collaboration, and success with our platform!<br>
+                                        </p>
+                                        <div style="margin:24px 0; background:#f3fafd; border-radius:8px; padding:20px;">
+                                            <strong style="display:block; color:#2d89ef;">Your login details:</strong>
+                                            <p style="margin: 2px 0 0 0;">
+                                                <b>Username:</b> {username}<br>
+                                                <b>Password:</b> {pass_w}
+                                            </p>
+                                        </div>
+                                        <p style="color:#333;">For your security, please reset your password on your first login.</p>
+                                        <div style="text-align:center; padding:28px 0 20px;">
+                                            <a href="{ocean.settings.BASE_URL}profile/restpwrod/{resettoken}/" target="_blank"
+                                                style="display:inline-block; padding:14px 36px; font-weight:600; background:#2d89ef; color:#fff !important; text-decoration:none; border-radius:6px; font-size:1.11em; transition:background 0.2s;">
+                                                Reset Password &amp; Login
+                                            </a>
+                                        </div>
+                                        <p style="font-size:0.97em; color:#888; border-top:1px solid #f2f2f2; margin-top:35px; padding-top:24px;">
+                                            If you need assistance, reach out to us at
+                                            <a href="mailto:support@rootechis.com" style="color:#2d89ef;">support@rootechis.com</a> or call <span style="white-space:nowrap;">054 631 0011</span> / <span style="white-space:nowrap;">020 199 8184</span>.<br>
+                                            <span style="display:block; margin-top:15px;">Best regards,<br><b>Ocean ERP Team</b></span>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </body>
+                    </html>
+                    """
 
                     # log sms
                     sms_api = SmsApi.objects.get(is_default=1)
-                    sms_template = """
-                    Hello [User's Name],\n
-
-                    We are pleased to inform you that a profile has been created for you in our Ocean system. Here are your login credentials:\n\n
-
-                    Username: [Username]\n
-                    Password: [Password]\n
-
-                    You can now log in to your account using the provided credentials. Please make sure to change your password after your first login for security reasons.\n
-
-                    If you have any questions or need assistance, please don't hesitate to contact our support team at [Support Email] or [Support Phone Number].\n
-
-                    
-
-                    Best regards,
-                    
-                    """
-
-                    sms_message = sms_template.replace("[User's Name]", f"{first_name} {last_name}")
-                    sms_message = sms_message.replace("[Username]", username)
-                    sms_message = sms_message.replace("[Password]", pass_w)
-                    sms_message = sms_message.replace("[Support Email]", "support@rootechis.com")
-                    sms_message = sms_message.replace("[Support Phone Number]", "054 631 0011 / 020 199 8184")
+                    sms_message = f"Welcome to Ocean ERP, {first_name} {last_name}! Username: {username}, Password: {pass_w}. Please change your password after first login. Need help? support@rootechis.com, 054 631 0011."
 
                     if notify == "YES":
                         Sms(api=sms_api, to=mobile, message=sms_message).save()
-                        Emails(sent_from=email_from, sent_to=email, subject=subject, body=message, email_type='system',
-                               ref='system').save()
+                        MailQueues(
+                            subject=subject,
+                            body=message,
+                            recipient=email,
+                            mail_key=make_md5_hash(f"{subject} {last_name} {first_name} {username} {message}"),
+                            sender=MailSenders.objects.get(is_default=1),
+                        ).save()
 
                     # send_mail(subject, message, email_from, recipient_list)
                     messages.error(request, "Account Created")
 
 
                 except Exception as e:
-                    new_user_instance.delete()
+                    if 'new_user_instance' in locals() and new_user_instance:
+                        new_user_instance.delete()
                     messages.error(request, f"error%%Error Saving User {e}")
                     # return HttpResponse(e)
 
@@ -2420,7 +2440,7 @@ def resetpasswordview(request, token):
         }
         return render(request, 'profile/resetpassword.html', context=context)
     else:
-        return HttpResponse("HTTP Version Not Supported", status=505)
+        return HttpResponse("Invalid Link", status=505)
 
 
 def resetpassword(request):
