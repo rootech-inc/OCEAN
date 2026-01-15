@@ -2,114 +2,74 @@
 {% load static %}
 
 {% block crm %}
-    <div class="card-header d-flex flex-wrap align-items-center justify-content-between bg-white border-bottom-0" style="border-radius: 0.75rem 0.75rem 0 0;">
-        <strong class="card-title fs-5">Sales Deals</strong>
-        <button class="btn btn-primary d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#salesDealsTable" aria-expanded="false" aria-controls="salesDealsTable">
-            Show Deals
-        </button>
-    </div>
+    <div class="card-header"><strong class="card-title">Sales Deals</strong></div>
     <div class="card-body p-0">
-        <div class="table-responsive collapse show" id="salesDealsTable">
-            <table class="table table-hover table-borderless align-middle mb-0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th class="text-uppercase small fw-semibold">Customer</th>
-                        <th class="text-uppercase small fw-semibold">Company</th>
-                        <th class="text-uppercase small fw-semibold text-end">Action</th>
+                        <th class="text-nowrap">Customer</th>
+                        <th class="text-nowrap">Company</th>
+                        <th class="text-nowrap text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody id="purc_tables">
-                    <!-- Data populated by JS -->
+                    <!-- Dynamic rows inserted here -->
                 </tbody>
             </table>
         </div>
-        <!-- Mobile Card List, shown only on small screens -->
-        <div class="d-md-none mt-3" id="salesDealsCards"></div>
+        <!-- Mobile-friendly cards (hidden on md+ screens, visible on xs/sm) -->
+        <div id="purc_cards" class="d-block d-md-none mt-2">
+            <!-- Dynamic mobile cards inserted here by JS -->
+        </div>
     </div>
     <script>
-    // Enhance responsiveness: Render as table on desktop, as cards on mobile
-    function renderSalesDealsMobile(msg) {
-        let cardsHtml = "";
-        for (let i = 0; i < msg.length; i++) {
-            let row = msg[i];
-            cardsHtml += `
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-body py-2 px-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="fw-bold text-muted small">Customer</span>
-                            <span>${row['customer']}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="fw-bold text-muted small">Company</span>
-                            <span>${row['company']}</span>
-                        </div>
-                        <div class="d-flex justify-content-end mt-2">
-                            <a onclick="cmms_sales.viewTransactions('${row['pk']}')" href="javascript:void(0)" class="btn btn-outline-primary btn-sm rounded-pill shadow-sm">
-                                <i class="fa fa-eye"></i> View
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        document.getElementById('salesDealsCards').innerHTML = cardsHtml;
-    }
-
-    function renderSalesDealsTable(msg) {
-        let purch_rows = "";
-        for (let i = 0; i < msg.length; i++) {
-            let row = msg[i];
-            purch_rows += `
-                <tr>
-                    <td>${row['customer']}</td>
-                    <td>${row['company']}</td>
-                    <td class="text-end">
-                        <a onclick="cmms_sales.viewTransactions('${row['pk']}')" href="javascript:void(0)" class="btn btn-link p-0 text-decoration-none">
-                            <i class="fa fa-eye"></i>
-                        </a>
-                    </td>
-                </tr>
-            `;
-        }
-        $('#purc_tables').html(purch_rows);
-    }
-
-    $(document).ready(function(){
-        // load open purchases
-        let open_purchases = cmms.getOpenPurchases();
-        if(anton.IsRequest(open_purchases)){
-            let msg = open_purchases.message;
-            // Detect screen mode
-            if (window.matchMedia("(max-width: 767px)").matches) {
-                // Mobile
-                renderSalesDealsMobile(msg);
-                $('#purc_tables').html('');
-            } else {
-                // Desktop
-                renderSalesDealsTable(msg);
-                $('#salesDealsCards').html('');
-            }
-        }
-
-        // Re-render on resize
-        $(window).on('resize', function() {
+        $(document).ready(function(){
+            // load open purchases
             let open_purchases = cmms.getOpenPurchases();
+            let purch_rows = "";
+            let purch_cards = "";
+
             if(anton.IsRequest(open_purchases)){
-                let msg = open_purchases.message;
-                if (window.matchMedia("(max-width: 767px)").matches) {
-                    renderSalesDealsMobile(msg);
-                    $('#purc_tables').html('');
-                } else {
-                    renderSalesDealsTable(msg);
-                    $('#salesDealsCards').html('');
+                let msg = open_purchases.message
+                for (let i = 0; i < msg.length; i++) {
+                    let row = msg[i];
+                    // Desktop/tablet row
+                    purch_rows += `
+                        <tr>
+                            <td class="text-nowrap">${row['customer']}</td>
+                            <td class="text-nowrap">${row['company']}</td>
+                            <td class="text-center">
+                                <a onclick="cmms_sales.viewTransactions('${row['pk']}')" href="javascript:void(0)" class="btn btn-sm btn-outline-primary" title="View"><i class="fa fa-eye"></i></a>
+                            </td>
+                        </tr>
+                    `;
+                    // Mobile card
+                    purch_cards += `
+                        <div class="card mb-2 shadow-sm">
+                            <div class="card-body py-2 px-3">
+                                <div class="d-flex flex-column">
+                                    <div><strong>Customer:</strong> ${row['customer']}</div>
+                                    <div><strong>Company:</strong> ${row['company']}</div>
+                                    <div class="mt-2">
+                                        <a onclick="cmms_sales.viewTransactions('${row['pk']}')" href="javascript:void(0)" class="btn btn-sm btn-outline-primary w-100" title="View"><i class="fa fa-eye"></i> View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 }
+
+                // Populate table rows (shown on md+ screens)
+                $('#purc_tables').html(purch_rows);
+                // Populate cards (shown on xs/sm screens)
+                $('#purc_cards').html(purch_cards);
             }
         });
-    });
     </script>
 
 
-    <script>
+    <!-- <script>
         $(document).ready(function(){
             // load open purchases
             let open_purchases = cmms.getOpenPurchases();
@@ -129,6 +89,6 @@
                 $('#purc_tables').html(purch_rows)
             }
         });
-    </script>
+    </script> -->
 
 {% endblock %}
