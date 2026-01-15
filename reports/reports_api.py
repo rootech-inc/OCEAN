@@ -304,8 +304,14 @@ def interface(request):
                 # send email
 
                 try:
-                    server = smtplib.SMTP(smtp_server, smtp_port)
-                    server.starttls()
+                    # Use SMTP_SSL for Port 465
+                    if int(smtp_port) == 465:
+                        server = smtplib.SMTP_SSL(smtp_server, smtp_port)
+                    else:
+                        # Fallback for Port 587
+                        server = smtplib.SMTP(smtp_server, smtp_port)
+                        server.starttls()
+
                     server.login(sender_email, sender_password)
                     server.sendmail(sender_email, to_address, msg.as_string())
 
