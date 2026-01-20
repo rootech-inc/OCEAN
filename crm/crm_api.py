@@ -750,7 +750,8 @@ SELECT phone,'',phone,cust_name FROM customer
                     recipient='rootech.inc@proton.me',
                     body=body,
                     subject=f"CRM REPORTS ON {today}",
-                    cc=cc
+                    cc=cc,
+                    mail_key=make_md5_hash(generate_random_password(255))
                 ).save()
                 mail = MailQueues.objects.all().last()
                 for attchment in attc.split(','):
