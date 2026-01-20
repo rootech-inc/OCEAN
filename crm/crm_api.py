@@ -668,7 +668,7 @@ SELECT phone,'',phone,cust_name FROM customer
                     owner = own.user
                     us_logs = Logs.objects.filter(owner=owner, created_date=today)
                     l_count = us_logs.count()
-                    exit()
+
 
                     tr += (f'<tr><td style="border: 1px solid black;">{owner.first_name} {owner.last_name}</td><td '
                            f'style="border: 1px solid black;">{l_count}</tr></tr>')
@@ -727,7 +727,7 @@ SELECT phone,'',phone,cust_name FROM customer
                         formatted_datetime = current_datetime.strftime("%Y_%m_%d_%H_%M_%S")
                         file_name1 = f"{owner.first_name}_{owner.last_name}_CRM_REPORT_{formatted_datetime}.xlsx"
 
-                        file_name = f"static/general/crm-logs-reports/{file_name1}"
+                        file_name = f"static/general/{file_name1}"
                         attc += f"{file_name},"
                         workbook.save(file_name)
                         print(file_name)
@@ -736,7 +736,7 @@ SELECT phone,'',phone,cust_name FROM customer
                 body = f'<table><tr><th style="border: 1px solid black;">USER</th><th style="border: 1px solid ' \
                        f'black;">LOGS</th></td>{tr}</table>'
                 print(tr)
-                cc = "uyinsolomon2@gmail.com,solomon@snedaghana.com,ajay@snedaghana.com,bharat@snedaghana.com"
+                cc = "uyinsolomon2@gmail.com,supremobawa02@gmail.com"
                 # Emails(sent_from='crm@snedaghana.com', sent_to='bharat@snedaghana.com',
                 #        subject=f"CRM REPORTS ON {today}",
                 #        body=body, email_type='crm', attachments=attc, cc=cc).save()
@@ -747,7 +747,7 @@ SELECT phone,'',phone,cust_name FROM customer
 
                 MailQueues(
                     sender=MailSenders.objects.get(is_default=1),
-                    recipient='solomon@snedaghana.com',
+                    recipient='rootech.inc@proton.me',
                     body=body,
                     subject=f"CRM REPORTS ON {today}",
                     cc=cc
