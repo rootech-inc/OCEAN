@@ -30,6 +30,13 @@ SHOW_ERROR_LINE = os.environ.get('DB_PASSWORD', False)
 CSRF_TRUSTED_ORIGINS = [
     'https://ocean.rootechits.com',
 ]
+from corsheaders.defaults import default_methods
+
+# default_methods already includes PUT, PATCH, and DELETE
+CORS_ALLOW_METHODS = list(default_methods) + [
+    "VIEW",
+]
+
 ALLOWED_HOSTS = [
     'ocean.rootechits.com',    # The ERP subdomain
     'rootechits.com',          # The main domain (if OCEAN uses it)
