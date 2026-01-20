@@ -37,11 +37,18 @@ CORS_ALLOW_METHODS = list(default_methods) + [
     "VIEW",
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "https://rootechits.com",
+]
+# If you want to allow everything during testing:
+CORS_ALLOW_ALL_ORIGINS = True
+
 ALLOWED_HOSTS = [
     'ocean.rootechits.com',    # The ERP subdomain
     'rootechits.com',          # The main domain (if OCEAN uses it)
     '127.0.0.1',               # Localhost for internal proxying
     'localhost',
+    'https://rootechits.com'
 ]
 
 LOGIN_URL = '/login/'
@@ -81,6 +88,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # MUST BE FIRST
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
