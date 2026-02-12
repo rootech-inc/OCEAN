@@ -12,7 +12,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 from admin_panel.anton import fix_phone_number, make_md5_hash, is_valid_email, is_valid_phone_number, md5only, \
     get_client_ip, generate_random_password
-from admin_panel.models import Emails, GeoCity, GeoCitySub, MailQueues, MailSenders, MailAttachments, Reminder, Sms, SmsApi
+from admin_panel.models import Emails, GeoCity, GeoCitySub, MailQueues, MailSenders, MailAttachments, Reminder, Sms, \
+    SmsApi, GoogleSyncConfig
 from cmms.extra import cmms_db
 from cmms.models import CarModel, SalesDeals, SalesCustomers
 from crm.models import Contacts, Logs, CrmUsers, Sector, Positions, FollowUp, Campaigns, LogValidity, CampaignTargets, \
@@ -765,13 +766,15 @@ SELECT phone,'',phone,cust_name FROM customer
                 import gspread
                 from oauth2client.service_account import ServiceAccountCredentials
 
+                credentials = GoogleSyncConfig.objects.get(tag='crm_log')
+
                 # Define the scope and authenticate using the JSON key file
                 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-                creds = ServiceAccountCredentials.from_json_keyfile_name("static/general/snedaghana-8ac36ff86480.json", scope)
+                creds = ServiceAccountCredentials.from_json_keyfile_name(credentials.json_file.path, scope)
                 client = gspread.authorize(creds)
 
                 # Open the Google Sheet by name or by URL
-                sheet = client.open("DAILY_CUSTOMER_HUNT")  # Use .sheet1 for the first sheet
+                sheet = client.open(credentials.file_url)  # Use .sheet1 for the first sheet
 
                 # Add a new sheet to the spreadsheet
                 sync_date = data.get('date',timezone.now().date())

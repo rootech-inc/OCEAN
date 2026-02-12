@@ -67,9 +67,10 @@
                                     <li><a class="dropdown-item sign_reciept" data-pk="{{asset.pk}}" href="#">Sign</a></li>
                                 {%endif%}
                             {% else %}
-                            <li><a class="dropdown-item assign" data-pk="{{asset.pk}}" href="#">Assign</a></li>
+                                <li><a class="dropdown-item assign" data-pk="{{asset.pk}}" href="#">Assign</a></li>
                             {% endif %}
-                            
+
+                            <li><a class="dropdown-item compliance" data-pk="{{asset.pk}}" href="#">Compliance</a></li>
                             <li><a class="dropdown-item specifications" data-pk="{{asset.pk}}" href="#">Specs</a></li>
                             <li><a class="dropdown-item images" data-pk="{{asset.pk}}" href="#">Images</a></li>
                             <li><a class="dropdown-item transactions" data-pk="{{asset.pk}}" href="#">Transactions</a></li>
@@ -81,7 +82,7 @@
                 {% endfor %}
             {% else %}
                 <tr>
-                <td colspan="6" class="text-center">No assets found.</td>
+                <td colspan="7" class="text-center">No assets found.</td>
                 </tr>
             {% endif %}
             </tbody>
@@ -604,6 +605,214 @@
                         kasa.response(response)
                     }
                 }).catch(error => {kasa.error(error)})
+            })
+
+            $('.compliance').click(async function(){
+
+                // load asset complance
+                let asset_pk = $(this).data('pk');
+                let asset_compliance_payload = {
+                    module:'asset_compliance',
+                    data:{
+                        asset:asset_pk
+                    }
+                }
+
+                await api.v2('VIEW',asset_compliance_payload,'/amc/api/').then(response => {
+                    let html ="";
+                    if(anton.IsRequest(response)){
+                        // make asset complaince table rows
+                        let rows = response.message;
+                        if(rows.length > 0){
+                            let tr = "";
+                            rows.map(row => {
+                                tr += `
+                                    <tr>
+                                        <td>${row.compliance_type}</td>
+                                        <td>
+                                            <button' data-id='${row.pk}' class='btn btn-sm btn-danger delete_asset_compliance'>DELETE</button>
+                                        </td>
+                                    </tr>
+                                `
+                            })
+                            
+                            html = `
+                                <table class='table table-sm table-hover table-bordered'>
+                                    <thead><tr><th>Compliance</th><th>Action</th></tr>   </thead> 
+                                    <tbody>${tr}</tbody>
+                                </table>
+                            `
+                            
+                        } else {
+                            html = `
+                                <div class='alert alert-info'>No Compliance. Add by clicking add</div>
+                            `
+                        }
+                    } else {
+                        kasa.response(response)
+                    }
+
+                    amodal.setBodyHtml(html)
+                    amodal.setTitleText("Asset Items")
+                    amodal.setFooterHtml(`<button class='btn btn-info' id='add_compliance_to_asset'>Add</button>`)
+                    amodal.show()
+
+                    $('.delete_asset_compliance').click(async function(){
+                                let asset_complaince_pk = $(this).data('id')
+                                if(confirm("Are You Sure?")){
+                                    let delete_asset_compliance_payload = {
+                                        module:'delete_asset_compliance',
+                                        data:{
+                                            pk:asset_complaince_pk
+                                        }
+                                    }
+
+                                    await api.v2("DELETE",delete_asset_compliance_payload,'/amc/api/').then(response => {
+                                        if(anton.IsRequest(response)){
+                                            kasa.confirm(response.message,1,'here')
+                                        } else {
+                                            kasa.response(response)
+                                        }
+                                        
+                                    }).catch(error => {kasa.error(error)})
+                                
+                                } else {
+                                    kasa.info("Operation Canceled")
+                                }
+                                
+                    })
+
+                            
+
+                    $('#add_compliance_to_asset').click(async function(){
+                        // payload to retrieve compliance
+                        let comp_payload = {
+                            module:'compliance_requirement',
+                            data:{}
+                        }
+
+                        await api.v2('VIEW',comp_payload,'/amc/api/').then(response => {
+                            if(anton.IsRequest(response)){
+                                let data = response.message;
+                                let tr = "";
+                                data.map(ct => {
+                                    tr += `
+                                        <tr>
+                                            <td>${ct.name}</td>
+                                            <td>${ct.description}</td>
+                                            <td><button data-id='${ct.pk}' data-name='${ct.name}' class='btn btn-sm btn-info add_compliance'>Add</button></td>    
+                                        </tr>
+                                    `
+                                })
+
+                                let table = `
+                                    <table class='table table-sm'>
+                                        <thead>
+                                            <tr><th>NAME</th><th>DESCRPIPTION</th><th>ACTION</th></tr>    
+                                        </thead>    
+                                        <tbody>${tr}</tbody>
+                                    </table>
+                                `;
+
+                                amodal.setBodyHtml(table)
+                                amodal.setTitleText("Add Compliance")
+                                amodal.setFooterHtml(``)
+                                amodal.show()
+
+                                $('.add_compliance').click(async function(){
+                                    let comp_pk = $(this).data('id');
+                                    let comp_name = $(this).data('name');
+                                    // tale image here
+                                    let form = `
+                                    <form id="compliance-file-upload-form" method='post' action='/amc/upload/asset_compliance_document/' class="w-100" enctype="multipart/form-data">
+                                        <input type='hiddden' name ='aci' id='aci' >
+                                        <div class="mb-3">
+                                            <label for="compliance_file" class="form-label">Upload File</label>
+                                            <input type="file" class="form-control" id="compliance_file" name="compliance_file" accept="*/*" required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="is_expiry" class="form-label">Has Expiry?</label>
+                                            <select class="form-select" id="is_expiry" name="is_expiry">
+                                                <option value="">Select</option>
+                                                <option value="YES">Yes</option>
+                                                <option value="NO">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="expiry_date" class="form-label">Expiry Date</label>
+                                            <input type="date" class="form-control" id="expiry_date" name="expiry_date">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="remarks" class="form-label">Remarks</label>
+                                            <textarea class="form-control" id="remarks" name="remarks" rows="2"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="reference" class="form-label">Reference</label>
+                                            <input type="text" class="form-control" id="reference" name="reference">
+                                        </div>
+                                        
+                                    </form>
+                                    `
+
+                                    amodal.setBodyHtml(form)
+                                    amodal.setTitleText(`Addning ${comp_name} to Asset`)
+                                    amodal.setFooterHtml(`
+                                    <button id="link_compliance" type="button" class="btn btn-outline-primary">
+                                        <i class="bi bi-link-45deg"></i> Link Compliance
+                                    </button>
+                                    `)
+
+                                    $('#link_compliance').click(async function(){
+                                        let ids = ['compliance_file','mypk','is_expiry','expiry_date','remarks','reference']
+
+                                        //todo add refence and other data to payload to save
+
+                                        if(anton.validateInputs(ids)){
+
+                                            let payload = {
+                                                module:'asset_compliance',
+                                                data:anton.Inputs(ids)
+                                                
+                                            }
+
+                                            payload['data']['asset_pk'] = asset_pk
+                                            payload['data']['compliance_pk'] = comp_pk
+
+                                            if(confirm("Are You Sure?")){
+                                                await api.v2('PUT',payload,'/amc/api/').then(response => {
+                                                    if(anton.IsRequest(response)){
+                                                        $('#aci').val(response.message)
+                                                        $('#compliance-file-upload-form').submit()
+                                                    } else {
+                                                        kasa.error(response)
+                                                    }
+                                                }).catch(error => kasa.error(error))
+                                            } else {
+                                                kasa.info("Operation Canceled")
+                                                amodal.hide()
+                                            }
+
+                                        } else {
+                                            kasa.error("Invalid Form")
+                                        }
+                                        
+                                    })
+                                    
+                                    
+                                    
+                                })
+                            } else {
+                                kasa.response(response)
+                            }
+                        }).catch(error=>{kasa.error(error)})
+                    
+                    })
+
+                }).catch(error => {kasa.error(error)})
+
+                
+            
             })
         })
     </script>

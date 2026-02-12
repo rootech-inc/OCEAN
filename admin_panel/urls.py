@@ -34,6 +34,8 @@ urlpatterns = [
     path('send-to-provider/', views.send_to_provider, name='send-to-provider'),
 
     path('accessories/', views.accessories, name='accessories'),
+    path('accessories/google-sync/', views.google_sync_setup, name='google_sync_setup'),
+    path('accessories/add_google_sync_info/',views.add_google_sync_info,name='add_google_sync_info'),
     path('accessories/geo/', views.geo, name='geo'),
 
     path('save-provider', views.new_provider, name='save-provider'),

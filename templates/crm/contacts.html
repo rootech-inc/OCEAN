@@ -4,7 +4,11 @@
 {% block crm %}
     <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom-0">
         <div class="row align-items-center w-100">
-            <div class="col-12 col-md-6 mb-2 mb-md-0"></div>
+            <div class="col-12 col-md-6 mb-2 mb-md-0">
+            <button type="button" class="btn btn-primary btn-sm" id="uploadContactBtn">
+                <i class="bi bi-upload"></i> Upload Contact
+            </button>
+            </div>
             <div class="col-12 col-md-6 d-flex flex-wrap justify-content-end gap-2">
                 <label for="switch_contacts" class="fw-semibold me-2 mb-0 text-secondary">Contact Type:</label>
                 <select name="" id="switch_contacts" class="form-control form-control-sm w-auto min-w-120px" style="min-width:130px;max-width:150px;">
@@ -127,7 +131,37 @@
                     let val = this.value;
                     crm.PreviewContacts(val)
                 })
+
+                $('#uploadContactBtn').click(function(){
+                    let form = `
+                    <form id="upload-contact-form" enctype="multipart/form-data" method="post" action="/crm/contacts/upload/">
+                        <div class="mb-3">
+                            <label for="contact_type" class="form-label">Contact Type</label>
+                            <select class="form-select" id="contact_type" name="contact_type" required>
+                                <option value="">Select Contact Type</option>
+                                <option value="sms">Phone</option>
+                                <option value="email">Email</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="excel_file" class="form-label">Upload Excel File</label>
+                            <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xls,.xlsx" required>
+                        </div>
+                        <div class="mb-3">
+                            <a href="https://docs.google.com/spreadsheets/d/1IXCsVnvbLtkb5jB_pZu0dzORy2AQ5yWsvgA-jKWwwok/edit?usp=sharing" target="_blank" download>Download Excel Template</a>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </form>
+                    `
+
+                    amodal.setBodyHtml(form);
+                    amodal.setTitleHtml('Upload Contacts');
+                    amodal.show()
+                })
+
             }
+
+            
             
         );
     </script>

@@ -1,10 +1,12 @@
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 
+from admin_panel.anton import is_valid_phone_number, is_valid_email, fix_phone_number
 from admin_panel.models import SmsApi, MailSenders
-from crm.models import Logs, CrmUsers, FollowUp, LeadStreams
+from crm.models import Logs, CrmUsers, FollowUp, LeadStreams, Contacts
 
 
 # Create your views here.
@@ -135,3 +137,75 @@ def crm_lead_stream(request):
             'leads':LeadStreams.objects.all(),
         }
     )
+
+
+
+@csrf_exempt  # Assuming AJAX or fetch, remove if not necessary
+@login_required()
+def upload_contacts(request):
+    import pandas as pd
+    if request.method == "POST":
+        excel_file = request.FILES.get('excel_file')
+        contact_type = request.POST.get('contact_type')
+        not_done = []
+        if not excel_file:
+            not_done.append('excel_file')
+        if not contact_type:
+            not_done.append('contact_type')
+        if not_done:
+            return JsonResponse({'success': False, 'message': f"Required fields missing: {', '.join(not_done)}.", 'not_done': not_done})
+
+        try:
+            # Read the uploaded file into a dataframe
+            df = pd.read_excel(excel_file)
+
+            required_columns = ['name', 'contact']
+            if not all(col in df.columns for col in required_columns):
+                return JsonResponse({'success': False, 'message': "Excel missing required columns: name, contact, source"})
+
+            count = 0
+            for _, row in df.iterrows():
+                name = row.get('name', '') or ''
+
+                # Get the raw value
+                raw_contact = row.get('contact', '')
+
+                # Format: ensure it's an integer (to remove .0) then pad to 10 digits
+                if pd.notnull(raw_contact) and raw_contact != '':
+                    contact = f"{int(raw_contact):010d}"
+                else:
+                    contact = ''
+                    
+                source = 'upd'
+
+                contact = fix_phone_number(contact) if contact == 'sms' else contact
+                print(f"Contact: {contact}")
+
+                if name and contact:
+                    if contact_type == 'sms' and is_valid_phone_number(str(contact)):
+                        Contacts.objects.create(
+                            name=name,
+                            contact=contact,
+                            source=source,
+                            type=contact_type
+                        )
+
+                        count += 1
+                    elif contact_type == 'email' and is_valid_email(str(contact)):
+                        Contacts.objects.create(
+                            name=name,
+                            contact=contact,
+                            source=source,
+                            type=contact_type
+                        )
+                        count += 1
+
+            return JsonResponse({'success': True, 'message': f"{count} contacts uploaded."})
+
+        except Exception as e:
+            import sys
+            tb = sys.exc_info()[2]
+            line_no = tb.tb_lineno if tb else 'unknown'
+            return JsonResponse({'success': False, 'message': f"Upload failed at line {line_no}: {str(e)}"}, status=400)
+    else:
+        return redirect('crm')

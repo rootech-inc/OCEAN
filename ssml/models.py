@@ -1406,6 +1406,8 @@ class Expense(models.Model):
     ]
     transaction_type = models.CharField(max_length=255, choices=transaction_type_choices)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    ori_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
     reference = models.CharField(max_length=255)
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)

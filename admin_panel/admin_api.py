@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from admin_panel.anton import md5only, remove_html_tags, generate_random_password
+from admin_panel.anton import md5only, remove_html_tags, generate_random_password, make_md5_hash
 from admin_panel.cron_exe import execute_script
 from admin_panel.models import BankAccounts, DocApprovals, GeoCity, GeoCitySub, Reminder, SmsApi, UserAddOns, EvatCredentials, \
     Locations, \
@@ -1045,7 +1045,7 @@ def index(request):
                 user.save()
                 mail_enc = make_md5_hash(email_template)
                 MailQueues(sender=mail_api, recipient=user.email, cc='solomon@snedaghana.com',
-                           subject="PASSWORD RESET FOR OCEAN", body=email_template).save()
+                           subject="PASSWORD RESET FOR OCEAN", body=email_template,mail_key=mail_enc).save()
                            
                 Sms(api=SmsApi.objects.get(is_default=1), to=addon.phone, message=sms_message).save()
 

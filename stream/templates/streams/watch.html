@@ -1,38 +1,336 @@
-{% extends 'base.html' %}
+{% extends 'streams/base_stream.html' %}
 {% load static %}
 
-{% block body %}
-    <div class="card-header">
-        <strong class="card-title">{{ video.title }}</strong>
-    </div>
-    <div class="card-body overflow-auto p-5">
-        <div class="w-100 card p-2">
+{% block extra_css %}
+<style>
+    .video-container {
+        position: relative;
+        width: 100%;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
 
-            <video
-                    id="my-video"
-                    class="video-js"
-                    controls
-                    preload="auto"
-                    style="width: 100%; height: 70vh"
-                    height="400"
-                    poster="{{ video.thumbnail }}"
-                    data-setup="{}"
+    video {
+        width: 100%;
+        max-height: 80vh;
+        outline: none;
+    }
 
-                  >
-                    <source src="/{{ video.file }}" type="video/mp4" />
-                    <p class="vjs-no-js">
-                      To view this video please enable JavaScript, and consider upgrading to a
-                      web browser that
-                      <a href="https://videojs.com/html5-video-support/" target="_blank"
-                        >supports HTML5 video</a
-                      >
-                    </p>
+    .recommended-video {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+
+    .recommended-video:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .recommended-thumb {
+        width: 160px;
+        height: 90px;
+        border-radius: 8px;
+        object-fit: cover;
+    }
+
+    .comment-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #333;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+    }
+
+    /* Scrollbar for playlist */
+    .playlist-scroll {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const VIDEO_KEY = "{{ video.key }}";
+    const USER_ID = "{{ request.user.id }}";
+    const API_URL = "{% url 'stream_api' %}";
+
+    function logView() {
+        const payload = {
+            module: 'view',
+            data: {
+                video_key: VIDEO_KEY
+            }
+        };
+
+        fetch(API_URL, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        }).then(res => res.json())
+            .then(data => console.log('View logged:', data))
+            .catch(err => console.error('Error logging view:', err));
+    }
+
+    function loadComments() {
+        const payload = {
+            module: 'comment',
+            data: {
+                video_key: VIDEO_KEY
+            }
+        };
+
+        fetch(API_URL, {
+            method: 'VIEW', // Using non-standard method as per user request/pattern
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        }).then(res => res.json())
+            .then(response => {
+                if (response.status_code === 200) {
+                    renderComments(response.message);
+                }
+            })
+            .catch(err => console.error('Error loading comments:', err));
+    }
+
+    function renderComments(comments) {
+        const container = document.getElementById('comments-container');
+        container.innerHTML = '';
+
+        if (comments.length === 0) {
+            container.innerHTML = '<div class="text-secondary text-center py-4">No comments yet. Be the first to share your thoughts!</div>';
+            return;
+        }
+
+        comments.forEach(c => {
+            const html = `
+            <div class="d-flex gap-3 mb-3">
+                <div class="comment-avatar bg-secondary">${c.avatar}</div>
+                <div>
+                    <div class="d-flex gap-2 align-items-center mb-1">
+                        <span class="fw-bold text-light smaller">${c.user}</span>
+                        <span class="text-secondary small">${c.created_at}</span>
+                    </div>
+                    <p class="text-light mb-1">${c.text}</p>
+                     <div class="d-flex gap-3 text-secondary small">
+                        <!-- Likes/Reply placeholders -->
+                        <span class="cursor-pointer"><i class="bi bi-hand-thumbs-up"></i> 0</span>
+                        <span class="cursor-pointer">Reply</span>
+                        ${c.is_owner ? `<span class="text-danger cursor-pointer" onclick="deleteComment(${c.id})">Delete</span>` : ''}
+                    </div>
+                </div>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    function submitComment() {
+        const input = document.getElementById('comment-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const payload = {
+            module: 'comment',
+            data: {
+                video_key: VIDEO_KEY,
+                text: text,
+                user_pk: USER_ID
+            }
+        };
+
+        fetch(API_URL, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        }).then(res => res.json())
+            .then(response => {
+                if (response.status_code === 200) {
+                    input.value = '';
+                    loadComments(); // Reload comments
+                } else {
+                    alert('Error posting comment: ' + response.message);
+                }
+            })
+            .catch(err => console.error('Error posting comment:', err));
+    }
+
+    function deleteComment(commentId) {
+        if (!confirm('Delete this comment?')) return;
+
+        const payload = {
+            module: 'comment',
+            data: {
+                comment_id: commentId
+            }
+        };
+
+        fetch(API_URL, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        }).then(res => res.json())
+            .then(response => {
+                if (response.status_code === 200) {
+                    loadComments();
+                } else {
+                    alert('Error deleting comment');
+                }
+            });
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        logView();
+        loadComments();
+
+        const commentBtn = document.getElementById('submit-comment-btn');
+        if (commentBtn) {
+            commentBtn.addEventListener('click', submitComment);
+        }
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Main Video Column -->
+    <div class="col-lg-8 col-xl-9">
+        <div class="video-container mb-3">
+            <video id="my-video" controls playsinline poster="{{ video.thumbnail }}">
+                <source src="/{{ video.file }}" type="video/mp4">
+                Your browser does not support HTML5 video.
             </video>
+        </div>
 
-            <hr>
-            <p class="text-muted">{{ video.descr }}</p>
+        <h4 class="fw-bold text-light mb-2">{{ video.title }}</h4>
 
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-secondary d-flex justify-content-center align-items-center"
+                    style="width: 40px; height: 40px;">
+                    <span class="fw-bold text-light">OS</span>
+                </div>
+                <div>
+                    <h6 class="text-white mb-0">Ocean Stream</h6>
+                    <small class="text-secondary">Subscribers</small>
+                </div>
+                <!-- Subscribe Button placeholder -->
+                <button class="btn btn-light rounded-pill fw-bold ms-3 px-3">Subscribe</button>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-secondary rounded-pill d-flex align-items-center gap-2">
+                    <i class="bi bi-hand-thumbs-up"></i> Like
+                </button>
+                <button class="btn btn-secondary rounded-pill d-flex align-items-center gap-2">
+                    <i class="bi bi-share"></i> Share
+                </button>
+                <button class="btn btn-secondary rounded-pill d-flex align-items-center gap-2">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-dark rounded-3 p-3 mb-4 text-light border border-secondary">
+            <div class="d-flex gap-2 mb-2">
+                <span class="fw-bold">{{ video.views|default:"0" }} views</span>
+                <span class="fw-bold">{{ video.uploaded_at|date:"M d, Y" }}</span>
+            </div>
+            <p class="mb-0 text-white-50">{{ video.descr }}</p>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section">
+            <h5 class="text-light mb-4">Comments</h5>
+
+            <!-- Add Comment Input -->
+            {% if user.is_authenticated %}
+            <div class="d-flex gap-3 mb-4">
+                <div class="comment-avatar bg-primary">{{ user.username|slice:":1"|upper }}</div>
+                <div class="w-100">
+                    <input type="text" id="comment-input"
+                        class="form-control bg-transparent border-0 border-bottom border-secondary text-light rounded-0 shadow-none"
+                        placeholder="Add a comment...">
+                    <div class="d-flex justify-content-end mt-2 gap-2">
+                        <button class="btn btn-text text-light rounded-pill"
+                            onclick="document.getElementById('comment-input').value=''">Cancel</button>
+                        <button class="btn btn-primary rounded-pill" id="submit-comment-btn">Comment</button>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-dark border-secondary mb-4 d-flex align-items-center justify-content-between">
+                <span>Please login to join the discussion.</span>
+                <a href="{% url 'login' %}" class="btn btn-sm btn-outline-primary rounded-pill">Login</a>
+            </div>
+            {% endif %}
+
+            <!-- Dynamic Comments Container -->
+            <div id="comments-container">
+                <div class="d-flex justify-content-center py-4">
+                    <div class="spinner-border text-secondary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Sidebar / Playlist Column -->
+    <div class="col-lg-4 col-xl-3">
+        {% if series_videos %}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header border-secondary bg-transparent d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 text-light fw-bold">{{ video.series.title }}</h6>
+                <span class="badge bg-secondary">Series</span>
+            </div>
+            <div class="card-body p-0 playlist-scroll">
+                {% for v in series_videos %}
+                <a href="{% url 'watch' v.key %}"
+                    class="d-flex p-2 text-decoration-none {% if v.id == video.id %}bg-secondary bg-opacity-25{% else %}hover-bg-secondary{% endif %}">
+                    <span class="me-2 text-secondary d-flex align-items-center">{{ forloop.counter }}</span>
+                    <div class="col-4 me-2">
+                        <img src="{{ v.thumbnail|default_if_none:'/static/general/img/strams.png' }}"
+                            onerror="this.onerror=null;this.src='/static/general/img/strams.png';"
+                            class="img-fluid rounded-1" alt="{{ v.title }}">
+                    </div>
+                    <div class="col text-truncate">
+                        <span class="text-light d-block small fw-bold text-truncate">{{ v.title }}</span>
+                        <small class="text-secondary">{{ v.uploaded_at|timesince }} ago</small>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Up Next / Recommended (Placeholder mostly) -->
+        <h6 class="text-light fw-bold mb-3">Up Next</h6>
+        <!-- We could list random videos here, but for now let's just show some static or random from global list if passed, but typically we want related videos.
+             Since we don't have 'related' logic, we won't show anything unless we pass 'videos' to this view too or just leave it blank/mocked.
+             User asked for "modern display", usually implies sidebar.
+        -->
+        <div class="alert alert-dark text-secondary small text-center">
+            More recommendations coming soon...
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -55,6 +55,16 @@ class Anton {
         return api.call('VIEW', payload, '/apiv2/')
     }
 
+    async UsersX() {
+        let payload = {
+            'module': 'users',
+            data: {}
+        }
+
+        return api.call('VIEW', payload, '/apiv2/')
+    }
+
+
     IsRequest(request,cry=false) {
         if (request['status_code'] === 200 || request['status'] === 200 || request['status'] === 202 || request['status_code'] === 202) {
             return true

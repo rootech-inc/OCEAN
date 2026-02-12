@@ -44,11 +44,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = True
 
 ALLOWED_HOSTS = [
-    'ocean.rootechits.com',    # The ERP subdomain
-    'rootechits.com',          # The main domain (if OCEAN uses it)
-    '127.0.0.1',               # Localhost for internal proxying
-    'localhost',
-    'https://rootechits.com'
+    '*'
 ]
 
 LOGIN_URL = '/login/'

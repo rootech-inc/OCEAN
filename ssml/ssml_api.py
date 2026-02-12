@@ -2117,7 +2117,7 @@ def interface(request):
                         elif filt == 'rejected':
                             expenses = Expense.objects.filter(is_rejected=True).order_by('date')
                         else:
-                            expenses = Expense.objects.flter(is_rejected=False).order_by('date')
+                            expenses = Expense.objects.flter(is_rejected=False,is_approved=True).order_by('date')
                         
                         if doc == 'json':
                             arr  = [expense.obj() for expense in expenses]
@@ -2153,7 +2153,9 @@ def interface(request):
                                 ws.append(li)
 
                             dir_name = direction if direction != '*' else 'all'
-                            file_name = f'static/general/tmp/{dir_name}_expensis_as_of_{str(as_of)}.xlsx'
+                            import uuid
+                            unique_id = uuid.uuid4()
+                            file_name = f'static/general/tmp/{unique_id}_d{dir_name}_expensis_as_of_{str(as_of)}.xlsx'
                             wb.save(file_name)
                             arr = file_name
 
@@ -2175,6 +2177,21 @@ def interface(request):
                             'total_out': "{:,.2f}".format(Expense.objects.filter(direction='out',is_approved=False).aggregate(total=Sum('amount'))['total'] or 0),
                             'expenses':arr
                         }
+
+                elif module == 'find_expense_by_search':
+                    from django.db.models import Q
+
+                    search_string = data.get('search_string')
+
+                    # Using Q objects to search both fields with 'icontains' (Case-Insensitive LIKE)
+                    expenses = Expense.objects.filter(
+                        Q(description__icontains=search_string) |
+                        Q(reference__icontains=search_string)
+                    ).order_by('date')
+
+                    arr = [expense.obj() for expense in expenses]
+                    success_response['message'] = arr
+                    response = success_response
 
                 elif module == 'invoice':
                     
@@ -3436,6 +3453,19 @@ def interface(request):
 
                 material.save()
                 success_response['message'] = "Material Updated Successfully"
+
+            elif module == 'set_expense_to_zero':
+                pk = data.get('pk')
+                expense = Expense.objects.get(pk=pk)
+                if expense.amount == 0:
+                    raise Exception("Cannot Reset 0")
+                ori_amount = expense.amount
+                expense.amount = data.get('amount',0)
+                expense.ori_amount = ori_amount
+                expense.save()
+
+                response = success_response
+
 
             elif module == 'meter_phase':
                 # INSERT_YOUR_CODE

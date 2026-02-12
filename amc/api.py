@@ -47,6 +47,101 @@ def amc_interface(request):
                 )
                 response = success_response
 
+            elif module == 'compliance_authority':
+                name = data.get('auth_name')
+                description = data.get('auth_description')
+                email = data.get('auth_email')
+                contact = data.get('auth_contact')
+                website = data.get('auth_website')
+                contact_person = data.get('auth_contact_person')
+                phone = data.get('auth_phone')
+                person_email = data.get('auth_person_email')
+                created_by = User.objects.get(pk=data.get('mypk'))
+
+                ComplianceAuthority.objects.create(
+                    name=name,
+                    description=description,
+                    email=email,
+                    contact=contact,
+                    website=website,
+                    contact_person=contact_person,
+                    phone=phone,
+                    person_email=person_email,
+                    created_by=created_by
+                )
+
+                # INSERT_YOUR_CODE
+                ca = ComplianceAuthority.objects.get(name=name, created_by=created_by)
+                success_response['message'] = ca.pk
+                response = success_response
+
+            elif module == 'compliance_type':
+                owner = User.objects.get(pk=data.get('mypk'))
+                name = data.get('compliance_type_name')
+                description = data.get('compliance_type_description')
+                managed_by = User.objects.get(pk=data.get('manged_by'))
+                authority_pk = data.get('authority')
+                authority = ComplianceAuthority.objects.get(pk=authority_pk)
+
+                ComplianceType.objects.create(
+                    created_by=owner,
+                    name=name,
+                    description=description,
+                    managed_by=managed_by,
+                    authority=authority
+                )
+
+                response = success_response
+
+            elif module == 'asset_group_compliance_type':
+                document_select = data.get('compliance_type_select')
+                group_id = data.get('group_id')
+
+                group = Groups.objects.get(pk=group_id)
+                complaince_type = ComplianceType.objects.get(pk=document_select)
+
+                AssetGroupComplianceType.objects.create(
+                    asset_group = group,
+                    compliance_type=complaince_type
+                )
+
+                response = success_response
+
+            elif module == 'asset_compliance':
+                asset_pk = data.get('asset_pk')
+                compliance_pk = data.get('compliance_pk')
+
+                asset = Asset.objects.get(pk=asset_pk)
+                compliance = ComplianceType.objects.get(pk=compliance_pk)
+
+                mypk = data.get('mypk')
+                expiry_date = data.get('expiry_date')
+                remarks = data.get('remarks')
+                reference = data.get('reference')
+                is_expiry = data.get('is_expiry')
+
+                if is_expiry == 'YES':
+                    is_expiry = True
+                else:
+                    is_expiry = False
+
+                created_by = User.objects.get(pk=mypk)
+
+                AssetCompliance.objects.create(
+                    asset=asset,
+                    compliance_type=compliance,
+                    is_expiry=is_expiry,
+                    expiry_date=expiry_date,
+                    reference=reference,
+                    remarks=remarks,
+                    linked_by=created_by
+                )
+
+                just_created = AssetCompliance.objects.get(asset=asset, compliance_type=compliance)
+
+                success_response['message'] = just_created.pk
+                response = success_response
+
             elif module == 'group_requirement':
                 document_select = data.get('document_select')
                 group_id = data.get('group_id')
@@ -150,6 +245,11 @@ def amc_interface(request):
                         # check if user has compliance
                         if EmployeeDocuments.objects.filter(user=assignee,document=compliance.document).count() == 0:
                            raise Exception(f"{assignee.get_full_name()} does not have all required compliance documents ({compliance.document.title}).")
+
+                # check if asset is assignable
+                is_assignable = asset.is_assignable()
+                if not is_assignable.get('can_assign'):
+                    raise Exception(f"Cannot assign asset because: {is_assignable.get('message')}")
 
                 # Save old assignee (if needed for logs)
                 old_assignee = asset.assigned_to.username if asset.assigned_to else None
@@ -313,6 +413,10 @@ def amc_interface(request):
                 else:
                     success_response['message'] = [gp.obj() for gp in Groups.objects.filter(pk=pk)]
                 
+                response = success_response
+
+            elif module == 'compliance_authority':
+                success_response['message'] = [ct.obj() for ct in ComplianceAuthority.objects.all()]
                 response = success_response
 
             elif module == 'print_document':
@@ -532,6 +636,16 @@ def amc_interface(request):
                 success_response['message'] = [ticket.obj() for ticket in TicketHd.objects.filter(ref=asset.serial)]
                 response = success_response
 
+            elif module == 'asset_compliance':
+                asset = Asset.objects.get(pk=data.get('asset'))
+                success_response['message'] = [ac.obj() for ac in AssetCompliance.objects.filter(asset=asset)]
+                response = success_response
+
+            elif module == 'compliance_requirement':
+                success_response['message'] = [cp.obj() for cp in ComplianceType.objects.all()]
+                response = success_response
+
+
             else:
                 raise Exception(f"Unknown {method} {module}")
 
@@ -539,7 +653,19 @@ def amc_interface(request):
             pass
 
         elif method == 'DELETE':
-            pass
+            if module == 'user_compliance_requirement':
+                print(data)
+                pk = data.get('id')
+                GroupCompliance.objects.get(pk=pk).delete()
+                response = success_response
+
+            elif module == 'delete_asset_compliance':
+                AssetCompliance.objects.get(pk=data.get('pk')).delete()
+                success_response['message'] = f"Complaince Unlinked from Asset"
+                response = success_response
+
+            else:
+                raise Exception(f"Unknown {method} {module}")
 
         else:
             raise Exception(f"Unknow Method {method}")

@@ -1,0 +1,120 @@
+{% extends 'amc/base.html' %}
+{% load static %}
+
+{% block body %}
+
+<!-- INSERT_YOUR_CODE -->
+
+<div class="container-fluid">
+    <div class="d-none d-md-block">
+        <!-- Table for desktop -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Asset</th>
+                        <th>Compliance</th>
+                        <th>Description</th>
+                        <th>Expiry Date</th>
+                        <th>Remarks</th>
+                        <th>Reference</th>
+                        <th>Document</th>
+                        <th>Managed By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in compliances %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            {% if c.asset %}
+                                {{ c.asset.name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.compliance_type %}
+                                {{ c.compliance_type.name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.compliance_type %}
+                                {{ c.compliance_type.description }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.expiry_date %}
+                                {{ c.expiry_date }} ({{c.days_to_expire}})
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ c.remarks|default:"-" }}</td>
+                        <td>{{ c.reference|default:"-" }}</td>
+                        <td>
+                            {% if c.document %}
+                                <a href="javascript:void(0)" onclick="windowPopUp('{{ c.document.url }}','View',500,500)"  class="btn btn-outline-success btn-sm">View</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ c.managed_by }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">No compliance records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Responsive cards for mobile -->
+    <div class="d-block d-md-none">
+        {% for c in compliances %}
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title mb-2">
+                    {{ c.compliance.name|default:"Compliance" }}
+                </h6>
+                <p class="card-text mb-1">
+                    <strong>Asset:</strong> {{ c.asset.name|default:"-" }}
+                </p>
+                <p class="card-text mb-1">
+                    <strong>Description:</strong> {{ c.compliance.description|default:"-" }}
+                </p>
+                <p class="card-text mb-1">
+                    <strong>Expiry Date:</strong> {% if c.expiry_date %}{{ c.expiry_date }}{% else %}N/A{% endif %}
+                </p>
+                <p class="card-text mb-1">
+                    <strong>Remarks:</strong> {{ c.remarks|default:"-" }}
+                </p>
+                <p class="card-text mb-1">
+                    <strong>Reference:</strong> {{ c.reference|default:"-" }}
+                </p>
+                <p class="card-text mb-2">
+                    <strong>Date Added:</strong> {{ c.created_at|date:"Y-m-d H:i" }}
+                </p>
+                {% if c.document %}
+                <a href="{{ c.document.url }}" target="_blank" class="btn btn-outline-success btn-sm mb-1">
+                    <i class="bi bi-file-earmark-arrow-down"></i> View Document
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="alert alert-info text-center">
+            No compliance records found.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+{% endblock %}

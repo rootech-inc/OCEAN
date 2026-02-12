@@ -1,0 +1,135 @@
+{% extends 'amc/base.html' %}
+{% load static %}
+
+{% block body %}
+<div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+       
+        <button type="button" class="btn btn-primary" id="add-compliance-type-btn">
+            <i class="bi bi-plus-circle me-1"></i> Add Compliance Type
+        </button>
+    </div>
+</div>
+<div class="card-body">
+    <div class="container py-4">
+        {% if compliance_types %}
+            <div class="row g-4">
+                {% for ctype in compliance_types %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-body d-flex flex-column">
+                                <div class="mb-2">
+                                    <i class="bi bi-list-ul text-success fs-2"></i>
+                                </div>
+                                <h5 class="card-title mb-1 fw-semibold">{{ ctype.name }}</h5>
+                                <p class="card-text mb-2 text-muted" style="min-height:48px;">
+                                    {{ ctype.description|default:"No description provided." }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                There are currently no compliance types displayed on this page.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        $('#add-compliance-type-btn').click(async function(){
+
+            // get all users
+            await anton.UsersX().then(async response => {
+                if(anton.IsRequest(response)){
+
+                    let users_option = "";
+                    response.message.map((item) => {
+                        users_option += `<option value="${item.pk}">${item.username}</option>`;
+                    })
+
+                    let ct_load = {
+                        module:'compliance_authority',
+                        data:{}
+                    }
+                    let authority_options = ``;
+                    await api.v2('VIEW',ct_load,'/amc/api/').then(resp => {
+                        if(anton.IsRequest(resp)){
+                            resp.message.map(auth => {
+                            
+                            authority_options += `<option value="${auth.pk}">${auth.name}</option>`;
+                            })
+                        } else {
+                            kasa.response(response);return
+                        }
+                    }).catch(error => {kasa.error(error);return})
+
+                    let formHtml = `
+                    <div id="compliance-type-form" class="mb-3">
+                        
+                        <div class="mb-3">
+                            <label for="authority" class="form-label">Authority</label>
+                            <select class="form-select" id="authority">
+                                <option value="">Select Authority</option>
+                                ${authority_options}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="compliance_type_name" class="form-label">Type Name</label>
+                            <input type="text" class="form-control" id="compliance_type_name" placeholder="Enter Compliance Type Name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="compliance_type_d   escription" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="compliance_type_description" placeholder="Enter Description">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="manged_by" class="form-label">Managed By (User)</label>
+                            <select class="form-select" id="manged_by">
+                                <option value="">Select User</option>
+                                ${users_option}
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="compliance-type-form-submit">Submit</button>
+                    </div>
+                    `;
+                    amodal.setBodyHtml(formHtml);
+                    amodal.show();
+
+                    $('#compliance-type-form-submit').click(async function(){
+                        let ids = ['authority','mypk','compliance_type_name','compliance_type_description','manged_by']
+                        if(anton.validateInputs(ids)){
+                            let payload = {
+                                module:'compliance_type',
+                                data:anton.Inputs(ids)
+                            }
+
+                            await api.v2('PUT',payload,'/amc/api/').then(response => {
+                                if(anton.IsRequest(response)){
+                                    kasa.confirm(response.message,1,'here')
+                                } else {
+                                    kasa.response(response)
+                                }
+                            }).catch(error => {kasa.error(error)})
+
+                        } else {
+                            kasa.error("invalid Form")
+                        }
+                    });
+
+                } else {
+                    kasa.response(response);
+                }
+
+
+
+            }).catch(error => {kasa.error(error)})
+
+
+        });
+    });
+</script>
+{% endblock %}

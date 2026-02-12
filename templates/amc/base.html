@@ -404,23 +404,55 @@
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'admin_panel' %}">
-          <i class="bi bi-grid"></i>
+          <i class="bi bi-speedometer2 text-primary fs-5 me-2"></i>
           <span>Dashboard</span>
         </a>
       </li><!-- End Dashboard Nav -->
-          <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'asset_management_center' %}">
-              <i class="bi bi-shop"></i>
-              <span>Assets</span>
-            </a>
-          </li>
+        <li class="nav-item">
+      <a class="nav-link collapsed" data-bs-target="#compliance-nav" data-bs-toggle="collapse" href="#">
+        <i class="bi bi-shield-check"></i>
+        <span>Compliance</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+      </a>
+      <ul id="compliance-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+        <li>
+          <a href="{% url 'amc_compliance' %}">
+            <i class="bi bi-card-checklist text-info me-2"></i>
+            <span>List of Compliances</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'amc_compliance_authorities' %}">
+            <i class="bi bi-building text-primary me-2"></i>
+            <span>Autorities</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'amc_compliance_type' %}">
+            <i class="bi bi-list-ul text-success me-2"></i>
+            <span>Types</span>
+          </a>
+        </li>
 
-          <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'amc_groups' %}">
-              <i class="bi bi-shop"></i>
-              <span>Asset Groups</span>
-            </a>
-          </li>
+
+      </ul>
+    </li>
+
+        <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'amc_groups' %}">
+          <i class="bi bi-layers text-success fs-5 me-2"></i>
+          <span>Asset Groups</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'asset_management_center' %}">
+          <i class="bi bi-hdd-network text-info fs-5 me-2"></i>
+          <span>Assets</span>
+        </a>
+      </li>
+
+
+
 
 
 
@@ -448,7 +480,7 @@
     </div><!-- End Page Title -->
 
     <section class="section h-100" style="height: 85vh !important">
-      <div class="w-100 h-100 card overflow-hidden">
+      <div class="w-100 h-100 {% if page.card %}card{% endif %} overflow-auto">
           <button id="install-button" class="install-button">Install App</button>
 
           {% block body %}

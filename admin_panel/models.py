@@ -1037,3 +1037,16 @@ class Company(models.Model):
             models.UniqueConstraint(fields=['email'], name='unique_company_email'),
             models.UniqueConstraint(fields=['name'], name='unique_company_name'),
         ]
+
+class GoogleSyncConfig(models.Model):
+    file_url = models.URLField(max_length=500)
+    tag = models.CharField(max_length=100)
+    json_file = models.FileField(upload_to="static/uploads/amc/assets")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='google_sync_configs'
+    )
+
+    def __str__(self):
+        return f"{self.tag}: {self.file_url}"

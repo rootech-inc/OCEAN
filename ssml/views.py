@@ -442,6 +442,8 @@ def save_contractor_error(request):
 
 @login_required
 def accounts(request):
+    if not request.user.is_superuser:
+        return HttpResponse("Invalid Access")
     page = {
         'title': 'Accounts',
         'page': 'accounts',

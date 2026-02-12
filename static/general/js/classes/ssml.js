@@ -2127,6 +2127,172 @@ class SSML {
     }
 
 
+    async loadExpensesByFilter(){
+        let html = fom.text('search_string','remarks, reference, amount',true)
+        amodal.setTitleText('Expenses Filter');
+        amodal.setBodyHtml(html);
+        amodal.setFooterHtml('<button class="btn btn-primary" id="filter_for_more_expense">Filter</button>');
+        amodal.show();
+
+        $('#filter_for_more_expense').click(async function () {
+            let ids = ['search_string']
+            if(anton.validateInputs(ids)) {
+                let payload = {
+                    module:'find_expense_by_search',
+                    data:anton.Inputs(ids)
+                }
+                loader.show()
+                await api.v2('VIEW',payload, '/ssml/api/').then(res => {
+                    if(anton.IsRequest(res)){
+                        // load data
+                        let expenses = res.message;
+                        console.log(expenses);
+                        let rows = ""
+                        expenses.forEach(expense => {
+                            let status = expense['status'];
+                            let approved = expense['approval']
+
+                            let men = `<a href='javascript:void(0)' class="dropdown-item text-success approve" data-id='${expense.id}'><i class="bi bi-check"></i> Approve</a>`;
+                            men += `<a href='javascript:void(0)' class="dropdown-item reject text-danger" data-id='${expense.id}'><i class="bi bi-check"></i> Reject</a>`;
+                            men += `<a href='javascript:void(0)' class="dropdown-item set_zero text-danger" data-id='${expense.id}'><i class="bi bi-check"></i> Set 0</a>`;
+                            if (!status) {
+                                // create approval menu
+                                men = ``
+
+                            }
+                            rows += `
+                            <tr>
+                                <td>${expense.direction}</td>
+                                <td>${expense.category}</td>
+                                <td>${expense.amount}</td>
+                                <td>${expense.created_at}</td>
+                                <td>${expense.reference}<br>${expense.description}</td>
+    
+                                <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="dropdownMenu${expense.id}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenu${expense.id}">
+                                        <a class="dropdown-item evidence" data-ev="${expense.evidence}" data-pk='${expense.id}' href="javascript:void(0)">
+                                                <i class="bi bi-paperclip" ></i> Evidence
+                                        </a>
+                                        ${men}
+                                    </ul>
+                                </div>
+                                </td>
+                            </tr>
+                        `
+
+                        })
+                        $('#expenses_table').html(rows)
+                        $('.evidence').click(function () {
+                            let pk = $(this).data('pk')
+                            let evidence = $(this).data('ev');
+
+                            let evs = "";
+                            evidence.split(',').map(ev => {
+                                let jk = ev.split('|')
+                                evs += `
+                                <a onclick='anton.viewFile("${jk[1]}")' href='javascript:void(0)'>${jk[0]}</a><br>
+                            `
+                            })
+
+                            // INSERT_YOUR_CODE
+                            let html = `
+                            ${evs}
+                        `;
+
+                            amodal.setBodyHtml(html)
+                            amodal.setFooterHtml(`<button class='this_new btn btn-info'>NEW</button>`)
+                            amodal.show()
+
+                            $('.this_new').click(function () {
+                                let html = `
+                                <form method='POST' action='/ssml/accounts/upload-evidence/' id='evidence_form' enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label for="evidenceTitle${pk}" class="form-label">Title</label>
+                                        <input type="text" name='title' require class="form-control" id="evidenceTitle${pk}" list="evidenceTitle${pk}" placeholder="Enter title">
+                                        <datalist list='evidenceTitle${pk}'>
+                                            <option value='Invoice'>
+                                        </datalist>
+                                    </div>
+                                    <div class="mb-3">
+                                    <input type='hidden' name='transaction_id' value='${pk}' >
+                                        <label for="evidenceFile${pk}" class="form-label">File</label>
+                                        <input type="file" name='file' require class="form-control" id="evidenceFile${pk}">
+                                    </div>
+                                </form>
+                            `;
+
+                                amodal.setBodyHtml(html)
+                                amodal.setFooterHtml(`<button type='submit' form='evidence_form' class='btn btn-success'>SAVE</button>`)
+                                amodal.show()
+                            })
+                        })
+
+                        $('.approve').click(function () {
+                            if (confirm("Are You Sure")) {
+                                let payload = {
+                                    module: 'approve_expense',
+                                    data: {
+                                        pk: $(this).data('id')
+                                    }
+                                }
+                                kasa.response(api.call('PATCH', payload, '/ssml/api/'))
+                                ssml.loadExpenses($('#filter_by').val())
+                            }
+                        })
+                        $('.reject').click(async function () {
+                            if (confirm("Are You Sure to Reject this Expense?")) {
+                                let payload = {
+                                    module: 'reject_expense',
+                                    data: {
+                                        pk: $(this).data('id')
+                                    }
+                                }
+                                loader.show()
+                                await api.v2('PATCH', payload, '/ssml/api/').then(response => {
+                                    kasa.response(response)
+                                    ssml.loadExpenses($('#filter_by').val())
+                                    loader.hide()
+                                }).catch(error => {
+                                    kasa.error(error)
+                                    loader.hide()
+                                })
+                            } else {
+                                kasa.info("Operation Cancelled")
+                                loader.hide()
+                            }
+                        })
+
+                        $('.set_zero').click(async function(){
+                            let pk = $(this).data('id');
+                            if(confirm("Are you sure?")){
+                                let payload = {
+                                    module:'set_expense_to_zero',
+                                    data:{
+                                        pk:pk
+                                    }
+                                }
+
+                                await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+                                    kasa.response(response)
+                                }).catch(error=>{kasa.error(error)})
+
+                            } else {
+                                kasa.info("Operations Canceled")
+                            }
+                        })
+                        loader.hide()
+                    } else {
+                        kasa.response(res);
+                        loader.hide();
+                    }
+                }).catch(err => {kasa.error(err);loader.hide()})
+            }
+        })
+    }
 
     async retRecon(service_id) {
         let payload = {
@@ -3236,11 +3402,13 @@ class SSML {
                                             <i class="bi bi-paperclip" ></i> Evidence
                                     </a>
                                     ${men}
+
                                 </ul>
                             </div>
                             </td>
                         </tr>
                     `
+
                     })
                     $('#expenses_table').html(rows)
                     $('.evidence').click(function () {

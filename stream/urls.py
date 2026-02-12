@@ -15,12 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from . import views
+from . import views, api
 
 urlpatterns = [
 
+
     path('', views.index, name='stream'),
     path('upload-video',views.upload_video,name='upload_video'),
-    path('watch/<key>', views.watch, name='watch')
+    path('watch/<key>', views.watch, name='watch'),
+    path('series/<key>', views.view_series, name='view_series'),
+    path('create-series', views.create_series, name='create_series'),
+    path('api/', api.stream_api, name='stream_api'),
 
 ]

@@ -7,6 +7,7 @@ import babel.numbers
 import datetime
 import hashlib
 
+
 from django.apps.registry import Apps
 from django.contrib.auth import authenticate, login as auth_login, logout, get_user_model
 from django.contrib.auth.decorators import login_required, permission_required
@@ -2628,3 +2629,56 @@ def user_compliance(request):
         
     }
     return render(request, 'console/user_compliance.html', context=context)
+
+@login_required
+def google_sync_setup(request):
+ 
+
+    context = {
+        'nav': True,
+        'page': {
+            'title': 'Google Sync Setup'
+        },
+        'google_sync_configs': GoogleSyncConfig.objects.all().order_by('-created_at'),
+    }
+    return render(request, 'console/accessories/gsync_setup.html', context=context)
+
+@login_required()
+@csrf_exempt
+def add_google_sync_info(request):
+    if request.method == "POST":
+            file_url = request.POST.get("fileUrl", "").strip()
+            tag = request.POST.get("tag", "").strip()
+            json_file = request.FILES.get("jsonFile")
+            # The user who is saving this config could be tracked as:
+            user = request.user if request.user.is_authenticated else None
+
+            context = {
+                "file_url": file_url,
+                "tag": tag,
+                "json_file": json_file,
+                "user": user,
+            }
+
+            # --- Example insertion, adapt below to your actual model ---
+
+            # Only insert if required fields are present
+            if file_url and tag and json_file:
+                # Uncomment and modify as appropriate:
+                config_instance = GoogleSyncConfig(
+                    file_url=file_url,
+                    tag=tag,
+                    json_file=json_file,
+                    created_by=user,
+                )
+                config_instance.save()
+                messages.success(request, "Google Sync Configuration added successfully!")
+
+            else:
+                messages.error(request, "All fields are required.")
+
+            return redirect("google_sync_setup")
+
+    else:
+
+            return redirect("google_sync_setup")

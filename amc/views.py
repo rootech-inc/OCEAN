@@ -1,5 +1,5 @@
 from django.http.response import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import *
 from django.contrib.auth.decorators import login_required, permission_required
 from django.views.decorators.csrf import csrf_exempt
@@ -11,10 +11,17 @@ from employee.models import Documents
 
 @login_required
 def amc(request):
+    # Asset.objects.all().delete()
+    # ComplianceAuthority.objects.all().delete()
+    # ComplianceType.objects.all().delete()
+    # AssetCompliance.objects.all().delete()
     context = {
         'nav':True,
         'assets':Asset.objects.all(),
-        'comment':True
+        'comment':True,
+        'page':{
+            'card': True
+        }
     }
     return render(request,'amc/index.html',context=context)
 
@@ -103,12 +110,87 @@ def asset_group(request,name):
    
     group = get_object_or_404(Groups, name=name)
     assets = Asset.objects.filter(group=group)
+    from .models import ComplianceType
     context = {
-            'nav': True,
-            'page': {'title': f"Asset Group: {group.name}"},
-            'group': group,
-            'assets': assets,
-            'documents':Documents.objects.all(),
-            'group_compliance':GroupCompliance.objects.filter(group=group)
-        }
+        'nav': True,
+        'page': {'title': f"Asset Group: {group.name}"},
+        'group': group,
+        'assets': assets,
+        'documents': Documents.objects.all(),
+        'group_compliance': GroupCompliance.objects.filter(group=group),
+        'asset_compliance_type': AssetGroupComplianceType.objects.all(),  # Added for form
+        'compliance_types': ComplianceType.objects.all(),
+    }
     return render(request, 'amc/asset_group.html', context)
+
+
+
+@login_required()
+def compliance_authorities(request):
+    
+    from .models import ComplianceAuthority
+    context = {
+        'nav': True,
+        'page': {'title': 'Compliance Authorities'},
+        'compliance_authorities': ComplianceAuthority.objects.all()
+    }
+    return render(request, 'amc/compliance_authorities.html', context)
+
+@login_required
+@csrf_exempt
+def upload_auth_logo(request):
+        if request.method == 'POST':
+            auth_id = request.POST.get('auth_id')
+            auth_logo = request.FILES.get('auth_logo')
+            if auth_id and auth_logo:
+                try:
+                    authority = ComplianceAuthority.objects.get(pk=auth_id)
+                    authority.logo = auth_logo
+                    authority.save()
+                except ComplianceAuthority.DoesNotExist:
+                    pass  # Optionally handle error
+        # Redirect back to the compliance authorities page
+        return redirect('compliance_authorities')
+
+
+@login_required
+def compliance_type(request):
+        from .models import ComplianceType
+        context = {
+            'nav': True,
+            'page': {'title': 'Compliance Types'},
+            'compliance_types': ComplianceType.objects.all()
+        }
+        return render(request, 'amc/compliance_type.html', context)
+
+
+
+
+@csrf_exempt
+@login_required()
+def upload_asset_compliance_document(request):
+    if request.method == 'POST':
+        compliance_id = request.POST.get('aci')
+        document = request.FILES.get('compliance_file')
+
+        if compliance_id and document:
+            try:
+                asset_compliance = AssetCompliance.objects.get(pk=compliance_id)
+                asset_compliance.document = document
+                asset_compliance.save()
+            except Exception as e:
+                return HttpResponse(str(e), content_type='text/plain')
+                pass  # Optionally handle error
+
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+@login_required()
+def compliance(request):
+
+
+    context = {
+        'nav': True,
+        'page': {'title': 'List of Compliances'},
+        'compliances': AssetCompliance.objects.all()
+    }
+    return render(request, 'amc/compliance.html', context)

@@ -273,6 +273,7 @@ class Contacts(models.Model):
     source_choice = (
         ('lty','Loyalty'),
         ('log','Logs'),
+        ('upd',"Upload")
     )
     source = models.CharField(max_length=10, choices=source_choice,null=False,blank=False)
     type_choice = (

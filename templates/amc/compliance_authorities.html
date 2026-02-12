@@ -1,0 +1,167 @@
+{% extends 'amc/base.html' %}
+{% load static %}
+
+
+{% block body %}
+
+<div class="card-header">
+<div class="d-flex justify-content-end gap-2">
+    <button type="button" id="add-authority-btn" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Add Authority
+    </button>
+    <button type="button" id="export-authorities-btn" class="btn btn-outline-success">
+        <i class="bi bi-download me-1"></i> Export
+    </button>
+</div>
+</div>
+<div class="card-body">
+    <div class="container py-4">
+        
+        <div class="row g-4">
+            {% comment %}
+            Expected in context:
+            compliance_authorities: Queryset of compliance authority objects
+            Each object should have: name, description, or relevant fields
+            {% endcomment %}
+            {% if compliance_authorities %}
+                {% for authority in compliance_authorities %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-sm border-0 h-100 position-relative" style="overflow:hidden;">
+                            {% if authority.logo %}
+                                <div class="position-absolute w-100 h-100 top-0 start-0" style="
+                                    background-image: url('{{ authority.logo.url }}');
+                                    background-size: cover;
+                                    background-position: center;
+                                    filter: blur(6px);
+                                    z-index: 1;
+                                "></div>
+                                <div class="position-absolute w-100 h-100 top-0 start-0" style="
+                                    background: rgba(255,255,255,0.60);
+                                    z-index: 2;">
+                                </div>
+                            {% endif %}
+                            <div class="card-body d-flex flex-column position-relative" style="z-index: 3;">
+                                <div class="mb-2">
+                                    <i class="bi bi-building-check text-primary fs-2"></i>
+                                </div>
+                                <h5 class="card-title mb-1 fw-semibold">{{ authority.name }}</h5>
+                                {% if authority.abbreviation %}
+                                    <span class="badge bg-info mb-2">{{ authority.abbreviation }}</span>
+                                {% endif %}
+                                <p class="card-text mb-2 text-muted" style="min-height:48px;">
+                                    {{ authority.description|default:"No description provided." }}
+                                </p>
+                                {% if authority.website %}
+                                    <a href="{{ authority.website }}" class="btn btn-sm btn-outline-primary mt-auto" target="_blank">
+                                        Visit Website
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        No compliance authorities found.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function(){
+        $('#add-authority-btn').click(function(){
+            let form = `
+           
+            <div id="authority-form" class="mb-3">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="auth_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="auth_name" placeholder="Enter Authority Name">
+                    </div>
+                    <div class="col-12">
+                        <label for="auth_description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="auth_description" placeholder="Enter Description">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="auth_email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="auth_email" placeholder="Enter Email Address">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="auth_contact" class="form-label">Contact</label>
+                        <input type="text" class="form-control" id="auth_contact" placeholder="Enter General Contact">
+                    </div>
+                    <div class="col-12">
+                        <label for="auth_website" class="form-label">Website</label>
+                        <input type="url" class="form-control" id="auth_website" placeholder="https://example.com">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="auth_contact_person" class="form-label">Contact Person</label>
+                        <input type="text" class="form-control" id="auth_contact_person" placeholder="Person's Full Name">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="auth_phone" class="form-label">Phone</label>
+                        <input type="tel" class="form-control" id="auth_phone" placeholder="Phone Number">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="auth_person_email" class="form-label">Contact Person Email</label>
+                        <input type="email" class="form-control" id="auth_person_email" placeholder="Contact Person's Email">
+                    </div>
+                    <form id="authority-logo-form" method="post" action="/amc/authority/upload-logo/" class="col-md-6" enctype="multipart/form-data">
+                        <input type='hidden' name='auth_id' id='auth_id'>
+                        <label for="auth_logo" class="form-label">Logo</label>
+                        <input type="file" class="form-control" id="auth_logo" name="auth_logo" accept="image/*">
+                    </form>
+                </div>
+                <div class="mt-4">
+                    <button type="button" class="btn btn-primary" id="authority-form-submit">Submit</button>
+                </div>
+            </div>
+            `
+            
+            amodal.setBodyHtml(form)
+            amodal.show()
+
+            $('#authority-form-submit').click(async function(){
+                let ids = [
+                    'auth_name',
+                    'auth_description',
+                    'auth_email',
+                    'auth_contact',
+                    'auth_website',
+                    'auth_contact_person',
+                    'auth_phone',
+                    'auth_person_email',
+                    'auth_logo',
+                    'mypk'
+                ];
+
+                if(anton.validateInputs(ids)){
+                    let payload = {
+                        module:'compliance_authority',
+                        data:anton.Inputs(ids)
+                    }
+
+                    await api.v2('PUT',payload,'/amc/api/').then(response => {
+                        if(anton.IsRequest(response)){
+                            let auth_id = response.message;
+                            $('#auth_id').val(auth_id)
+                            $('#authority-logo-form').submit()
+                        } else {
+                            kasa.response(response)
+                        }
+                    }).catch(error => {kasa.error(error)})
+                } else {
+                    kasa.error("Fill Forms")
+                }
+            })
+        })
+    })
+</script>
+
+{% endblock %}
+
