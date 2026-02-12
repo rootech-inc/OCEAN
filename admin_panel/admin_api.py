@@ -794,26 +794,27 @@ def index(request):
    
             elif module == 'auth':
                 username = data.get('username')
-                password = data.get('key')
+                password = data.get('password') or data.get('key') # Support both
+                next_url = data.get('next') or '/stream/' # Default to stream if no next
 
                 # check if user exist
                 user = authenticate(request, username=username, password=password)
 
                 try:
                     # check if user is valid
-                    if hasattr(user, 'is_active'):
+                    if user is not None and hasattr(user, 'is_active') and user.is_active:
                         auth_login(request, user)
                         # Redirect to a success page.
                         msg = {
                             'auth': 'yes',
-                            'pk': 1,
-                            'username': username
+                            'pk': user.pk,
+                            'username': user.username,
+                            'redirect': next_url
                         }
-
                     else:
                         msg = {
                             'auth': 'no',
-                            'error': "Check Credentials"
+                            'error': "Invalid credentials or inactive account"
                         }
 
                 except Exception as e:
@@ -823,7 +824,6 @@ def index(request):
                     }
                 success_response['message'] = msg
                 response = success_response
-                print(response)
 
             elif module == 'users':
                 all_users = User.objects.all()

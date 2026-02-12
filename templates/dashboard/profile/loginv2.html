@@ -1,183 +1,331 @@
-
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCEAN | Login</title>
 
-  <title>OCEAN</title>
-  <meta content="" name="description">
-  <meta content="" name="keywords">
-
-  <!-- Favicons -->
-  <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
-  <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
-
-  <!-- Google Fonts -->
-{#  <link href="https://fonts.gstatic.com" rel="preconnect">#}
-{#  <link #}
-{#          href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" #}
-{#          rel="stylesheet">#}
-
-  <!-- Vendor CSS Files -->
+  <!-- Design System - Sea Blue Ocean Theme -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
   <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/quill/quill.snow.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/quill/quill.bubble.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/remixicon/remixicon.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/simple-datatables/style.css' %}" rel="stylesheet">
 
-  <!-- Template Main CSS File -->
-  <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
-<link href="{% static 'general/css/recorder.css' %}" rel="stylesheet">
+  <style>
+    :root {
+      --ocean-bg: #0a192f;
+      --ocean-dark: #061121;
+      --ocean-card: #112240;
+      --ocean-primary: #64ffda;
+      --ocean-secondary: #8892b0;
+      --ocean-text: #ccd6f6;
+      --ocean-surface: rgba(17, 34, 64, 0.7);
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--ocean-bg);
+      color: var(--ocean-text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      overflow: hidden;
+      /* Prevent scroll */
+    }
+
+    /* Abstract Background */
+    .bg-shapes {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+    }
+
+    .shape-1 {
+      background: #0056b3;
+      width: 500px;
+      height: 500px;
+      top: -100px;
+      left: -100px;
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .shape-2 {
+      background: #008080;
+      width: 400px;
+      height: 400px;
+      bottom: -50px;
+      right: -50px;
+      animation: float 15s infinite ease-in-out reverse;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      50% {
+        transform: translate(30px, 30px);
+      }
+
+      100% {
+        transform: translate(0, 0);
+      }
+    }
+
+    /* Card STyling */
+    .login-card {
+      background: var(--ocean-surface);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(100, 255, 218, 0.1);
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      position: relative;
+      z-index: 10;
+    }
+
+    .login-logo {
+      font-size: 2rem;
+      /* Adjusted size */
+      font-weight: 700;
+      color: var(--ocean-primary);
+      text-align: center;
+      margin-bottom: 0.5rem;
+      letter-spacing: 1px;
+      display: flex;
+      /* Flex to align icon */
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .login-subtitle {
+      text-align: center;
+      color: var(--ocean-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Form Controls */
+    .form-floating>.form-control {
+      background: rgba(255, 255, 255, 0.05);
+      /* Slightly visible input bg */
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-radius: 8px;
+    }
+
+    .form-floating>.form-control:focus {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--ocean-primary);
+      box-shadow: 0 0 0 0.25rem rgba(100, 255, 218, 0.25);
+      color: #fff;
+    }
+
+    .form-floating>label {
+      color: rgba(136, 146, 176, 0.5);
+      /* Blended ocean-secondary */
+    }
+
+    .form-floating>.form-control:focus~label,
+    .form-floating>.form-control:not(:placeholder-shown)~label {
+      color: var(--ocean-primary);
+      opacity: 1;
+    }
+
+    .btn-login {
+      background: linear-gradient(135deg, #0d6efd, #0099cc);
+      /* Sea blue gradient */
+      border: none;
+      color: white;
+      padding: 0.8rem;
+      border-radius: 8px;
+      width: 100%;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-top: 1.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+      background: linear-gradient(135deg, #0b5ed7, #0088b5);
+    }
+
+    .error-message {
+      color: #ff6b6b;
+      font-size: 0.85rem;
+      margin-top: 10px;
+      text-align: center;
+      display: none;
+    }
+
+    /* Loader Overlay */
+    .loader-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 25, 47, 0.8);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s;
+    }
+
+    .loader-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Credits */
+    .credits {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      color: var(--ocean-secondary);
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+    }
+
+    .credits a {
+      color: var(--ocean-primary);
+      text-decoration: none;
+    }
+  </style>
 </head>
 
 <body>
 
-  <main>
- <div class="container-fluid p-0">
-  <div class="row g-0 min-vh-100">
-    <!-- Full Background with Centered Form -->
-    <div class="col-12 position-relative d-flex align-items-center justify-content-center" 
-         style="background-image: url('{% static 'assets/img/ocean_background.jpg' %}'); 
-                background-size: cover; 
-                background-position: center center; 
-                background-repeat: no-repeat;">
-      
-      <!-- Overlay for better readability -->
-      <div class="position-absolute top-0 start-0 w-100 h-100 bg-primary" style="opacity: 0.2;"></div>
-      
-      <!-- Centered Form Container -->
-      <div class="position-relative" style="z-index: 2; max-width: 450px; width: 100%;">
-        <div class="px-3">
-          
-         
-
-          <!-- Login Card -->
-          
-<div class="card shadow-lg border-0 mx-auto" style="max-width: 400px; backdrop-filter: blur(10px); background-color: rgba(255, 255, 255, 0.95);">
-  <div class="card-body p-4">
-
-    <!-- Logo -->
-      <div class="text-center">
-    <a href="" class="d-inline-flex align-items-center text-decoration-none">
-      <!-- <img src="{% static 'assets/img/logo.png' %}" alt="OCEAN Logo" class="me-2" style="height: 50px;"> -->
-      <span class="fs-4 fw-bold text-primary">OCEAN</span>
-    </a>
+  <!-- Background Shapes -->
+  <div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
   </div>
 
+  <div class="container d-flex flex-column align-items-center">
 
-    <div class="pt-2 pb-2">
-{#      <h5 class="card-title text-center pb-0 fs-4">Login to Your Account</h5>#}
-{#      <p class="text-center text-muted small mb-4">Welcome back to OCEAN</p>#}
-        <p class="text-center">Open Source ERP</p>
-    </div>
-
-    <!-- Login Form -->
-    <form id="regular_form" method="post" action="{% url 'login_process' %}" class="row g-3 needs-validation" novalidate>
-      {% csrf_token %}
-
-      <div class="col-12">
-        <label for="email" class="form-label"><small>Username</small></label>
-        <input autocomplete="off" type="email" name="email" class="form-control form-control-md" id="email" required>
-        <div class="invalid-feedback">Please enter a valid email address!</div>
-      </div>
-
-      <div class="col-12">
-        <label for="password" class="form-label"><small>Password</small></label>
-        <input autocomplete="off" type="password" name="password" class="form-control form-control-md" id="password" required>
-        <div class="invalid-feedback">Please enter your password!</div>
-      </div>
-
-      <input type="hidden" name="next" value="{{ next }}">
-
-      <div class="col-12">
-        <button class="btn btn-primary w-100" type="submit">Login</button>
-          <hr>
-         <div class="text-center mt-3">
-            <small class="text-muted">
-                <span>🚀 Started by <strong><a class="text-muted" href="https://github.com/rootleet" target="_blank">Rootleet</a></strong> • 🛠 Maintained by the <a class="text-muted" href="https://github.com/rootech-inc/ocean_live">Community</a></span>
-            </small>
-        </div>
-
-      </div>
-
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-danger small alert-dismissible fade show" role="alert">
-            <strong>{{message}}</strong> 
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-
-        {% endfor %}
-      {% endif %}
-
-      </div>
-    </form>
-
-  </div>
-</div>
-
-
+    <div class="login-card">
+      <!-- Loader -->
+      <div class="loader-overlay" id="loader">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+          <span class="visually-hidden">Loading...</span>
         </div>
       </div>
-      
+
+      <div class="login-logo">
+        <i class="bi bi-droplet-fill"></i> OCEAN
+      </div>
+      <div class="login-subtitle">Open Source ERP</div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="username" placeholder="Username" required autocomplete="username">
+          <label for="username">Username</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="password" class="form-control" id="password" placeholder="Password" required
+            autocomplete="current-password">
+          <label for="password">Password</label>
+        </div>
+
+        <div class="error-message" id="errorMsg">
+          <i class="bi bi-exclamation-circle me-1"></i> <span>Invalid Credentials</span>
+        </div>
+
+        <input type="hidden" id="nextUrl" value="{{ next }}">
+
+        <button type="submit" class="btn btn-login">
+          Sign In <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </form>
     </div>
+
   </div>
-</div>
-    
-  </main><!-- End #main -->
 
-  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  <div class="credits">
+    Started by <a href="https://github.com/rootleet" target="_blank">Rootleet</a> • Maintained by the <a
+      href="https://github.com/rootech-inc/ocean_live">Community</a>
+  </div>
 
-  <!-- Vendor JS Files -->
-  <script src="assets/vendor/apexcharts/apexcharts.min.js"></script>
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/vendor/chart.js/chart.min.js"></script>
-  <script src="assets/vendor/echarts/echarts.min.js"></script>
-  <script src="assets/vendor/quill/quill.min.js"></script>
-  <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>
-  <script src="assets/vendor/tinymce/tinymce.min.js"></script>
-  <script src="assets/vendor/php-email-form/validate.js"></script>
+  <script>
+    const API_URL = "/adapi/";
 
-  <script >
-        var closeBtns = document.querySelectorAll('.btn-close');
+    function handleLogin(e) {
+      e.preventDefault();
 
-    // Loop through each button and attach the event listener
-    closeBtns.forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        // Select all alert elements on the page
-        var allAlert = document.querySelectorAll('.alert');
-        
-        allAlert.forEach(function(alert) {
-          alert.classList.add('fade-out');
-          alert.addEventListener('transitionend', function() {
-            alert.remove();
-          }, { once: true });
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const nextUrl = document.getElementById('nextUrl').value || '/stream/';
+      const loader = document.getElementById('loader');
+      const errorMsg = document.getElementById('errorMsg');
+      const errorText = errorMsg.querySelector('span');
+
+      // Reset UI
+      errorMsg.style.display = 'none';
+      loader.classList.add('active');
+
+      const payload = {
+        module: 'auth',
+        data: {
+          username: username,
+          password: password,
+          next: nextUrl
+        }
+      };
+
+      fetch(API_URL, {
+        method: 'VIEW',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      })
+        .then(res => res.json())
+        .then(response => {
+          loader.classList.remove('active');
+
+          if (response.status_code === 200 && response.message.auth === 'yes') {
+            // Success
+            const redirectUrl = response.message.redirect || nextUrl;
+            window.location.href = redirectUrl;
+          } else {
+            // Error
+            errorText.textContent = response.message.error || 'Authentication failed';
+            errorMsg.style.display = 'block';
+          }
+        })
+        .catch(err => {
+          loader.classList.remove('active');
+          console.error('Login Error:', err);
+          errorText.textContent = 'Connection error. Please try again.';
+          errorMsg.style.display = 'block';
         });
-      });
-    });
-
-  
+    }
   </script>
-
-  <style>
-      .fade-out {
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: hidden;
-      }
-  </style>
-
-  <!-- Template Main JS File -->
-  <script src="assets/js/main.js"></script>
 
 </body>
 
