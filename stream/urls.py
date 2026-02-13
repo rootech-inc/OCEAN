@@ -26,5 +26,6 @@ urlpatterns = [
     path('series/<key>', views.view_series, name='view_series'),
     path('create-series', views.create_series, name='create_series'),
     path('api/', api.stream_api, name='stream_api'),
-
+    path('series/<key>/update-thumbnail', views.update_series_thumbnail, name='update_series_thumbnail'),
+    path('watch/<key>/update-thumbnail', views.update_video_thumbnail, name='update_video_thumbnail'),
 ]

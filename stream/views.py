@@ -127,11 +127,52 @@ def watch(request, key):
         
         all_series = Series.objects.all().order_by('-created_at')
         
-        context = {
+    context = {
             'video': video,
             'series_videos': series_videos,
             'series_list': series_list,
             'all_series': all_series,
             'nav':False
         }
-        return render(request, 'streams/watch.html', context=context)
+    return render(request, 'streams/watch.html', context=context)
+
+
+@login_required
+def update_series_thumbnail(request, key):
+    if request.method == 'POST':
+        series = Series.objects.get(key=key)
+        if request.user == series.owner or request.user.is_superuser:
+            thumbnail = request.FILES.get('thumbnail')
+            if thumbnail:
+                series.thumbnail = thumbnail
+                series.save()
+        return redirect('view_series', key=key)
+    return redirect('index')
+
+
+@login_required
+def update_video_thumbnail(request, key):
+    if request.method == 'POST':
+        video = Videos.objects.get(key=key)
+        # Check ownership via series owner or if video owner field existed (it doesn't directly, but series does)
+        # Assuming for now only superusers or series owners can edit. 
+        # But wait, Videos doesn't have an owner field directly. 
+        # It has a series, which has an owner. 
+        # If video is not in a series, only superuser can edit?
+        # User said "as long as am the woener of the series and also vide"
+        # Since Video doesn't have owner, let's assume we need to check series owner if series exists, or superuser.
+        
+        is_owner = False
+        if request.user.is_superuser:
+            is_owner = True
+        elif video.series and video.series.owner == request.user:
+            is_owner = True
+            
+        if is_owner:
+            custom_thumbnail = request.FILES.get('thumbnail')
+            if custom_thumbnail:
+                video.custom_thumbnail = custom_thumbnail
+                video.save()
+                
+        return redirect('watch', key=key)
+    return redirect('index')

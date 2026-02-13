@@ -54,6 +54,14 @@
         border-radius: 4px;
         font-size: 0.8rem;
     }
+
+    .hover-opacity-100:hover {
+        opacity: 1 !important;
+    }
+
+    .transition-opacity {
+        transition: opacity 0.2s ease-in-out;
+    }
 </style>
 {% endblock %}
 
@@ -87,14 +95,31 @@
     {% endif %}
 
     <div class="series-info d-flex flex-column flex-md-row gap-4 w-100 align-items-center align-items-md-start">
-        {% if series.thumbnail %}
-        <img src="{{ series.thumbnail.url }}" class="series-thumb-large flex-shrink-0" alt="{{ series.title }}">
-        {% else %}
-        <div
-            class="series-thumb-large bg-secondary d-flex align-items-center justify-content-center text-light flex-shrink-0">
-            <span class="fs-1 fw-bold">{{ series.title|slice:":1" }}</span>
+        <div class="position-relative group-hover">
+            {% if series.thumbnail %}
+            <img src="{{ series.thumbnail.url }}" class="series-thumb-large flex-shrink-0" alt="{{ series.title }}">
+            {% else %}
+            <div
+                class="series-thumb-large bg-secondary d-flex align-items-center justify-content-center text-light flex-shrink-0">
+                <span class="fs-1 fw-bold">{{ series.title|slice:":1" }}</span>
+            </div>
+            {% endif %}
+
+            {% if user == series.owner or user.is_superuser %}
+            <div
+                class="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center opacity-0 hover-opacity-100 transition-opacity rounded-3">
+                <form action="{% url 'update_series_thumbnail' series.key %}" method="POST"
+                    enctype="multipart/form-data" class="text-center">
+                    {% csrf_token %}
+                    <label for="series-thumb-upload" class="btn btn-sm btn-light rounded-pill mb-0 shadow-sm">
+                        <i class="bi bi-camera"></i> Change
+                    </label>
+                    <input type="file" name="thumbnail" id="series-thumb-upload" class="d-none"
+                        onchange="this.form.submit()" accept="image/*">
+                </form>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
 
         <div class="text-center text-md-start">
             <h6 class="text-info fw-bold mb-1 text-uppercase small ls-1">Series</h6>
