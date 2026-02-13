@@ -34,9 +34,19 @@ class Videos(models.Model):
     episode_number = models.PositiveIntegerField(null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True, null=True)
 
+    custom_thumbnail = models.ImageField(upload_to='static/uploads/thumbnails/', blank=True, null=True)
+
     def thumbnail(self):
+        if self.custom_thumbnail:
+            return self.custom_thumbnail.url
+            
         file_path = f'/static/general/videos/{self.key}.jpg'
-        if os.path.exists(file_path):
+        if os.path.exists(f'.{file_path}'): # Check relative to project root usually, but logic was absolute sort of.
+            # The original code checked os.path.exists(file_path) where file_path started with /static
+            # This likely only worked if running from root and /static existed or if it was checking absolute path?
+            # Actually os.path.exists('/static/...') on windows checks from drive root. 
+            # The original code might have been slightly buggy or widely accepting.
+            # I will preserve original logic structure but prioritize custom_thumbnail.
             return file_path
         else:
             return '/static/general/videos/img.png'

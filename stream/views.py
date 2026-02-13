@@ -73,7 +73,6 @@ def view_series(request, key):
 
 @user_passes_test(lambda u: u.is_superuser)
 def upload_video(request):
-    import subprocess
     current_user = request.user
     if request.method == 'POST':
         form_date = request.POST
@@ -81,40 +80,30 @@ def upload_video(request):
         title = form_date['title']
         description = form_date['description']
         video_file = file['video_file']
+        custom_thumbnail = file.get('thumbnail')
         series_id = form_date.get('series_id') # Handle series selection
 
         file_key = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        thumbnail = f'static/general/videos/{file_key}.jpg'
         
         series = None
         if series_id:
              try:
                  series = Series.objects.get(id=series_id)
-                 # Optional: Check ownership here if needed
              except Series.DoesNotExist:
                  pass
 
         try:
             # Create video object
-            video = Videos(key=file_key, file=video_file, title=title, descr=description, series=series)
+            video = Videos(
+                key=file_key, 
+                file=video_file, 
+                title=title, 
+                descr=description, 
+                series=series,
+                custom_thumbnail=custom_thumbnail
+            )
             video.save()
             
-            # get video details
-            saved_file = Videos.objects.last() # Warning: race condition if multiple uploads. Better to use 'video' obj above.
-            # But sticking to existing logic pattern for safety with minor tweaks if needed.
-            # Actually 'video' object is already saved.
-            file_name = video.file.path
-
-            # return HttpResponse(file_name)
-
-            img_output_path = Path(thumbnail).absolute()
-
-            src_video_path = Path(file_name).absolute()
-
-            command = f"ffmpeg -i \"{src_video_path}\" -ss 00:00:00.000 -vframes 1 \"{img_output_path}\""
-
-            os.system(command)
-
             return HttpResponse("done%%")
         except Exception as e:
             return HttpResponse(f"Could Not Add {e} {video_file}")
