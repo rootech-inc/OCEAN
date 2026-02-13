@@ -1,6 +1,39 @@
 {% extends 'streams/base_stream.html' %}
 {% load static %}
 
+{% block title %}
+<title>{{ video.title }} | Ocean Stream</title>
+{% endblock %}
+
+{% block meta %}
+<meta name="description" content="{{ video.descr|truncatechars:160 }}">
+<meta name="keywords" content="{{ video.title }}, video, streaming, ocean stream">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="video.other">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:title" content="{{ video.title }}">
+<meta property="og:description" content="{{ video.descr|truncatechars:200 }}">
+{% if video.series and video.series.thumbnail %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ video.series.thumbnail.url }}">
+{% else %}
+<meta property="og:image"
+    content="{{ request.scheme }}://{{ request.get_host }}{% static 'assets/img/ocean-stream-social.jpg' %}">
+{% endif %}
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+<meta property="twitter:title" content="{{ video.title }}">
+<meta property="twitter:description" content="{{ video.descr|truncatechars:200 }}">
+{% if video.series and video.series.thumbnail %}
+<meta property="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ video.series.thumbnail.url }}">
+{% else %}
+<meta property="twitter:image"
+    content="{{ request.scheme }}://{{ request.get_host }}{% static 'assets/img/ocean-stream-social.jpg' %}">
+{% endif %}
+{% endblock %}
+
 {% block extra_css %}
 <style>
     .video-container {
