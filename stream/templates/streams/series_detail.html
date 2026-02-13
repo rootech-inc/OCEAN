@@ -1,0 +1,171 @@
+{% extends 'streams/base_stream.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .series-header {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        background: #0a1f35;
+    }
+
+    .series-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.3;
+        z-index: 0;
+    }
+
+    .series-info {
+        position: relative;
+        z-index: 1;
+        padding: 32px;
+        background: linear-gradient(to right, rgba(5, 16, 28, 0.95) 0%, rgba(5, 16, 28, 0.7) 100%);
+    }
+
+    .series-thumb-large {
+        width: 200px;
+        aspect-ratio: 1/1;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .video-item {
+        transition: background 0.2s;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .video-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .episode-badge {
+        background: rgba(0, 168, 204, 0.2);
+        color: var(--ocean-accent);
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openUploadModal(seriesId) {
+        // Find modal in base template
+        const modalEl = document.getElementById('uploadVideo');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+            // Try to set value if select exists
+            const select = modalEl.querySelector('select[name="series_id"]');
+            if (select) {
+                select.value = seriesId;
+            }
+        } else {
+            console.error('Upload modal not found');
+            alert('Upload feature unavailable on this page.');
+        }
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+
+<!-- Series Header -->
+<div class="series-header d-flex flex-column flex-md-row align-items-center align-items-md-start gap-4">
+    {% if series.thumbnail %}
+    <img src="{{ series.thumbnail.url }}" class="series-backdrop" alt="">
+    {% endif %}
+
+    <div class="series-info d-flex flex-column flex-md-row gap-4 w-100 align-items-center align-items-md-start">
+        {% if series.thumbnail %}
+        <img src="{{ series.thumbnail.url }}" class="series-thumb-large flex-shrink-0" alt="{{ series.title }}">
+        {% else %}
+        <div
+            class="series-thumb-large bg-secondary d-flex align-items-center justify-content-center text-light flex-shrink-0">
+            <span class="fs-1 fw-bold">{{ series.title|slice:":1" }}</span>
+        </div>
+        {% endif %}
+
+        <div class="text-center text-md-start">
+            <h6 class="text-info fw-bold mb-1 text-uppercase small ls-1">Series</h6>
+            <h1 class="fw-bold text-light mb-3 display-6">{{ series.title }}</h1>
+            <p class="lead text-light opacity-75 mb-4" style="font-size: 1rem;">{{ series.description }}</p>
+            <div class="d-flex gap-3 justify-content-center justify-content-md-start">
+                {% if videos %}
+                <a href="{% url 'watch' videos.first.key %}" class="btn btn-primary rounded-pill px-4 fw-bold">
+                    <i class="bi bi-play-fill me-1"></i> Play All
+                </a>
+                {% else %}
+                <button class="btn btn-secondary rounded-pill px-4 fw-bold disabled">No Videos</button>
+                {% endif %}
+                {% if user.is_superuser %}
+                <button class="btn btn-outline-light rounded-pill px-3" onclick="openUploadModal('{{ series.id }}')"
+                    title="Add Video">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+                {% endif %}
+            </div>
+            <div class="mt-3 text-secondary small">
+                {{ videos.count }} Videos • Created {{ series.created_at|date:"M d, Y" }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Videos List -->
+<div class="row">
+    <div class="col-12">
+        <h5 class="fw-bold text-light mb-3">Episodes</h5>
+        <div class="bg-dark rounded-3 overflow-hidden border border-secondary shadow-sm">
+            {% for video in videos %}
+            <div class="video-item p-3 d-flex align-items-center gap-3">
+                <div class="text-secondary fw-bold" style="width: 30px; text-align: center;">
+                    {% if video.episode_number %}
+                    {{ video.episode_number }}
+                    {% else %}
+                    {{ forloop.counter }}
+                    {% endif %}
+                </div>
+
+                <div class="position-relative flex-shrink-0" style="width: 160px; aspect-ratio: 16/9;">
+                    <img src="{{ video.thumbnail|default_if_none:'/static/general/img/strams.png' }}"
+                        class="w-100 h-100 object-fit-cover rounded-2"
+                        onerror="this.src='/static/general/img/strams.png'" alt="">
+                    <a href="{% url 'watch' video.key %}" class="stretched-link"></a>
+                </div>
+
+                <div class="flex-grow-1 min-width-0">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="text-light mb-0 text-truncate fw-bold">{{ video.title }}</h6>
+                        <small class="text-secondary ms-2 text-nowrap">{{ video.uploaded_at|timesince }} ago</small>
+                    </div>
+                    <p class="text-secondary small mb-0 text-truncate">{{ video.descr }}</p>
+                </div>
+
+                <div class="d-none d-md-block">
+                    <a href="{% url 'watch' video.key %}" class="btn btn-sm btn-outline-secondary rounded-circle">
+                        <i class="bi bi-play-fill"></i>
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-5 text-center text-muted">
+                <i class="bi bi-film fs-1 mb-3 d-block"></i>
+                No videos in this series yet.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
