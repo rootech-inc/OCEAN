@@ -1,0 +1,306 @@
+{% load static %}
+{% load permission_tags %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <title>OCEAN </title>
+    <meta content="" name="description">
+    <meta content="" name="keywords">
+
+    <!-- Favicons -->
+    <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
+    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+    <!-- Vendor CSS Files -->
+    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/quill/quill.snow.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/quill/quill.bubble.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/remixicon/remixicon.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/simple-datatables/style.css' %}" rel="stylesheet">
+
+    <!-- Template Main CSS File -->
+    <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'general/css/recorder.css' %}" rel="stylesheet">
+    <link rel="manifest" href="{% static 'general/manifest.json' %}">
+
+    <style>
+        :root {
+            --ocean-bg: #142850;
+            --ocean-dark: #102142;
+            --ocean-card: #27496d;
+            --ocean-primary: #0090e7;
+            --ocean-secondary: #dae1e7;
+            --ocean-text: #f0f5f9;
+            --ocean-hover: #355d89;
+        }
+
+        body {
+            background-color: var(--ocean-bg) !important;
+            color: var(--ocean-text) !important;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Override Header */
+        .header {
+            background-color: var(--ocean-dark) !important;
+            border-bottom: 1px solid rgba(100, 255, 218, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            height: 70px;
+            transition: all 0.3s;
+        }
+
+        .logo span {
+            color: var(--ocean-primary) !important;
+            letter-spacing: 1px;
+        }
+
+        /* Center Main Content */
+        #main {
+            margin-left: 0 !important;
+            padding: 20px;
+            margin-top: 70px;
+            /* Header height */
+            min-height: calc(100vh - 70px);
+        }
+
+        /* Hide Sidebar Elements */
+        .toggle-sidebar-btn {
+            display: none !important;
+        }
+
+        /* New Card Styles */
+        .card {
+            background-color: var(--ocean-card) !important;
+            border: 1px solid rgba(100, 255, 218, 0.05);
+            color: var(--ocean-text) !important;
+            box-shadow: 0 10px 30px -10px rgba(2, 12, 27, 0.7);
+        }
+
+        .card-title {
+            color: var(--ocean-primary) !important;
+        }
+
+        /* Nav Icons */
+        .nav-icon {
+            color: var(--ocean-text) !important;
+        }
+
+        .nav-icon:hover {
+            color: var(--ocean-primary) !important;
+        }
+
+        .header-nav .nav-profile {
+            color: var(--ocean-text) !important;
+        }
+
+        /* Dropdowns */
+        .dropdown-menu {
+            background-color: var(--ocean-card) !important;
+            border: 1px solid rgba(100, 255, 218, 0.1);
+        }
+
+        .dropdown-item {
+            color: var(--ocean-text) !important;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--ocean-hover) !important;
+            color: var(--ocean-primary) !important;
+        }
+
+        .dropdown-header {
+            color: var(--ocean-secondary) !important;
+        }
+
+        .dropdown-divider {
+            border-color: rgba(100, 255, 218, 0.1) !important;
+        }
+    </style>
+
+    <script src="{% static 'blog/js/jquery.min.js' %}"></script>
+    <script src="{% static 'blog/js/popper.min.js' %}"></script>
+    <script src="{% static 'blog/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'general/js/cust.js' %}"></script>
+    <script src="{% static 'general/js/admin.js' %}"></script>
+    <script src="{% static 'general/js/error_handler.js' %}"></script>
+    <script src="{% static 'general/js/sweetalert2@11' %}"></script>
+    <script src="{% static 'general/js/all.js' %}"></script>
+    <script src="{% static 'general/js/prod_master.js' %}"></script>
+
+    <script src="{% static 'general/js/classes/products.js' %}"></script>
+    <script src="{% static 'general/js/classes/adjustment.js' %}"></script>
+    <script src="{% static 'general/js/classes/grn.js' %}"></script>
+    <script src="{% static 'general/js/classes/transfer.js' %}"></script>
+    <script src="{% static 'general/js/classes/issues.js' %}"></script>
+    <script src="{% static 'general/js/classes/recording.js' %}"></script>
+    <script src="{% static 'general/js/classes/meeting.js' %}"></script>
+    <script src="{% static 'general/js/record.js' %}"></script>
+    <script src="{% static 'general/js/classes/user.js' %}"></script>
+    <script src="{% static 'general/js/classes/po.js' %}"></script>
+    <script src="{% static 'general/js/classes/sales.js' %}"></script>
+    <script src="{% static 'general/js/classes/sms.js' %}"></script>
+    <script src="{% static 'general/js/classes/cmms.js' %}"></script>
+    <script src="{% static 'general/js/trigger.js' %}"></script>
+    <script src="{% static 'general/js/classes/api.js' %}"></script>
+    <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
+    <script src="{% static 'general/js/classes/ticket.js' %}"></script>
+    <script src="{% static 'general/js/classes/app.js' %}"></script>
+    <script src="{% static 'general/js/classes/docs.js' %}"></script>
+    <script src="{% static 'general/js/classes/anton.js' %}"></script>
+    <script src="{% static 'general/js/classes/reminder.js' %}"></script>
+    <script src="{% static 'general/js/classes/contact.js' %}"></script>
+    <script src="{% static 'general/js/classes/modal.js' %}"></script>
+    <script src="{% static 'general/js/classes/form.js' %}"></script>
+    <script src="{% static 'general/js/classes/maintenance.js' %}"></script>
+    <script src="{% static 'general/js/classes/staff.js' %}"></script>
+    <script src="{% static 'general/js/classes/servicing.js' %}"></script>
+
+    <script>
+        var pClass = new Products()
+    </script>
+</head>
+
+<body>
+
+    <!-- MODALS -->
+    <div id="g_modal" class="modal fade">
+        <div id="g_modal_size" class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="g_modal_title"></h5>
+                    <button class="close btn btn-outline-danger" data-bs-dismiss="modal">X</button>
+                </div>
+                <div class="modal-body">
+                    <div class="w-100" id="g_modal_body">
+
+                    </div>
+                </div>
+                <div class="modal-footer" id="g_footer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="loader">
+        <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
+            <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
+            <div class="w-100 text-center">
+                <br>
+                <small class="text-info" id="error_msg"></small>
+            </div>
+        </div>
+    </div>
+    <script>
+        $('#loader').modal('show')
+    </script>
+
+    <input type="hidden" id="autos_url" value="{% url 'autos' 'ajax' %}">
+    <input type="hidden" id="search_url" value="{% url 'search' %}">
+    <input type="hidden" value="{{ request.user.pk }}" id="mypk">
+
+    <!-- ======= Header ======= -->
+    <header id="header" class="header fixed-top d-flex align-items-center">
+
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="{% url 'home' %}" class="logo d-flex align-items-center">
+                <img src="{% static 'assets/img/logo.png' %}" alt="">
+                <span class="d-none d-lg-block">OCEAN</span>
+            </a>
+        </div><!-- End Logo -->
+
+        <div class="search-bar">
+            <!-- Search removed for landing page or kept generic -->
+        </div>
+
+        <nav class="header-nav ms-auto">
+            <ul class="d-flex align-items-center">
+
+                <li class="nav-item dropdown pe-3">
+
+                    <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
+                        <img src="{{ request.user|my_profile_picture }}" alt="Profile" class="rounded-circle">
+                        <span class="d-none d-md-block dropdown-toggle ps-2">{{ user.username }}</span>
+                    </a><!-- End Profile Iamge Icon -->
+
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
+                        <li class="dropdown-header">
+                            <h6>{{ user.firstname }} {{ user.lastname }}</h6>
+                            <span>User</span>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}">
+                                <i class="bi bi-person"></i>
+                                <span>My Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Sign Out</span>
+                            </a>
+                        </li>
+
+                    </ul><!-- End Profile Dropdown Items -->
+                </li><!-- End Profile Nav -->
+
+            </ul>
+        </nav><!-- End Icons Navigation -->
+
+    </header><!-- End Header -->
+
+    <!-- NO SIDEBAR -->
+
+    <main id="main" class="main">
+
+        {% block body %}
+
+        {% endblock %}
+
+    </main><!-- End #main -->
+
+    <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
+            class="bi bi-arrow-up-short"></i></a>
+
+    <!-- Vendor JS Files -->
+    <script src="{% static 'assets/vendor/apexcharts/apexcharts.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/chart.js/chart.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/echarts/echarts.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/quill/quill.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/simple-datatables/simple-datatables.js' %}"></script>
+    <script src="{% static 'assets/vendor/tinymce/tinymce.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/php-email-form/validate.js' %}"></script>
+
+    <!-- Template Main JS File -->
+    <script src="{% static 'assets/js/main.js' %}"></script>
+
+    <script>
+        $('#loader').delay(1000).modal('hide')
+    </script>
+
+    {% if messages %}
+    <script>
+        {% for message in messages %}
+        kasa.info(`{{ message }}`)
+        {% endfor %}
+    </script>
+    {% endif %}
+
+</body>
+
+</html>
