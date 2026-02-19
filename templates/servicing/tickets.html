@@ -1,0 +1,230 @@
+{% extends 'servicing/base.html' %}
+{% load static %}
+
+{% block body %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 fw-bold text-dark">Servicing Tickets</h5>
+                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm"
+                        data-bs-toggle="modal" data-bs-target="#newTicketModal">
+                        <i class="bi bi-plus-lg me-1"></i> New Ticket
+                    </button>
+                </div>
+
+                <!-- New Ticket Modal -->
+                <div class="modal fade" id="newTicketModal" tabindex="-1" aria-labelledby="newTicketModalLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg rounded-4">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold" id="newTicketModalLabel">Create New Ticket</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <form action="{% url 'save-ticket' %}" method="POST">
+                                {% csrf_token %}
+                                <div class="modal-body py-4">
+
+                                    <div class="mb-3">
+                                        <label for="id_title"
+                                            class="form-label small fw-bold text-secondary">TITLE</label>
+                                        <input type="text" name="title"
+                                            class="form-control rounded-3 border-light bg-light py-2" id="id_title"
+                                            placeholder="Brief summary of the issue" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="id_descr"
+                                            class="form-label small fw-bold text-secondary">DESCRIPTION</label>
+                                        <textarea name="descr" class="form-control rounded-3 border-light bg-light py-2"
+                                            id="id_descr" rows="4" placeholder="Detailed explanation..."
+                                            required></textarea>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="id_app"
+                                                class="form-label small fw-bold text-secondary">APP</label>
+                                            <select name="app" class="form-select rounded-3 border-light bg-light py-2"
+                                                id="id_app" required>
+                                                <option value="" selected disabled>Select App</option>
+                                                {% for app in apps %}
+                                                <option value="{{ app.name }}">{{ app.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="id_owner"
+                                                class="form-label small fw-bold text-secondary">REPORTED BY</label>
+                                            <select name="owner"
+                                                class="form-select rounded-3 border-light bg-light py-2" id="id_owner"
+                                                required>
+                                                <option value="" selected disabled>Select User</option>
+                                                {% for u in users %}
+                                                <option value="{{ u.pk }}">{{ u.get_full_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0 pb-4">
+                                    <button type="button" class="btn btn-light rounded-pill px-4"
+                                        data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">Submit
+                                        Ticket</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-0 pb-2">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="ticketsTable">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4 text-secondary small fw-bold">ID</th>
+                                    <th class="text-secondary small fw-bold">TITLE</th>
+                                    <th class="text-secondary small fw-bold">DESCRIPTION</th>
+                                    <th class="text-secondary small fw-bold">APP</th>
+                                    <th class="text-secondary small fw-bold">OWNER</th>
+                                    <th class="text-secondary small fw-bold text-center">STATUS</th>
+                                    <th class="pe-4 text-secondary small fw-bold text-end">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in tickets %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="fw-medium text-dark">#{{ ticket.pk }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle me-3 d-flex align-items-center justify-content-center"
+                                                style="width: 32px; height: 32px;">
+                                                <i class="bi bi-ticket-detailed"></i>
+                                            </div>
+                                            <span class="fw-semibold text-dark">{{ ticket.title }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <p class="text-muted small mb-0 text-truncate" style="max-width: 250px;">
+                                            {{ticket.descr }}</p>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-soft-info text-info rounded-pill px-3">
+                                            {{ ticket.app }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-xs bg-light rounded-circle me-2 d-flex align-items-center justify-content-center"
+                                                style="width: 24px; height: 24px;">
+                                                <i class="bi bi-person text-secondary"></i>
+                                            </div>
+                                            <span class="small text-secondary fw-medium">
+                                                {{ ticket.owner.username}}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if ticket.status == 0 %}
+                                        <span class="badge bg-warning rounded-pill px-3 shadow-sm"
+                                            style="font-size: 0.7rem;">PENDING</span>
+                                        {% elif ticket.status == 1 %}
+                                        <span class="badge bg-primary rounded-pill px-3 shadow-sm"
+                                            style="font-size: 0.7rem;">IN PROGRESS</span>
+                                        {% else %}
+                                        <span class="badge bg-success rounded-pill px-3 shadow-sm"
+                                            style="font-size: 0.7rem;">CLOSED</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-4 text-end">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-icon border-0" type="button"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3">
+                                                <li><a class="dropdown-item py-2" href="#"><i
+                                                            class="bi bi-eye me-2 text-primary"></i>View Details</a>
+                                                </li>
+                                                <li><a class="dropdown-item py-2" href="#"><i
+                                                            class="bi bi-pencil me-2 text-info"></i>Edit Ticket</a></li>
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li><a class="dropdown-item py-2 text-danger" href="#"><i
+                                                            class="bi bi-trash me-2"></i>Delete</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>
+                                            <p class="mb-0">No tickets found.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-soft-info {
+        background-color: rgba(13, 202, 240, 0.1);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .card {
+        background: #ffffff;
+    }
+
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .btn-icon:hover {
+        background-color: #f1f5f9;
+        color: #4f46e5;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+        if ($('#ticketsTable tbody tr').length > 1) {
+            $('#ticketsTable').DataTable({
+                "paging": true,
+                "lengthChange": false,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "language": {
+                    "search": "",
+                    "searchPlaceholder": "Search tickets..."
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
