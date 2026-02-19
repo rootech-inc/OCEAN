@@ -190,7 +190,7 @@ class StockFreezeTrans(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=3, default=0.0)
 
 
-class SalesCustomers(models.Model):
+class Customers(models.Model):
     sector_of_company = models.TextField(blank=True)
     type_of_client = models.TextField()
     company = models.CharField(max_length=225, unique=True)
@@ -219,7 +219,7 @@ class SalesCustomers(models.Model):
 
 
     def proformas(self):
-        return ProformaInvoice.objects.filter(sales_customer=self)
+        return ProformaInvoice.objects.filter(customer=self)
     
     def obj(self):
         return {
@@ -227,7 +227,7 @@ class SalesCustomers(models.Model):
         }
 
     def trans(self):
-        return SalesCustomerTransactions.objects.filter(customer=self.pk).order_by('-pk')
+        return CustomerTransactions.objects.filter(customer=self.pk).order_by('-pk')
 
     def uni(self):
         return self.company.replace(' ', '-').lower()
@@ -236,7 +236,7 @@ class SalesCustomers(models.Model):
         return SalesDeals.objects.filter(customer=self.pk).order_by('-pk')
 
     def delete(self, *args, **kwargs):
-        related_objects = self.salescustomertransactions_set.all()  # replace 'yourmodel' with the lowercased model name that has the 'customer' field
+        related_objects = self.customertransactions_set.all()  # replace 'yourmodel' with the lowercased model name that has the 'customer' field
         for obj in related_objects:
             obj.customer = self.name
             obj.save()
@@ -246,8 +246,8 @@ class SalesCustomers(models.Model):
         return self.company.replace('’', "'")
 
 
-class SalesCustomerTransactions(models.Model):
-    customer = models.ForeignKey(SalesCustomers, on_delete=models.SET_NULL, null=True, blank=True)
+class CustomerTransactions(models.Model):
+    customer = models.ForeignKey(Customers, on_delete=models.SET_NULL, null=True, blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.TextField()
     details = models.TextField()
@@ -262,7 +262,7 @@ class SalesCustomerTransactions(models.Model):
 
 
 class SalesDeals(models.Model):
-    customer = models.ForeignKey(SalesCustomers, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customers, on_delete=models.CASCADE)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     pur_rep_name = models.TextField()
@@ -479,7 +479,7 @@ class CarSpecification(models.Model):
 class ProformaInvoice(models.Model):
     uni = models.CharField(max_length=100, unique=True, null=False, blank=False)
     car_model = models.ForeignKey(CarModel, on_delete=models.CASCADE, null=False, blank=False)
-    customer = models.ForeignKey(SalesCustomers, on_delete=models.SET_NULL, null=True)
+    customer = models.ForeignKey(Customers, on_delete=models.SET_NULL, null=True)
 
     currency = models.CharField(max_length=3)
     chassis = models.TextField(default='none')
@@ -728,7 +728,8 @@ class JobMaterials(models.Model):
     jobcard = models.ForeignKey(JobCard, on_delete=models.CASCADE)
     part = models.CharField(max_length=255, null=False, blank=False)
     reason = models.TextField(null=False, blank=False, max_length=25000)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    image = models.ImageField(upload_to='static/uploads/cmms/materials/%Y/%m/%d/', null=True, blank=True)
     requested_on = models.DateField(auto_now_add=True)
     is_issued = models.BooleanField(default=False)
     issued_on = models.DateField(auto_now_add=True)

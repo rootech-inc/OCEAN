@@ -2215,8 +2215,11 @@ def make_ticket(request):
 
 
             except Exception as e:
-                messages.success(request, f"Could Not Open Ticket {e}")
+                messages.error(request, f"Could Not Open Ticket {e}")
 
+            referer = request.META.get('HTTP_REFERER')
+            if referer:
+                return redirect(referer)
             return redirect('open-ticket')
 
         else:

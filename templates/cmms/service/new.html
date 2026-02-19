@@ -2,379 +2,617 @@
 {% load static %}
 
 {% block cmms %}
-    <style>
-        .car_btn{
-            height: 80px;
-            width: 100%;
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        --glass-bg: rgba(255, 255, 255, 0.9);
+        --glass-border: rgba(255, 255, 255, 0.2);
+    }
+
+    .setup-container {
+        min-height: calc(100vh - 60px);
+        background: #f8fafc;
+        padding-bottom: 5rem;
+    }
+
+    .section-screen {
+        min-height: calc(100vh - 60px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        scroll-snap-align: start;
+    }
+
+    .premium-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 1.5rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .select-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .option-btn {
+        aspect-ratio: 1/1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 1.25rem;
+        color: #64748b;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        padding: 1.5rem;
+        position: relative;
+    }
+
+    .option-btn i {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+
+    .option-btn span {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .option-btn:hover {
+        border-color: #6366f1;
+        color: #4f46e5;
+        transform: translateY(-5px);
+    }
+
+    .option-btn.active {
+        background: var(--primary-gradient);
+        border-color: transparent;
+        color: white;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
+    }
+
+    .option-btn.active i {
+        transform: scale(1.1);
+    }
+
+    /* Section Headers */
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .form-section-card {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .form-label-premium {
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .form-control-premium {
+        border: 2px solid #f1f5f9;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+    }
+
+    .form-control-premium:focus {
+        background: white;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .floating-nav {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-premium-submit {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
+        transition: all 0.3s ease;
+    }
+
+    .btn-premium-submit:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
+        color: white;
+    }
+
+    @media (max-width: 576px) {
+        .select-grid {
+            grid-template-columns: 1fr;
         }
-    </style>
 
+        .option-btn {
+            flex-direction: row;
+            aspect-ratio: unset;
+            padding: 1rem 2rem;
+            justify-content: flex-start;
+        }
 
-    <div class="container-fluid">
+        .option-btn i {
+            font-size: 1.5rem;
+            margin-bottom: 0;
+            margin-right: 1.5rem;
+        }
+    }
 
-        <div id="car_type" class="d-flex justify-content-center align-items-center" style="min-height: 100vh; width: 100vw; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);">
-            <div class="card shadow rounded-4" style="width: 100%; max-width: 420px; background: #fff;">
-                <div class="card-header text-center bg-white border-0 pb-0">
-                    <h4 class="fw-bold text-primary mb-0">Car Type</h4>
+    /* Fuel Specific Icons/Colors */
+    .fuel-petrol i {
+        color: #3b82f6;
+    }
+
+    .fuel-diesel i {
+        color: #64748b;
+    }
+
+    .fuel-gas i {
+        color: #ef4444;
+    }
+
+    .option-btn.active i {
+        color: white !important;
+    }
+
+    /* Modal Specifics */
+    .confirmation-details label {
+        letter-spacing: 0.05em;
+        margin-bottom: 0.2rem;
+    }
+
+    .confirmation-details .bi {
+        vertical-align: middle;
+    }
+</style>
+
+<div class="setup-container">
+    <!-- Step 1: Car Type -->
+    <div id="car_type" class="section-screen">
+        <div class="premium-card p-4">
+            <h2 class="section-title">Select Car Type</h2>
+            <div class="select-grid">
+                <div data-info="suv" class="option-btn car_class">
+                    <i class="bi bi-car-front-fill"></i>
+                    <span>SUV</span>
                 </div>
-                <div class="card-body py-4 d-flex flex-column justify-content-center align-items-center">
-                    <div class="row w-100 g-4">
-                        <div class="col-6 d-flex justify-content-center">
-                            <button data-info="suv" class="btn btn-outline-primary car_class shadow-sm car_btn w-100 h-100 rounded-3">
-                                <i class="fa fa-2x fa-car mb-2"></i><br>
-                                <span class="fw-semibold">SUV</span>
-                            </button>
-                        </div>
-                        <div class="col-6 d-flex justify-content-center">
-                            <button data-info="truck" class="btn btn-outline-secondary car_class shadow-sm car_btn w-100 h-100 rounded-3">
-                                <i class="fa fa-2x fa-truck mb-2"></i><br>
-                                <span class="fw-semibold">Truck</span>
-                            </button>
-                        </div>
-                        <div class="col-6 d-flex justify-content-center">
-                            <button data-info="bus" class="btn btn-outline-info car_class shadow-sm car_btn w-100 h-100 rounded-3">
-                                <i class="fa fa-2x fa-bus mb-2"></i><br>
-                                <span class="fw-semibold">Bus</span>
-                            </button>
-                        </div>
-                        <div class="col-6 d-flex justify-content-center">
-                            <button data-info="pickup" class="btn btn-outline-danger car_class shadow-sm car_btn w-100 h-100 rounded-3">
-                                <i class="fa fa-2x fa-truck-pickup mb-2"></i><br>
-                                <span class="fw-semibold">Pickup</span>
-                            </button>
-                        </div>
-                    </div>
+                <div data-info="truck" class="option-btn car_class">
+                    <i class="bi bi-truck-flatbed"></i>
+                    <span>Truck</span>
                 </div>
-            </div>
-        </div>
-
-        <div 
-            id="service_type" 
-            class="d-flex justify-content-center align-items-center"
-            style="height: 100vh; min-height: 100vh; width: 100vw; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);"
-        >
-            <div class="card shadow rounded-4" style="width: 100%; max-width: 400px; background: #fff;">
-                <div class="card-header text-center bg-white border-0 pb-0">
-                    <h4 class="fw-bold text-primary mb-0">Service Type</h4>
+                <div data-info="bus" class="option-btn car_class">
+                    <i class="bi bi-bus-front-fill"></i>
+                    <span>Bus</span>
                 </div>
-                <div class="card-body py-4 d-flex flex-column justify-content-center align-items-center">
-                    <div class="row w-100 g-3">
-                        <div class="col-6 d-flex justify-content-center">
-                            <button data-info="engine" class="btn btn-outline-danger serv_type shadow-sm car_btn w-100 h-100 rounded-3">
-                                <i class="fa fa-2x fa-toolbox mb-2"></i><br>
-                                <span class="fw-semibold">Engine</span>
-                            </button>
-                        </div>
-                        <div class="col-6 d-flex justify-content-center">
-                            <button data-info="interior" class="btn btn-outline-secondary serv_type shadow-sm car_btn w-100 h-100 rounded-3">
-                                <i class="fa fa-2x fa-door-open mb-2"></i><br>
-                                <span class="fw-semibold">Interior</span>
-                            </button>
-                        </div>
-                        <div class="col-6 d-flex justify-content-center">
-                            <button data-info="exterior" class="btn btn-outline-info serv_type shadow-sm car_btn w-100 h-100 rounded-3">
-                                <i class="fa fa-2x fa-door-closed mb-2"></i><br>
-                                <span class="fw-semibold">Exterior</span>
-                            </button>
-                        </div>
-                        <div class="col-6 d-flex justify-content-center">
-                            <button data-info="others" class="btn btn-outline-primary serv_type shadow-sm car_btn w-100 h-100 rounded-3">
-                                <i class="fa fa-2x fa-truck-pickup mb-2"></i><br>
-                                <span class="fw-semibold">Others</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-
-        <div id="fuel_type" class="d-flex justify-content-center align-items-center" style="min-height: 100vh; width: 100vw;">
-            <div class="card w-100" style="max-width: 400px;">
-                <div class="card-header text-center"><strong class="card-title">Fuel</strong></div>
-                <div class="card-body py-2 d-flex flex-column justify-content-center align-items-center">
-                    <div class="row w-100 d-flex justify-content-center flex-wrap mb-5">
-                        <div class="col-12 mb-4 d-flex justify-content-center">
-                            <button data-info="petrol" class="btn btn-light fuel_type shadow-sm car_btn w-75">
-                                <i class="fa fa-2x text-info fa-gas-pump"></i><br>
-                                <small>Petrol</small>
-                            </button>
-                        </div>
-
-                        <div class="col-12 mb-4 d-flex justify-content-center">
-                            <button data-info="disel" class="btn btn-light fuel_type shadow-sm car_btn w-75">
-                                <i class="fa fa-2x fa-gas-pump"></i><br>
-                                <small>Disel</small>
-                            </button>
-                        </div>
-
-                        <div class="col-12 d-flex justify-content-center">
-                            <button data-info="gas" class="btn btn-light fuel_type shadow-sm car_btn w-75">
-                                <i class="fa fa-2x text-danger fa-gas-pump"></i><br>
-                                <small>Gas</small>
-                            </button>
-                        </div>
-                    </div>
+                <div data-info="pickup" class="option-btn car_class">
+                    <i class="bi bi-truck"></i>
+                    <span>Pickup</span>
                 </div>
             </div>
         </div>
+    </div>
 
-
-
-
-        <div id="other_details" class="container d-flex flex-column align-items-center justify-content-center my-5" style="max-width: 600px;">
-            <div class="card shadow rounded-4 w-100 mb-4" style="background: #f9fbfd;">
-                <div class="card-body px-4 py-4">
-                    <h4 class="mb-3 text-center text-info fw-bold">
-                        <i class="fa fa-user-circle me-1"></i>Customer Details
-                    </h4>
-                    <div class="mb-3">
-                        <label for="company_name" class="form-label text-secondary fw-semibold">Organization</label>
-                        <input type="text" id="company_name" class="form-control rounded-3 py-2" placeholder="Company name or individual name">
-                    </div>
-                    <div class="mb-3">
-                        <label for="driver_name" class="form-label text-secondary fw-semibold">Driver Name</label>
-                        <input type="text" id="driver_name" class="form-control rounded-3 py-2" placeholder="e.g. John Doe">
-                    </div>
-                    <div class="mb-3">
-                        <label for="driver_phone" class="form-label text-secondary fw-semibold">Driver's Contact</label>
-                        <input type="tel" id="driver_phone" class="form-control rounded-3 py-2" placeholder="Phone number">
-                    </div>
+    <!-- Step 2: Service Type -->
+    <div id="service_type" class="section-screen">
+        <div class="premium-card p-4">
+            <h2 class="section-title">Service Type</h2>
+            <div class="select-grid">
+                <div data-info="engine" class="option-btn serv_type">
+                    <i class="bi bi-gear-wide-connected"></i>
+                    <span>Engine</span>
                 </div>
-            </div>
-
-            <div class="card shadow rounded-4 w-100 mb-4" style="background: #f9fbfd;">
-                <div class="card-body px-4 py-4">
-                    <h4 class="mb-3 text-center text-info fw-bold">
-                        <i class="fa fa-car me-1"></i>Car Details
-                    </h4>
-                    <div class="mb-3">
-                        <label for="car_brand" class="form-label text-secondary fw-semibold">Brand</label>
-                        <select id="car_brand" class="form-select rounded-3 py-2">
-                            <option value="" selected disabled>Select brand</option>
-                            <option value="toyota">Toyota</option>
-                            <option value="nissan">Nissan</option>
-                            <option value="proton">Proton</option>
-                            <option value="benz">Benz</option>
-                            <option value="others">Others</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="car_model" class="form-label text-secondary fw-semibold">Model</label>
-                        <input type="text" id="car_model" class="form-control rounded-3 py-2" placeholder="Car model">
-                    </div>
-                    <div class="mb-3">
-                        <label for="reg_no" class="form-label text-secondary fw-semibold">Reg. No.</label>
-                        <input type="text" id="reg_no" class="form-control rounded-3 py-2" placeholder="Registration number">
-                    </div>
+                <div data-info="interior" class="option-btn serv_type">
+                    <i class="bi bi-door-open-fill"></i>
+                    <span>Interior</span>
                 </div>
-            </div>
-
-            <div class="card shadow rounded-4 w-100 mb-4" style="background: #f9fbfd;">
-                <div class="card-body px-4 py-4">
-                    <h4 class="mb-3 text-center text-info fw-bold">
-                        <i class="fa fa-exclamation-circle me-1"></i>Problem
-                    </h4>
-                    <div class="mb-3">
-                        <label for="problem" class="form-label text-secondary fw-semibold">Describe Issue</label>
-                        <textarea id="problem" class="form-control rounded-3 py-2" rows="4" placeholder="Describe the issue..."></textarea>
-                    </div>
+                <div data-info="exterior" class="option-btn serv_type">
+                    <i class="bi bi-palette-fill"></i>
+                    <span>Exterior</span>
+                </div>
+                <div data-info="others" class="option-btn serv_type">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span>Others</span>
                 </div>
             </div>
         </div>
-    <div class="container pb-5">
+    </div>
+
+    <!-- Step 3: Fuel Type -->
+    <div id="fuel_type" class="section-screen">
+        <div class="premium-card p-4">
+            <h2 class="section-title">Fuel Type</h2>
+            <div class="select-grid">
+                <div data-info="petrol" class="option-btn fuel_type fuel-petrol">
+                    <i class="bi bi-fuel-pump-fill"></i>
+                    <span>Petrol</span>
+                </div>
+                <div data-info="disel" class="option-btn fuel_type fuel-diesel">
+                    <i class="bi bi-fuel-pump-fill"></i>
+                    <span>Diesel</span>
+                </div>
+                <div data-info="gas" class="option-btn fuel_type fuel-gas">
+                    <i class="bi bi-fuel-pump-diesel-fill"></i>
+                    <span>Gas</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Final Details -->
+    <div id="other_details" class="container py-5">
         <div class="row justify-content-center">
-            <div class="col-12 d-flex justify-content-center">
-                <button id="submit" class="btn btn-success px-5 py-3 fw-bold rounded-pill shadow" style="font-size: 1.25rem; letter-spacing: 1px; transition: background 0.2s;">
-                    <i class="fa fa-paper-plane me-2"></i>SUBMIT
-                </button>
-            </div>
-        </div>
-    </div>
+            <div class="col-lg-8">
+                <div class="form-section-card">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-3 me-3">
+                            <i class="bi bi-person-badge-fill text-primary fs-4"></i>
+                        </div>
+                        <h3 class="h5 mb-0 fw-bold">Customer Details</h3>
+                    </div>
 
-    </div>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label-premium">Organization</label>
+                            <select id="company_name" class="form-select form-control-premium select2">
+                                <option value="">Select Organization</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.pk }}">{{ customer.company }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Driver Name</label>
+                            <input type="text" id="driver_name" class="form-control form-control-premium"
+                                placeholder="Enter driver name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Contact Phone</label>
+                            <input type="tel" id="driver_phone" class="form-control form-control-premium"
+                                placeholder="Enter phone number">
+                        </div>
+                    </div>
+                </div>
 
+                <div class="form-section-card">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-info bg-opacity-10 p-3 rounded-3 me-3">
+                            <i class="bi bi-car-front-fill text-info fs-4"></i>
+                        </div>
+                        <h3 class="h5 mb-0 fw-bold">Vehicle Information</h3>
+                    </div>
 
-    <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirm Details</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>&times;</span>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Brand</label>
+                            <select id="car_brand" class="form-select form-control-premium">
+                                <option value="" selected disabled>Select brand</option>
+                                <option value="toyota">Toyota</option>
+                                <option value="nissan">Nissan</option>
+                                <option value="proton">Proton</option>
+                                <option value="benz">Benz</option>
+                                <option value="others">Others</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Model</label>
+                            <input type="text" id="car_model" class="form-control form-control-premium"
+                                placeholder="e.g. Corolla">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label-premium">Registration Number</label>
+                            <input type="text" id="reg_no" class="form-control form-control-premium"
+                                placeholder="e.g. GR-1234-22">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section-card">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-warning bg-opacity-10 p-3 rounded-3 me-3">
+                            <i class="bi bi-exclamation-triangle-fill text-warning fs-4"></i>
+                        </div>
+                        <h3 class="h5 mb-0 fw-bold">Problem Description</h3>
+                    </div>
+
+                    <label class="form-label-premium">Detailed Issue</label>
+                    <textarea id="problem" class="form-control form-control-premium" rows="4"
+                        placeholder="Briefly describe what's wrong with the vehicle..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-center mt-5 mb-5">
+                    <button id="submit" class="btn btn-premium-submit">
+                        <i class="bi bi-send-fill me-2"></i>CREATE JOB REQUEST
                     </button>
                 </div>
-                <div class="modal-body">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirmSubmit">Confirm</button>
-                </div>
             </div>
         </div>
     </div>
+</div>
 
 
-    <script>
-        var allFilesSelected = true;
-        $(document).ready(function(){
-            $('.car_class').click(function(){
-                $('.car_class').removeClass('active')
-                $('.car_class').removeClass('btn-success')
-                $(this).addClass('active')
-                $(this).removeClass('btn-light')
-                $(this).addClass('btn-success')
-                location.href = '#service_type'
-            })
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Details</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSubmit">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-            $('.serv_type').click(function(){
-                $('.serv_type').removeClass('active')
-                $('.serv_type').removeClass('btn-success')
-                $(this).addClass('active')
-                $(this).removeClass('btn-light')
-                $(this).addClass('btn-success')
-                location.href = '#fuel_type'
 
-            })
+<script>
+    var allFilesSelected = true;
+    $(document).ready(function () {
+        $('.car_class').click(function () {
+            $('.car_class').removeClass('active')
+            $('.car_class').removeClass('btn-success')
+            $(this).addClass('active')
+            $(this).removeClass('btn-light')
+            $(this).addClass('btn-success')
+            location.href = '#service_type'
+        })
 
-            $('.fuel_type').click(function(){
-                $('.fuel_type').removeClass('active')
-                $('.fuel_type').removeClass('btn-success')
-                $(this).addClass('active')
-                $(this).removeClass('btn-light')
-                $(this).addClass('btn-success')
-                location.href = '#other_details'
-            })
+        $('.serv_type').click(function () {
+            $('.serv_type').removeClass('active')
+            $('.serv_type').removeClass('btn-success')
+            $(this).addClass('active')
+            $(this).removeClass('btn-light')
+            $(this).addClass('btn-success')
+            location.href = '#fuel_type'
 
-            $('#submit').click(function(){
-                // Get selected values
-                let carType = $('.car_class.active').data('info');
-                let serviceType = $('.serv_type.active').data('info');
-                let fuelType = $('.fuel_type.active').data('info');
+        })
 
-                // Get form values
-                let companyName = $('#company_name').val();
-                let driverName = $('#driver_name').val();
-                let driverPhone = $('#driver_phone').val();
-                let carBrand = $('#car_brand').val();
-                let carModel = $('#car_model').val();
-                let regNo = $('#reg_no').val();
-                let problem = $('#problem').val();
+        $('.fuel_type').click(function () {
+            $('.fuel_type').removeClass('active')
+            $('.fuel_type').removeClass('btn-success')
+            $(this).addClass('active')
+            $(this).removeClass('btn-light')
+            $(this).addClass('btn-success')
+            location.href = '#other_details'
+        })
 
-                let is_date = false;
-                if(carType == undefined){
-                    kasa.error('Please select car type')
-                }
+        $('#submit').click(function () {
+            // Get selected values
+            let carType = $('.car_class.active').data('info');
+            let serviceType = $('.serv_type.active').data('info');
+            let fuelType = $('.fuel_type.active').data('info');
 
-                if (serviceType == undefined) {
-                    kasa.error('Please select service type')
-                    return;
-                }
+            // Get form values
+            let companyName = $('#company_name').val() ? $('#company_name option:selected').text() : '';
+            let driverName = $('#driver_name').val();
+            let driverPhone = $('#driver_phone').val();
+            let carBrand = $('#car_brand').val();
+            let carModel = $('#car_model').val();
+            let regNo = $('#reg_no').val();
+            let problem = $('#problem').val();
 
-                if (fuelType == undefined) {
-                    kasa.error('Please select fuel type')
-                    return;
-                }
+            let is_date = false;
+            if (carType == undefined) {
+                kasa.error('Please select car type')
+            }
 
-                let ids = ['company_name','driver_name','driver_phone','car_brand','car_model','reg_no','problem']
-                if(anton.validateInputs(ids)){
-                    // Populate modal
-                    let ht = `
-                        <p><strong>Car Type:</strong> ${carType}</p>
-                        <p><strong>Service Type:</strong> ${serviceType}</p>
-                        <p><strong>Fuel Type:</strong> ${fuelType}</p>
-                        <p><strong>Company:</strong> ${companyName}</p>
-                        <p><strong>Driver:</strong> ${driverName}</p>
-                        <p><strong>Phone:</strong> ${driverPhone}</p>
-                        <p><strong>Brand:</strong> ${carBrand}</p>
-                        <p><strong>Model:</strong> ${carModel}</p>
-                        <p><strong>Reg No:</strong> ${regNo}</p>
-                        <p><strong>Problem:</strong> ${problem}</p>
-                    `
+            if (serviceType == undefined) {
+                kasa.error('Please select service type')
+                return;
+            }
 
-                    // Show modal
-                    amodal.setBodyHtml(ht)
-                    let payload = {
-                        module:'job_request',
-                        data:anton.Inputs(ids)
+            if (fuelType == undefined) {
+                kasa.error('Please select fuel type')
+                return;
+            }
+
+            let ids = ['company_name', 'driver_name', 'driver_phone', 'car_brand', 'car_model', 'reg_no', 'problem']
+            if (anton.validateInputs(ids)) {
+                // Populate modal
+                let ht = `
+                    <div class="confirmation-details">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
+                                <i class="bi bi-info-circle-fill text-primary"></i>
+                            </div>
+                            <h4 class="h6 mb-0 fw-bold">Review Your Request</h4>
+                        </div>
+
+                        <div class="row g-4 text-start">
+                            <div class="col-12">
+                                <div class="d-flex">
+                                    <div class="text-primary me-3">
+                                        <i class="bi bi-car-front fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <label class="d-block text-muted small fw-bold text-uppercase">Vehicle Details</label>
+                                        <span class="fw-semibold text-dark">${carBrand.toUpperCase()} ${carModel}</span>
+                                        <span class="badge bg-light text-primary ms-2">${regNo}</span>
+                                        <div class="mt-1 small text-muted">
+                                            ${carType.toUpperCase()} • ${fuelType.toUpperCase()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="d-flex">
+                                    <div class="text-info me-3">
+                                        <i class="bi bi-tools fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <label class="d-block text-muted small fw-bold text-uppercase">Service Required</label>
+                                        <span class="fw-semibold text-dark text-capitalize">${serviceType} Service</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="d-flex">
+                                    <div class="text-success me-3">
+                                        <i class="bi bi-person-check fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <label class="d-block text-muted small fw-bold text-uppercase">Customer & Contact</label>
+                                        <span class="fw-semibold text-dark">${companyName}</span>
+                                        <div class="small text-muted">${driverName} • ${driverPhone}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-4">
+                                    <label class="d-block text-muted small fw-bold text-uppercase mb-1">Issue Description</label>
+                                    <p class="mb-0 small text-dark">${problem}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Show modal
+                amodal.setBodyHtml(ht)
+                let payload = {
+                    module: 'job_request',
+                    data: {
+                        'company_name': companyName,
+                        'driver_name': driverName,
+                        'driver_phone': driverPhone,
+                        'car_brand': carBrand,
+                        'car_model': carModel,
+                        'reg_no': regNo,
+                        'problem': problem
                     }
-                    payload['data']['fuel_type'] = fuelType
-                    payload['data']['service_type'] = serviceType
-                    payload['data']['car_type'] = carType
-                    console.table(payload)
-                    amodal.setFooterHtml(`
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                            <button type="button" id="confirmSubmit" class="btn btn-success">Submit</button>
-                    `)
-                    amodal.show()
+                }
+                payload['data']['fuel_type'] = fuelType
+                payload['data']['service_type'] = serviceType
+                payload['data']['car_type'] = carType
+                console.table(payload)
+                amodal.setFooterHtml(`
+                    <div class="d-flex w-100 gap-2 p-2">
+                        <button type="button" class="btn btn-light flex-grow-1 rounded-pill fw-bold" data-dismiss="modal">Edit Details</button>
+                        <button type="button" id="confirmSubmit" class="btn btn-primary flex-grow-1 rounded-pill fw-bold shadow-sm">
+                            <i class="bi bi-check-circle-fill me-2"></i>Confirm & Submit
+                        </button>
+                    </div>
+                `)
+                amodal.show()
 
-                    $('#confirmSubmit').click(async function () {
-                        loader.show('Requesting Job Card...')
-                        await api.v2('PUT', payload, '/cmms/api/').then(res => {
-                            if (anton.IsRequest(res)) {
-                                kasa.confirm('Job Card Submitted Successfully',1,`/cmms/servcing/track/${res.message}/`)
-                                loader.hide()
-
-                            } else {
-                                kasa.response(res)
-                                loader.hide()
-                            }
-                        }).catch(err => {
-                            kasa.error('Something went wrong')
+                $('#confirmSubmit').click(async function () {
+                    loader.show('Requesting Job Card...')
+                    await api.v2('PUT', payload, '/cmms/api/').then(res => {
+                        if (anton.IsRequest(res)) {
+                            kasa.confirm('Job Card Submitted Successfully', 1, `/cmms/servcing/track/${res.message}/`)
                             loader.hide()
-                        })
+
+                        } else {
+                            kasa.response(res)
+                            loader.hide()
+                        }
+                    }).catch(err => {
+                        kasa.error('Something went wrong')
+                        loader.hide()
                     })
-                } else {
-                    kasa.error('Please fill all required fields')
-                }
+                })
+            } else {
+                kasa.error('Please fill all required fields')
+            }
 
 
-            })
-            // Get today's date
-            document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
-            $('#add_img_line').click(function(){
-                $('#images_que').prepend(`<input type="file" name="file[]" class="form-control">
+        })
+        // Get today's date
+        document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
+        $('#add_img_line').click(function () {
+            $('#images_que').prepend(`<input type="file" name="file[]" class="form-control">
                                 <hr>`);
-            });
-
-            $('#save_jc').click(function(){
-                let ids = ['company','driver','contact','brand','model','car_number','report','mypk','entry_date'];
-                // Reset `allFilesSelected` before validation
-                let allFilesSelected = true;
-
-                $('input[name="file[]"]').each(function() {
-                    if ($(this).val() === '') {
-                        allFilesSelected = false;
-                        return false;  // Break the loop
-                    }
-                });
-
-
-
-                if(anton.validateInputs(ids) || !allFilesSelected){
-                    $('#save_jc').prop('disabled',true)
-                    let payload = {
-                        module:'save_job_card',
-                        data:anton.Inputs(ids)
-                    }
-
-
-                    let save = api.call('PUT',payload,'/cmms/api/');
-                    console.table(save)
-                    if(anton.IsRequest(save)){
-                        let saved_id = save.message;
-                        $('#job_id').val(saved_id);
-                        $('#images_que').submit();
-                        kasa.info('Done')
-                    } else {
-                        kasa.response(save)
-                        $('#save_jc').prop('disabled',false)
-                    }
-                }
-
-            });
         });
-    </script>
+
+        $('#save_jc').click(function () {
+            let ids = ['company_name', 'driver_name', 'driver_phone', 'car_brand', 'car_model', 'reg_no', 'problem', 'mypk', 'entry_date'];
+            // Reset `allFilesSelected` before validation
+            let allFilesSelected = true;
+
+            $('input[name="file[]"]').each(function () {
+                if ($(this).val() === '') {
+                    allFilesSelected = false;
+                    return false;  // Break the loop
+                }
+            });
+
+
+
+            if (anton.validateInputs(ids) || !allFilesSelected) {
+                $('#save_jc').prop('disabled', true)
+                let payload = {
+                    module: 'save_job_card',
+                    data: anton.Inputs(ids)
+                }
+                // Fix naming mismatch if needed
+                payload.data.company = $('#company_name option:selected').text()
+                payload.data.driver = payload.data.driver_name
+                payload.data.contact = payload.data.driver_phone
+                payload.data.car_number = payload.data.reg_no
+                payload.data.report = payload.data.problem
+                payload.data.brand = payload.data.car_brand
+                payload.data.model = payload.data.car_model
+
+
+                let save = api.call('PUT', payload, '/cmms/api/');
+                console.table(save)
+                if (anton.IsRequest(save)) {
+                    let saved_id = save.message;
+                    $('#job_id').val(saved_id);
+                    $('#images_que').submit();
+                    kasa.info('Done')
+                } else {
+                    kasa.response(save)
+                    $('#save_jc').prop('disabled', false)
+                }
+            }
+
+        });
+    });
+</script>
 {% endblock %}

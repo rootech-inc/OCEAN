@@ -38,7 +38,7 @@ def newjob(request):
     sers = Services.objects.filter(status=1)
     if sers.count() < 1:
         messages.error(request, "Please Create A Service")
-        return redirect('wo_services')
+        return redirect('srv_wo_services')
 
     context['users'] = UserAddOns.objects.all()
     context['technicians'] = User.objects.filter(is_superuser=True)
@@ -134,3 +134,12 @@ def save_service_documents(request):
             )
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+
+@login_required()
+def tickets(request):
+    context['tickets'] = TicketHd.objects.filter(status__in=[0,1]).order_by('-pk')
+    context['apps'] = App.objects.all().order_by('name')
+    context['users'] = User.objects.filter(is_active=True).order_by('username')
+    context['page']['title'] = "Tickets"
+    return render(request, 'servicing/tickets.html', context=context)

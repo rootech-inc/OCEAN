@@ -1027,17 +1027,58 @@ def index(request):
             elif module == 'rest_password':
                 pk = data.get('user')
                 user = User.objects.get(pk=pk)
+                if not UserAddOns.objects.filter(user=user).exists():
+                    UserAddOns.objects.create(
+                        user=user,
+                        
+                    )
                 addon = UserAddOns.objects.get(user=user)
                 # generate new password
                 new_password = generate_random_password()
                 user.set_password(new_password)
 
-                email_template = (
-                    f"Dear {user.get_full_name()}, your password has been reset to <strong>{new_password}</strong>."
-                    f" Logon to <a href='http://ocean.snedaghana.loc'>OCEAN</a> with credentials below<br>"
-                    f"<strong>Username</strong> : {user.username}<br>"
-                    f"<strong>Email</strong> : {user.email}<br>"
-                    f"<strong>Password</strong> : {new_password}<br>")
+                
+
+                domain = request.get_host()
+                email_template = f"""
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #0077be; border-radius: 10px; overflow: hidden;">
+                    <div style="background-color: #0077be; padding: 25px; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 24px; letter-spacing: 1px;">OCEAN PORTAL</h1>
+                        <p style="color: #e0f2ff; margin: 5px 0 0 0; font-size: 14px;">Security Notification</p>
+                    </div>
+                    <div style="padding: 30px; background-color: #ffffff;">
+                        <p style="font-size: 16px; margin-bottom: 20px;">Dear <strong>{user.get_full_name()}</strong>,</p>
+                        <p style="font-size: 15px; color: #555;">Your password has been successfully reset. Please use the credentials provided below to access the portal:</p>
+                        
+                        <div style="background-color: #f0f8ff; border-left: 4px solid #0077be; padding: 20px; margin: 25px 0; border-radius: 0 5px 5px 0;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 5px 0; color: #666; width: 100px;">Username:</td>
+                                    <td style="padding: 5px 0; font-weight: bold;">{user.username}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 0; color: #666;">Email:</td>
+                                    <td style="padding: 5px 0; font-weight: bold;">{user.email}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 0; color: #666;">Password:</td>
+                                    <td style="padding: 5px 0; font-weight: bold; color: #0077be; font-family: 'Courier New', monospace; font-size: 18px;">{new_password}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 35px;">
+                            <a href="http://{domain}" style="background-color: #0077be; color: white; padding: 14px 35px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">Log in to OCEAN</a>
+                        </div>
+                    </div>
+                    <div style="background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee;">
+                        <p style="margin: 0 0 5px 0;">If you did not request this password reset, please contact the IT department immediately.</p>
+                        <p style="margin: 0;">&copy; Ocean. All rights reserved.</p>
+                    </div>
+                </div>
+                """
+
+
                 sms_message = (f"Your password for ocean has been reset, please logon using the crecentials below \n"
                                f"USERNAME: {user.username}\n"
                                f"Password:{new_password}")

@@ -61,6 +61,7 @@ urlpatterns = [
     path('servicing/delete_job_request/',views.delete_job_request,name='delete_job_request'),
     path('servcing/track/<req_id>/',views.track_job,name='track_job'),
     path('servicing/cmms-service-due/',views.cmms_service_due,name='cmms_service_due'),
+    path('servicing/material-request/', views.public_material_request, name='public_material_request'),
 
 ]
 

@@ -641,7 +641,7 @@ class TicketHd(models.Model):
 
     created_on = models.DateTimeField(default=timezone.now)
     edited_on = models.DateTimeField(auto_now=True)
-    status = models.IntegerField(default=0)
+    status = models.IntegerField(default=0) # 0 = open, 1 = closed
     app = models.TextField(default='Unknown')
 
     ref = models.CharField(max_length=255, null=True, blank=True)

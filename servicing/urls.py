@@ -27,6 +27,7 @@ urlpatterns = [
     path('jobcard/tracking/<cardno>/', views.tracking, name='tracking'),
     path('main-to-provider/<job>/', views.mail_to_provider, name='mail_provider'),
     path('save-service-documents/',views.save_service_documents, name='save_service_documents'),
+    path('tickets/', views.tickets, name='servicing_tickets'),
 
 
 

@@ -32,3 +32,16 @@ def my_dp(user):
 
     else:
         return '/static/assets/img/users/user.png'
+@register.filter(name='replace')
+def replace(value, arg):
+    """
+    Replaces all values of arg0 with arg1
+    Usage: {{ value|replace:"arg0,arg1" }}
+    """
+    if len(arg.split(',')) != 2:
+        return value
+
+    arg0 = arg.split(',')[0]
+    arg1 = arg.split(',')[1]
+
+    return str(value).replace(arg0, arg1)

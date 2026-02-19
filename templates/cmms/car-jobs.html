@@ -1,72 +1,270 @@
-{% extends 'cmms/base.html' %}
+{% extends 'cmms/service/serv_base.html' %}
+{% load static %}
 
 {% block cmms %}
-    <div style="height: 80vh" class="w-100">
-        <!-- HEADER -->
-        <div class="h-25 container-fluid">
-            <div class="row h-100 d-flex flex-wrap justify-content-between">
-                <div class="col-sm-5 h-100">
-                    <div class="card bg-primary-light h-100">
-                        <div class="card-header">
-                            <strong class="card-title">Customer Details</strong>
-                        </div>
-                        <div id="custBody" class="card-body">
+<style>
+    :root {
+        --dash-blue: #3b82f6;
+        --dash-green: #10b981;
+        --dash-yellow: #f59e0b;
+        --dash-red: #ef4444;
+    }
 
-                        </div>
-                    </div>
+    .dashboard-container {
+        padding: 2rem 1.5rem;
+        background: #f8fafc;
+        min-height: calc(100vh - 60px);
+    }
 
+    .card-stat {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .card-stat:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .icon-box {
+        width: 60px;
+        height: 60px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1.25rem;
+        font-size: 1.75rem;
+        flex-shrink: 0;
+    }
+
+    .stat-details {
+        flex-grow: 1;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        line-height: 1.2;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Contextual Variants */
+    .variant-blue .icon-box {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--dash-blue);
+    }
+
+    .variant-blue:hover {
+        border-color: var(--dash-blue);
+    }
+
+    .variant-green .icon-box {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--dash-green);
+    }
+
+    .variant-green:hover {
+        border-color: var(--dash-green);
+    }
+
+    .variant-yellow .icon-box {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--dash-yellow);
+    }
+
+    .variant-yellow:hover {
+        border-color: var(--dash-yellow);
+    }
+
+    .variant-red .icon-box {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--dash-red);
+    }
+
+    .variant-red:hover {
+        border-color: var(--dash-red);
+    }
+
+    .variant-purple .icon-box {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+    }
+
+    .variant-purple:hover {
+        border-color: #8b5cf6;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem 1rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- Top Row: 3 Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Service Requests (Pending) -->
+        <div class="col-lg-4 col-md-6" onclick="location.href='{% url 'service_request' %}';">
+            <div class="card-stat variant-purple">
+                <div class="icon-box">
+                    <i class="bi bi-file-earmark-plus"></i>
                 </div>
-                <div class="col-sm-5 h-100">
-                    <div class="card bg-info-light h-100">
-                        <div class="card-header">
-                            <strong class="card-title">Car Details</strong>
-                        </div>
-                        <div id="assetBody" class="card-body">
-
-                        </div>
-                    </div>
+                <div class="stat-details">
+                    <span class="stat-value">{{ metrics.requests }}</span>
+                    <span class="stat-label">Service Requests</span>
                 </div>
             </div>
         </div>
 
-        <!-- WO TRANS -->
-        <div class="h-75 container-fluid pt-2">
-
-
-
-            <div class="card bg-danger-light h-100">
-                <div class="card-header">
-                    <strong class="card-title">Work Order History</strong>
-                    <button class="btn btn-info bx bx-list-ul" style="display: none !important;" id="carFollups"></button>
+        <!-- Ongoing Services -->
+        <div class="col-lg-4 col-md-6" onclick="location.href='{% url 'cmms_servicing' %}';">
+            <div class="card-stat variant-blue">
+                <div class="icon-box">
+                    <i class="bi bi-gear-wide-connected"></i>
                 </div>
-                <div class="card-body p-2 overflow-auto">
-                    <table class="table table-striped table-bordered table-hover table-sm">
-                        <thead>
-                            <tr>
-                                <th>Work Request</th>
-                                <th>Work Order</th>
-                                <th>Invoice</th>
-                                <th>Date</th>
-                                <th>By</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody">
-
-                        </tbody>
-                    </table>
-                </div>
-                <div class="card-footer">
-                    <select style="width: 75px" name="" id="" class="form-control">
-                        <option value="10">10</option>
-                        <option value="10">30</option>
-                        <option value="10">50</option>
-                        <option value="10">100</option>
-                    </select>
-
+                <div class="stat-details">
+                    <span class="stat-value">{{ metrics.ongoing }}</span>
+                    <span class="stat-label">Ongoing Services</span>
                 </div>
             </div>
         </div>
 
+        <!-- Ready to Delivery -->
+        <div class="col-lg-4 col-md-12" onclick="location.href='{% url 'cmms_servicing' %}';">
+            <div class="card-stat variant-green">
+                <div class="icon-box">
+                    <i class="bi bi-check2-all"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-value">{{ metrics.ready }}</span>
+                    <span class="stat-label">Ready cards</span>
+                </div>
+            </div>
+        </div>
     </div>
-{% endblock %}
 
+    <!-- Bottom Row: 2 Cards -->
+    <div class="row g-4 mb-4 justify-content-center">
+        <!-- Pending Feedbacks -->
+        <div class="col-lg-6 col-md-6" onclick="location.href='{% url 'cmms_servicing_feedback' %}';">
+            <div class="card-stat variant-yellow">
+                <div class="icon-box">
+                    <i class="bi bi-chat-left-dots-fill"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-value">{{ metrics.feedbacks }}</span>
+                    <span class="stat-label">Pending Feedbacks</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Service Due -->
+        <div class="col-lg-6 col-md-6" onclick="location.href='{% url 'cmms_service_due' %}';">
+            <div class="card-stat variant-red">
+                <div class="icon-box">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-value">{{ metrics.service_due }}</span>
+                    <span class="stat-label">Service Due</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ongoing Services Table -->
+    <div class="mt-5">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h3 class="h5 fw-bold mb-0">
+                <i class="bi bi-activity text-primary me-2"></i>Recent Ongoing Services
+            </h3>
+            <a href="{% url 'cmms_servicing' %}" class="btn btn-link text-decoration-none fw-bold small">
+                View All <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+
+        <div class="premium-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4 py-3 text-muted small fw-bold text-uppercase">Vehicle / Request</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase">Customer</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase">In Charge</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase">Started On</th>
+                            <th class="pe-4 py-3 text-end text-muted small fw-bold text-uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in ongoing_jobs %}
+                        <tr onclick="location.href='{% url 'view_service_card' job.pk %}';" style="cursor: pointer;">
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
+                                        <i class="bi bi-car-front text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ job.carno }}</div>
+                                        <div class="small text-muted text-capitalize">{{ job.brand }} {{ job.model }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3">
+                                <div class="fw-semibold text-dark">{{ job.company|truncatechars:20 }}</div>
+                                <div class="small text-muted">{{ job.contact }}</div>
+                            </td>
+                            <td class="py-3 text-muted small">
+                                <i class="bi bi-person me-1"></i> {{ job.mechanic|default:"Not Assigned" }}
+                            </td>
+                            <td class="py-3 text-muted small">
+                                {{ job.created_on|date:"M d, Y" }}
+                            </td>
+                            <td class="pe-4 py-3 text-end">
+                                <span
+                                    class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill small fw-bold">
+                                    IN PROGRESS
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="bi bi-inbox display-6 d-block mb-3 opacity-25"></i>
+                                    No ongoing services at the moment.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

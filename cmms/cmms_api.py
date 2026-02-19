@@ -687,7 +687,7 @@ def api(request):
                             hd = StockCountHD.objects.filter(pk=key)
                         elif doc == 'STR':
                             # sales transactions
-                            hd = SalesCustomers.objects.filter(pk=key)
+                            hd = Customers.objects.filter(pk=key)
                         count = hd.count()
                         if count == 1:
                             response['status_code'] = 200
@@ -784,26 +784,6 @@ def api(request):
                             response['status_code'] = 404
                             response['message'] = f"ENTRY NOT FOUNC ( {doc} - {key} )"
 
-                elif module == 'customer':
-                    cust_type = data.get('cust_type')
-                    if cust_type == 'cmms_service':
-                        cursor = db()
-                        cust_code = data.get('cust_code') or 'all'
-                        if cust_code == 'all':
-                            cursor.execute("select cust_code,cust_name,cust_contact,email1 from customer_master")
-                        else:
-                            cursor.execute(
-                                f"select cust_code,cust_name,cust_contact,email1 from customer_master  where cust_code = '{cust_code}'")
-                        cust_arr = []
-                        for customer in cursor.fetchall():
-                            cust_arr.append({
-                                'code': str(customer[0]).strip(),
-                                'name': str(customer[1]).strip(),
-                                'phone': str(customer[2]).strip(),
-                                'email': str(customer[3]).strip()
-                            })
-                        response['message'] = cust_arr
-                        response['status_code'] = 200
 
                 elif module == 'cust_asset':
                     customer = data.get('customer')
@@ -992,22 +972,18 @@ def api(request):
                             'message': 'Customer not found'
                         }
 
-                elif module == 'cmms_sales_customer':
-                    key = data.get('key')
+                elif module == 'customer':
+                    key = data.get('key') or 'all'
+                    cust_type = data.get('cust_type') or 'all'
                     arr = []
-
+                    
                     if key == 'all':
-                        customers = SalesCustomers.objects.all()
+                        customers = Customers.objects.all()
                     else:
-                        customers = SalesCustomers.objects.filter(pk=key)
+                        customers = Customers.objects.filter(pk=key)
 
                     if customers.count() > 0:
                         for customer in customers:
-                            x_region = getattr(customer.region, 'name', 'UNKNOWN') if customer and hasattr(customer,
-                                                                                                           'region') else 'unknown'
-                            suburb = getattr(customer.suburb, 'name', 'UNKNOWN') if customer and hasattr(customer,
-                                                                                                         'suburb') else 'unknown'
-
                             obj = {
                                 'pk': customer.pk,
                                 'url': customer.url,
@@ -1017,22 +993,8 @@ def api(request):
                                 'email': customer.email,
                                 'address': customer.address,
                                 'type_of_client': customer.type_of_client,
-                                'timestamp': {
-                                    'created_date': customer.created_date,
-                                    'created_time': customer.created_time,
-                                    'updated_date': customer.updated_date,
-                                    'updated_time': customer.updated_time
-                                },
                                 'status': customer.status,
-                                'owner': {
-                                    'pk': customer.owner.pk,
-                                    'username': customer.owner.username
-                                },
-                                'geography': {
-                                    'region': x_region,
-                                    'suburb': suburb
-                                }
-
+                                'code': customer.pk, 
                             }
                             arr.append(obj)
 
@@ -1040,13 +1002,13 @@ def api(request):
                         response['message'] = arr
                     else:
                         response['status_code'] = 404
-                        response['message'] = f"NO CUSTOMER FOUND WITH KEY {key}"
+                        response['message'] = f"NO CUSTOMER FOUND"
 
                 elif module == 'cmms_sales_deals':
                     cust = data.get('sales_customer')
 
-                    if SalesCustomers.objects.filter(pk=cust).count() == 1:
-                        customer = SalesCustomers.objects.get(pk=cust)
+                    if Customers.objects.filter(pk=cust).count() == 1:
+                        customer = Customers.objects.get(pk=cust)
                         deals = customer.deals()
                         deal_arr = []
                         for deal in deals:
@@ -2007,7 +1969,7 @@ def api(request):
 
                     # validate
                     try:
-                        customer = SalesCustomers.objects.get(pk=sales_cust)
+                        customer = Customers.objects.get(pk=sales_cust)
                         owner = User.objects.get(pk=sales_rep)
 
                         SalesDeals(customer=customer, owner=owner, pur_rep_name=pur_rep_name,
@@ -2045,40 +2007,39 @@ def api(request):
                         response['status_code'] = 500
                         response['message'] = str(e)
 
-                elif module == 'sales_customer':
+                elif module == 'customer':
                     try:
-                        type_of_client = data.get('type_of_client')
-                        sector_of_company = data.get('sector_of_company')
                         company = data.get('company')
-                        region = data.get('region')
-                        address = data.get('address')
-                        city = data.get('city')
-                        phone = data.get('phone')
+                        type_of_client = data.get('type') or 'CMMS'
                         email = data.get('email')
-                        fax = data.get('fax')
-
-                        position = data.get('position')
+                        phone = data.get('phone')
+                        address = data.get('address')
                         first_name = data.get('first_name')
                         last_name = data.get('last_name')
-                        note = data.get('note')
+                        mypk = data.get('mypk')
+                        owner = User.objects.get(pk=mypk)
 
-                        url = data.get('url')
-                        owner_pk = data.get('owner')
-                        # save
-                        owner = User.objects.get(pk=owner_pk)
-                        reg = GeoCity.objects.get(pk=region)
-                        cit = GeoCitySub.objects.get(pk=city)
-
-                        SalesCustomers(sector_of_company=sector_of_company, type_of_client=type_of_client,
-                                       company=company,
-                                       region=reg, city=cit,
-                                       mobile=phone, email=email, fax=fax, address=address, first_name=first_name,
-                                       last_name=last_name, position=position,
-                                       note=note, name=f"{first_name} {last_name}", url=url, owner=owner).save()
-                        response['status'] = 200
-                        response['message'] = "CUSTOMER SAVED"
+                        if Customers.objects.filter(company=company).exists():
+                            response['status_code'] = 505
+                            response['message'] = "Customer Already Exists"
+                        else:
+                            Customers(
+                                company=company,
+                                type_of_client=type_of_client,
+                                email=email,
+                                mobile=phone,
+                                address=address,
+                                first_name=first_name,
+                                last_name=last_name,
+                                name=f"{first_name} {last_name}",
+                                url=company.lower().replace(' ', '-'),
+                                owner=owner,
+                                status=1
+                            ).save()
+                            response['status_code'] = 200
+                            response['message'] = "Customer Created"
                     except Exception as e:
-                        response['status'] = 505
+                        response['status_code'] = 500
                         response['message'] = str(e)
 
                 elif module == 'asset_group':
@@ -2170,7 +2131,7 @@ def api(request):
                     model_pk = data.get('model')
                     car_model = CarModel.objects.get(pk=model_pk)
                     customer_pk = data.get('customer')
-                    customer = SalesCustomers.objects.get(pk=customer_pk)
+                    customer = Customers.objects.get(pk=customer_pk)
                     mypk = data.get('mypk')
                     created_by = User.objects.get(pk=mypk)
 
@@ -2799,7 +2760,7 @@ def api(request):
                 response['message'] = 'Card Deleted'
 
             elif module == 'sales_customer':
-                customer = SalesCustomers.objects.get(pk=data.get('key'))
+                customer = Customers.objects.get(pk=data.get('key'))
                 name = customer.name
                 customer.delete()
                 response['message'] = f"{name} deleted"

@@ -1,54 +1,379 @@
-{% extends "servicing/base.html" %}
+{% extends 'servicing/base.html' %}
 {% load static %}
+{% load permission_tags %}
 
 {% block body %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.75);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --accent-primary: #4361ee;
+        --accent-success: #4cc9f0;
+        --accent-warning: #f72585;
+        --accent-info: #7209b7;
+    }
 
+    /* Premium Scrollbar */
+    .premium-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .premium-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .premium-scroll::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        border-radius: 1.5rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 3rem;
+        padding-bottom: 2.5rem;
+        border-left: 2px solid rgba(67, 97, 238, 0.15);
+        margin-left: 1rem;
+    }
+
+    .timeline-item:last-child {
+        border-left: 2px solid transparent;
+        padding-bottom: 0;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -11px;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: white;
+        border: 4px solid var(--accent-primary);
+        box-shadow: 0 0 15px rgba(67, 97, 238, 0.3);
+    }
+
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 0.4rem 1rem;
+        border-radius: 2rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .badge-unattended {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .badge-progress {
+        background: #e0f2fe;
+        color: #0ea5e9;
+    }
+
+    .badge-closed {
+        background: #dcfce7;
+        color: #22c55e;
+    }
+
+    .header-gradient {
+        background: linear-gradient(135deg, #4361ee, #4cc9f0);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .entry-animation {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .timeline-item {
+            padding-left: 2rem;
+        }
+
+        .timeline-dot {
+            left: -9px;
+            width: 16px;
+            height: 16px;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4 min-vh-100"
+    style="background: radial-gradient(circle at top right, rgba(67, 97, 238, 0.05), transparent), radial-gradient(circle at bottom left, rgba(76, 201, 240, 0.05), transparent);">
     {% if pagevalid %}
-        <div class="card-header">
-            <strong class="card-title">{{ pagemessage.service.name }} | {{ pagemessage.service_sub.name }}</strong>
-        </div>
-        <div class="card-body p-2">
-        <div class="card bg-light border-secondary mb-3">
-        <div class="card-header bg-secondary text-light">
-            <code class="fs-5 text-light">TICKET #{{ pagemessage.cardno }}</code><br>
-            <code class="fs-5 text-info">{{ pagemessage.ticket.title }}</code>
-        </div>
-        <div class="card-body font-monospace">
+    <!-- Hero Header -->
+    <div class="row g-4 mb-4 entry-animation" style="animation-delay: 0.1s;">
+        <div class="col-12">
+            <div class="glass-card p-4 p-md-5 overflow-hidden position-relative">
 
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-sm-12">
-                        <h4>Reported</h4>
-                        {{ pagemessage.ticket.descr }}
-
-                        <h3>Analysis</h3>
-                        {{ pagemessage.analysis }}
-
-                        <h3>Transactions</h3>
-                        {% for tran in pagemessage.ticket.transactions %}
-                            <div class="border-bottom border-secondary rounded-0 p-2">
-                                <strong class="card-title text-primary">{{ tran.title }}</strong><br>
-                                <small class="text-muted">by <span class="text-info">{{ tran.user.username }}</span>
-                                </small>on <span class="text-success">{{ tran.created_on }}</span><br>
-                                <span class="text-secondary">{{ tran.tran }}</span>
-                            </div>
-                        {% endfor %}
+                <div
+                    class="d-flex flex-wrap align-items-center justify-content-between gap-3 position-relative z-index-1">
+                    <div>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-2">
+                                <li class="breadcrumb-item"><a href="#"
+                                        class="text-primary text-decoration-none fw-bold small text-uppercase ls-1">Tracking</a>
+                                </li>
+                                <li class="breadcrumb-item active small text-uppercase ls-1" aria-current="page">
+                                    {{ pagemessage.cardno }}</li>
+                            </ol>
+                        </nav>
+                        <h1 class="fw-black mb-1 display-5 text-dark">Work Order <span
+                                class="header-gradient">Details</span></h1>
+                        <p class="text-secondary fw-medium mb-0">{{ pagemessage.service.name }} &bull;
+                            {{ pagemessage.service_sub.name }}</p>
+                    </div>
+                    <div class="text-md-end">
+                        <span class="status-badge badge-{{ pagemessage.text_status }}">
+                            {{ pagemessage.text_status|replace:"_, "|title }}
+                        </span>
+                        <div class="mt-2 text-dark fw-black fs-4">#{{ pagemessage.cardno }}</div>
                     </div>
                 </div>
             </div>
-
-
-
-
         </div>
-    {% else %}
-        <div class="w-100 h-100 d-flex flex-wrap align-content-center justify-content-center">
-            <div class="alert alert-danger">
-                <p>{{ pagemessage }}</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="row g-4">
+                <!-- Analysis & Report -->
+                <div class="col-12 entry-animation" style="animation-delay: 0.2s;">
+                    <div class="glass-card p-4" id="issueCaptureZone">
+                        <!-- Issue Section -->
+                        <div class="mb-4">
+                            <h5 class="fw-black text-dark mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-file-earmark-text text-primary"></i>
+                                Reported Issue
+                            </h5>
+                            <div class="bg-white bg-opacity-50 rounded-4 p-3 border border-white">
+                                <h6 class="fw-bold text-dark">{{ pagemessage.ticket.title }}</h6>
+                                <p class="text-secondary mb-0 small lh-lg">{{ pagemessage.ticket.descr }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Section -->
+                        {% if pagemessage.analysis %}
+                        <div class="mb-4">
+                            <h5 class="fw-black text-dark mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-search text-info"></i>
+                                Technical Analysis
+                            </h5>
+                            <div class="bg-info bg-opacity-10 rounded-4 p-3 border border-white">
+                                <p class="text-dark mb-0 small lh-lg fw-medium">{{ pagemessage.analysis }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Latest Transaction Section (For Capture Only/Priority View) -->
+                        {% with last_tran=pagemessage.ticket.transactions.0 %}
+                        {% if last_tran %}
+                        <div>
+                            <h5 class="fw-black text-dark mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-clock-history text-warning"></i>
+                                Latest Update
+                            </h5>
+                            <div class="bg-warning bg-opacity-10 rounded-4 p-3 border border-white">
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <h6 class="fw-bold text-dark mb-0 small">{{ last_tran.title }}</h6>
+                                    <small class="text-muted fw-bold" style="font-size: 0.6rem;">{{
+                                        last_tran.created_on|date:"M d, H:i" }}</small>
+                                </div>
+                                <p class="text-secondary mb-0" style="font-size: 0.75rem;">{{ last_tran.tran }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="col-12 entry-animation" style="animation-delay: 0.3s;">
+                    <div class="glass-card p-4">
+                        <h5 class="fw-black text-dark mb-4 d-flex align-items-center justify-content-between">
+                            <span class="d-flex align-items-center gap-2">
+                                <i class="bi bi-list-check text-primary"></i>
+                                Full Activity Log
+                            </span>
+                            <span class="badge bg-light text-dark rounded-pill px-3 py-2 fw-bold small border">
+                                {{pagemessage.ticket.transactions|length }} Events</span>
+                        </h5>
+
+                        <div class="ps-2">
+                            {% for tran in pagemessage.ticket.transactions %}
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="bg-white bg-opacity-40 rounded-4 p-3 shadow-sm border border-white">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold text-dark mb-0">{{ tran.title }}</h6>
+                                        <small class="text-muted fw-bold">{{ tran.created_on|date:"M d, H:i" }}</small>
+                                    </div>
+                                    <p class="text-secondary small mb-2">{{ tran.tran }}</p>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle small d-flex align-items-center justify-content-center fw-bold"
+                                            style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                            {{ tran.user.username|slice:":2"|upper }}
+                                        </div>
+                                        <span class="text-muted small fw-bold">By {{ tran.user.username }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Sidebar Stats -->
+        <div class="col-lg-4">
+            <div class="row g-4">
+                <div class="col-12 entry-animation" style="animation-delay: 0.4s;">
+                    <div class="glass-card p-4 overflow-hidden position-relative">
+                        <h6 class="text-secondary small fw-bold text-uppercase ls-1 mb-4">Service Information</h6>
+
+                        <div class="mb-4">
+                            <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Technician</label>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white rounded-3 p-2 me-3">
+                                    <i class="bi bi-person-badge fs-4"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ pagemessage.technician.full_name }}</div>
+                                    <div class="text-secondary small">Primary Consultant</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Reported On</label>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-info text-white rounded-3 p-2 me-3">
+                                    <i class="bi bi-calendar3 fs-4"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ pagemessage.created_date|date:"F d, Y" }}</div>
+                                    <div class="text-secondary small">{{ pagemessage.created_time|time:"H:i A" }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Importance</label>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning text-white rounded-3 p-2 me-3">
+                                    <i class="bi bi-lightning-charge fs-4"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">
+                                        {% if pagemessage.importance == 1 %}
+                                        Low
+                                        {% elif pagemessage.importance == 2 %}
+                                        Medium
+                                        {% elif pagemessage.importance == 3 %}
+                                        High
+                                        {% else %}
+                                        Critical
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-secondary small">Priority Level</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 entry-animation" style="animation-delay: 0.5s;">
+                    <button
+                        class="btn btn-info w-100 rounded-pill py-3 fw-bold shadow-lg border-0 d-flex align-items-center justify-content-center gap-2 mb-3 text-white"
+                        onclick="generateIssueCard()">
+                        <i class="bi bi-image-fill"></i>
+                        Print Issue Card
+                    </button>
+                    <button
+                        class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-lg border-0 d-flex align-items-center justify-content-center gap-2"
+                        onclick="window.print()">
+                        <i class="bi bi-printer-fill"></i>
+                        Print Job Details
+                    </button>
+                    <button class="btn btn-outline-secondary w-100 rounded-pill py-3 fw-bold mt-3 border-2"
+                        onclick="history.back()">
+                        Return to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="d-flex align-items-center justify-content-center min-vh-100 p-4">
+        <div class="glass-card p-5 text-center entry-animation" style="max-width: 500px;">
+            <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-4"
+                style="width: 80px; height: 80px;">
+                <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+            </div>
+            <h3 class="fw-black text-dark mb-3">Service Not Found</h3>
+            <p class="text-secondary mb-4 lh-lg">{{ pagemessage }}</p>
+            <a href="{% url 'srv_wo_services' %}"
+                class="btn btn-primary rounded-pill px-5 fw-bold py-2 shadow-sm border-0">Back to Services</a>
+        </div>
+    </div>
     {% endif %}
+</div>
 
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+    function generateIssueCard() {
+        const element = document.getElementById('issueCaptureZone');
+        if (!element) return;
 
+        // Apply temporary styling for high-quality capture
+        const originalBg = element.style.background;
+        const originalPadding = element.style.padding;
+        element.style.background = 'white';
+        element.style.padding = '40px';
+        element.style.borderRadius = '24px';
 
+        html2canvas(element, {
+            scale: 2, // Higher resolution
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        }).then(canvas => {
+            // Restore original styling
+            element.style.background = originalBg;
+            element.style.padding = originalPadding;
+            element.style.borderRadius = '';
+
+            const link = document.createElement('a');
+            link.download = `Issue_Report_{{ pagemessage.cardno }}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+</script>
 {% endblock %}

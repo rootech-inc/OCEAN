@@ -35,7 +35,7 @@
   <!-- Template Main CSS File -->
   <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
   <link href="{% static 'general/css/recorder.css' %}" rel="stylesheet">
-    <link href="{% static 'general/css/colors.css' %}" rel="stylesheet">
+  <link href="{% static 'general/css/colors.css' %}" rel="stylesheet">
 
 
 
@@ -60,20 +60,20 @@
   <script src="{% static 'general/js/record.js' %}"></script>
   <script src="{% static 'general/js/classes/user.js' %}"></script>
   <script src="{% static 'general/js/classes/po.js' %}"></script>
-    <script src="{% static 'general/js/classes/sales.js' %}"></script>
-    <script src="{% static 'general/js/classes/sms.js' %}"></script>
-    <script src="{% static 'general/js/classes/cmms.js' %}"></script>
-    <script src="{% static 'general/js/trigger.js' %}"></script>
-    <script src="{% static 'general/js/classes/api.js' %}"></script>
-    <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
-    <script src="{% static 'general/js/classes/ticket.js' %}"></script>
-    <script src="{% static 'general/js/classes/app.js' %}"></script>
-    <script src="{% static 'general/js/classes/docs.js' %}"></script>
-    <script src="{% static 'general/js/classes/anton.js' %}"></script>
-    <script src="{% static 'general/js/classes/cmms_cust.js' %}"></script>
-    <script src="{% static 'general/js/classes/modal.js' %}"></script>
-    <script src="{% static 'general/js/classes/servicing.js' %}"></script>
-    <script src="{% static 'general/js/classes/mailer.js' %}"></script>
+  <script src="{% static 'general/js/classes/sales.js' %}"></script>
+  <script src="{% static 'general/js/classes/sms.js' %}"></script>
+  <script src="{% static 'general/js/classes/cmms.js' %}"></script>
+  <script src="{% static 'general/js/trigger.js' %}"></script>
+  <script src="{% static 'general/js/classes/api.js' %}"></script>
+  <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
+  <script src="{% static 'general/js/classes/ticket.js' %}"></script>
+  <script src="{% static 'general/js/classes/app.js' %}"></script>
+  <script src="{% static 'general/js/classes/docs.js' %}"></script>
+  <script src="{% static 'general/js/classes/anton.js' %}"></script>
+  <script src="{% static 'general/js/classes/cmms_cust.js' %}"></script>
+  <script src="{% static 'general/js/classes/modal.js' %}"></script>
+  <script src="{% static 'general/js/classes/servicing.js' %}"></script>
+  <script src="{% static 'general/js/classes/mailer.js' %}"></script>
 
 
   <script>
@@ -90,98 +90,103 @@
 </head>
 
 <body>
-    <!-- MODALS -->
-    <div id="g_modal" class="modal fade">
-        <div id="g_modal_size"  class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="g_modal_title"></h5>
-                </div>
-                <div class="modal-body overflow-auto" style='max-height : 75vh'>
-                    <div class="w-100" id="g_modal_body">
-                        
-                    </div>
-                </div>
-                <div class="modal-footer" id="g_footer"></div>
-            </div>
+  <!-- MODALS -->
+  <div id="g_modal" class="modal fade">
+    <div id="g_modal_size" class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="g_modal_title"></h5>
         </div>
-    </div>
+        <div class="modal-body overflow-auto" style='max-height : 75vh'>
+          <div class="w-100" id="g_modal_body">
 
-    <div id="mailer" class="modal fade">
-        <div id="mailer_size"  class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="mailer_title">SEND MAIL</h5>
-                </div>
-                <div class="modal-body overflow-auto" style='max-height : 75vh'>
-                    <div class="w-100" id="mailer_mailer">
-                        <label for="body"></label><textarea id="body" name="article_desc" class="tinymce-editor"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer" id="mailer_footer"></div>
-            </div>
+          </div>
         </div>
+        <div class="modal-footer" id="g_footer"></div>
+      </div>
     </div>
+  </div>
 
-    <div class="modal fade" id="followUps">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <strong class="modal-title">Followup History</strong>
-{#                            <button id="newFolloupButton" class="close bx bx-plus btn btn-sm" data-bs-target="#newFolloup" data-bs-toggle="modal"></button>#}
-                        </div>
-                        <div class="modal-body" id="xfact" style="height: 60vh; overflow: auto">
-                            <table class="table table-bordered table-sm table-hover table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Person</th><th>Date</th><th>Title</th><th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="fTbody">
-                                    <tr>
-                                        <td>James</td>
-                                        <td>Date</td>
-                                        <td>Hello World</td>
-                                        <td><i class="fa fa-reply pointer" onclick="al('info','hello world')"></i></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="newFolloup">
-                <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <strong class="modal-title">NEW FOLLOWUP</strong>
-                        </div>
-                        <div class="modal-body">
-                            <label for="car_no">CAR NUMBER</label><input type="text" readonly id="car_no" name="car_no" class="form-control mb-2 rounded-0">
-                            <label for="ftitle">TItle</label><input type="text" class="form-control mb-2 rounded-0" id="ftitle">
-                            <label for="freply">Response</label><textarea name="" id="freply" cols="30" rows="10"
-                                                                  class="form-control rounded-0"></textarea>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" onclick="cmms.SaveFollowup()" class="btn btn-success">SAVE</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-    <div class="modal" id="loader">
-        <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
-            <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
-            <div class="w-100 text-center">
-                <br>
-                <small class="text-info" id="error_msg"></small>
-            </div>
+  <div id="mailer" class="modal fade">
+    <div id="mailer_size" class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="mailer_title">SEND MAIL</h5>
         </div>
+        <div class="modal-body overflow-auto" style='max-height : 75vh'>
+          <div class="w-100" id="mailer_mailer">
+            <label for="body"></label><textarea id="body" name="article_desc" class="tinymce-editor"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" id="mailer_footer"></div>
+      </div>
     </div>
-    <script>
-        $('#loader').modal('show')
-    </script>
+  </div>
+
+  <div class="modal fade" id="followUps">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <strong class="modal-title">Followup History</strong>
+          {# <button id="newFolloupButton" class="close bx bx-plus btn btn-sm" data-bs-target="#newFolloup"
+            data-bs-toggle="modal"></button>#}
+        </div>
+        <div class="modal-body" id="xfact" style="height: 60vh; overflow: auto">
+          <table class="table table-bordered table-sm table-hover table-striped">
+            <thead>
+              <tr>
+                <th>Person</th>
+                <th>Date</th>
+                <th>Title</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="fTbody">
+              <tr>
+                <td>James</td>
+                <td>Date</td>
+                <td>Hello World</td>
+                <td><i class="fa fa-reply pointer" onclick="al('info','hello world')"></i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="newFolloup">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <strong class="modal-title">NEW FOLLOWUP</strong>
+        </div>
+        <div class="modal-body">
+          <label for="car_no">CAR NUMBER</label><input type="text" readonly id="car_no" name="car_no"
+            class="form-control mb-2 rounded-0">
+          <label for="ftitle">TItle</label><input type="text" class="form-control mb-2 rounded-0" id="ftitle">
+          <label for="freply">Response</label><textarea name="" id="freply" cols="30" rows="10"
+            class="form-control rounded-0"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="cmms.SaveFollowup()" class="btn btn-success">SAVE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="loader">
+    <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
+      <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
+      <div class="w-100 text-center">
+        <br>
+        <small class="text-info" id="error_msg"></small>
+      </div>
+    </div>
+  </div>
+  <script>
+    $('#loader').modal('show')
+  </script>
 
   <input type="hidden" id="autos_url" value="{% url 'autos' 'ajax' %}">
   <input type="hidden" id="search_url" value="{% url 'search' %}">
@@ -221,9 +226,9 @@
 
           <a class="nav-link nav-icon">
             <small class="text-danger">
-                {% for message in messages %}
-                  {{ message }}
-                {% endfor %}
+              {% for message in messages %}
+              {{ message }}
+              {% endfor %}
             </small>
           </a><!-- End Messages Icon -->
 
@@ -511,38 +516,43 @@
   <aside id="sidebar" class="sidebar">
 
     <ul class="sidebar-nav" id="sidebar-nav">
-        <li class="nav-item">
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'servicing_tickets' %}">
+          <i class="bi bi-ticket-detailed"></i><span>Tickets</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'service_jobcard' %}">
           <i class="bi bi-tools"></i><span>JOB CARD</span>
         </a>
       </li>
 
-    {% if user.is_superuser %}
+      {% if user.is_superuser %}
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'srv_wo_services' %}">
           <i class="bi bi-tools"></i><span>SERVICE MASTER</span>
         </a>
       </li>
-    {% endif %}
+      {% endif %}
 
 
 
-   
 
 
 
-    {% if perms.cmms.view_followup %}
 
-    
-
-        <!-- END OF CMMD -->
-        {% endif %}
-
-     
+      {% if perms.cmms.view_followup %}
 
 
 
-   
+      <!-- END OF CMMD -->
+      {% endif %}
+
+
+
+
+
+
 
 
 
@@ -564,7 +574,7 @@
       </nav>
     </div><!-- End Page Title -->
 
-    <section class="section h-100 card" style="height: 85vh !important">
+    <section class="section h-100" style="height: 85vh !important">
       {% block body %}
 
       {% endblock %}
@@ -590,23 +600,22 @@
   <!-- Template Main JS File -->
   <script src="{% static 'assets/js/main.js' %}"></script>
 
-    <script>
+  <script>
 
-        $('#loader').delay(5000).modal('hide')
+    $('#loader').delay(5000).modal('hide')
 
-    </script>
+  </script>
 
 
-{#{% if messages %}#}
-{#  <script>#}
-{#    {% for message in messages %}#}
-{#      kasa.info(`{{ message }}`)#}
-{#    {% endfor %}#}
-{#  </script>#}
-{#{% endif %}#}
+
+  {% if messages %}
+  <script>
+    {% for message in messages %}
+    kasa.info(`{{ message }}`)
+    {% endfor %}
+  </script>
+  {% endif %}
 
 </body>
 
 </html>
-
-

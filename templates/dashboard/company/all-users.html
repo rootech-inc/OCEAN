@@ -2,413 +2,455 @@
 {% load static %}
 
 {% block body %}
-    <!-- Modern, Responsive & Mobile-Friendly Redesign using Bootstrap 5 utility classes and modern cards -->
-    <style>
-      /* Slight card shadow for modern look */
-      .modern-card { box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 4px 24px rgba(0,0,0,0.05); border-radius: 1rem; }
-      .modern-table th, .modern-table td { vertical-align: middle; }
-      @media (max-width: 767px) {
-        .responsive-table-header th, .responsive-table-header td { white-space: nowrap; }
-      }
-      /* Modal inputs spacing */
-      .modal-form-group label { font-weight: 500; }
-      .modal-form-group input, .modal-form-group textarea, .modal-form-group select {
-        margin-bottom: 1rem;
-      }
-    </style>
+<style>
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --accent-primary: #4361ee;
+    --accent-success: #22c55e;
+    --accent-danger: #ef4444;
+    --accent-warning: #f59e0b;
+    --accent-info: #0ea5e9;
+  }
 
-    <!-- New Department Modal -->
-    <div class="modal fade" id="newDepartment" tabindex="-1" aria-labelledby="newDepartmentLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
-                <form action="{% url 'save-department' %}" method="post" class="p-4">
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold" id="newDepartmentLabel">Add Department</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    {% csrf_token %}
-                    <div class="modal-body p-0 pt-3">
-                        <div class="modal-form-group">
-                            <label for="name" class="form-label">Name of Department</label>
-                            <input required type="text" class="form-control" autocomplete="off" name="name" id="name">
-                        </div>
-                        <div class="modal-form-group">
-                            <label for="name_of_head" class="form-label">Head's Name</label>
-                            <input required type="text" class="form-control" autocomplete="off" name="name_of_head" id="name_of_head">
-                        </div>
-                        <div class="modal-form-group">
-                            <label for="email_of_head" class="form-label">Head's Email</label>
-                            <input required type="email" class="form-control" autocomplete="off" name="email_of_head" id="email_of_head">
-                        </div>
-                        <div class="modal-form-group">
-                            <label for="phone_of_head" class="form-label">Head's Phone</label>
-                            <input required type="tel" class="form-control" autocomplete="off" name="phone_of_head" id="phone_of_head">
-                        </div>
-                        <div class="modal-form-group">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea required name="description" id="description" rows="3" class="form-control"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button class="btn btn-success px-4">Save</button>
-                    </div>
-                </form>
-            </div>
+  /* Custom Scrollbar */
+  .premium-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .premium-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .premium-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+
+  .premium-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+    transition: all 0.3s ease;
+  }
+
+  .glass-card:hover {
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.08);
+  }
+
+  .header-gradient {
+    background: linear-gradient(135deg, #4361ee, #4cc9f0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .table-container {
+    height: 70vh;
+    overflow-y: auto;
+  }
+
+  /* Status Badges */
+  .badge-soft-success {
+    background: #dcfce7;
+    color: #16a34a;
+    font-weight: 700;
+  }
+
+  .entry-animation {
+    animation: slideIn 0.5s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(15px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Responsive Mobile Cards */
+  @media (max-width: 767.98px) {
+    .modern-table thead {
+      display: none;
+    }
+
+    .modern-table tr {
+      display: block;
+      margin-bottom: 1rem;
+      border: 1px solid var(--glass-border) !important;
+      border-radius: 1.25rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .modern-table td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: none !important;
+      padding: 0.5rem 0 !important;
+      text-align: right;
+    }
+
+    .modern-table td::before {
+      content: attr(data-label);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      text-align: left;
+    }
+  }
+</style>
+
+<div class="container-fluid py-4 bg-light"
+  style="background: radial-gradient(circle at top right, rgba(67, 97, 238, 0.03), transparent), radial-gradient(circle at bottom left, rgba(76, 201, 240, 0.03), transparent); min-height: 90vh;">
+
+  <!-- Top Action Bar -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 px-3 entry-animation"
+    style="animation-delay: 0.1s;">
+    <div>
+      <h2 class="fw-black text-dark mb-0 d-flex align-items-center gap-3">
+        <i class="bi bi-people-fill text-primary"></i>
+        <span>User Management</span>
+      </h2>
+      <p class="text-secondary small mb-0 fw-medium">Administer organization accounts and permissions</p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+      <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold border-0" data-bs-toggle="modal"
+        data-bs-target="#newUser">
+        <i class="bi bi-person-plus-fill me-2"></i> New User
+      </button>
+      <button class="btn btn-outline-danger rounded-pill px-3 shadow-sm fw-bold border-2"
+        onclick="user.resetAllPasswords()">
+        <i class="bi bi-shield-lock-fill"></i>
+      </button>
+      <button class="btn btn-danger rounded-pill px-3 shadow-sm fw-bold border-0" id="select_deleted">
+        <i class="bi bi-trash-fill"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-4 px-2">
+    <!-- Main Users List -->
+    <div class="col-lg-8 entry-animation" style="animation-delay: 0.2s;">
+      <div class="glass-card overflow-hidden">
+        <div class="card-header bg-transparent border-0 py-4 px-4">
+          <div class="d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold text-dark mb-0">Active Directory</h5>
+            <div class="text-secondary small fw-bold text-uppercase ls-1">{{ users|length }} Members</div>
+          </div>
         </div>
+        <div class="table-container premium-scroll px-2 pb-3">
+          <table class="table table-hover align-middle mb-0 modern-table">
+            <thead class="sticky-top bg-white bg-opacity-75" style="backdrop-filter: blur(8px); z-index: 10;">
+              <tr>
+                <th class="ps-4 py-3 text-secondary small fw-bold text-uppercase"><input type="checkbox"
+                    id="select_all_users" class="form-check-input"></th>
+                <th class="py-3 text-secondary small fw-bold text-uppercase">Full Name</th>
+                <th class="py-3 text-secondary small fw-bold text-uppercase">Identification</th>
+                <th class="py-3 text-secondary small fw-bold text-uppercase">Last Seen</th>
+                <th class="py-3 text-secondary small fw-bold text-uppercase text-center">Status</th>
+                <th class="pe-4 py-3 text-secondary small fw-bold text-uppercase text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for this_user in users %}
+              <tr class="border-top" style="transition: background 0.2s ease;">
+                <td class="ps-4"><input type="checkbox" name="selected_user" value="{{ this_user.pk }}"
+                    class="form-check-input"></td>
+                <td data-label="Full Name">
+                  <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3 small fw-bold"
+                      style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
+                      {{ this_user.first_name|slice:":1" }}{{ this_user.last_name|slice:":1" }}
+                    </div>
+                    <div>
+                      <div class="fw-bold text-dark">{{ this_user.get_full_name }}</div>
+                      <div class="text-muted small fw-medium">{{ this_user.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td data-label="Username">
+                  <span class="badge bg-light text-dark fw-bold border px-3 py-2 rounded-3">
+                    @{{ this_user.username}}</span>
+                </td>
+                <td data-label="Last Seen" class="text-secondary small fw-medium">
+                  {{ this_user.last_login|date:"M d, H:i" }}
+                </td>
+                <td data-label="Status" class="text-center">
+                  <span class="badge rounded-pill badge-soft-success px-3 py-1">ACTIVE</span>
+                </td>
+                <td data-label="Action" class="pe-4 text-end">
+                  <div class="dropdown">
+                    <button class="btn btn-light btn-sm rounded-circle p-2 shadow-none" data-bs-toggle="dropdown">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2">
+                      <li><a class="dropdown-item rounded-3 py-2 text-danger"
+                          onclick="user.Delete('{{ this_user.pk }}')"><i class="bi bi-person-x me-2"></i> Disable
+                          Account</a></li>
+                      <li><a class="dropdown-item rounded-3 py-2 text-warning"
+                          onclick="user.resetPassword('{{ this_user.pk }}')"><i class="bi bi-key me-2"></i> Reset
+                          password</a></li>
+                      <li>
+                        <hr class="dropdown-divider">
+                      </li>
+                      <li><a class="dropdown-item rounded-3 py-2" data-bs-target="#chgDept{{ this_user.pk }}"
+                          data-bs-toggle="modal"><i class="bi bi-diagram-2 me-2"></i> Assign Department</a></li>
+                      <li><a class="dropdown-item rounded-3 py-2"
+                          onclick="location.href='{% url 'user_permissions' this_user.username %}';"><i
+                            class="bi bi-shield-lock me-2"></i> Permissions</a></li>
+                      <li><a class="dropdown-item rounded-3 py-2" onclick="user.updateInfo('{{ this_user.pk }}')"><i
+                            class="bi bi-pencil me-2"></i> Update Profile</a></li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
-    <div class="container-fluid py-4 px-2 bg-light min-vh-100">
+    <!-- Sidebar Content -->
+    <div class="col-lg-4">
       <div class="row g-4">
-        <!-- USERS TABLE & ACTIONS -->
-        <div class="col-lg-8 col-12">
-          <div class="card modern-card mb-4">
-            <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2 bg-white">
-              <h5 class="card-title mb-0 fw-bold">Users</h5>
-              <div class="d-flex flex-wrap gap-2">
-                <button data-bs-target="#newUser" data-bs-toggle="modal" class="btn btn-info btn-sm d-flex align-items-center gap-1">
-                  <i class="bi bi-person-plus"></i><span class="d-none d-md-inline">New User</span>
-                </button>
-                <button onclick="user.resetAllPasswords()" class="btn btn-danger btn-sm d-flex align-items-center gap-1">
-                  <i class="bi bi-lock"></i><span class="d-none d-md-inline">Reset All Passwords</span>
-                </button>
-                <button class="btn btn-secondary btn-sm ms-1 d-flex align-items-center gap-1" id="select_deleted">
-                  <i class="bi bi-trash"></i><span class="d-none d-md-inline">Delete</span>
-                </button>
-              </div>
+        <!-- Departments Section -->
+        <div class="col-12 entry-animation" style="animation-delay: 0.3s;">
+          <div class="glass-card">
+            <div class="card-header bg-transparent border-0 d-flex align-items-center justify-content-between p-4 pb-0">
+              <h6 class="fw-black text-dark mb-0">DEPARTMENTS</h6>
+              <button class="btn btn-light btn-sm rounded-circle shadow-none" data-bs-toggle="modal"
+                data-bs-target="#newDepartment">
+                <i class="bi bi-plus-lg"></i>
+              </button>
             </div>
-            <div class="card-body p-0">
-              <div class="table-responsive">
-                <table class="table table-hover table-striped table-bordered table-sm align-middle mb-0 modern-table">
-                  <thead class="responsive-table-header text-nowrap">
-                    <tr class="bg-light">
-                      <th class="text-center" style="width:32px"><input type="checkbox" id="select_all_users"></th>
-                      <th>First Name</th>
-                      <th>Last Name</th>
-                      <th>Username</th>
-                      <th>Status</th>
-                      <th>Last Login</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for this_user in users %}
-                      <tr>
-                        <td class="text-center">
-                          <input type="checkbox" name="selected_user" value="{{ this_user.pk }}">
-                        </td>
-                        <td class="text-nowrap">{{ this_user.first_name }}</td>
-                        <td class="text-nowrap">{{ this_user.last_name }}</td>
-                        <td class="text-nowrap">{{ this_user.username }}</td>
-                        <td>
-                          <span class="badge rounded-pill bg-success bg-opacity-75">Active</span>
-                        </td>
-                        <td>
-                          <small class="text-muted">{{ this_user.last_login|date:"Y-m-d H:i" }}</small>
-                        </td>
-                        <td>
-                          <!-- Dropdown for actions (mobile-friendly) -->
-                          <div class="dropdown">
-                            <button class="btn btn-light btn-sm border dropdown-toggle" type="button" id="userMenu{{ this_user.pk }}" data-bs-toggle="dropdown" aria-expanded="false">
-                              <i class="bi bi-three-dots-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu{{ this_user.pk }}">
-                              <li>
-                                <a class="dropdown-item text-danger" onclick="user.Delete('{{ this_user.pk }}')" href="javascript:void(0)">
-                                  <i class="bi bi-person-x"></i> Disable
-                                </a>
-                              </li>
-                              <li>
-                                <a class="dropdown-item text-warning" onclick="user.resetPassword('{{ this_user.pk }}')" href="javascript:void(0)">
-                                  <i class="bi bi-arrow-counterclockwise"></i> Reset Password
-                                </a>
-                              </li>
-                              <li>
-                                <a class="dropdown-item text-secondary" data-bs-target="#chgDept{{ this_user.pk }}" data-bs-toggle="modal" href="javascript:void(0)">
-                                  <i class="bi bi-diagram-3"></i> Set Department
-                                </a>
-                              </li>
-                              <li>
-                                <a class="dropdown-item text-primary" onclick="location.href='{% url 'user_permissions' this_user.username %}'" href="javascript:void(0)">
-                                  <i class="bi bi-sliders"></i> UAL
-                                </a>
-                              </li>
-                              <li>
-                                <a class="dropdown-item text-info" onclick="user.makeApprovalScreen('{{ this_user.pk }}')" href="javascript:void(0)">
-                                  <i class="bi bi-person-check"></i> Make Approver
-                                </a>
-                              </li>
-                              <li>
-                                <a class="dropdown-item text-info" onclick="user.updateInfo('{{ this_user.pk }}')" href="javascript:void(0)">
-                                  <i class="bi bi-pencil-square"></i> Update Info
-                                </a>
-                              </li>
-                            </ul>
-                          </div>
-                        </td>
-                      </tr>
-                      <!-- Change Department Modal for Each User -->
-                      <div class="modal fade" id="chgDept{{ this_user.pk }}" tabindex="-1" aria-labelledby="chgDeptModal{{ this_user.pk }}" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                          <div class="modal-content p-2">
-                            <form method="post" action="{% url 'set_department' %}" class="p-3">
-                              <div class="modal-header border-0 pb-0">
-                                <strong class="modal-title h6" id="chgDeptModal{{ this_user.pk }}">
-                                  Change Department for {{ this_user.first_name }} {{ this_user.last_name }}
-                                </strong>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                              </div>
-                              {% csrf_token %}
-                              <div class="modal-body pb-0">
-                                <input type="hidden" name="user" value="{{ this_user.pk }}">
-                                <label for="dept{{ this_user.pk }}" class="form-label">Department</label>
-                                <select name="dept" id="dept{{ this_user.pk }}" class="form-select mb-3">
-                                  {% for dep in depts %}
-                                    <option value="{{ dep.pk }}">{{ dep.name }}</option>
-                                  {% endfor %}
-                                </select>
-                              </div>
-                              <div class="modal-footer border-0 pt-0">
-                                <button class="btn btn-success" type="submit">Commit</button>
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                              </div>
-                            </form>
-                          </div>
-                        </div>
-                      </div>
-                    {% endfor %}
-                  </tbody>
-                </table>
+            <div class="card-body p-4 pt-3">
+              <div class="premium-scroll overflow-auto" style="max-height: 200px;">
+                {% for dept in depts %}
+                <div class="d-flex align-items-center justify-content-between p-3 rounded-4 mb-2"
+                  style="background: rgba(255,255,255,0.4);">
+                  <div class="d-flex align-items-center">
+                    <div class="bg-info bg-opacity-10 text-info rounded-3 p-2 me-3 small">
+                      <i class="bi bi-building"></i>
+                    </div>
+                    <span class="fw-bold text-dark small">{{ dept.name }}</span>
+                  </div>
+                  <i class="bi bi-trash text-muted pointer small" title="Delete"></i>
+                </div>
+                {% endfor %}
               </div>
             </div>
           </div>
         </div>
-        <!-- END USERS -->
 
-        <!-- SIDE PANEL: Departments, O_MEMBERS, O_UNITS -->
-        <div class="col-lg-4 col-12">
-          <!-- Departments Card -->
-          <div class="card modern-card mb-4">
-            <div class="card-header d-flex align-items-center justify-content-between bg-white">
-              <span class="fw-bold">Departments</span>
-              <button data-bs-toggle="modal" data-bs-target="#newDepartment" class="btn btn-info btn-sm d-flex align-items-center gap-1">
-                <i class="bi bi-plus-square"></i> <span class="d-none d-md-inline">Add</span>
-              </button>
-            </div>
-            <div class="card-body">
-              <ul class="list-group list-group-flush">
-                {% for dept in depts %}
-                  <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
-                    <span>{{ dept.name }}</span>
-                    <i title="delete" class="fa fa-recycle text-danger pointer"></i>
-                  </li>
-                {% empty %}
-                  <li class="list-group-item text-muted">No Departments</li>
-                {% endfor %}
-              </ul>
-            </div>
-          </div>
-          <!-- O_MEMBERS Card -->
-          <div class="card modern-card mb-4">
-            <div class="card-header bg-white">
-              <span class="fw-bold">OU Members</span>
-            </div>
-            <div class="card-header border-0 bg-white">
-              <form action="{% url 'save_um' %}" method="post" class="row g-2 align-items-end">
+        <!-- OU Members Section -->
+        <div class="col-12 entry-animation" style="animation-delay: 0.4s;">
+          <div class="glass-card">
+            <div class="card-header bg-transparent border-0 p-4 pb-0">
+              <h6 class="fw-black text-dark mb-3 text-uppercase">Organizational Members</h6>
+              <form action="{% url 'save_um' %}" method="post" class="d-flex gap-2">
                 {% csrf_token %}
-                <input type="hidden" name="owner" value="{{ user.pk }}">
-                <div class="col-12 col-md-5">
-                  <select name="ou" class="form-select form-select-sm" required>
-                    <option selected disabled>Choose OU</option>
-                    {% for ou in ous %}
-                      <option value="{{ ou.pk }}">{{ ou.name }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="col-12 col-md-5">
-                  <input type="text" autocomplete="off" class="form-control form-control-sm" placeholder="Name" name="name" required>
-                </div>
-                <div class="col-12 col-md-2">
-                  <button type="submit" class="btn btn-sm btn-success w-100">
-                    <i class="bi bi-plus-lg"></i>
-                  </button>
-                </div>
+                <select name="ou" class="form-select form-select-sm rounded-3 bg-light border-0 shadow-none px-3"
+                  required>
+                  <option selected disabled>OU</option>
+                  {% for ou in ous %}
+                  <option value="{{ ou.pk }}">{{ ou.name }}</option>
+                  {% endfor %}
+                </select>
+                <input type="text" name="name"
+                  class="form-control form-control-sm rounded-3 bg-light border-0 shadow-none px-3" placeholder="Name"
+                  required>
+                <button type="submit" class="btn btn-primary btn-sm rounded-3 shadow-none px-3 px-md-2">
+                  <i class="bi bi-plus-lg"></i>
+                </button>
               </form>
             </div>
-            <div class="card-body pb-2">
-              <div class="table-responsive">
-                <table class="table table-sm table-bordered modern-table mb-0">
-                  <thead>
-                    <tr class="bg-light">
-                      <th>OU</th>
-                      <th>Name</th>
+            <div class="card-body p-4">
+              <div class="premium-scroll overflow-auto" style="max-height: 220px;">
+                <table class="table table-sm align-middle mb-0">
+                  <thead class="small text-secondary fw-bold text-uppercase border-bottom">
+                    <tr>
+                      <th class="ps-0 pb-2">OU</th>
+                      <th class="pb-2">Name</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody class="small fw-medium">
                     {% for mem in unit_membs %}
-                      <tr>
-                        <td>{{ mem.ou.name }}</td>
-                        <td>{{ mem.name }}</td>
-                      </tr>
-                    {% empty %}
-                      <tr>
-                        <td colspan="2" class="text-center text-muted">No Members</td>
-                      </tr>
+                    <tr>
+                      <td class="ps-0 py-2"><span class="badge bg-soft-info text-info">{{ mem.ou.name }}</span></td>
+                      <td class="py-2 text-dark">{{ mem.name }}</td>
+                    </tr>
                     {% endfor %}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-          <!-- O_UNITS Card -->
-          <div class="card modern-card mb-3">
-            <div class="card-header bg-white d-flex align-items-center justify-content-between">
-              <span class="fw-bold">OU Units</span>
-              <button data-bs-target="#newOU" data-bs-toggle="modal" class="btn btn-info btn-sm d-flex align-items-center gap-1">
-                <i class="bi bi-plus-square"></i> <span class="d-none d-md-inline">New</span>
+        </div>
+
+        <!-- OU Units Section -->
+        <div class="col-12 entry-animation" style="animation-delay: 0.5s;">
+          <div class="glass-card">
+            <div class="card-header bg-transparent border-0 d-flex align-items-center justify-content-between p-4 pb-0">
+              <h6 class="fw-black text-dark mb-0">OU UNITS</h6>
+              <button class="btn btn-light btn-sm rounded-circle shadow-none" data-bs-toggle="modal"
+                data-bs-target="#newOU">
+                <i class="bi bi-p-square"></i>
               </button>
             </div>
-            <!-- New OU Modal -->
-            <div class="modal fade" id="newOU" tabindex="-1" aria-labelledby="newOUModal" aria-hidden="true">
-              <div class="modal-dialog modal-dialog-centered">
-                <form method="post" action="{% url 'save_ou' %}" class="modal-content">
-                  <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold" id="newOUModal">Create New OU</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div class="modal-body">
-                    {% csrf_token %}
-                    <input type="hidden" name="owner" value="{{ user.pk }}">
-                    <div class="mb-3">
-                      <label class="form-label">Name</label>
-                      <input type="text" required name="name" autocomplete="off" class="form-control form-control-sm mb-2">
-                    </div>
-                    <div class="mb-2">
-                      <label class="form-label">Description</label>
-                      <textarea required name="description" rows="3" class="form-control form-control-sm"></textarea>
-                    </div>
-                  </div>
-                  <div class="modal-footer border-0">
-                    <button class="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
-                    <button class="btn btn-success px-4" type="submit">Save</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-sm table-bordered modern-table mb-0">
-                  <thead>
-                    <tr class="bg-light">
-                      <th>OU</th>
-                      <th>Created By</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for ou in ous %}
-                      <tr>
-                        <td>{{ ou.name }}</td>
-                        <td>{{ ou.description }}</td>
-                      </tr>
-                    {% empty %}
-                      <tr>
-                        <td colspan="2" class="text-center text-muted">No OU Units</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+            <div class="card-body p-4">
+              <div class="premium-scroll overflow-auto" style="max-height: 180px;">
+                {% for ou in ous %}
+                <div class="p-3 rounded-4 mb-2 shadow-sm border border-white"
+                  style="background: linear-gradient(to right, rgba(255,255,255,0.6), rgba(255,255,255,0.2));">
+                  <div class="fw-black text-primary small mb-1">{{ ou.name }}</div>
+                  <div class="text-secondary small fw-medium text-truncate">{{ ou.description }}</div>
+                </div>
+                {% endfor %}
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- NEW USER MODAL (Floating across the app root) -->
-    <div id="newUser" class="modal fade" tabindex="-1" aria-labelledby="newUserLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-          <form action="{% url 'create_account' %}" method="post" class="p-3">
-            <div class="modal-header border-0 pb-0">
-              <h5 class="modal-title fw-bold" id="newUserLabel">Create User</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-0 pt-3">
-              {% csrf_token %}
-              <input type="hidden" name="password" value="1111111">
-              <div class="container-fluid p-0">
-                <div class="row g-3">
-                  <div class="col-12 col-md-6">
-                    <label for="first_name" class="form-label">First Name</label>
-                    <input name="first_name" type="text" class="form-control" id="first_name" required>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="last_name" class="form-label">Last Name</label>
-                    <input name="last_name" type="text" class="form-control" id="last_name" required>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="company" class="form-label">Company</label>
-                    <input name="company" type="text" class="form-control" id="company">
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="position" class="form-label">Position</label>
-                    <input name="position" type="text" class="form-control" id="position">
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="email" class="form-label">Email</label>
-                    <input name="email" type="email" class="form-control" id="email" required>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="mobile" class="form-label">Phone</label>
-                    <input name="mobile" type="text" class="form-control" id="mobile">
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="notify" class="form-label">Notification</label>
-                    <select name="notify" id="notify" class="form-select" required>
-                      <option value="NO" selected>No</option>
-                      <option value="YES">Yes</option>
-                    </select>
-                  </div>
-                  <div class="col-12 col-md-6 d-flex align-items-end">
-                    <button class="btn btn-success w-100" type="submit">Register</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
+<!-- All Users Modals Redesign -->
+<!-- New Department Modal -->
+<div class="modal fade" id="newDepartment" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content glass-card rounded-5 border-0 shadow-2xl overflow-hidden p-2">
+      <form action="{% url 'save-department' %}" method="post" class="p-3">
+        <div class="modal-header border-0 pb-3">
+          <h5 class="modal-title fw-black">ADD DEPT</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-      </div>
+        {% csrf_token %}
+        <div class="modal-body p-0">
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">Name</label>
+            <input required type="text" class="form-control rounded-4 bg-light border-0 py-3 px-4 shadow-none"
+              name="name">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">Head of Dept</label>
+            <input required type="text" class="form-control rounded-4 bg-light border-0 py-3 px-4 shadow-none"
+              name="name_of_head">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">Description</label>
+            <textarea name="description" rows="3"
+              class="form-control rounded-4 bg-light border-0 py-3 px-4 shadow-none"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold border-0">Save Dept</button>
+        </div>
+      </form>
     </div>
+  </div>
+</div>
 
-    <script>
-      // Select/Deselect all users
-      document.getElementById('select_all_users')?.addEventListener('change', function(e) {
-        let checked = e.target.checked;
-        document.querySelectorAll('input[name="selected_user"]').forEach(cb => cb.checked = checked);
-      });
+<!-- New User Modal -->
+<div id="newUser" class="modal fade" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content glass-card rounded-5 border-0 shadow-2xl p-2">
+      <form action="{% url 'create_account' %}" method="post" class="p-3">
+        <div class="modal-header border-0 pb-3">
+          <h4 class="modal-title fw-black">CREATE NEW MEMBER</h4>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0 pt-3">
+          {% csrf_token %}
+          <input type="hidden" name="password" value="1111111">
+          <div class="row g-4 mb-4">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">First Name</label>
+              <input name="first_name" type="text"
+                class="form-control rounded-4 bg-light border-0 py-3 px-4 shadow-none" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">Last Name</label>
+              <input name="last_name" type="text" class="form-control rounded-4 bg-light border-0 py-3 px-4 shadow-none"
+                required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">Email Address</label>
+              <input name="email" type="email" class="form-control rounded-4 bg-light border-0 py-3 px-4 shadow-none"
+                required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">Contact Phone</label>
+              <input name="mobile" type="text" class="form-control rounded-4 bg-light border-0 py-3 px-4 shadow-none">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">Company /
+                Organization</label>
+              <input name="company" type="text" class="form-control rounded-4 bg-light border-0 py-3 px-4 shadow-none">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">Official Position</label>
+              <input name="position" type="text" class="form-control rounded-4 bg-light border-0 py-3 px-4 shadow-none">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-secondary text-uppercase ls-1 ms-1">Enable
+                Notifications</label>
+              <select name="notify" class="form-select rounded-4 bg-light border-0 py-3 px-4 shadow-none" required>
+                <option value="NO" selected>No</option>
+                <option value="YES">Yes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pb-2">
+          <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Close</button>
+          <button class="btn btn-primary rounded-pill px-5 shadow-sm fw-bold border-0" type="submit">COMMIT
+            REGISTRATION</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
-      // Handle delete selected users (mobile friendly)
-      document.getElementById('select_deleted')?.addEventListener('click', function() {
-          const selectedUsers = [];
-          document.querySelectorAll('input[name="selected_user"]:checked').forEach(function (el) {
-              selectedUsers.push(el.value);
-              user.Delete(el.value);
-          });
-          kasa.confirm("Done",1,'here');
-      });
-    </script>
+<script>
+  // Premium select all logic
+  document.getElementById('select_all_users')?.addEventListener('change', function (e) {
+    let checked = e.target.checked;
+    document.querySelectorAll('input[name="selected_user"]').forEach(cb => cb.checked = checked);
+  });
 
-    <script>
-        $('#select_deleted').click(function(){
-            const selectedUsers = [];
-            $('input[id="selected_user"]:checked').each(function () {
-                selectedUsers.push($(this).val());
-                console.log($(this).val());
-                user.Delete($(this).val());
-            });
-            kasa.confirm("Done",1,'here')
-            {#console.log(selectedUsers);#}
-        })
-    </script>
+  // Handle delete with premium confirmation flow
+  document.getElementById('select_deleted')?.addEventListener('click', function () {
+    const selectedUsers = [];
+    const checkboxes = document.querySelectorAll('input[name="selected_user"]:checked');
+    if (checkboxes.length === 0) {
+      kasa.error("Please select users to delete");
+      return;
+    }
 
+    checkboxes.forEach(function (el) {
+      selectedUsers.push(el.value);
+      user.Delete(el.value);
+    });
+    kasa.confirm("Action request sent for " + selectedUsers.length + " accounts", 1, 'here');
+  });
+</script>
 {% endblock %}

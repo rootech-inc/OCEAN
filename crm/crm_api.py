@@ -15,7 +15,7 @@ from admin_panel.anton import fix_phone_number, make_md5_hash, is_valid_email, i
 from admin_panel.models import Emails, GeoCity, GeoCitySub, MailQueues, MailSenders, MailAttachments, Reminder, Sms, \
     SmsApi, GoogleSyncConfig
 from cmms.extra import cmms_db
-from cmms.models import CarModel, SalesDeals, SalesCustomers
+from cmms.models import CarModel, SalesDeals, Customers
 from crm.models import Contacts, Logs, CrmUsers, Sector, Positions, FollowUp, Campaigns, LogValidity, CampaignTargets, \
     CampaignSense, LeadStreams
 from ocean import settings
@@ -266,8 +266,8 @@ SELECT phone,'',phone,cust_name FROM customer
                 asset = CarModel.objects.get(pk=asset_pk)
                 # create customer
                 comp_url = log.company.replace(' ','-').lower()
-                if not SalesCustomers.objects.filter(url=comp_url).exists():
-                    SalesCustomers(
+                if not Customers.objects.filter(url=comp_url).exists():
+                    Customers(
                         sector_of_company=log.sector.name,
                         type_of_client='Phone Call',
                         company=log.company,
@@ -283,7 +283,7 @@ SELECT phone,'',phone,cust_name FROM customer
                         owner=own,
                     ).save()
 
-                customer = SalesCustomers.objects.get(url=comp_url)
+                customer = Customers.objects.get(url=comp_url)
 
                 SalesDeals(customer=customer, owner=own, pur_rep_name=f"{log.customer.split(' ')[0]} {log.customer.split(' ')[-1]}",
                            pur_rep_phone=f"{log.phone}",

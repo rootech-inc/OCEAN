@@ -1,47 +1,142 @@
 {% extends 'cmms/service/serv_base.html' %}
 
 {% block cmms %}
-    <div class="w-100 h-100 card">
-        <div class="card-header">
-            <button class="btn btn-info">NEW CUSTOMER</button>
-        </div>
-        <div class="card-body p-2">
-            <table class="table table-sm datatable">
-                <thead>
-                    <tr>
-                        <th>CODE</th><th>ORGANIZATION</th><th>CONTACT</th><th>Email</th><th>ACTION</th>
-                    </tr>
-                </thead>
-                <tbody id="tBody">
-                </tbody>
-            </table>
+<div class="w-100 h-100 card">
+    <div class="card-header d-flex justify-content-between">
+        <h5 class="card-title">SERVICE CUSTOMERS</h5>
+        <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#newCustomer">NEW CUSTOMER</button>
+    </div>
+    <div class="card-body p-2">
+        <table class="table table-sm datatable">
+            <thead>
+                <tr>
+                    <th>CODE</th>
+                    <th>ORGANIZATION</th>
+                    <th>CONTACT</th>
+                    <th>Email</th>
+                    <th>ACTION</th>
+                </tr>
+            </thead>
+            <tbody id="tBody">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="newCustomer" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">NEW CUSTOMER</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newCustomerForm">
+                    <div class="mb-3">
+                        <label for="company" class="form-label">Organization Name</label>
+                        <input type="text" class="form-control" id="company" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveCustomer()">SAVE CUSTOMER</button>
+            </div>
         </div>
     </div>
+</div>
 
-    <script>
+<script>
+    $(document).ready(function () {
+        loadCustomers();
+    });
+
+    function loadCustomers() {
+        $('#tBody').empty();
         let payload = {
-            "module":"customer",
-            "data":{
-                "cust_type":"cmms_service"
+            "module": "customer",
+            "data": {
+                "cust_type": "cmms_service"
             }
         }
 
-        let response = api.call('VIEW',payload,'/cmms/api/')
-        if(response['status_code'] === 200){
+        let response = api.call('VIEW', payload, '/cmms/api/')
+        if (response['status_code'] === 200) {
             let message = response['message']
             for (let i = 0; i < message.length; i++) {
                 let customer = message[i]
                 $('#tBody').append(`
-                    <tr>
-                        <td><a href="/cmms/servicing/customer/${customer['code']}/">${customer['code']}</a></td><td>${customer['name']}</td><td>${customer['phone']}</td><td>${customer['email']}</td>
-                        <td><i title='View Assets' onclick="location.href='/cmms/servicing/customer/${customer['code']}/'" class="bi bi-car-front-fill pointer"></i></td>
-                    </tr>
-                `);
+                        <tr>
+                            <td><a href="/cmms/servicing/customer/${customer['pk']}/">${customer['pk']}</a></td><td>${customer['company']}</td><td>${customer['mobile'] || ''}</td><td>${customer['email'] || ''}</td>
+                            <td><i title='View Assets' onclick="location.href='/cmms/servicing/customer/${customer['pk']}/'" class="bi bi-car-front-fill pointer"></i></td>
+                        </tr>
+                    `);
             }
         } else {
             kasa.error(response['message'])
         }
+    }
 
-    </script>
+    function saveCustomer() {
+        let company = $('#company').val();
+        let first_name = $('#first_name').val();
+        let last_name = $('#last_name').val();
+        let email = $('#email').val();
+        let phone = $('#phone').val();
+        let address = $('#address').val();
 
+        if (company === '') {
+            kasa.error('Organization name is required');
+            return;
+        }
+
+        let payload = {
+            "module": "customer",
+            "data": {
+                "company": company,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "phone": phone,
+                "address": address,
+                "type": "cmms_service",
+                "mypk": "{{ mypk }}"
+            }
+        }
+
+        let response = api.call('PUT', payload, '/cmms/api/')
+        if (response['status_code'] === 200) {
+            kasa.success(response['message']);
+            $('#newCustomer').modal('hide');
+            $('#newCustomerForm')[0].reset();
+            loadCustomers();
+        } else {
+            kasa.error(response['message'])
+        }
+    }
+</script>
 {% endblock %}

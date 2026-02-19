@@ -12,6 +12,7 @@ from fpdf import FPDF
 
 from admin_panel.models import SmsApi, Sms
 from cmms.forms import NewSalesCustomer, NewSaleTransactions
+from cmms.models import Customers
 from inventory.models import Assets
 from maintenance.models import WorkOrder
 from ocean.settings import DB_SERVER, DB_NAME, DB_USER, DB_PORT, DB_PASSWORD
@@ -43,18 +44,33 @@ def base(request):
 
 @login_required(login_url='/login/')
 def carjobs(request):
-    # return HttpResponse("Module Discontinued..")
+    # Calculate metrics
+    today = date.today()
+    ongoing = JobCard.objects.filter(is_started=True, is_ended=False).count()
+    ready = JobCard.objects.filter(is_ended=True, is_feedback=False).count()
+    feedbacks = JobCard.objects.filter(is_ended=True, is_feedback=False).count() # Using same logic for now if no specific delivery flag
+    service_due = JobCard.objects.filter(next_service_date__lte=today).count()
+    ongoing_jobs = JobCard.objects.filter(is_started=True, is_ended=False).order_by('-pk')
+    pending_requests = JobRequest.objects.filter(is_started=False).count()
+
+
     page = {
         'nav': True,
-        'title': "Car Jobs"
+        'title': "Servicing Dashboard"
     }
 
     context = {
         'page': page,
         'nav': True,
-        'searchButton': 'carJob'
+        'metrics': {
+            'ongoing': ongoing,
+            'ready': ready,
+            'feedbacks': feedbacks,
+            'service_due': service_due,
+            'requests': pending_requests
+        },
+        'ongoing_jobs': ongoing_jobs
     }
-    # messages.info(request, "You can now view all data but limited to 100 records")
     return render(request, 'cmms/car-jobs.html', context=context)
 
 
@@ -170,7 +186,7 @@ def customer_sales(request):
         'page': {
             'title': "SALES CUSTOMERS"
         },
-        'customers': SalesCustomers.objects.all().order_by('-pk')
+        'customers': Customers.objects.all().order_by('-pk')
     }
     return render(request, 'cmms/sales-customer.html', context=context)
 
@@ -194,11 +210,11 @@ def save_sales_customer(request):
             mobile = request.POST['mobile']
             email = request.POST['email']
             company = request.POST['company']
-            if SalesCustomers.objects.filter(mobile=mobile).exists():
+            if Customers.objects.filter(mobile=mobile).exists():
                 messages.error(request, f"Customer exist with number {mobile}")
-            elif SalesCustomers.objects.filter(email=email).exists():
+            elif Customers.objects.filter(email=email).exists():
                 messages.error(request, f"Customer exist with number {mobile}")
-            elif SalesCustomers.objects.filter(company=company).exists():
+            elif Customers.objects.filter(company=company).exists():
                 messages.error(request, f"Customer from company {company}")
             elif form.is_valid():
                 try:
@@ -223,7 +239,7 @@ def save_sales_customer(request):
 #         'page': {
 #             'title': ""
 #         },
-#         'cust': SalesCustomers.objects.get(pk=customer)
+#         'cust': Customers.objects.get(pk=customer)
 #     }
 #     return render(request, 'cmms/sales_transactions.html', context=context)
 
@@ -256,7 +272,8 @@ def service_customers(request):
         'page': {
 
             'title': "SERVICE CUSTOMERS"
-        }
+        },
+        'mypk': request.user.pk
     }
     return render(request, 'cmms/service/customers.html', context=context)
 
@@ -277,8 +294,8 @@ def servicing(request):
 @login_required()
 def sales_deal(request, customer):
     # validate customer
-    if SalesCustomers.objects.filter(url=customer).count() == 1:
-        cust = SalesCustomers.objects.get(url=customer)
+    if Customers.objects.filter(url=customer).count() == 1:
+        cust = Customers.objects.get(url=customer)
         context = {
             'nav': True,
             'page': {
@@ -434,6 +451,7 @@ def invoices(request):
     return render(request, 'cmms/service/invoices.html', context=context)
 
 
+@login_required()
 def newjob(request):
 
     context = {
@@ -441,7 +459,9 @@ def newjob(request):
         'page': {
 
             'title': ""
-        }
+        },
+        'customers': Customers.objects.all(),
+        'mypk': request.user.pk
     }
     return render(request, 'cmms/service/new.html', context=context)
 
@@ -547,7 +567,7 @@ def start_job(request):
             model = job_request.car_model,
             carno=job_request.car_no,
             owner=request.user,
-            mechanic="auto",
+            mechanic=form.get('mechanic'),
             report=job_request.problem,
 
 
@@ -650,3 +670,39 @@ def cmms_service_due(request):
 
     }
     return render(request, 'cmms/service/servcice_due.html', context=context)
+
+@csrf_exempt
+def public_material_request(request):
+    if request.method == 'POST':
+        job_pk = request.POST.get('job_pk')
+        barcode = request.POST.get('barcode')
+        part = request.POST.get('name')
+        quantity = request.POST.get('quantity')
+        reason = request.POST.get('reason')
+        image = request.FILES.get('image')
+
+        try:
+            job = JobCard.objects.get(pk=job_pk)
+            JobMaterials.objects.create(
+                jobcard=job,
+                barcode=barcode,
+                part=part,
+                quantity=quantity,
+                reason=reason,
+                image=image,
+                owner=None # Public request
+            )
+            messages.success(request, "Material request submitted successfully!")
+            return redirect('public_material_request')
+        except Exception as e:
+            messages.error(request, f"Error submitting request: {str(e)}")
+            return redirect('public_material_request')
+
+    context = {
+        'jobs': JobCard.objects.filter(is_ended=False).order_by('carno'),
+        'page': {
+            'title': "Submit Material Request"
+        },
+        'nav': False # Don't show sidebar/header for public page
+    }
+    return render(request, 'cmms/service/material_request.html', context=context)
