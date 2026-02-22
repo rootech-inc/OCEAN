@@ -1073,6 +1073,7 @@ SELECT phone,'',phone,cust_name FROM customer
                             for target in pending:
                                 try:
                                     message.replace('-tail-',target.contact)
+                                    message.replace('-name-',target.name)
                                     if camp_type == 'email':
                                         if is_valid_email(target.contact):
                                             mail_sender = MailSenders.objects.get(pk=sender_pk)
