@@ -1073,9 +1073,10 @@ SELECT phone,'',phone,cust_name FROM customer
                             for target in pending:
                                 try:
                                     message.replace('-tail-',target.contact)
-                                    message.replace('[NAME]',target.name)
+
                                     if camp_type == 'email':
                                         if is_valid_email(target.contact):
+                                            message.replace('[NAME]', target.name)
                                             mail_sender = MailSenders.objects.get(pk=sender_pk)
                                             mail_queue = MailQueues.objects.create(
                                                 sender=mail_sender,
@@ -1093,6 +1094,7 @@ SELECT phone,'',phone,cust_name FROM customer
                                             if len(target.campaign.external) > 0:
                                                 link = make_magic_link(target.campaign.external,{'tail':target.contact,'tag':'campaign'},'campaign',target.campaign_id)
                                             message += f"\n{link}"
+                                            message.replace('[NAME]', target.name)
                                             Sms.objects.create(
                                                 api=api,
                                                 message=message,
