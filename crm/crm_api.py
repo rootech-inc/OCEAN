@@ -892,7 +892,7 @@ SELECT phone,'',phone,cust_name FROM customer
             elif module == 'campaign':
                 key = data.get('key','')
                 if key == '*':
-                    campaigns = Campaigns.objects.all().order_by('-pk')
+                    campaigns = Campaigns.objects.filter(is_sent=False).order_by('-pk')
                 else:
                     campaigns = Campaigns.objects.filter(pk=key)
 
