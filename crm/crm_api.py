@@ -1093,7 +1093,7 @@ SELECT phone,'',phone,cust_name FROM customer
                                             external_link = target.campaign.external
                                             if len(target.campaign.external) > 0:
                                                 link = make_magic_link(target.campaign.external,{'tail':target.contact,'tag':'campaign'},'campaign',target.campaign_id)
-                                            message += f"\n{link}"
+                                            message += f"\n\n{link}"
                                             message.replace('[NAME]', target.name)
                                             Sms.objects.create(
                                                 api=api,
