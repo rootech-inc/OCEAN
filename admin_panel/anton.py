@@ -1,4 +1,5 @@
 import hashlib
+import uuid
 from urllib.parse import urlencode
 
 from django.contrib.auth.models import User
@@ -122,7 +123,8 @@ def shorten_url(url):
 
 def make_magic_link(url, attr={},tag='unknown',ref=''):
     # 1. Create the unique hash key
-    magic_key = make_md5_hash(f"{url}")
+    unique_key = uuid.uuid4()
+    magic_key = make_md5_hash(f"{url}{unique_key}")
     params_str = ""
     if attr:
         params_str = "?" + urlencode(attr)
