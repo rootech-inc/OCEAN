@@ -124,7 +124,7 @@ urlpatterns = [
 
     path('evat/',views.evat_keys,name='evat_keys'),
     path('log-500/',views.log500,name='log_500'),
-    path('magic-link<key>/',views.magic_key,name='magic_key'),
+    path('magic-link/<key>/',views.magic_key,name='magic_key'),
 
 
 ]
