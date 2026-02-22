@@ -1060,8 +1060,7 @@ SELECT phone,'',phone,cust_name FROM customer
                         failded_cunt = 0
 
                         pending = campaign.pending()
-                        message = campaign.message_template
-                        message.replace('-key-',campaign.uni)
+
 
 
                         camp_type = campaign.type
@@ -1072,10 +1071,11 @@ SELECT phone,'',phone,cust_name FROM customer
                             # send campaigns
                             for target in pending:
                                 try:
-                                    message.replace('-tail-',target.contact)
+
 
                                     if camp_type == 'email':
                                         if is_valid_email(target.contact):
+                                            message = target.campaign.message_template
                                             message.replace('[NAME]', target.name)
                                             mail_sender = MailSenders.objects.get(pk=sender_pk)
                                             mail_queue = MailQueues.objects.create(
@@ -1088,6 +1088,7 @@ SELECT phone,'',phone,cust_name FROM customer
 
                                     if camp_type == 'sms':
                                         if is_valid_phone_number(target.contact):
+                                            message = target.campaign.message_template
                                             api = SmsApi.objects.get(pk=sender_pk)
                                             link = ''
                                             external_link = target.campaign.external
