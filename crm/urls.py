@@ -30,6 +30,7 @@ urlpatterns = [
     path('campaigns/',views.campaigns,name='campaigns'),
     path('campaigns/new/',views.new_campaign,name='new_campaign'),
     path('lead-stream/',views.crm_lead_stream,name='crm_lead_stream'),
+    path('magic-links/',views.crm_magic_links,name='crm_magic_links'),
 
 ]
 

@@ -220,11 +220,32 @@ class Campaigns(models.Model):
     sender = models.IntegerField(null=False, blank=False)
     message_template = models.TextField()
     created_on = models.DateTimeField(auto_now_add=True)
+    approval_request = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=False)
     is_scheduled = models.BooleanField(default=False)
     schedule_date = models.DateTimeField(null=True, blank=True)
     is_sent = models.BooleanField(default=False)
+    sector = models.CharField(null=True, blank=True, max_length=255,default="Not Set")
+    external = models.TextField(blank=True)
 
+    def status(self):
+        st = {
+            'text':'unknown',
+            'bg':'bg-secondary'
+        }
+        if self.approval_request:
+            st['text'] = 'pending approval'
+            st['bg'] = 'bg-warning'
+        if self.is_approved:
+            st['text'] = 'approved'
+            st['bg'] = 'bg-primary'
+        if self.is_scheduled:
+            st['text'] = 'scheduled'
+            st['bg'] = 'bg-info'
+        if self.is_sent:
+            st['text'] = 'sent'
+            st['bg'] = 'bg-success'
+        return st
     def obj(self):
         return {
             'uni': self.uni,
@@ -237,7 +258,9 @@ class Campaigns(models.Model):
             'heat':CampaignSense.objects.filter(campaign=self).count(),
             'is_scheduled':self.is_scheduled,
             'shc':self.schedule_date,
-            'targets':self.pending().count()
+            'targets':self.pending().count(),
+            'sector':self.sector,
+            'status':self.status(),
         }
 
     def pending(self):
@@ -265,6 +288,10 @@ class CampaignSense(models.Model):
     tail = models.TextField(blank=True)
     created_on = models.DateTimeField(auto_now_add=True)
 
+class ContactSector(models.Model):
+    name = models.CharField(unique=True, max_length=65)
+    description = models.TextField()
+
 
 class Contacts(models.Model):
     contact = models.CharField(max_length=200,unique=True)
@@ -284,6 +311,9 @@ class Contacts(models.Model):
     is_active = models.BooleanField(default=True)
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+    sector = models.ForeignKey(ContactSector,null=True,blank=True,on_delete=models.SET_NULL)
+
+
 
 
 class LeadStreams(models.Model):

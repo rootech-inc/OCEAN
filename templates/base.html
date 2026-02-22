@@ -677,6 +677,30 @@
         </a>
       </li>
       <!-- END OF SERVICING -->
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#accounts-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-cash-coin text-success fs-5 me-2"></i>
+          <span>Accounts</span>
+          <i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="accounts-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+          <li>
+            <a href="{% url 'accounts_ledgers' %}">
+              <i class="bi bi-journal-text text-info me-2"></i>
+              <span>Ledgers</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'accounts_vouchers' %}">
+              <i class="bi bi-receipt text-warning me-2"></i>
+              <span>Payment Vouchers</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+      <!-- END OF ACCOUNTS -->
+
       {% endif %}
 
       <li class="nav-item">

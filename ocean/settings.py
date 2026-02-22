@@ -80,7 +80,8 @@ INSTALLED_APPS = [
     'ssml.apps.SsmlConfig',
     'employee.apps.EmployeeConfig',
     'logistics.apps.LogisticsConfig',
-    'amc.apps.AmcConfig'
+    'amc.apps.AmcConfig',
+    'accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [
@@ -313,3 +314,16 @@ AMC_ASSIGN_COPIES = os.environ.get('REST_DB_HOST','uyinsolomon2@gmail.com')
 
 
 CRM_NOTIFICATION_EMAIL = 'rootech.inc@proton.me'
+
+# Servicing Material Request Approvers
+SERVICING_REQUEST_APPROVER = os.environ.get('SERVICING_REQUEST_APPROVER','uyinsolomon2@gmail.com')
+ACCOUNTS_EMAIL = os.environ.get('ACCOUNTS_EMAIL','accounts@snedaghana.com')
+
+# Company details for printed documents (Payment Vouchers, etc.)
+COMPANY_DETAILS = {
+    'name': os.environ.get('COMPANY_NAME', 'ROOTECH IT SOLUTIONS'),
+    'address': os.environ.get('COMPANY_ADDRESS', 'Japan Motors, Room 6'),
+    'phone': os.environ.get('COMPANY_PHONE', '+233 54 631 0011'),
+    'email': os.environ.get('COMPANY_EMAIL', 'rootech.inc@proton.me'),
+    'logo': os.environ.get('COMPANY_LOGO', '/static/images/logo.png'),
+}

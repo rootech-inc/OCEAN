@@ -2,14 +2,46 @@
 {% load static %}
 
 {% block crm %}
+
+    <div class="modal" id="magic_link">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Set Magic Link</h4>
+                    </div>
+
+                    <div class="modal-body">
+                        <label for="link">Link</label>
+                        <input type="text" class="form-control rounded-0"  id="link">
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button data-bs-dismiss="modal" class="btn btn-success">Commit</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
     <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom-0">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 w-100">
             <div class="fw-bold text-primary fs-5">{{ page.title }}</div>
-            <button onclick="crm.saveCampaign()" class="btn btn-info d-flex align-items-center gap-2 px-4">
+
+            <button data-bs-toggle="modal" data-bs-target="#magic_link" class="btn btn-primary ms-2">
+                <i class="bi bi-link"></i> Magic Link
+            </button>
+
+            <button onclick="crm.saveCampaign()" class="btn btn-success d-flex align-items-center gap-2 px-4 ms-2">
                 <i class="bi bi-save"></i>
                 <span class="d-none d-sm-inline">Save Campaign</span>
                 <span class="d-inline d-sm-none">Save</span>
             </button>
+
+
+
         </div>
     </div>
     <div class="card-body overflow-hidden p-2 p-md-4">
@@ -24,6 +56,16 @@
                                 <option value="">Select Type</option>
                                 <option value="email">Email</option>
                                 <option value="sms">SMS</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold" for="sector"><i class="bi bi-sliders"></i> Sector</label>
+                            <select id="sector" class="form-select" aria-label="Select Type">
+
+                                <option value="*">All</option>
+                                {% for sector in sectors %}
+                                <option value="{{ sector.pk }}">{{ sector.name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="mb-3">
@@ -147,9 +189,12 @@
 
         $('#see_clients').click(function () {
             let select = $('#type').val();
+            let sector = $('#sector').val();
             let payload = {
                 module:"contacts",
-                data:{}
+                data:{
+                    sector:sector,
+                }
             }
             if(select === 'email'){
                 payload['data']['type'] = 'email'

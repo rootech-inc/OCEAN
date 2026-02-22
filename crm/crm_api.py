@@ -11,13 +11,13 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 from admin_panel.anton import fix_phone_number, make_md5_hash, is_valid_email, is_valid_phone_number, md5only, \
-    get_client_ip, generate_random_password
+    get_client_ip, generate_random_password, shorten_url, make_magic_link
 from admin_panel.models import Emails, GeoCity, GeoCitySub, MailQueues, MailSenders, MailAttachments, Reminder, Sms, \
     SmsApi, GoogleSyncConfig
 from cmms.extra import cmms_db
 from cmms.models import CarModel, SalesDeals, Customers
 from crm.models import Contacts, Logs, CrmUsers, Sector, Positions, FollowUp, Campaigns, LogValidity, CampaignTargets, \
-    CampaignSense, LeadStreams
+    CampaignSense, LeadStreams, ContactSector
 from ocean import settings
 from retail.db import ret_cursor
 
@@ -341,9 +341,22 @@ SELECT phone,'',phone,cust_name FROM customer
                 description = data.get('description')
                 title = data.get('title')
                 c_type = data.get('type')
+                sector_pk = data.get('sector','*')
+                sector = 'All'
+                if sector_pk != '*':
+                    sector = ContactSector.objects.get(pk=sector_pk).name
                 # make call back link from title
                 # callback = title.to_lower().replace(' ','-')
                 uni = ''
+
+                if sector_pk !='*' and not Contacts.objects.filter(sector_id=sector_pk).exists():
+                    raise Exception("Cannot make campaign with no contacts")
+                if sector_pk =='*' and not Contacts.objects.all().count() < 1:
+                    raise Exception("Cannot make campaign with no contacts")
+
+                external = data.get('link')
+
+
                 if c_type == 'sms':
                     sms_api = data.get('sms_api')
                     sms_template = data.get('sms_template')
@@ -358,7 +371,11 @@ SELECT phone,'',phone,cust_name FROM customer
                         description=description,
                         sender=sms_api,
                         message_template=sms_template,
+                        sector=sector,
+                        external=external,
                     )
+
+
 
 
                 if c_type == 'email':
@@ -375,6 +392,8 @@ SELECT phone,'',phone,cust_name FROM customer
                         description=description,
                         sender=sender,
                         message_template=email_template,
+                        sector=sector,
+                        external=external,
                     )
 
 
@@ -386,22 +405,14 @@ SELECT phone,'',phone,cust_name FROM customer
                 em_tot = 0
 
                 # que transactions
-                for log in Logs.objects.all():
-                    contact = ''
-                    if c_type == 'sms':
-                        contact = log.phone
-                    if c_type == 'email':
-                        contact = log.email
-
-                    try:
-                        CampaignTargets.objects.create(
-                            campaign=camp,
-                            contact=contact,
-                            name=log.customer,
-                        )
-                    except Exception as e:
-                        pass
-
+                # log Targets
+                contacts = Contacts.objects.all() if sector_pk == '*' else Contacts.objects.filter(sector_id=sector_pk)
+                for contact in contacts:
+                    CampaignTargets.objects.create(
+                        campaign=camp,
+                        contact=contact.contact,
+                        name=contact.name,
+                    )
                 success_response['message'] = f"Campaign Created SSuccessfully"
                 response = success_response
 
@@ -858,16 +869,21 @@ SELECT phone,'',phone,cust_name FROM customer
 
             elif module == 'contacts':
                 c_type = data.get('type')
+                sector_pk = data.get('sector','*')
                 arr = []
                 # get emails from logs
                 lgs = Contacts.objects.filter(type=c_type)
+                if sector_pk != '*':
+                    sector = ContactSector.objects.get(pk=sector_pk)
+                    lgs = lgs.filter(sector=sector)
                 for lg in lgs:
                     arr.append({
                         'first_name': lg.name.split(' ')[0],
                         'last_name': lg.name.split(' ')[-1],
                         'name':f"{lg.name}",
                         'contact': lg.contact,
-                        'source': lg.source
+                        'source': lg.source,
+                        'sector':lg.sector.name,
                     })
 
                 success_response['message'] = arr
@@ -966,6 +982,7 @@ SELECT phone,'',phone,cust_name FROM customer
                 cp = Campaigns.objects.get(pk=key)
                 print(cp.obj())
                 sender_pk = cp.sender
+                approvers_list = data.get('approvers').split(',')
                 li = ""
                 if cp.type == 'email':
                     api = MailSenders.objects.get(pk=sender_pk)
@@ -977,11 +994,7 @@ SELECT phone,'',phone,cust_name FROM customer
                     #     'sales2@snedamotors.com'
                     # ]
 
-                    text_recipeients = [
-                        'ajay@snedaghana.com',
-                        'rootech.inc@proton.me',
-                        'bharat@snedaghana.com'
-                    ]
+                    text_recipeients = approvers_list
 
                     for rec in text_recipeients:
                         MailQueues.objects.create(
@@ -995,11 +1008,7 @@ SELECT phone,'',phone,cust_name FROM customer
                         li += f"{rec},"
 
                 elif cp.type == 'sms':
-                    test_sms_recipient = [
-                        '0546310011',
-                        '0243500687',
-                        '0244325598'
-                    ]
+                    test_sms_recipient = approvers_list
 
                     for num in test_sms_recipient:
                         
@@ -1009,10 +1018,13 @@ SELECT phone,'',phone,cust_name FROM customer
                             message=f"""Campaign Approval Request\n\nMessage: {cp.message_template} 
                             \n\nTotal Targets: {cp.obj()['targets']} 
                             \nSMS Length:{len(cp.message_template)}
-                            \nCost Per SMS: 0.20\nTotal Cost:{cp.obj()['targets']/30 * 0.2}"""
+                            \nCost Per SMS: 0.40\nTotal Cost:{cp.obj()['targets']/30 * 0.40}"""
                         ).save()
 
                         li += f"{num},"
+
+                cp.approval_request = True
+                cp.save()
 
                 success_response['message'] = f"Approval request sent to {li}"
 
@@ -1036,61 +1048,78 @@ SELECT phone,'',phone,cust_name FROM customer
             elif module == 'send_campaign':
 
                 ripe_campaigns = Campaigns.objects.filter(is_sent=False,schedule_date__lte=timezone.now(),is_scheduled=True)
-                pass_cunt = 0
-                failded_cunt = 0
-                for campaign in ripe_campaigns:
+                if not ripe_campaigns.exists():
+                    success_response['message'] = f"No Campaigns Ready To Send"
 
-                    pending = campaign.pending()
-                    message = campaign.message_template
-                    message.replace('-key-',campaign.uni)
+                else:
+                    log = ""
 
 
-                    camp_type = campaign.type
-                    sender_pk = campaign.sender
-                    subject = campaign.subject
+                    for campaign in ripe_campaigns:
+                        pass_cunt = 0
+                        failded_cunt = 0
 
-                    if not campaign.is_sent:
-                        # send campaigns
-                        for target in pending:
-                            try:
-                                message.replace('-tail-',target.contact)
-                                if camp_type == 'email':
-                                    if is_valid_email(target.contact):
-                                        mail_sender = MailSenders.objects.get(pk=sender_pk)
-                                        mail_queue = MailQueues.objects.create(
-                                            sender=mail_sender,
-                                            recipient=target.contact,
-                                            body=message,
-                                            subject=subject,
-                                            mail_key=make_md5_hash(f"{target.contact},{message}")
-                                        )
-
-                                if camp_type == 'sms':
-                                    if is_valid_phone_number(target.contact):
-                                        api = SmsApi.objects.get(pk=sender_pk)
-                                        Sms.objects.create(
-                                            sender=api,
-                                            message=message,
-                                            to=target.contact,
-                                        )
+                        pending = campaign.pending()
+                        message = campaign.message_template
+                        message.replace('-key-',campaign.uni)
 
 
-                                target.tried_response = "Message Delivered"
+                        camp_type = campaign.type
+                        sender_pk = campaign.sender
+                        subject = campaign.subject
 
-                                target.is_sent = True
-                                pass_cunt += 1
-                                target.last_tried = timezone.now()
-                                target.save()
-                            except Exception as e:
-                                target.tried_response = f"{e}"
-                                print(e)
-                                failded_cunt += 1
-                           
-                                
-                    campaign.is_sent = True
-                    campaign.save()
+                        if not campaign.is_sent:
+                            # send campaigns
+                            for target in pending:
+                                try:
+                                    message.replace('-tail-',target.contact)
+                                    if camp_type == 'email':
+                                        if is_valid_email(target.contact):
+                                            mail_sender = MailSenders.objects.get(pk=sender_pk)
+                                            mail_queue = MailQueues.objects.create(
+                                                sender=mail_sender,
+                                                recipient=target.contact,
+                                                body=message,
+                                                subject=subject,
+                                                mail_key=make_md5_hash(f"{target.contact},{message}")
+                                            )
 
-                success_response['message'] = f"{pass_cunt} / {pass_cunt + failded_cunt} sent"
+                                    if camp_type == 'sms':
+                                        if is_valid_phone_number(target.contact):
+                                            api = SmsApi.objects.get(pk=sender_pk)
+                                            link = ''
+                                            external_link = target.campaign.external
+                                            if len(target.campaign.external) > 0:
+                                                link = make_magic_link(target.campaign.external,{'tail':target.contact,'tag':'campaign'},'campaign',target.campaign_id)
+                                            message += f"\n{link}"
+                                            Sms.objects.create(
+                                                api=api,
+                                                message=message,
+                                                to=target.contact,
+                                            )
+
+
+                                    target.tried_response = "Message Delivered"
+
+                                    target.is_sent = True
+                                    pass_cunt += 1
+                                    target.last_tried = timezone.now()
+                                    target.save()
+
+                                except Exception as e:
+                                    target.tried_response = f"{e}"
+                                    log += f"Error: {str(e)}\n"
+                                    print(e)
+                                    failded_cunt += 1
+
+                        if failded_cunt == 0:
+                            campaign.is_sent = True
+                        title = campaign.title
+                        campaign.save()
+
+                        log += f"{title} - {pass_cunt} / {pass_cunt + failded_cunt} sent \n"
+
+                    success_response['message'] = log
                 response = success_response
 
             elif module == 'band_user':

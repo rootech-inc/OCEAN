@@ -940,6 +940,7 @@ class Crm {
                             <td>${contact['first_name']} ${contact['last_name']}</td>
                             <td>${contact['contact']}</td>
                              <td>${contact['source']}</td>
+                             <td>${contact['sector']}</td>
                         </tr>
                     `
                 })
@@ -979,11 +980,18 @@ class Crm {
             ids.push('sms_template')
         }
 
+        ids.push('sector')
+
+
         if(anton.validateInputs(ids)){
             let payload = {
                 module:'campaign',
                 data:anton.Inputs(ids)
             }
+
+            payload['data']['link'] = $('#link').val()
+
+            console.table(payload);
 
             let sv = api.call('PUT',payload,'/crm/api/');
             if(anton.IsRequest(sv)){
@@ -1007,27 +1015,31 @@ class Crm {
             for(let x = 0; x < cmps.length; x++){
                 let row = cmps[x];
                 console.table(row)
-                rows += `<tr><td>${row['type']}</td><td>${row['title']}</td><td>${row['date']}</td><td>${row['is_scheduled']}</td><td>${row['heat']}</td><td>
-                        <div class="dropdown dropleft">
-                          <button class="btn btn-primary" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fa fa-arrow-left"></i>
-                          </button>
-                          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <!-- Title -->
-                            <h6 class="dropdown-header">Menu Title</h6>
-                            <!-- Links -->
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="crm.approval_request('${row['pk']}')">Send For Approval</a>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="crm.scheduleCampaignScreen('${row['pk']}')">Schedule</a>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="crm.deleteCampaign('${row['pk']}')">Delete</a>
-                            <!-- Divider -->
-                            <div class="dropdown-divider"></div>
-                            <!-- Additional links or items can go here -->
-                            
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="crm.prevCamp('${row['pk']}')">Preview</a>
-                            <a class="dropdown-item" href="#link4">Update Content</a>
-                          </div>
-                        </div>
-</td></tr>`
+                rows += `<tr>
+                            <td>${row['type']}</td><td>${row['title']}</td><td>${row['date']}</td><td>${row['is_scheduled']}</td><td>${row['heat']}</td>
+                            <td><span class="badge ${row['status']['bg']}">${row['status']['text']}</span></td>
+                            <td>
+                                <div class="dropdown dropleft">
+                                  <button class="btn btn-primary" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fa fa-arrow-left"></i>
+                                  </button>
+                                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <!-- Title -->
+                                    <h6 class="dropdown-header">Menu Title</h6>
+                                    <!-- Links -->
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick="crm.approval_request('${row['pk']}')">Send For Approval</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick="crm.scheduleCampaignScreen('${row['pk']}')">Schedule</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick="crm.deleteCampaign('${row['pk']}')">Delete</a>
+                                    <!-- Divider -->
+                                    <div class="dropdown-divider"></div>
+                                    <!-- Additional links or items can go here -->
+                                    
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick="crm.prevCamp('${row['pk']}')">Preview</a>
+                                    <a class="dropdown-item" href="#link4">Update Content</a>
+                                  </div>
+                                </div>
+                            </td>
+                        </tr>`
             }
             $('tbody').html(rows);
         } else {
@@ -1077,7 +1089,7 @@ class Crm {
         kasa.confirm(api.call('PUT',payload,'/crm/api/')['message'],1,'here')
     }
 
-    sendCampaign(pk){
+    async sendCampaign(pk){
         let payload = {
             module:'send_campaign',
             data:{
@@ -1085,7 +1097,11 @@ class Crm {
             }
         }
 
-        kasa.confirm(api.call('PUT',payload,'/crm/api/')['message'],1,'here')
+        loader.show()
+        await api.v2('PATCH',payload,'/crm/api/').then(response => {
+            kasa.html(response.message)
+            loader.hide()
+        }).catch(error => {kasa.error(error);loader.hide()})
     }
 
     extendFollowUpScreen(pk){
@@ -1272,14 +1288,38 @@ class Crm {
     }
 
     approval_request(pk) {
-        let payload = {
-            module:'request_campaing_approval',
-            data:{
-                key:pk
-            }
-        }
+        let form = "";
+        form += fom.text('approvers','Email address or numbers of people ro approve separated by comma (,)',true,10000)
+        amodal.setTitleText("Approve")
+        amodal.setBodyHtml(form)
 
-        kasa.confirm(api.call('PATCH',payload,'/crm/api/')['message'],1,'here')
+        amodal.setFooterHtml(`<button class="btn btn-success" id="send_approve_campaign_request">Approve</button>`)
+        $('#send_approve_campaign_request').click(async function(){
+            loader.show()
+            let ids = ['mypk','approvers']
+            if(anton.validateInputs(ids)){
+                let payload = {
+                    module:'request_campaing_approval',
+                    data:{
+                        key:pk
+                    }
+                }
+                payload['data']['approvers'] = $('#approvers').val()
+                console.table(payload)
+                await api.v2('PATCH',payload,'/crm/api/').then(response => {
+                    kasa.confirm(response.message,1,'here')
+                }).catch(err=>{
+                    kasa.error(err.message)
+                })
+
+            } else {
+                kasa.error("Invalid Form")
+                loader.hide()
+            }
+        })
+
+
+
     }
 
     deleteCampaign(pk) {

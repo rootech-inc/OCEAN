@@ -1,6 +1,7 @@
 # from bs4 import BeautifulSoup
 import io
 import random
+from urllib.parse import urlencode
 
 import babel.numbers
 # from unicodecsv import writer
@@ -16,7 +17,7 @@ from django.contrib.auth.models import Permission
 from django.core import serializers
 from django.core.mail import send_mail
 from django.http import HttpResponse, FileResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from fpdf import FPDF
@@ -32,6 +33,8 @@ from blog.models import *
 from community.models import *
 from django.views.decorators.csrf import csrf_exempt
 
+from crm.models import Campaigns, CampaignSense
+from crm.views import campaigns
 from inventory.models import AssetGroup
 from meeting.models import MeetingHD, MeetingTalkingPoints, MeetingTrans
 from ocean.settings import EMAIL_HOST_USER
@@ -2685,3 +2688,26 @@ def add_google_sync_info(request):
     else:
 
             return redirect("google_sync_setup")
+
+
+def magic_key(request,key):
+    # 1. Use get_object_or_404 to prevent a 500 error if the key is wrong
+    link = get_object_or_404(MagicLink, key=key)
+
+    # 2. Handle Campaign Tracking
+    if link.tag == 'campaign':
+        try:
+            cp = Campaigns.objects.get(pk=link.ref)
+            CampaignSense.objects.create(
+                campaign=cp,
+
+                tail=request.GET.get('tail'),
+            )
+        except Campaigns.DoesNotExist:
+            pass  # Or log an error
+
+
+    destination = link.destination
+
+    return redirect(destination)
+

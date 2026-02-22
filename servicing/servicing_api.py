@@ -1,6 +1,8 @@
 import json
 import sys
 
+from django.conf import settings
+
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import JsonResponse
@@ -18,7 +20,8 @@ from appscenter.models import App
 from meeting.models import MeetingHD
 
 from reports.models import ReportForms, ReportLegend, LegendSubs, DepartmentReportMailQue
-from servicing.models import Services, SubServices, ServiceCard, ServiceMaterials, ServiceTechnicians, CheckList
+from servicing.models import Services, SubServices, ServiceCard, ServiceMaterials, ServiceTechnicians, CheckList, \
+    MR_Hd, MR_Trans
 from taskmanager.models import Tasks, TaskTransactions
 
 
@@ -230,6 +233,81 @@ def interface(request):
 
                 ServiceTechnicians(service=service, technician=User.objects.get(pk=technician)).save()
 
+            elif module == 'create_material_request':
+                header = data.get('header')
+                transactions = data.get('transactions')
+
+                cardno = header.get('cardno')
+                service_card = ServiceCard.objects.get(cardno=cardno)
+
+                mr_hd = MR_Hd(
+                    service_card=service_card,
+                    supplier_name=header.get('supplier_name'),
+                    contact=header.get('contact'),
+                    location=header.get('location'),
+                    remarks=header.get('remarks'),
+                    owner=request.user
+                )
+                mr_hd.save()
+
+                for tran in transactions:
+                    MR_Trans(
+                        mr_hd=mr_hd,
+                        name=tran.get('name'),
+                        price=tran.get('price'),
+                        quantity=tran.get('quantity'),
+                        total=tran.get('total')
+                    ).save()
+
+                success_response['message'] = "Material Request Created Successfully"
+
+                # LOG TRANSACTION
+                try:
+                    msg = f"MATERIAL REQUEST SUBMITTED: {header.get('supplier_name')}\nRemarks: {header.get('remarks')}"
+                    TicketTrans(
+                        ticket=service_card.ticket,
+                        title="MATERIAL REQUEST",
+                        tran=msg,
+                        user=request.user
+                    ).save()
+                except Exception as e:
+                    print(f"Failed to log MR creation to ticket: {e}")
+
+                # EMAIL NOTIFICATION
+                try:
+                    mail_subject = f"NEW MATERIAL REQUEST: {cardno}"
+                    items_html = "<table border='1' style='border-collapse: collapse; width: 100%;'>"
+                    items_html += "<thead><tr style='background-color: #f2f2f2;'><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr></thead><tbody>"
+                    grand_total = 0
+                    for t in transactions:
+                        items_html += f"<tr><td>{t.get('name')}</td><td>{t.get('price')}</td><td>{t.get('quantity')}</td><td>{t.get('total')}</td></tr>"
+                        grand_total += float(t.get('total'))
+                    items_html += f"</tbody><tfoot><tr><td colspan='3' align='right'><strong>Grand Total</strong></td><td><strong>{grand_total:.2f}</strong></td></tr></tfoot></table>"
+
+                    mail_body = f"""
+                    <h3>New Material Request Submitted</h3>
+                    <p><strong>Job Card:</strong> {cardno}</p>
+                    <p><strong>Supplier:</strong> {header.get('supplier_name')}</p>
+                    <p><strong>Contact:</strong> {header.get('contact')}</p>
+                    <p><strong>Location:</strong> {header.get('location')}</p>
+                    <p><strong>Remarks:</strong> {header.get('remarks')}</p>
+                    <h4>Requested Items:</h4>
+                    {items_html}
+                    <p>Please log in to the system to approve this request.</p>
+                    """
+                
+                    if MailSenders.objects.filter(is_default=True).exists():
+                        sender = MailSenders.objects.get(is_default=True)
+                        MailQueues(
+                            sender=sender,
+                            subject=mail_subject,
+                            body=mail_body,
+                            recipient=settings.SERVICING_REQUEST_APPROVER,
+                            mail_key=make_md5_hash(f"{mail_subject}{mail_body}")
+                        ).save()
+                except Exception as e:
+                    print(f"Failed to queue MR email: {e}")
+
 
 
         # read data
@@ -301,16 +379,16 @@ def interface(request):
                         uni = cardno
                     else:
                         uni = card.task.uni
-                    for material in card.materials():
-                        materials.append({
-                            'line': material.line,
-                            'item': material.item,
-                            'description': material.description,
-                            'price': material.price,
-                            'quantity': material.quantity,
-                            'total_price': material.total_price,
-
-                        })
+                    for mr in MR_Hd.objects.filter(service_card=card):
+                        for material in mr.transactions.all():
+                            materials.append({
+                                'line': material.pk,
+                                'item': material.name,
+                                'description': f"From {mr.supplier_name}",
+                                'price': float(material.price),
+                                'quantity': float(material.quantity),
+                                'total_price': float(material.total),
+                            })
 
                     for doc in card.documents():
                         documents.append({
@@ -568,6 +646,58 @@ def interface(request):
 
                 success_response['message'] = cards
 
+            elif module == 'get_material_requests':
+                mrs = MR_Hd.objects.all().order_by('-created_date', '-created_time')
+                arr = []
+                for mr in mrs:
+                    arr.append({
+                        'pk': mr.pk,
+                        'date': f"{mr.created_date} {mr.created_time}",
+                        'service_card': mr.service_card.cardno,
+                        'supplier': mr.supplier_name,
+                        'contact': mr.contact,
+                        'location': mr.location,
+                        'total_amount': float(mr.total_amount()),
+                        'is_requested': mr.is_requested,
+                        'is_delivered': mr.is_delivered,
+                        'is_approved': mr.is_approved,
+                        'status': 'Delivered' if mr.is_delivered else ('Approved' if mr.is_approved else 'Requested')
+                    })
+                success_response['message'] = arr
+
+            elif module == 'get_material_request_details':
+                pk = data.get('pk')
+                mr = MR_Hd.objects.get(pk=pk)
+                trans = MR_Trans.objects.filter(mr_hd=mr)
+                
+                header = {
+                    'pk': mr.pk,
+                    'service_card': mr.service_card.cardno,
+                    'supplier_name': mr.supplier_name,
+                    'contact': mr.contact,
+                    'location': mr.location,
+                    'remarks': mr.remarks,
+                    'is_approved': mr.is_approved,
+                    'is_delivered': mr.is_delivered,
+                    'approved_by': mr.approved_by.get_full_name() if mr.approved_by else 'N/A',
+                    'approval_remarks': mr.approval_remarks,
+                    'grand_total': float(mr.total_amount())
+                }
+                
+                transactions = []
+                for t in trans:
+                    transactions.append({
+                        'name': t.name,
+                        'price': float(t.price),
+                        'quantity': float(t.quantity),
+                        'total': float(t.total)
+                    })
+                    
+                success_response['message'] = {
+                    'header': header,
+                    'transactions': transactions
+                }
+
             elif module == 'material_request':
                 cardno = data.get('cardno')
                 send = data.get('send') or 'NO'
@@ -737,6 +867,65 @@ def interface(request):
                 card.save()
                 success_response['message'] = jobcard
                 response = success_response
+
+            elif module == 'approve_material_request':
+                pk = data.get('pk')
+                remarks = data.get('remarks')
+                mr = MR_Hd.objects.get(pk=pk)
+                
+                mr.is_approved = True
+                mr.approved_by = request.user
+                mr.approved_date = timezone.now().date()
+                mr.approved_time = timezone.now().time()
+                mr.approval_remarks = remarks
+                mr.save()
+                
+                # LOG TRANSACTION
+                try:
+                    msg = f"MATERIAL REQUEST APPROVED: {mr.supplier_name}\nRemarks: {remarks}"
+                    TicketTrans(
+                        ticket=mr.service_card.ticket,
+                        title="MR APPROVED",
+                        tran=msg,
+                        user=request.user
+                    ).save()
+                except Exception as e:
+                    print(f"Failed to log MR approval to ticket: {e}")
+
+                # NOTIFY ACCOUNTS
+                try:
+                    mail_subject = f"MATERIAL REQUEST APPROVED: {mr.service_card.cardno}"
+                    items_html = "<table border='1' style='border-collapse: collapse; width: 100%;'>"
+                    items_html += "<thead><tr style='background-color: #f2f2f2;'><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr></thead><tbody>"
+                    for t in MR_Trans.objects.filter(mr_hd=mr):
+                        items_html += f"<tr><td>{t.name}</td><td>{t.price}</td><td>{t.quantity}</td><td>{t.total}</td></tr>"
+                    items_html += f"</tbody><tfoot><tr><td colspan='3' align='right'><strong>Grand Total</strong></td><td><strong>{mr.total_amount():.2f}</strong></td></tr></tfoot></table>"
+
+                    mail_body = f"""
+                    <h3>Material Request Approved</h3>
+                    <p><strong>Job Card:</strong> {mr.service_card.cardno}</p>
+                    <p><strong>Supplier:</strong> {mr.supplier_name}</p>
+                    <p><strong>Approved By:</strong> {request.user.get_full_name()}</p>
+                    <p><strong>Approval Remarks:</strong> {remarks}</p>
+                    <h4>Items Detail:</h4>
+                    {items_html}
+                    <p>Please proceed with payment/procurement.</p>
+                    """
+
+                    if MailSenders.objects.filter(is_default=True).exists():
+                        sender = MailSenders.objects.get(is_default=True)
+                        MailQueues(
+                            sender=sender,
+                            subject=mail_subject,
+                            body=mail_body,
+                            recipient=settings.ACCOUNTS_EMAIL,
+                            cc=mr.owner.email,
+                            mail_key=make_md5_hash(f"{mail_subject}{mail_body}")
+                        ).save()
+                except Exception as e:
+                    print(f"Failed to queue Approval email: {e}")
+                    
+                success_response['message'] = "Request Approved & Accounts Notified"
 
             elif module == 'close_sent':
                 sent_to_client = ServiceCard.objects.filter(client_approval=1)

@@ -1,0 +1,27 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+
+{% block crm %}
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>TAG</th>
+                        <th>REF</th>
+                        <th><i class="bi bi-magic"></i> LINK</th>
+                        <th>DESTINATION</th>
+                    </tr>
+                </thead>
+                {% for link in links %}
+                    <tr>
+                        <td>{{ link.tag }}</td>
+                        <td>{{ link.ref }}</td>
+                        <td>{{ link.magic_url }}</td>
+                        <td><a href="{{ link.destination }}" target="_blank">{{ link.destination }}</a></td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+{% endblock %}

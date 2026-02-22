@@ -5,8 +5,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from admin_panel.anton import is_valid_phone_number, is_valid_email, fix_phone_number
-from admin_panel.models import SmsApi, MailSenders
-from crm.models import Logs, CrmUsers, FollowUp, LeadStreams, Contacts
+from admin_panel.models import SmsApi, MailSenders, MagicLink
+from crm.models import Logs, CrmUsers, FollowUp, LeadStreams, Contacts, ContactSector
 
 
 # Create your views here.
@@ -122,7 +122,8 @@ def new_campaign(request):
         'nav': True,
         'page': {'title': "New Campaigns"},
         'smsapis': SmsApi.objects.all(),
-        'mss':MailSenders.objects.all()
+        'mss':MailSenders.objects.all(),
+        'sectors':ContactSector.objects.all().order_by('name')
     })
 
 @login_required()
@@ -159,7 +160,7 @@ def upload_contacts(request):
             # Read the uploaded file into a dataframe
             df = pd.read_excel(excel_file)
 
-            required_columns = ['name', 'contact']
+            required_columns = ['name', 'contact','sector']
             if not all(col in df.columns for col in required_columns):
                 return JsonResponse({'success': False, 'message': "Excel missing required columns: name, contact, source"})
 
@@ -169,6 +170,17 @@ def upload_contacts(request):
 
                 # Get the raw value
                 raw_contact = row.get('contact', '')
+
+                sector = row.get('sector', 'Default').strip()
+
+                ## create sector if not exist
+                if not ContactSector.objects.filter(name=sector).exists():
+                    ContactSector.objects.create(
+                        name=sector,
+                        description="Uploaded"
+                    )
+
+                sector = ContactSector.objects.get(name=sector)
 
                 # Format: ensure it's an integer (to remove .0) then pad to 10 digits
                 if pd.notnull(raw_contact) and raw_contact != '':
@@ -183,12 +195,22 @@ def upload_contacts(request):
 
                 if name and contact:
                     if contact_type == 'sms' and is_valid_phone_number(str(contact)):
-                        Contacts.objects.create(
-                            name=name,
-                            contact=contact,
-                            source=source,
-                            type=contact_type
-                        )
+                        if Contacts.objects.filter(contact=contact).exists():
+                            Contacts.objects.filter(contact=contact).update(
+                                name=name,
+                                contact=contact,
+                                source=source,
+                                type=contact_type,
+                                sector=sector
+                            )
+                        else:
+                            Contacts.objects.create(
+                                name=name,
+                                contact=contact,
+                                source=source,
+                                type=contact_type,
+                                sector=sector
+                            )
 
                         count += 1
                     elif contact_type == 'email' and is_valid_email(str(contact)):
@@ -196,7 +218,8 @@ def upload_contacts(request):
                             name=name,
                             contact=contact,
                             source=source,
-                            type=contact_type
+                            type=contact_type,
+                            sector=sector
                         )
                         count += 1
 
@@ -209,3 +232,17 @@ def upload_contacts(request):
             return JsonResponse({'success': False, 'message': f"Upload failed at line {line_no}: {str(e)}"}, status=400)
     else:
         return redirect('crm')
+
+
+def crm_magic_links(request):
+    page = {
+        "title":"Magic Links",
+    }
+
+    context = {
+        "page":page,
+        'nav':True,
+        'links':MagicLink.objects.all(),
+    }
+
+    return render(request,'crm/magic-link.html',context=context)

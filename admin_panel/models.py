@@ -830,6 +830,7 @@ class Sms(models.Model):
     status = models.IntegerField(default=0)
 
 
+
 # log sms responses
 class SmsResponse(models.Model):
     sms = models.ForeignKey(Sms, on_delete=models.CASCADE)
@@ -1050,3 +1051,14 @@ class GoogleSyncConfig(models.Model):
 
     def __str__(self):
         return f"{self.tag}: {self.file_url}"
+
+class MagicLink(models.Model):
+    key = models.CharField(max_length=100,unique=True,null=False,blank=False)
+    destination = models.URLField(max_length=500)
+    attr_choices = (
+        ('unknown','unknown'),
+        ('campaign', 'campaign'),
+    )
+    tag = models.CharField(max_length=100,null=False,blank=False,choices=attr_choices,default='unknown')
+    ref = models.CharField(max_length=255,null=True,blank=True)
+    magic_url =  models.CharField(max_length=255,null=True,blank=True)

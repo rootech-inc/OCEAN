@@ -176,4 +176,38 @@ class ServiceDocument(models.Model):
     def doc_url(self):
         if self.document and Path(self.document.path).exists():
             return self.document.url
-        return None
+
+
+class MR_Hd(models.Model):
+    service_card = models.ForeignKey(ServiceCard, on_delete=models.CASCADE)
+    supplier_name = models.CharField(max_length=255)
+    contact = models.CharField(max_length=100)
+    location = models.CharField(max_length=255)
+    remarks = models.TextField(null=True, blank=True)
+
+    is_valid = models.BooleanField(default=True)
+    is_requested = models.BooleanField(default=True)
+    is_delivered = models.BooleanField(default=False)
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    created_date = models.DateField(auto_now_add=True)
+    created_time = models.TimeField(auto_now_add=True)
+
+    # Approval Status
+    is_approved = models.BooleanField(default=False)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='mr_approvals')
+    approved_date = models.DateField(null=True, blank=True)
+    approved_time = models.TimeField(null=True, blank=True)
+    approval_remarks = models.TextField(null=True, blank=True)
+
+    def total_amount(self):
+        return MR_Trans.objects.filter(mr_hd=self).aggregate(total=models.Sum('total'))['total'] or 0.00
+
+
+class MR_Trans(models.Model):
+    mr_hd = models.ForeignKey(MR_Hd, on_delete=models.CASCADE, related_name='transactions')
+    name = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=60, decimal_places=2)
+    quantity = models.DecimalField(max_digits=60, decimal_places=2)
+    total = models.DecimalField(max_digits=60, decimal_places=2)

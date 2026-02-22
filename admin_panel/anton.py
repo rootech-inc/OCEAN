@@ -1,9 +1,11 @@
 import hashlib
+from urllib.parse import urlencode
 
 from django.contrib.auth.models import User
+
 from django.utils import timezone
 
-from admin_panel.models import UserAddOns, UserSettings, Emails, Sms, SmsApi
+from admin_panel.models import UserAddOns, UserSettings, Emails, Sms, SmsApi, MagicLink
 from employee.modric import token
 from ocean import settings
 
@@ -94,6 +96,8 @@ def remove_html_tags(text):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
 
+
+
 def shorten_url(url):
 
     import requests
@@ -115,6 +119,29 @@ def shorten_url(url):
         new_url = response.text
 
     return new_url
+
+def make_magic_link(url, attr={},tag='unknown',ref=''):
+    # 1. Create the unique hash key
+    magic_key = make_md5_hash(f"{url}")
+    params_str = ""
+    if attr:
+        params_str = "?" + urlencode(attr)
+
+    magic_url = f"{settings.BASE_URL}magic-link/{magic_key}/{params_str}"
+
+    short_magic = shorten_url(magic_url)
+
+    # 2. Save to Database (using get_or_create to avoid duplicates)
+    MagicLink.objects.get_or_create(
+        key=magic_key,
+        defaults={'destination': url},
+        tag=tag,
+        ref=ref,
+        magic_url=short_magic
+    )
+
+
+    return short_magic
 
 def validateDocuments(request):
     user = request.user

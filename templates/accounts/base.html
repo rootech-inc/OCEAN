@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>OCEAN – Accounts – {{ page.title }}</title>
+
+    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'general/css/colors.css' %}" rel="stylesheet">
+
+    <script src="{% static 'blog/js/jquery.min.js' %}"></script>
+    <script src="{% static 'blog/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'general/js/cust.js' %}"></script>
+    <script src="{% static 'general/js/admin.js' %}"></script>
+    <script src="{% static 'general/js/sweetalert2@11' %}"></script>
+    <script src="{% static 'general/js/classes/api.js' %}"></script>
+    <script src="{% static 'general/js/classes/modal.js' %}"></script>
+    <script src="{% static 'general/js/classes/anton.js' %}"></script>
+</head>
+
+<body>
+
+    <!-- Generic Modal -->
+    <div id="g_modal" class="modal fade">
+        <div id="g_modal_size" class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="g_modal_title"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body overflow-auto" style="max-height:75vh">
+                    <div class="w-100" id="g_modal_body"></div>
+                </div>
+                <div class="modal-footer" id="g_footer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header id="header" class="header fixed-top d-flex align-items-center">
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="/" class="logo d-flex align-items-center">
+                <img src="{% static 'assets/img/logo.png' %}" alt="">
+                <span class="d-none d-lg-block">OCEAN</span>
+            </a>
+            <i class="bi bi-list toggle-sidebar-btn"></i>
+        </div>
+        <nav class="header-nav ms-auto">
+            <ul class="d-flex align-items-center">
+                <li class="nav-item d-block d-lg-none">
+                    <a class="nav-link nav-icon search-bar-toggle" href="#">
+                        <i class="bi bi-search"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+        <ul class="sidebar-nav" id="sidebar-nav">
+
+            <li class="nav-heading">Accounts</li>
+
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'accounts_ledgers' %}active{% else %}collapsed{% endif %}"
+                    href="{% url 'accounts_ledgers' %}">
+                    <i class="bi bi-journal-text"></i><span>Ledgers</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'accounts_vouchers' %}active{% else %}collapsed{% endif %}"
+                    href="{% url 'accounts_vouchers' %}">
+                    <i class="bi bi-receipt"></i><span>Payment Vouchers</span>
+                </a>
+            </li>
+
+        </ul>
+    </aside>
+
+    <!-- Main -->
+    <main id="main" class="main">
+        <div class="pagetitle">
+            <h1>{{ page.title }}</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item active">Accounts</li>
+                </ol>
+            </nav>
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'assets/js/main.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

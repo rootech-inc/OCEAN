@@ -1,0 +1,325 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Payment Vouchers</h5>
+                <button class="btn btn-sm btn-primary" onclick="openCreateVoucher()">
+                    <i class="bi bi-plus-lg me-1"></i>New Voucher
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover table-striped mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Voucher No</th>
+                                <th>Recipient</th>
+                                <th>Ledger</th>
+                                <th class="text-end">Total Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="voucherRows">
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-3">Loading…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Voucher Modal -->
+<div class="modal fade" id="createVoucherModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>New Payment Voucher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Recipient <span class="text-danger">*</span></label>
+                        <input type="text" id="v_recipient" class="form-control" placeholder="Full name">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Phone</label>
+                        <input type="text" id="v_phone" class="form-control" placeholder="+233…">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Email</label>
+                        <input type="email" id="v_email" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Ledger <span class="text-danger">*</span></label>
+                        <select id="v_ledger" class="form-select">
+                            <option value="">— Select Ledger —</option>
+                            {% for l in ledgers %}
+                            <option value="{{ l.pk }}">{{ l.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Remarks</label>
+                        <input type="text" id="v_remarks" class="form-control" placeholder="Purpose / notes">
+                    </div>
+                </div>
+
+                <hr>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Transaction Items</strong>
+                    <button class="btn btn-sm btn-outline-primary" onclick="addVoucherItem()">
+                        <i class="bi bi-plus-lg"></i> Add Item
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered" id="vItemTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th class="text-end" style="width:140px">Amount</th>
+                                <th style="width:40px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="vItemRows"></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2" class="text-end fw-bold">TOTAL</td>
+                                <td class="text-end fw-bold" id="vTotalDisplay">0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" onclick="saveVoucher()">
+                    <i class="bi bi-save me-1"></i>Save Voucher
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View/Detail Modal -->
+<div class="modal fade" id="viewVoucherModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewVoucherTitle">Voucher Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewVoucherBody">Loading…</div>
+            <div class="modal-footer" id="viewVoucherFooter"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const ACCT_API = '/accounts/api/';
+    let vItemCount = 0;
+    const vcModal = new bootstrap.Modal(document.getElementById('createVoucherModal'));
+    const vvModal = new bootstrap.Modal(document.getElementById('viewVoucherModal'));
+
+    // ── Load Vouchers ────────────────────────────────────────────────
+    function loadVouchers() {
+        let res = api.call('VIEW', { module: 'get_vouchers', data: {} }, ACCT_API);
+        let tbody = '';
+        if (res.status_code === 200) {
+            let rows = res.message;
+            if (!rows.length) {
+                tbody = '<tr><td colspan="8" class="text-center text-muted py-3">No vouchers yet.</td></tr>';
+            } else {
+                rows.forEach((v, i) => {
+                    let badgeColor = v.is_confirmed ? 'bg-success' : v.is_approved ? 'bg-warning text-dark' : 'bg-secondary';
+                    tbody += `<tr>
+            <td><small>${i + 1}</small></td>
+            <td><strong class="text-primary pointer" onclick="viewVoucher(${v.pk})">${v.voucher_no}</strong></td>
+            <td>${v.recipient}</td>
+            <td>${v.ledger}</td>
+            <td class="text-end">${v.total_amount.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
+            <td><span class="badge ${badgeColor}">${v.status}</span></td>
+            <td><small>${v.created_date}</small></td>
+            <td>
+              <button class="btn btn-xs btn-outline-dark" onclick="window.open('/accounts/voucher/print/${v.pk}/','_blank')">
+                <i class="bi bi-printer"></i>
+              </button>
+            </td>
+          </tr>`;
+                });
+            }
+        } else {
+            tbody = `<tr><td colspan="8" class="text-danger text-center py-3">${res.message}</td></tr>`;
+        }
+        document.getElementById('voucherRows').innerHTML = tbody;
+    }
+
+    // ── Create Voucher Modal ─────────────────────────────────────────
+    function openCreateVoucher() {
+        document.getElementById('vItemRows').innerHTML = '';
+        vItemCount = 0;
+        updateVoucherTotal();
+        addVoucherItem();
+        vcModal.show();
+    }
+
+    function addVoucherItem() {
+        vItemCount++;
+        let row = `<tr id="vrow_${vItemCount}">
+      <td><input class="form-control form-control-sm" id="v_title_${vItemCount}" placeholder="Title"></td>
+      <td><input class="form-control form-control-sm" id="v_desc_${vItemCount}" placeholder="Description"></td>
+      <td><input type="number" class="form-control form-control-sm text-end v_amount" id="v_amt_${vItemCount}"
+           step="0.01" value="0.00" oninput="updateVoucherTotal()"></td>
+      <td><button class="btn btn-sm btn-outline-danger" onclick="removeVoucherItem(${vItemCount})">
+        <i class="bi bi-trash"></i></button></td>
+    </tr>`;
+        document.getElementById('vItemRows').insertAdjacentHTML('beforeend', row);
+    }
+
+    function removeVoucherItem(id) {
+        document.getElementById(`vrow_${id}`)?.remove();
+        updateVoucherTotal();
+    }
+
+    function updateVoucherTotal() {
+        let total = 0;
+        document.querySelectorAll('.v_amount').forEach(el => {
+            total += parseFloat(el.value) || 0;
+        });
+        document.getElementById('vTotalDisplay').textContent = total.toLocaleString('en', { minimumFractionDigits: 2 });
+    }
+
+    function saveVoucher() {
+        let items = [];
+        for (let i = 1; i <= vItemCount; i++) {
+            let titleEl = document.getElementById(`v_title_${i}`);
+            if (!titleEl) continue;
+            items.push({
+                title: titleEl.value,
+                description: document.getElementById(`v_desc_${i}`)?.value || '',
+                amount: parseFloat(document.getElementById(`v_amt_${i}`)?.value) || 0
+            });
+        }
+
+        let payload = {
+            module: 'create_voucher',
+            data: {
+                recipient: $('#v_recipient').val(),
+                phone: $('#v_phone').val(),
+                email: $('#v_email').val(),
+                ledger_pk: $('#v_ledger').val(),
+                remarks: $('#v_remarks').val(),
+                items: items
+            }
+        };
+        let res = api.call('PUT', payload, ACCT_API);
+        if (res.status_code === 200) {
+            alert(`Voucher ${res.message.voucher_no} created successfully!`);
+            vcModal.hide();
+            loadVouchers();
+        } else {
+            alert('Error: ' + res.message);
+        }
+    }
+
+    // ── View Voucher Detail ──────────────────────────────────────────
+    function viewVoucher(pk) {
+        document.getElementById('viewVoucherBody').innerHTML = 'Loading…';
+        document.getElementById('viewVoucherFooter').innerHTML = '';
+        vvModal.show();
+
+        let res = api.call('VIEW', { module: 'get_voucher_details', data: { pk: pk } }, ACCT_API);
+        if (res.status_code !== 200) {
+            document.getElementById('viewVoucherBody').innerHTML = `<p class="text-danger">${res.message}</p>`;
+            return;
+        }
+
+        let v = res.message;
+        document.getElementById('viewVoucherTitle').textContent = `Voucher: ${v.voucher_no}`;
+
+        let itemRows = v.items.map((t, i) =>
+            `<tr><td>${i + 1}</td><td>${t.title}</td><td>${t.description || '—'}</td>
+       <td class="text-end">${t.amount.toLocaleString('en', { minimumFractionDigits: 2 })}</td></tr>`
+        ).join('');
+
+        let approvedRow = v.is_approved
+            ? `<span class="badge bg-success">Approved by ${v.approved_by} on ${v.approved_date}</span>`
+            : `<span class="badge bg-secondary">Not yet approved</span>`;
+
+        let confirmedRow = v.is_confirmed
+            ? `<span class="badge bg-primary">Confirmed by ${v.confirmed_by} on ${v.confirmed_date}</span>`
+            : `<span class="badge bg-secondary">Not yet confirmed</span>`;
+
+        let receiptHtml = v.receipt
+            ? `<a href="${v.receipt}" target="_blank" class="btn btn-sm btn-outline-info"><i class="bi bi-image me-1"></i>View Receipt</a>`
+            : '<span class="text-muted small">No receipt uploaded</span>';
+
+        document.getElementById('viewVoucherBody').innerHTML = `
+      <div class="row g-2 mb-3">
+        <div class="col-md-6"><strong>Recipient:</strong> ${v.recipient}</div>
+        <div class="col-md-3"><strong>Phone:</strong> ${v.phone || '—'}</div>
+        <div class="col-md-3"><strong>Email:</strong> ${v.email || '—'}</div>
+        <div class="col-md-6"><strong>Ledger:</strong> ${v.ledger.name}</div>
+        <div class="col-md-6"><strong>Remarks:</strong> ${v.remarks || '—'}</div>
+        <div class="col-md-6"><strong>Created by:</strong> ${v.owner} on ${v.created_date}</div>
+        <div class="col-md-6"><strong>Status:</strong> ${approvedRow} ${confirmedRow}</div>
+      </div>
+      <table class="table table-sm table-bordered">
+        <thead class="table-light">
+          <tr><th>#</th><th>Title</th><th>Description</th><th class="text-end">Amount</th></tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+        <tfoot>
+          <tr><td colspan="3" class="text-end fw-bold">TOTAL</td>
+              <td class="text-end fw-bold">${v.total_amount.toLocaleString('en', { minimumFractionDigits: 2 })}</td></tr>
+        </tfoot>
+      </table>
+      <div class="mt-2">${receiptHtml}</div>
+    `;
+
+        let footer = `<button class="btn btn-sm btn-outline-dark me-1" onclick="window.open('/accounts/voucher/print/${pk}/','_blank')">
+      <i class="bi bi-printer me-1"></i>Print</button>`;
+        if (!v.is_approved) {
+            footer += `<button class="btn btn-sm btn-warning" onclick="approveVoucher(${pk})">
+        <i class="bi bi-check-circle me-1"></i>Approve</button>`;
+        }
+        if (v.is_approved && !v.is_confirmed) {
+            footer += `<button class="btn btn-sm btn-success ms-1" onclick="confirmVoucher(${pk})">
+        <i class="bi bi-check2-all me-1"></i>Confirm & Post</button>`;
+        }
+        document.getElementById('viewVoucherFooter').innerHTML = footer;
+    }
+
+    function approveVoucher(pk) {
+        if (!confirm('Approve this voucher?')) return;
+        let res = api.call('PATCH', { module: 'approve_voucher', data: { pk: pk } }, ACCT_API);
+        alert(res.message);
+        viewVoucher(pk);
+        loadVouchers();
+    }
+
+    function confirmVoucher(pk) {
+        if (!confirm('Confirm and post this voucher? This will deduct the amount from the ledger.')) return;
+        let res = api.call('PATCH', { module: 'confirm_voucher', data: { pk: pk } }, ACCT_API);
+        alert(res.message);
+        viewVoucher(pk);
+        loadVouchers();
+    }
+
+    loadVouchers();
+</script>
+{% endblock %}

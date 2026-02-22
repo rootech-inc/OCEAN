@@ -76,6 +76,14 @@ def tracking(request, cardno):
     if ServiceCard.objects.filter(Q(cardno=cardno) | Q(task__uni=cardno)).exists():
         this_service = ServiceCard.objects.get(Q(cardno=cardno) | Q(task__uni=cardno))
 
+        page = {
+            "title":this_service.ticket.title,
+            "description":this_service.ticket.descr,
+            "keywords":this_service.ticket.descr
+        }
+
+        context['page'] = page
+
         # validate owner
         # if this_service.owner.pk == request.user.pk or request.user.is_superuser:
         if True:
@@ -143,3 +151,9 @@ def tickets(request):
     context['users'] = User.objects.filter(is_active=True).order_by('username')
     context['page']['title'] = "Tickets"
     return render(request, 'servicing/tickets.html', context=context)
+
+
+@login_required()
+def material_requests(request):
+    context['page']['title'] = "Material Requests"
+    return render(request, 'servicing/material_requests.html', context=context)
