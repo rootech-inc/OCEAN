@@ -965,8 +965,10 @@ class ServiceOrder(models.Model):
         ('rejected', 'Rejected'),
         ('invoiced',"Invoiced"),
         ('paid', 'Paid'),
+        ('ecg_invoiced', 'ECG Invoiced'),
     ]
     status = models.CharField(max_length=255, choices=status_choices, default='pending')
+    is_ecg_invoiced = models.BooleanField(default=False)
     old_meter_no_reading = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     new_meter_no_reading = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     closed_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='closed_service_orders')
@@ -1102,6 +1104,8 @@ class Meter(models.Model):
     linked_phase = models.ForeignKey(Phase,on_delete=models.SET_NULL,null=True)
     phase = models.CharField(max_length=255, choices=meter_type_choices, default='other')
     phase_str = models.CharField(max_length=255, default='', help_text='Phase as plain text')
+
+    ecg_invoice_no = models.CharField(max_length=255, null=True, blank=True)
 
     
 
@@ -1551,6 +1555,108 @@ class InvoiceHD(models.Model):
             'previous':self.prev_row(),
             'stage':self.stage()
         }
+
+class ECGInvoiceHD(models.Model):
+    entry_no = models.CharField(max_length=255, null=False, blank=False, unique=True)
+    entry_date = models.DateField(null=False)
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True)
+    remarks = models.TextField()
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    date_created = models.DateField(auto_now_add=True)
+    time_created = models.TimeField(auto_now_add=True)
+
+    is_approved = models.BooleanField(default=False)
+    is_posted = models.BooleanField(default=False)
+
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='ecg_invapproved_by')
+    posted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='ecg_invposted_by')
+
+    def status(self):
+        if not self.is_approved:
+            return 'pending approval'
+        elif not self.is_posted:
+            return 'pending posting'
+        else:
+            return 'posted'
+
+    def transactions(self):
+        return [tran.obj() for tran in ECGInvoiceTransactions.objects.filter(entry=self)]
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'entry_no': self.entry_no,
+            'entry_date': self.entry_date,
+            'remarks': self.remarks,
+            'total_amount': self.total_amount,
+            'created_by': self.created_by.get_full_name() if self.created_by else "System",
+            'date_created': self.date_created,
+            'time_created': self.time_created,
+            'is_approved': self.is_approved,
+            'is_posted': self.is_posted,
+            'status': self.status(),
+            'transactions': self.transactions(),
+            'location': self.location.obj() if self.location else None,
+            'items': [item.obj() for item in ECGInvoiceItem.objects.filter(entry=self)]
+        }
+
+class ECGJobRate(models.Model):
+    service_type = models.ForeignKey(ServiceType, on_delete=models.CASCADE)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'service_type': self.service_type.obj(),
+            'rate': self.rate,
+        }
+
+class ECGMeterRate(models.Model):
+    phase_choices = [
+        ('1 phase ', 'Single Phase'),
+        ('3 phase', 'Three Phase'),
+    ]
+    phase = models.CharField(max_length=255, choices=phase_choices, unique=True)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'phase': self.phase,
+            'rate': self.rate,
+        }
+
+class ECGInvoiceItem(models.Model):
+    entry = models.ForeignKey(ECGInvoiceHD, on_delete=models.CASCADE)
+    meter_no = models.CharField(max_length=255)
+    phase = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_found = models.BooleanField(default=False)
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'meter_no': self.meter_no,
+            'phase': self.phase,
+            'amount': self.amount,
+            'is_found': self.is_found,
+        }
+
+class ECGInvoiceTransactions(models.Model):
+    entry = models.ForeignKey(ECGInvoiceHD, on_delete=models.CASCADE)
+    service_order = models.ForeignKey(ServiceOrder, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    def obj(self):
+        return {
+            'id': self.id,
+            'service_order': self.service_order.obj(),
+            'amount': self.amount
+        }
     
 
 class InvoiceTransactions(models.Model):
@@ -1853,7 +1959,7 @@ class RetiredMetersBox(models.Model):
 
 class RetiredMetersTransactions(models.Model):
     box = models.ForeignKey(RetiredMetersBox, on_delete=models.CASCADE, related_name='retired_meters')
-    sn = models.IntegerField(max_length=100)
+    sn = models.IntegerField()
     spn = models.CharField(max_length=100, blank=True, null=True)
     old_meter_no = models.CharField(max_length=100, unique=True, blank=False, null=False)
     diff_old_meter_no = models.CharField(max_length=100, blank=True, null=True)

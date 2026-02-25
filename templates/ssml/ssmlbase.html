@@ -427,6 +427,47 @@
       </li>
 
       <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#invoicing-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-receipt"></i><span>Invoicing</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="invoicing-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+          <li>
+            <a href="{% url 'cont-invoice' %}">
+              <i class="bi bi-circle"></i><span>View Invoices</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'new-cont-inv' %}">
+              <i class="bi bi-circle"></i><span>New Invoice</span>
+            </a>
+          </li>
+        </ul>
+      </li><!-- End Invoicing Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#ecg-invoicing-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-receipt-cutoff"></i><span>ECG Invoicing</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="ecg-invoicing-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+          <li>
+            <a href="{% url 'ecg-invoice' %}">
+              <i class="bi bi-circle"></i><span>View ECG Invoices</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'new-ecg-inv' %}">
+              <i class="bi bi-circle"></i><span>New ECG Invoice</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'ecg-rates' %}">
+              <i class="bi bi-circle"></i><span>ECG Rates</span>
+            </a>
+          </li>
+        </ul>
+      </li><!-- End ECG Invoicing Nav -->
+
+      <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#acct-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-megaphone"></i><span>Accounts</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>

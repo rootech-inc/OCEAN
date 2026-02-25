@@ -7,37 +7,76 @@
 <div class="card-header">
     <div class="w-100 h-100 d-flex flex-wrap">
 
-        <div class="w-75 h-100 d-flex flex-wrap">
-            <button onclick="location.href='{% url 'wo_newjob' %}';" style="margin-right: .2em"
-                class="btn btn-outline-primary"><i class="fa fa-plus"></i></button>
-            <button id="change_app" onclick="svc.changeApp(this.value)" style="margin-right: .2em"
-                class="btn btn-outline-primary">CHGAP</button>
-            <button id="find_job" onclick="findJobScreen()" style="margin-right: .2em" class="btn btn-outline-info"><i
-                    class="fa fa-search"></i></button>
-            <button onclick="if(confirm('ARE YOU SURE?')){deleteJobCard(this.value)}" id="delete"
-                style="margin-right: .2em" class="btn btn-outline-danger"><i class="fa fa-trash"></i></button>
-            <button onclick="if(confirm('ARE YOU SURE YOU WANT TO CLOSE SERVICE?')){updateDocument(2)}" id="close"
-                style="margin-right: .2em" class="btn btn-outline-warning"><i class="fa fa-door-closed"></i>
-                close</button>
-            <button id="update" onclick="ticket.updateTranScreen()" style="margin-right: .2em"
-                class="btn btn-outline-info"><i class="fa fa-assistive-listening-systems"></i> update ticket</button>
-            <button id="send_to_client" onclick="ticket.sendToClient($('#delete').val())" style="margin-right: .2em"
-                class="btn btn-outline-success"><i class="fa fa-mail-bulk"></i> client</button>
-            <button id="send_to_provider" onclick="mail_provider()" style="margin-right: .2em"
-                class="btn btn-outline-dark"><i class="fa fa-mail-bulk"></i> provider</button>
-            <button onclick="windowPopUp(`/servicing/jobcard/tracking/${$('#delete').val()}/`,'none',500,1024)"
-                class="btn btn-info"><i class="fa fa-list"></i></button>
+        <div class="w-75 d-flex align-items-center flex-wrap gap-1">
+            <!-- Primary Actions -->
+            <button onclick="location.href='{% url 'wo_newjob' %}';" class="btn btn-primary btn-sm px-3"
+                title="New Job Card">
+                <i class="fa fa-plus me-1"></i> <span class="d-none d-md-inline">New</span>
+            </button>
+            <button id="find_job" onclick="findJobScreen()" class="btn btn-outline-secondary btn-sm px-3"
+                title="Search Job Cards">
+                <i class="fa fa-search me-1"></i> <span class="d-none d-md-inline">Find</span>
+            </button>
+
+            <div class="vr mx-2 d-none d-md-block text-muted"></div>
+
+            <!-- Status Actions -->
+            <button id="update" onclick="ticket.updateTranScreen()" class="btn btn-info btn-sm px-3 text-white"
+                title="Update Ticket">
+                <i class="fa fa-pencil-alt me-1"></i> <span class="d-none d-md-inline">Update</span>
+            </button>
+            <button id="close" onclick="if(confirm('ARE YOU SURE YOU WANT TO CLOSE SERVICE?')){updateDocument(2)}"
+                class="btn btn-warning btn-sm px-3 text-white" title="Close Job Card">
+                <i class="fa fa-door-closed me-1"></i> <span class="d-none d-md-inline">Close</span>
+            </button>
+
+            <!-- More Actions Dropdown -->
+            <div class="dropdown ms-1">
+                <button class="btn btn-light btn-sm dropdown-toggle border" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <i class="bi bi-three-dots-vertical"></i> <span class="d-none d-lg-inline">More</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end shadow border-0">
+                    <h6 class="dropdown-header fw-bold">Management</h6>
+                    <button class="dropdown-item" id="change_app" onclick="svc.changeApp(this.value)"><i
+                            class="fa fa-exchange-alt me-2 text-primary"></i> Change App</button>
+                    <div class="dropdown-divider"></div>
+                    <h6 class="dropdown-header fw-bold">Notifications</h6>
+                    <button class="dropdown-item" id="send_to_client"
+                        onclick="ticket.sendToClient($('#delete').val())"><i
+                            class="fa fa-user-check me-2 text-success"></i> Send to Client</button>
+                    <button class="dropdown-item" id="send_to_provider" onclick="mail_provider()"><i
+                            class="fa fa-envelope-open-text me-2 text-info"></i> Mail Provider</button>
+                    <div class="dropdown-divider"></div>
+                    <h6 class="dropdown-header fw-bold">Tools</h6>
+                    <button class="dropdown-item"
+                        onclick="windowPopUp(`/servicing/jobcard/tracking/${$('#delete').val()}/`,'none',500,1024)"><i
+                            class="fa fa-external-link-alt me-2 text-secondary"></i> Tracking Page</button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item text-danger" id="delete"
+                        onclick="if(confirm('ARE YOU SURE?')){deleteJobCard(this.value)}"><i
+                            class="fa fa-trash-alt me-2"></i> Delete Job Card</button>
+                </div>
+            </div>
+
+            <!-- Hidden Meta Inputs -->
             <input type="hidden" id="cardno">
             <input type="hidden" id="task">
         </div>
-        <div class="w-25 h-100 d-flex flex-wrap justify-content-end">
-
-            <button onclick="svc.pendingCards()" style="margin-right: .2em"
-                class="btn btn-outline-primary">PENDING</button>
-            <button id="prev" onclick="loadJobCard(this.value)" style="margin-right: .2em"
-                class="btn btn-outline-info"><i class="bi bi-skip-backward-btn"></i></button>
-            <button id="next" onclick="loadJobCard(this.value)" style="margin-right: .2em"
-                class="btn btn-outline-info"><i class="bi bi-skip-forward-btn"></i></button>
+        <div class="w-25 d-flex justify-content-end align-items-center gap-1">
+            <button onclick="svc.pendingCards()" class="btn btn-outline-primary btn-sm px-3 d-none d-sm-block">
+                <i class="fa fa-clock me-1"></i> Pending
+            </button>
+            <div class="btn-group btn-group-sm rounded shadow-sm border">
+                <button id="prev" onclick="loadJobCard(this.value)" class="btn btn-light border-0"
+                    title="Previous Job Card">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button id="next" onclick="loadJobCard(this.value)" class="btn btn-light border-0"
+                    title="Next Job Card">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
         </div>
 
     </div>
@@ -279,8 +318,10 @@
                         </button>
                         <!-- Dropdown Menu -->
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <a class="dropdown-item" href="javascript:void(0)"
-                                onclick="svc.materialRequest(`${$('#delete').val()}`)">Material Request</a>
+                            <button class="dropdown-item" type="button"
+                                onclick="svc.materialRequest(`${$('#delete').val()}`)">Material Request</button>
+                            <button class="dropdown-item" type="button" onclick="servicing.weeklyServiceReport()">Weekly
+                                Service Report</button>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="#">Separated link</a>
                         </div>
@@ -489,31 +530,38 @@
 
         switch (status) {
             case 0:
-                // deleted => disable('delete',close,update,send)
+                // deleted
                 del.prop('disabled', true);
                 close.prop('disabled', true);
                 update.prop('disabled', true);
                 send.prop('disabled', true);
-
                 break;
             case 1:
-                //open
+                // open
                 del.prop('disabled', false);
                 close.prop('disabled', false);
                 update.prop('disabled', false);
                 send.prop('disabled', false);
+
+                // Reset button to "Close" state
+                close.html('<i class="fa fa-door-closed me-1"></i> <span class="d-none d-md-inline">Close</span>');
+                close.removeClass('btn-success').addClass('btn-warning');
+                close.attr('onclick', "if(confirm('ARE YOU SURE YOU WANT TO CLOSE SERVICE?')){updateDocument(2)}");
                 break;
             case 2:
-                // closed
+                // closed - allow re-opening
                 del.prop('disabled', true);
-                close.prop('disabled', true);
+                close.prop('disabled', false); // Enable for re-opening
                 update.prop('disabled', true);
                 send.prop('disabled', true);
+
+                // Change button to "Open" state
+                close.html('<i class="fa fa-door-open me-1"></i> <span class="d-none d-md-inline">Open</span>');
+                close.removeClass('btn-warning').addClass('btn-success');
+                close.attr('onclick', "if(confirm('DO YOU WANT TO RE-OPEN THIS JOB?')){updateDocument(1)}");
                 break;
             default:
-
         }
-
     }
 
     // delete job card
@@ -534,17 +582,19 @@
         if (status < 0 || status > 2) {
             kasa.error("INVALID SETTINGS")
         } else {
+            let cardno = $('#cardno').val();
             let payload = {
                 module: 'jobcardstatus',
                 data: {
-                    'cardno': $('#cardno').val(),
+                    'cardno': cardno,
                     'status': status
                 }
             };
-            alert(api.call(
-                'PATCH', payload, '/servicing/api/'
-            )['message']);
-            loadJobCard(cardno);
+            let response = api.call('PATCH', payload, '/servicing/api/');
+            kasa.response(response);
+            if (anton.IsRequest(response)) {
+                loadJobCard(cardno);
+            }
         }
     }
 
@@ -638,10 +688,23 @@
                 }
 
                 let tab = `
-                        <table class='table table-sm table-bordered'>
-                            <thead><tr><th>DATE</th><th>OWNER</th><th>TITLE</th><th>DESCRIPTION</th><th>TECHNICIAN</th></tr></thead>
-                            <tbody>${tr}</tbody>
-                        </table>
+
+<div class="table-responsive">
+    <table class="table table-hover table-borderless align-middle">
+        <thead class="text-muted small text-uppercase border-bottom">
+            <tr>
+                <th class="fw-semibold">Date</th>
+                <th class="fw-semibold">Owner</th>
+                <th class="fw-semibold">Title</th>
+                <th class="fw-semibold">Description</th>
+                <th class="fw-semibold">Technician</th>
+            </tr>
+        </thead>
+        <tbody class="small">
+            ${tr}
+        </tbody>
+    </table>
+</div>
                     `;
                 amodal.setTitleText("PENDING JOBS");
                 amodal.setBodyHtml(tab);

@@ -14,7 +14,8 @@ from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
     IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, \
     ServiceMaterials, ServiceOrder, \
-    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType,Cardex,Phase,MaterialRequestHeader
+    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType,Cardex,Phase,MaterialRequestHeader, \
+    ECGInvoiceHD, ECGInvoiceTransactions
 from dolphine.models import Documents
 
 
@@ -1005,7 +1006,22 @@ def invoice_new(request):
     }
 
     return render(request,'ssml/contractor-invoice-new.html',context=context)
-
+@login_required
+def invoice_edit(request, pk):
+    invoice = InvoiceHD.objects.get(pk=pk)
+    page = {
+        'title': 'EDIT Contractor Invoice',
+        'page': 'contractor_invoice',
+        'page_title': 'Contractor Invoice',
+        'page_description': 'Service Type',
+        'nav': True
+    }
+    context = {
+        'page': page,
+        'contractors': Contractor.objects.all().order_by('company'),
+        'invoice': invoice
+    }
+    return render(request, 'ssml/contractor-invoice-edit.html', context=context)
 @login_required
 def location_master(request):
     page = {
@@ -1600,3 +1616,75 @@ def ecg_reports(request):
 
 
     return render(request,'ssml/ecg/monthly_reports.html',context=context)
+
+@login_required
+def ecg_invoice(request):
+    if ECGInvoiceHD.objects.all().count() == 0:
+        return redirect('new-ecg-inv')
+    
+    last_entry = ECGInvoiceHD.objects.all().last().id
+    page = {
+        'title': 'ECG Invoice',
+        'page': 'ecg_invoice',
+        'nav': True
+    }
+    context = {
+        'page': page,
+        'last_entry': last_entry
+    }
+    return render(request, 'ssml/ecg/ecg-invoice.html', context=context)
+
+@login_required
+def ecg_invoice_new(request):
+    page = {
+        'title': 'New ECG Invoice',
+        'page': 'ecg_invoice',
+        'nav': True
+    }
+    eligible_jobs = ServiceOrder.objects.filter(status='completed', is_ecg_invoiced=False)
+    
+    context = {
+        'page': page,
+        'jobs': eligible_jobs
+    }
+    return render(request, 'ssml/ecg/ecg-invoice-new.html', context=context)
+
+@login_required
+def ecg_invoice_edit(request, pk):
+    invoice = ECGInvoiceHD.objects.get(pk=pk)
+    page = {
+        'title': 'Edit ECG Invoice',
+        'page': 'ecg_invoice',
+        'nav': True
+    }
+    context = {
+        'page': page,
+        'invoice': invoice
+    }
+    return render(request, 'ssml/ecg/ecg-invoice-edit.html', context=context)
+
+@login_required
+def ecg_invoice_view(request, pk):
+    page = {
+        'title': 'View ECG Invoice',
+        'page': 'ecg_invoice',
+        'nav': True
+    }
+    context = {
+        'page': page,
+        'last_entry': pk
+    }
+    return render(request, 'ssml/ecg/ecg-invoice.html', context=context)
+
+@login_required
+def ecg_rates(request):
+    page = {
+        'title': 'ECG Rates Management',
+        'page': 'ecg_invoice',
+        'nav': True
+    }
+    context = {
+        'page': page,
+        'service_types': ServiceType.objects.all().order_by('name')
+    }
+    return render(request, 'ssml/ecg/ecg-rates.html', context=context)

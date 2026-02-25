@@ -89,6 +89,11 @@ class ServiceCard(models.Model):
     updated_date = models.DateField(auto_now=True)
     updated_time = models.TimeField(auto_now=True)
 
+    closed_date = models.DateField(null=True, blank=True)
+    closed_time = models.TimeField(null=True, blank=True)
+    deleted_date = models.DateField(null=True, blank=True)
+    deleted_time = models.TimeField(null=True, blank=True)
+
     client_approval = models.IntegerField(default=0)  # 0 not sent, 1 sent, 2 approved
 
     def obj(self):

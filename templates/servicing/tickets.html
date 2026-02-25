@@ -151,11 +151,14 @@
                                                 </li>
                                                 <li><a class="dropdown-item py-2" href="#"><i
                                                             class="bi bi-pencil me-2 text-info"></i>Edit Ticket</a></li>
+                                                {% if ticket.status == 0 %}
                                                 <li>
                                                     <hr class="dropdown-divider">
                                                 </li>
-                                                <li><a class="dropdown-item py-2 text-danger" href="#"><i
+                                                <li><a class="dropdown-item py-2 text-danger" href="javascript:void(0)"
+                                                        onclick="ticket.deleteTicket({{ ticket.pk }})"><i
                                                             class="bi bi-trash me-2"></i>Delete</a></li>
+                                                {% endif %}
                                             </ul>
                                         </div>
                                     </td>

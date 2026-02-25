@@ -783,6 +783,90 @@ def interface(request):
                     MailAttachments(mail=mail, attachment=file_name).save()
                 success_response['message'] = file_name
 
+            elif module == 'weekly_service_report':
+                import uuid
+                from datetime import datetime, timedelta
+                import openpyxl
+                from openpyxl.chart import PieChart, Reference
+
+                # Calculate the start of the current week (Monday)
+                today = timezone.now().date()
+                start_of_week = today - timedelta(days=today.weekday())
+
+                # Fetch issues
+                new_issues = ServiceCard.objects.filter(created_date__gte=start_of_week)
+                closed_issues = ServiceCard.objects.filter(closed_date__gte=start_of_week, status=2)
+                open_issues = ServiceCard.objects.filter(status=1)
+
+                workbook = openpyxl.Workbook()
+
+                # 1. New Issues Sheet
+                sheet_new = workbook.active
+                sheet_new.title = "New Issues"
+
+                headers = ["DATE", "CARD NO", "TITLE", "SERVICE", "TECHNICIAN", "OWNER"]
+                sheet_new.append(headers)
+                for issue in new_issues:
+                    sheet_new.append([
+                        issue.created_date,
+                        issue.cardno,
+                        issue.ticket.title,
+                        f"{issue.service.name}/{issue.service_sub.name}",
+                        issue.technician.technician.get_full_name(),
+                        issue.client.get_full_name()
+                    ])
+
+                # Add Pie Chart to New Issues Sheet
+                stats_sheet = workbook.create_sheet("Stats")
+                stats_data = [
+                    ["Category", "Count"],
+                    ["New Issues", new_issues.count()],
+                    ["Closed Issues", closed_issues.count()],
+                    ["Open Issues", open_issues.count()]
+                ]
+                for row in stats_data:
+                    stats_sheet.append(row)
+
+                chart = PieChart()
+                chart.title = "Weekly Summary"
+                data = Reference(stats_sheet, min_col=2, min_row=2, max_row=4)
+                labels = Reference(stats_sheet, min_col=1, min_row=2, max_row=4)
+                chart.add_data(data, titles_from_data=False)
+                chart.set_categories(labels)
+                sheet_new.add_chart(chart, "H2")
+
+                # 2. Closed Issues Sheet
+                sheet_closed = workbook.create_sheet("Closed Issues")
+                sheet_closed.append(["DATE CLOSED", "CARD NO", "TITLE", "SERVICE", "TECHNICIAN", "OWNER"])
+                for issue in closed_issues:
+                    sheet_closed.append([
+                        issue.closed_date,
+                        issue.cardno,
+                        issue.ticket.title,
+                        issue.service.name,
+                        issue.technician.technician.get_full_name(),
+                        issue.client.get_full_name()
+                    ])
+
+                # 3. General Open Issues Sheet
+                sheet_open = workbook.create_sheet("General Open")
+                sheet_open.append(["DATE OPENED", "CARD NO", "TITLE", "SERVICE", "TECHNICIAN", "OWNER"])
+                for issue in open_issues:
+                    sheet_open.append([
+                        issue.created_date,
+                        issue.cardno,
+                        issue.ticket.title,
+                        issue.service.name,
+                        issue.technician.technician.get_full_name(),
+                        issue.client.get_full_name()
+                    ])
+
+                unique_id = str(uuid.uuid4())
+                file_name = f"static/general/tmp/WEEKLY_REPORT_{unique_id}.xlsx"
+                workbook.save(file_name)
+
+                success_response['message'] = f"/{file_name}"
+
 
         # update data
         elif method == 'PATCH':
@@ -795,6 +879,12 @@ def interface(request):
                 owner_details = UserAddOns.objects.get(user=owner)
 
                 service.status = status
+                if status == 2:
+                    service.closed_date = timezone.now().date()
+                    service.closed_time = timezone.now().time()
+                elif status == 0:
+                    service.deleted_date = timezone.now().date()
+                    service.deleted_time = timezone.now().time()
                 service.save()
                 Sms(to=owner_details.phone, message=f"Ticket has been closed\nTICKET NO: {cardno}",
                     api=SmsApi.objects.get(is_default=1)).save()
@@ -826,6 +916,8 @@ def interface(request):
                     ticket.status = 2
                     ticket.save()
                     service.status = 2
+                    service.closed_date = timezone.now().date()
+                    service.closed_time = timezone.now().time()
                     service.client_approval = 2
 
 
@@ -956,6 +1048,8 @@ def interface(request):
                                 'sent_to': phone
                             })
                             sent.status = 2
+                            sent.closed_date = timezone.now().date()
+                            sent.closed_time = timezone.now().time()
                             sent.client_approval = 2
                             sent.save()
                 success_response['message'] = obj
@@ -978,17 +1072,12 @@ def interface(request):
                 ServiceCard.objects.filter(cardno=cardno).delete()
                 success_response['message'] = f"{cardno} has been deleted"
 
-            elif module == 'jobcard':
-                cardno = data.get('cardno')
-                service = ServiceCard.objects.get(cardno=cardno)
-                owner = service.owner
-                owner_details = UserAddOns.objects.get(user=owner)
-
-                service.status = 0
-                service.save()
-                # Sms(to=owner_details.phone,message=f"Ticket has been closed\nTICKET NO: {cardno}",api=SmsApi.objects.get(is_default=1)).save()
-
                 success_response['message'] = "Ticket Closed"
+            
+            elif module == 'ticket':
+                pk = data.get('pk')
+                TicketHd.objects.filter(pk=pk).delete()
+                success_response['message'] = "Ticket Deleted Successfully"
 
 
 

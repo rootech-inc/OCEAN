@@ -60,7 +60,8 @@ def interface(request):
     from ssml.models import Cardex, Location, RequiredReturn, InvoiceHD, InvoiceTransactions, Contractor, Expense, \
         InventoryGroup, InventoryMaterial, Issue, IssueTransaction, Ledger, MaterialOrderItem, Meter, PaySlipHD, Plot, \
         RedeemTransactions, Reedem, Service, ServiceMaterials, ServiceOrder, ServiceOrderItem, ServiceOrderReturns, \
-        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash,RetiredMetersBox,RetiredMetersTransactions,Phase
+        ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash,RetiredMetersBox,RetiredMetersTransactions,Phase, \
+        ECGInvoiceHD, ECGInvoiceTransactions
     from admin_panel.models import Emails, Locations, BusinessEntityTypes, MailSenders, MailQueues, MailAttachments, \
         Sms, SmsApi
     from admin_panel.anton import make_md5_hash
@@ -595,6 +596,108 @@ def interface(request):
                         entry.delete()  
                     success_response['status_code'] = 400
                     success_response['message'] = f"Error on line {sys.exc_info()[2].tb_lineno}: {e}"
+
+            elif module == 'ecg_invoice':
+                try:
+                    location_id = data.get('location')
+                    location = Location.objects.get(id=location_id)
+                    
+                    # Sequential invoice number: ECG-INV-{LOCATION_ID}-{YEAR}-{SEQ}
+                    year = datetime.now().year
+                    seq = ECGInvoiceHD.objects.filter(location=location, entry_date__year=year).count() + 1
+                    entry_no = f"ECG-INV-{location.loc_id}-{year}-{seq:04d}"
+                    
+                    entry_date = data.get('entry_date')
+                    remarks = data.get('remarks')
+                    job_transactions = data.get('job_transactions', [])
+                    meter_transactions = data.get('meter_transactions', [])
+                    created_by = User.objects.get(pk=data.get('mypk'))
+
+                    ecg_hd = ECGInvoiceHD(
+                        entry_no=entry_no,
+                        entry_date=entry_date,
+                        location=location,
+                        remarks=remarks,
+                        created_by=created_by
+                    )
+                    ecg_hd.save()
+
+                    total = 0
+                    # Process Job Transactions
+                    for job in job_transactions:
+                        so = ServiceOrder.objects.get(id=job.get('id'))
+                        ECGInvoiceTransactions(
+                            entry=ecg_hd,
+                            service_order=so,
+                            amount=job.get('amount')
+                        ).save()
+                        
+                        so.is_ecg_invoiced = True
+                        so.status = 'ecg_invoiced'
+                        so.save()
+                        total += Decimal(str(job.get('amount')))
+                    
+                    # Process Meter Transactions
+                    for m_item in meter_transactions:
+                        meter_no = m_item.get('meter_no')
+                        phase = m_item.get('phase')
+                        
+                        # Find rate
+                        rate_obj = ECGMeterRate.objects.filter(phase__icontains=phase).first()
+                        amt = rate_obj.rate if rate_obj else Decimal('0.00')
+                        
+                        is_found = False
+                        if Meter.objects.filter(meter_no=meter_no).exists():
+                            m = Meter.objects.get(meter_no=meter_no)
+                            m.ecg_invoice_no = entry_no
+                            m.save()
+                            is_found = True
+                        
+                        ECGInvoiceItem(
+                            entry=ecg_hd,
+                            meter_no=meter_no,
+                            phase=phase,
+                            amount=amt,
+                            is_found=is_found
+                        ).save()
+                        total += amt
+                    
+                    ecg_hd.total_amount = total
+                    ecg_hd.save()
+                    success_response['message'] = f"ECG Invoice {entry_no} Created Successfully"
+                except Exception as e:
+                    if 'ecg_hd' in locals():
+                        ECGInvoiceTransactions.objects.filter(entry=ecg_hd).delete()
+                        ECGInvoiceItem.objects.filter(entry=ecg_hd).delete()
+                        ecg_hd.delete()
+                    raise Exception(e)
+
+            elif module == 'ecg_job_rate':
+                try:
+                    service_type_id = data.get('service_type')
+                    service_type = ServiceType.objects.get(id=service_type_id)
+                    rate = data.get('rate')
+                    created_by = User.objects.get(id=data.get('mypk'))
+                    
+                    ECGJobRate.objects.update_or_create(
+                        service_type=service_type,
+                        defaults={'rate': rate, 'created_by': created_by}
+                    )
+                    success_response['message'] = "Job Rate Updated"
+                except Exception as e:
+                    raise Exception(e)
+
+            elif module == 'ecg_meter_rate':
+                try:
+                    phase = data.get('phase')
+                    rate = data.get('rate')
+                    ECGMeterRate.objects.update_or_create(
+                        phase=phase,
+                        defaults={'rate': rate}
+                    )
+                    success_response['message'] = "Meter Rate Updated"
+                except Exception as e:
+                    raise Exception(e)
 
             elif module == 'approve_invoice':
                 id = data.get('id')
@@ -2202,6 +2305,73 @@ def interface(request):
                         arr = [inv.obj() for inv in InvoiceHD.objects.filter(id=id)]
 
                     success_response['message'] = arr
+
+                elif module == 'ecg_eligible_jobs':
+                    location_id = data.get('location', '*')
+                    eligible_jobs = ServiceOrder.objects.filter(status='completed', is_ecg_invoiced=False)
+                    if location_id != '*':
+                        eligible_jobs = eligible_jobs.filter(location_id=location_id)
+                    
+                    res = []
+                    for job in eligible_jobs:
+                        # Get job rate if exists
+                        rate_obj = ECGJobRate.objects.filter(service_type=job.service_type).first()
+                        rate = float(rate_obj.rate) if rate_obj else float(job.total_amount) if job.total_amount else 0.0
+                        
+                        res.append({
+                            'id': job.id,
+                            'date': str(job.service_date),
+                            'service': job.service_type.name,
+                            'meter': job.new_meter,
+                            'contractor': job.contractor.company,
+                            'amount': rate
+                        })
+                    success_response['message'] = res
+
+                elif module == 'ecg_rates':
+                    job_rates = [r.obj() for r in ECGJobRate.objects.all()]
+                    meter_rates = [r.obj() for r in ECGMeterRate.objects.all()]
+                    success_response['message'] = {
+                        'job_rates': job_rates,
+                        'meter_rates': meter_rates
+                    }
+
+                elif module == 'ecg_invoice':
+                    id = data.get('id', '*')
+                    if id == '*':
+                         success_response['message'] = [inv.obj() for inv in ECGInvoiceHD.objects.all().order_by('-entry_date')]
+                    else:
+                         invoice = ECGInvoiceHD.objects.get(id=id)
+                         res = invoice.obj()
+                         prev_inv = ECGInvoiceHD.objects.filter(id__lt=id).order_by('-id').first()
+                         next_inv = ECGInvoiceHD.objects.filter(id__gt=id).order_by('id').first()
+                         res['previous'] = prev_inv.id if prev_inv else None
+                         res['next'] = next_inv.id if next_inv else None
+                         
+                         # Supplied Meters Tab
+                         supplied_meters = [item.obj() for item in ECGInvoiceItem.objects.filter(entry=invoice)]
+                         res['supplied_meters'] = supplied_meters
+                         
+                         # Jobs Done Tab
+                         jobs_done = []
+                         for t in ECGInvoiceTransactions.objects.filter(entry=invoice):
+                             jobs_done.append({
+                                 'id': t.id,
+                                 'service_order': {
+                                     'service_date': str(t.service_order.service_date),
+                                     'service_type': {'name': t.service_order.service_type.name},
+                                     'new_meter_no': t.service_order.new_meter,
+                                     'contractor': {'name': t.service_order.contractor.company}
+                                 },
+                                 'amount': float(t.amount)
+                             })
+                         res['jobs_done'] = jobs_done
+                         
+                         # Meters Invoiced For Tab (Combined/Aggregated)
+                         # Simply return the same as supplied_meters or a filtered list
+                         res['meters_invoiced_for'] = supplied_meters
+
+                         success_response['message'] = res
 
                 elif module == 'print_invoice':
                     id = data.get('id')
@@ -4352,10 +4522,76 @@ def interface(request):
                     success_response['status_code'] = 500
                     success_response['message'] = str(e)
                 
-
             else:
                 success_response['status_code'] = 505
                 success_response['message'] = "Invalid Module"
+        
+        elif method == 'PATCH':
+            if module == 'invoice_update':
+                try:
+                    invoice_id = data.get('invoice_id')
+                    invoice = InvoiceHD.objects.get(id=invoice_id)
+                    
+                    if invoice.is_posted:
+                        raise Exception("Cannot update a posted invoice")
+                        
+                    contractor_id = data.get('contractor')
+                    invoice.contractor = Contractor.objects.get(id=contractor_id)
+                    invoice.entry_date = data.get('entry_date')
+                    invoice.remarks = data.get('remarks')
+                    
+                    transactions = data.get('transactions')
+                    
+                    # Delete old transactions
+                    InvoiceTransactions.objects.filter(entry=invoice).delete()
+                    
+                    total = 0
+                    for transaction in transactions:
+                        InvoiceTransactions(
+                            entry=invoice,
+                            service_date=transaction.get('date') or transaction.get('service_date'),
+                            asset=transaction.get('meter') or transaction.get('asset'),
+                            amount=transaction.get('amount'),
+                            remarks=transaction.get('service') or transaction.get('remarks')
+                        ).save()
+                        total += Decimal(str(transaction.get('amount')))
+                    
+                    invoice.total_amount = total
+                    invoice.save()
+                    
+                    success_response['message'] = "Invoice Updated Successfully"
+                except Exception as e:
+                    success_response['status_code'] = 400
+                    success_response['message'] = f"Update Error: {e}"
+            
+            elif module == 'approve_ecg_invoice':
+                try:
+                    invoice_id = data.get('id')
+                    invoice = ECGInvoiceHD.objects.get(id=invoice_id)
+                    invoice.is_approved = True
+                    invoice.approved_by = User.objects.get(pk=data.get('mypk'))
+                    invoice.save()
+                    success_response['message'] = "ECG Invoice Approved Successfully"
+                except Exception as e:
+                    success_response['status_code'] = 400
+                    success_response['message'] = f"Approval Error: {e}"
+
+            elif module == 'post_ecg_invoice':
+                try:
+                    invoice_id = data.get('id')
+                    invoice = ECGInvoiceHD.objects.get(id=invoice_id)
+                    if not invoice.is_approved:
+                        raise Exception("Invoice must be approved before posting")
+                    invoice.is_posted = True
+                    invoice.save()
+                    success_response['message'] = "ECG Invoice Posted Successfully"
+                except Exception as e:
+                    success_response['status_code'] = 400
+                    success_response['message'] = f"Posting Error: {e}"
+            else:
+                success_response['status_code'] = 505
+                success_response['message'] = "Invalid Module for PATCH"
+        
         else:
             success_response['status_code'] = 400
             success_response['message'] = f"Method Not Found"

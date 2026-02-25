@@ -1,38 +1,38 @@
 class Ticket {
-    newTicket(){
+    newTicket() {
         // let title = $('#title').val()
         // let description = $('#description').val()
         // let owner = 1
 
         var owner = $('#owner').val().trim();
-          var title = $('#title').val().trim();
-          var description = $('#description').val().trim();
-          let app = $('#app').val()
+        var title = $('#title').val().trim();
+        var description = $('#description').val().trim();
+        let app = $('#app').val()
 
-      if (owner === '' || title === '' || description === '' || app === '') {
-        alert('Please fill in all the fields');
-      } else {
-        let data = {
-            "module":"ticket",
-            "data":{
-                "owner":owner,
-                "title":title,
-                "descr":description,
-                'app':app
+        if (owner === '' || title === '' || description === '' || app === '') {
+            alert('Please fill in all the fields');
+        } else {
+            let data = {
+                "module": "ticket",
+                "data": {
+                    "owner": owner,
+                    "title": title,
+                    "descr": description,
+                    'app': app
+                }
             }
+
+            let call = api.put(data);
+            kasa.confirm(call['message'], 1, 'here')
+
         }
-
-        let call = api.put(data);
-         kasa.confirm(call['message'],1,'here')
-
-      }
 
 
 
     }
 
-    updateTask(){
-        let title,details,update_time,support_by,owner,data,task
+    updateTask() {
+        let title, details, update_time, support_by, owner, data, task
 
         task = $('#task').val()
         title = $('#title').val()
@@ -42,22 +42,22 @@ class Ticket {
         owner = $('#pk').val();
 
         data = {
-            'module':'task',
-            'do':'update',
-            'data':{
-                'task':task,'title':title,'detail':details,'date':update_time,'support_by':support_by,'owner':owner
+            'module': 'task',
+            'do': 'update',
+            'data': {
+                'task': task, 'title': title, 'detail': details, 'date': update_time, 'support_by': support_by, 'owner': owner
             }
         }
 
         let save = api.put(data)
 
         location.reload()
-        al('info',save['message'])
+        al('info', save['message'])
 
 
     }
 
-    updateTranScreen(){
+    updateTranScreen() {
         let form = `
             <label for="title">TITLE</label><input type="text" id="title" class="form-control rounded-0 mb-2" placeholder="" />
             <label for="description">DESCRIPTION</label><textarea name="" id="description" cols="30" rows="5" class="form-control rounded-0 mb-2" placeholder=""></textarea>
@@ -75,15 +75,15 @@ class Ticket {
         amodal.show()
     }
 
-    saveTicketTran(){
-        let inputs = ['title','description','datetime','cardno','mypk'];
+    saveTicketTran() {
+        let inputs = ['title', 'description', 'datetime', 'cardno', 'mypk'];
 
-        if(anton.validateInputs(inputs)){
-            let jobcard = api.call('VIEW',{module:'servicecard',data:{cardno:$('#cardno').val()}},'/servicing/api/');
-            if(jobcard['status_code'] === 200){
+        if (anton.validateInputs(inputs)) {
+            let jobcard = api.call('VIEW', { module: 'servicecard', data: { cardno: $('#cardno').val() } }, '/servicing/api/');
+            if (jobcard['status_code'] === 200) {
                 let payload = {
-                    module:'ticketupdate',
-                    data:anton.Inputs(inputs)
+                    module: 'ticketupdate',
+                    data: anton.Inputs(inputs)
                 }
                 console.table(jobcard)
                 payload['data']['ticket'] = jobcard['message']['ticket']['hd']['pk']
@@ -91,7 +91,7 @@ class Ticket {
 
                 amodal.hide();
 
-                let request = api.call('PUT',payload,'/adapi/');
+                let request = api.call('PUT', payload, '/adapi/');
 
                 kasa.info(request['message']);
                 loadJobCard(payload['data']['cardno'])
@@ -107,64 +107,78 @@ class Ticket {
         amodal.hide();
     }
 
-    sendToClient(cardno){
+    sendToClient(cardno) {
         Swal.fire({
-          title: 'MESSAGE',
-          html:
-            '<textarea id="message" class="form-control rounded-0" rows="5" placeholder="Text"></textarea>',
-          showCancelButton: true,
-          confirmButtonText: 'Confirm',
-          cancelButtonText: 'Cancel',
-          showLoaderOnConfirm: true,
-          preConfirm: () => {
-            const message = document.getElementById('message').value;
+            title: 'MESSAGE',
+            html:
+                '<textarea id="message" class="form-control rounded-0" rows="5" placeholder="Text"></textarea>',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            cancelButtonText: 'Cancel',
+            showLoaderOnConfirm: true,
+            preConfirm: () => {
+                const message = document.getElementById('message').value;
 
-            // You can use textInputValue and textareaInputValue as needed
-            let payload = {
-                module:'send_ticket_to_client',
-                data: {
-                    cardno:cardno,
-                    message:message
+                // You can use textInputValue and textareaInputValue as needed
+                let payload = {
+                    module: 'send_ticket_to_client',
+                    data: {
+                        cardno: cardno,
+                        message: message
+                    }
                 }
+
+                kasa.info(api.call('PUT', payload, '/servicing/api/')['message']);
+                loadJobCard(cardno)
+
             }
-
-            kasa.info(api.call('PUT',payload,'/servicing/api/')['message']);
-            loadJobCard(cardno)
-
-          }
         });
 
     }
 
-    approveTicket(cardno,status){
+    approveTicket(cardno, status) {
         Swal.fire({
-          title: 'ENTER FEED BACK',
-          html:
-            '<textarea id="message" class="form-control rounded-0" rows="5" placeholder="Text"></textarea>',
-          showCancelButton: true,
-          confirmButtonText: 'Confirm',
-          cancelButtonText: 'Cancel',
-          showLoaderOnConfirm: true,
-          preConfirm: () => {
-            const message = document.getElementById('message').value;
+            title: 'ENTER FEED BACK',
+            html:
+                '<textarea id="message" class="form-control rounded-0" rows="5" placeholder="Text"></textarea>',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            cancelButtonText: 'Cancel',
+            showLoaderOnConfirm: true,
+            preConfirm: () => {
+                const message = document.getElementById('message').value;
 
-            // You can use textInputValue and textareaInputValue as needed
-            let payload = {
-                module:'client_ticket_approval',
-                data: {
-                    cardno:cardno,
-                    message:message,
-                    status:status
+                // You can use textInputValue and textareaInputValue as needed
+                let payload = {
+                    module: 'client_ticket_approval',
+                    data: {
+                        cardno: cardno,
+                        message: message,
+                        status: status
+                    }
                 }
+
+                kasa.confirm(api.call('PATCH', payload, '/servicing/api/')['message'], 1, 'here')
+
             }
-
-            kasa.confirm(api.call('PATCH',payload,'/servicing/api/')['message'],1,'here')
-
-          }
         });
     }
 
-
+    deleteTicket(pk) {
+        if (confirm("ARE YOU SURE YOU WANT TO DELETE THIS TICKET?")) {
+            let payload = {
+                module: 'ticket',
+                data: {
+                    pk: pk
+                }
+            };
+            let response = api.call('DELETE', payload, '/servicing/api/');
+            kasa.response(response);
+            if (anton.IsRequest(response)) {
+                location.reload();
+            }
+        }
+    }
 }
 
 const ticket = new Ticket();
