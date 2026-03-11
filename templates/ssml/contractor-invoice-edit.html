@@ -1,0 +1,266 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+{% block body %}
+<!-- Modernized Invoicing Styles -->
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.18);
+        --accent-primary: #0d6efd;
+        --accent-secondary: #6c757d;
+        --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid var(--glass-border);
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .premium-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 1.5rem;
+        border-bottom: none;
+    }
+
+    .form-control-premium {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+        padding: 0.6rem 1rem;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .form-control-premium:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border-color: var(--accent-primary);
+    }
+
+    .table-premium {
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+
+    .table-premium tr {
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+        transition: transform 0.2s ease;
+    }
+
+    .table-premium tr:hover {
+        transform: scale(1.005);
+    }
+
+    .table-premium td,
+    .table-premium th {
+        border: none;
+        padding: 1rem;
+    }
+
+    .btn-premium {
+        border-radius: 10px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-premium-success {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-premium-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        border: none;
+        color: white;
+    }
+
+    #retrieve {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        color: white;
+    }
+
+    #retrieve:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+</style>
+
+<div class="pagetitle mb-4">
+    <h1>Edit Contractor Invoice</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'ssml' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'cont-invoice' %}">Invoicing</a></li>
+            <li class="breadcrumb-item active">Edit Invoice</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="glass-card mb-4">
+    <div class="premium-header d-flex justify-content-between align-items-center">
+        <div class="d-flex gap-2">
+            <button class="btn btn-premium btn-premium-success py-2 d-flex align-items-center gap-2" id="update">
+                <i class="bi bi-check2-circle"></i> UPDATE INVOICE
+            </button>
+            <a href="{% url 'cont-invoice' %}"
+                class="btn btn-premium btn-premium-secondary py-2 d-flex align-items-center gap-2">
+                <i class="bi bi-arrow-left"></i> BACK
+            </a>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-light text-dark p-2 rounded-pill">Entry: {{ invoice.entry_no }}</span>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Contractor</label>
+                    <select id="contractor" class="form-select form-control-premium">
+                        {% for contractor in contractors %}
+                        <option value="{{ contractor.id }}" {% if contractor.id==invoice.contractor.id %}selected{%
+                            endif %}>
+                            {{ contractor.company }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Entry Date</label>
+                    <input id="entry_date" type="date" class="form-control form-control-premium"
+                        value="{{ invoice.entry_date|date:'Y-m-d' }}">
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Remarks</label>
+                    <div class="input-group">
+                        <input id="remarks" type="text" class="form-control form-control-premium"
+                            value="{{ invoice.remarks }}">
+                        <button id="retrieve" class="btn btn-primary" style="border-radius: 0 10px 10px 0;">
+                            <i class="bi bi-arrow-clockwise"></i> RE-RETRIEVE
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background: #f8f9fa;">
+                    <span class="fw-bold text-muted text-uppercase small">Total Amount:</span>
+                    <span class="h4 mb-0 text-primary fw-bold" id="total_display">GHS {{ invoice.total_amount }}</span>
+                    <input type="hidden" id="total" value="{{ invoice.total_amount }}">
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" id="invoice_id" value="{{ invoice.id }}">
+        <input type="hidden" id="mypk" value="{{ request.user.pk }}">
+    </div>
+</div>
+
+<div class="glass-card">
+    <div class="p-4" style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+        <h5 class="mb-0 fw-bold">Invoice Transactions</h5>
+    </div>
+    <div class="p-0">
+        <div style="max-height: 50vh; overflow-y: auto;">
+            <table class="table table-hover mb-0">
+                <thead class="sticky-top bg-dark text-white">
+                    <tr>
+                        <th class="ps-4">DATE</th>
+                        <th>SERVICE</th>
+                        <th>METER</th>
+                        <th class="text-end pe-4">AMOUNT</th>
+                    </tr>
+                </thead>
+                <tbody id="jesus">
+                    {% for tran in invoice.transactions %}
+                    <tr>
+                        <td class="ps-4">{{ tran.service_date }}</td>
+                        <td>{{ tran.service }}</td>
+                        <td>{{ tran.meter }}</td>
+                        <td class="text-end pe-4">GHS {{ tran.amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{ invoice.transactions|json_script:"invoice-data" }}
+
+<script>
+    $(document).ready(function () {
+        let dt = JSON.parse(document.getElementById('invoice-data').textContent);
+
+        $('#retrieve').click(async function () {
+            let ids = ['contractor', 'entry_date']
+            if (anton.validateInputs(ids)) {
+                await ssml.getJobs('json', $('#contractor').val(), 'completed').then(res => {
+                    if (anton.IsRequest(res)) {
+                        let data = res.message;
+                        dt = data
+                        let tr = "";
+                        let total_amount = 0;
+                        data.map(service => {
+                            tr += `
+                                <tr>
+                                    <td class="ps-4">${service.date}</td>
+                                    <td>${service.service}</td>
+                                    <td>${service.meter}</td>
+                                    <td class="text-end pe-4">GHS ${parseFloat(service.amount).toFixed(2)}</td>
+                                </tr>
+                            `
+                            total_amount += parseFloat(service.amount)
+                        })
+                        $('#jesus').html(tr)
+                        $('#total').val(total_amount.toFixed(2))
+                        $('#total_display').text('GHS ' + total_amount.toFixed(2))
+                    } else {
+                        kasa.response(res)
+                    }
+                }).catch(error => {
+                    kasa.error(error)
+                })
+            } else {
+                kasa.info("Please select a contractor and date")
+            }
+        })
+
+        $('#update').click(async function () {
+            let ids = ['contractor', 'entry_date', 'remarks', 'mypk', 'invoice_id'];
+            if (anton.validateInputs(ids) && dt.length > 0) {
+                let payload = {
+                    module: 'invoice_update',
+                    data: anton.Inputs(ids)
+                }
+                payload['data']['transactions'] = dt
+
+                await api.v2('PATCH', payload, '/ssml/api/').then(res => {
+                    kasa.confirm(res.message, 1, '/ssml/accounts/invoice/')
+                }).catch(error => {
+                    kasa.error(error)
+                })
+            } else {
+                kasa.error("Please ensure all fields are filled and transactions are retrieved.")
+            }
+        })
+    })
+</script>
+{%endblock%}

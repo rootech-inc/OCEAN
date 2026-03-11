@@ -18,7 +18,8 @@ from django.urls import path, include
 from . import views,employee_api
 
 urlpatterns = [
-    path('', views.index, name='company'),
+    # path('', views.index, name='company'),
+    path('', views.attendance, name='company'),
     path('area/', views.area, name='area'),
     path('departments/', views.departments, name='departments'),
     path('employees/', views.employees, name='staffs'),
@@ -32,5 +33,8 @@ urlpatterns = [
     path('upload-document/',views.upload_document,name='uplaod_compliance_document'),
     path('self-service/',views.self_service,name='hrm_self_service'),
     path('self-service/attendance/',views.my_attendance,name='hrm_my_attendance'),
-    path('submit-attendce/',views.submit_attendance,name='hrm_submit_attendance')
+    path('submit-attendce/',views.submit_attendance,name='hrm_submit_attendance'),
+    path('upload-resign-document/',views.upload_resign_document,name='upload_resign_document'),
+    path('resigned/',views.resigned_employees,name='resigned_employees'),
+    path('devices/',views.devices,name='devices'),
 ]

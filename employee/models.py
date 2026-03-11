@@ -66,6 +66,51 @@ class Attendance(models.Model):
         unique_together = ['emp_code', 'date']
 
 
+
+class AttendanceLog(models.Model):
+    # The device serial number (e.g., MED7241100432)
+    device_sn = models.CharField(max_length=50, db_index=True)
+    
+    # The employee's PIN/ID on the machine
+    user_id = models.CharField(max_length=20, db_index=True)
+    
+    # The exact time of the punch
+    timestamp = models.DateTimeField()
+    
+    # Punch State: 0=Check-In, 1=Check-Out, 2=Break-Out, 3=Break-In
+    PUNCH_CHOICES = [
+        (0, 'Check-In'),
+        (1, 'Check-Out'),
+        (2, 'Break-Out'),
+        (3, 'Break-In'),
+    ]
+    punch_state = models.IntegerField(choices=PUNCH_CHOICES, default=0)
+    
+    # Verify Type: 15=Face, 1=Fingerprint, 3=Password, 4=Card
+    VERIFY_CHOICES = [
+        (1, 'Fingerprint'),
+        (3, 'Password'),
+        (4, 'Card'),
+        (15, 'Face'),
+        (20, 'Face (SpeedFace)'),
+    ]
+    verify_type = models.IntegerField(choices=VERIFY_CHOICES, default=0)
+    
+    # Store extended data if needed (Temperature/Mask)
+    temperature = models.DecimalField(max_digits=4, decimal_places=1, default=0.0)
+    is_masked = models.BooleanField(default=False)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Prevents duplicate entries if the device pushes the same log twice
+        unique_together = ('device_sn', 'user_id', 'timestamp')
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"User {self.user_id} - {self.get_punch_state_display()} at {self.timestamp}"
+
 class Leave(models.Model):
     employee = models.ForeignKey(User, on_delete=models.CASCADE,null=False)
     

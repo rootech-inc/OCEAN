@@ -2,62 +2,113 @@
 {% load static %}
 
 {% block body %}
-<div class="card-header">
-    <div class="w-100 d-flex">
-        <div class="w-50 d-flex"></div>
-        <div class="w-50 d-flex justify-content-end">
-            <input id="attd_date" style="width: fit-content" type="date"  class="form-control">
-            <button class="btn btn-info ms-2" id="exp_attendance">Export</button>
+<!-- Manual Punch Header -->
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Manual Punches</h4>
+        <p class="text-muted small mb-0">View manual attendance corrections and punch-ins.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="bi bi-calendar3 text-muted"></i>
+            </span>
+            <input id="attd_date" type="date" class="form-control border-start-0 ps-0" style="width: 150px;">
+        </div>
+        <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2" id="exp_attendance">
+            <i class="bi bi-download"></i>
+            <span>Export</span>
+        </button>
+    </div>
+</div>
+
+<!-- Manual Punch Table Section -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div id="x_start" class="table-responsive">
+            <div class="p-5 text-center text-muted">
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                Loading manual records...
+            </div>
         </div>
     </div>
 </div>
-<div class="card-body overflow-auto">
-    
-   <div id="x_start" class="table-responsive">
 
-   </div>
-</div>
+<style>
+    #attd_table thead th {
+        background-color: var(--hr-bg);
+        color: var(--hr-text-muted);
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-top: none;
+        padding: 12px 16px;
+    }
 
-    <script>
-        let frm = `
-            <table id="attd_table" class="table table-responsive-md">
-           <thead>
+    #attd_table tbody td {
+        padding: 14px 16px;
+        vertical-align: middle;
+        font-size: 13.5px;
+        border-bottom: 1px solid var(--hr-border);
+    }
+
+    #attd_table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* DataTable customization */
+    .dataTables_wrapper .dataTables_filter {
+        padding: 16px;
+    }
+
+    .dataTables_wrapper .dataTables_info {
+        padding: 16px;
+        font-size: 12px;
+    }
+
+    .dataTables_wrapper .dataTables_paginate {
+        padding: 16px;
+    }
+</style>
+
+<script>
+    const tableTemplate = `
+        <table id="attd_table" class="table table-hover mb-0 w-100">
+            <thead>
                 <tr>
-                    <th>NAME</th>
-                    <th>POSITION</th>
-                    <th>STATUS</th>
-                    <th>DATE</th>
-                    <th>TIME</th>
+                    <th>Employee Name</th>
+                    <th>Position</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Time</th>
                 </tr>
-           </thead>
+            </thead>
+            <tbody id="att_bd">
+                <tr class="loading-row">
+                    <td colspan="5" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    `;
 
-           <tbody id="att_bd">
-           <tr class="loading-row">
-               <td colspan="5" class="text-center">
-                   <div class="spinner-border text-primary" role="status">
-                       <span class="sr-only">Loading...</span>
-                   </div>
-               </td>
-           </tr>
-           </tbody>
-       </table>
-        `
+    $(document).ready(function () {
+        $('#x_start').html(tableTemplate);
 
-        $('#x_start').html(frm)
+        const today = new Date().toISOString().split('T')[0];
+        $('#attd_date').val(today);
 
-        $(document).ready(function(){
-            // laod attendance
-            staff.loadManualPunch()
-            $('#atte_date').val(today)
+        staff.loadManualPunch(today);
 
-            $('#attd_date').change(function () {
-                $('#x_start').empty()
-                $('#x_start').html(frm)
-                let dt = $(this).val()
-                staff.loadManualPunch(dt)
-            })
-        })
-    </script>
-
-
+        $('#attd_date').change(function () {
+            const dt = $(this).val();
+            $('#x_start').empty().html(tableTemplate);
+            staff.loadManualPunch(dt);
+        });
+    });
+</script>
 {% endblock %}

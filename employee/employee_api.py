@@ -1,3 +1,5 @@
+from iclock.models import Area
+from iclock.models import AttendanceLog,Employee
 import json
 import sys
 from decimal import Decimal
@@ -465,7 +467,7 @@ def interface(request):
                     else:
                         end_date = date(today.year, today.month + 1, 1) - timedelta(days=1)
 
-                    res = [att.obj() for att in Attendance.objects.filter(
+                    res = [att.obj() for att in AttendanceLog.objects.filter(
                         emp_code=emp_code,
                         date__range=[start_date, end_date]
                     ).order_by('date')]
@@ -479,6 +481,80 @@ def interface(request):
 
                 response = success_response
             
+            elif module == 'view_attendance':
+                arr = []
+                work_day = data.get('date',datetime.now().date())
+                for emp in Employee.objects.all().order_by('name'):
+                    first_log_of_the_day = AttendanceLog.objects.filter(
+                        employee=emp,
+                        timestamp__date=work_day
+                    ).order_by('timestamp').first()
+
+                    last_log_of_the_day = AttendanceLog.objects.filter(
+                        employee=emp,
+                        timestamp__date=work_day
+                    ).order_by('timestamp').last()
+
+                    
+                    
+                    if first_log_of_the_day and last_log_of_the_day:
+                        minutes_worked = (last_log_of_the_day.timestamp - first_log_of_the_day.timestamp).total_seconds() / 60
+                    else:
+                        minutes_worked = 0
+                    
+                    abscent = True
+                    if first_log_of_the_day:
+                        abscent = False
+                    else:
+                        abscent = True
+
+                    first_tile = None
+                    last_tile = None
+                    late = False
+                    if first_log_of_the_day:
+                        first_tile = first_log_of_the_day.timestamp.time()
+                        area = emp.area
+                        if area:
+                            work_start_time = area.work_start_time
+                            
+                            if first_tile > work_start_time:
+                                late = True
+                    if last_log_of_the_day:
+                        last_tile = last_log_of_the_day.timestamp.time()
+
+                    
+
+
+                    obj = {
+                        'name': emp.name,
+                        'first_log': str(first_tile),
+                        'last_log': str(last_tile),
+                        'emp_code': emp.user_id,
+                        'minutes_worked': minutes_worked,
+                        'abscent': abscent,
+                        'late':late,
+                        'area':emp.area.area_name if emp.area else 'Not Set',
+                        'position':emp.position.position_name if emp.position else 'Not Set',
+                        'department':emp.department.dept_name if emp.department else 'Not Set',
+                    }
+                    arr.append(obj)
+
+                leg_obg = {
+                    'record':arr
+                }
+
+                # get locattion wise summar 
+                ar_arr = []
+                for area in Area.objects.all():
+                    ar_arr.append(area.attendance_summary(work_day))
+
+                leg_obg.update({'location_summary':ar_arr})
+
+                success_response['message'] = leg_obg
+                response = success_response
+                    
+                        
+
             elif module == 'month_attendance':
 
                 distinct_names = Attendance.objects.values_list('name', flat=True).distinct().order_by('name')

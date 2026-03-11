@@ -35,7 +35,7 @@
   <!-- Template Main CSS File -->
   <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
   <link href="{% static 'general/css/recorder.css' %}" rel="stylesheet">
-    <link href="{% static 'general/css/colors.css' %}" rel="stylesheet">
+  <link href="{% static 'general/css/colors.css' %}" rel="stylesheet">
 
 
 
@@ -60,23 +60,23 @@
   <script src="{% static 'general/js/record.js' %}"></script>
   <script src="{% static 'general/js/classes/user.js' %}"></script>
   <script src="{% static 'general/js/classes/po.js' %}"></script>
-    <script src="{% static 'general/js/classes/sales.js' %}"></script>
-    <script src="{% static 'general/js/classes/sms.js' %}"></script>
-    <script src="{% static 'general/js/classes/cmms.js' %}"></script>
-    <script src="{% static 'general/js/trigger.js' %}"></script>
-    <script src="{% static 'general/js/classes/api.js' %}"></script>
-    <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
-    <script src="{% static 'general/js/classes/ticket.js' %}"></script>
-    <script src="{% static 'general/js/classes/app.js' %}"></script>
-    <script src="{% static 'general/js/classes/docs.js' %}"></script>
-    <script src="{% static 'general/js/classes/anton.js' %}"></script>
-    <script src="{% static 'general/js/classes/cmms_cust.js' %}"></script>
-    <script src="{% static 'general/js/classes/modal.js' %}"></script>
-    <script src="{% static 'general/js/classes/retail.js' %}"></script>
-    <script src="{% static 'general/js/classes/recipe.js' %}"></script>
-    <script src="{% static 'general/js/classes/form.js' %}"></script>
-    <script src="{% static 'general/js/dataTables.min.js' %}"></script>
-    <script src="{% static 'general/js/dataTables.bootstrap4.min.js' %}"></script>
+  <script src="{% static 'general/js/classes/sales.js' %}"></script>
+  <script src="{% static 'general/js/classes/sms.js' %}"></script>
+  <script src="{% static 'general/js/classes/cmms.js' %}"></script>
+  <script src="{% static 'general/js/trigger.js' %}"></script>
+  <script src="{% static 'general/js/classes/api.js' %}"></script>
+  <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
+  <script src="{% static 'general/js/classes/ticket.js' %}"></script>
+  <script src="{% static 'general/js/classes/app.js' %}"></script>
+  <script src="{% static 'general/js/classes/docs.js' %}"></script>
+  <script src="{% static 'general/js/classes/anton.js' %}"></script>
+  <script src="{% static 'general/js/classes/cmms_cust.js' %}"></script>
+  <script src="{% static 'general/js/classes/modal.js' %}"></script>
+  <script src="{% static 'general/js/classes/retail.js' %}"></script>
+  <script src="{% static 'general/js/classes/recipe.js' %}"></script>
+  <script src="{% static 'general/js/classes/form.js' %}"></script>
+  <script src="{% static 'general/js/dataTables.min.js' %}"></script>
+  <script src="{% static 'general/js/dataTables.bootstrap4.min.js' %}"></script>
 
 
   <script>
@@ -93,65 +93,69 @@
 </head>
 
 <body>
-    <!-- MODALS -->
-    <div id="g_modal" class="modal fade">
-        <div id="g_modal_size"  class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="g_modal_title"></h5>
-                </div>
-                <div class="modal-body overflow-auto" style='max-height : 75vh'>
-                    <div class="w-100" id="g_modal_body">
-                        
-                    </div>
-                </div>
-                <div class="modal-footer" id="g_footer"></div>
-            </div>
+  <!-- MODALS -->
+  <div id="g_modal" class="modal fade">
+    <div id="g_modal_size" class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="g_modal_title"></h5>
         </div>
-    </div>
+        <div class="modal-body overflow-auto" style='max-height : 75vh'>
+          <div class="w-100" id="g_modal_body">
 
-    <div class="modal fade" id="followUps">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <strong class="modal-title">Followup History</strong>
-{#                            <button id="newFolloupButton" class="close bx bx-plus btn btn-sm" data-bs-target="#newFolloup" data-bs-toggle="modal"></button>#}
-                        </div>
-                        <div class="modal-body" id="xfact" style="height: 60vh; overflow: auto">
-                            <table class="table table-bordered table-sm table-hover table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Person</th><th>Date</th><th>Title</th><th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="fTbody">
-                                    <tr>
-                                        <td>James</td>
-                                        <td>Date</td>
-                                        <td>Hello World</td>
-                                        <td><i class="fa fa-reply pointer" onclick="al('info','hello world')"></i></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-
-    <div class="modal" id="loader">
-        <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
-            <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
-            <div class="w-100 text-center">
-                <br>
-                <small class="text-info" id="error_msg"></small>
-            </div>
+          </div>
         </div>
+        <div class="modal-footer" id="g_footer"></div>
+      </div>
     </div>
-    <script>
-        $('#loader').modal('show')
-    </script>
+  </div>
+
+  <div class="modal fade" id="followUps">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <strong class="modal-title">Followup History</strong>
+          {# <button id="newFolloupButton" class="close bx bx-plus btn btn-sm" data-bs-target="#newFolloup"
+            data-bs-toggle="modal"></button>#}
+        </div>
+        <div class="modal-body" id="xfact" style="height: 60vh; overflow: auto">
+          <table class="table table-bordered table-sm table-hover table-striped">
+            <thead>
+              <tr>
+                <th>Person</th>
+                <th>Date</th>
+                <th>Title</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="fTbody">
+              <tr>
+                <td>James</td>
+                <td>Date</td>
+                <td>Hello World</td>
+                <td><i class="fa fa-reply pointer" onclick="al('info','hello world')"></i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div class="modal" id="loader">
+    <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
+      <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
+      <div class="w-100 text-center">
+        <br>
+        <small class="text-info" id="error_msg"></small>
+      </div>
+    </div>
+  </div>
+  <script>
+    $('#loader').modal('show')
+  </script>
 
   <input type="hidden" id="autos_url" value="{% url 'autos' 'ajax' %}">
   <input type="hidden" id="search_url" value="{% url 'search' %}">
@@ -191,9 +195,9 @@
 
           <a class="nav-link nav-icon">
             <small class="text-danger">
-                {% for message in messages %}
-                  {{ message }}
-                {% endfor %}
+              {% for message in messages %}
+              {{ message }}
+              {% endfor %}
             </small>
           </a><!-- End Messages Icon -->
 
@@ -486,38 +490,40 @@
 
 
 
-    {% if perms.retail.view_products  %}
-        <li class="nav-item">
+      {% if perms.retail.view_products %}
+      <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'clerks' %}">
           <i class="bi bi-list"></i><span>CLERKS</span>
         </a>
       </li>
 
-        <li class="nav-item">
+      <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#prod-nav" data-bs-toggle="collapse" href="#">
           <i class="bx bx-food-menu"></i><span>Products</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        
+
         <ul id="prod-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'products' 1 %}">
               <i class="bi bi-circle"></i><span>Products List</span>
             </a>
           </li>
-            <li>
+          <li>
             <a href="{% url 'retail_product_card' %}">
               <i class="bi bi-circle"></i><span>Product Card</span>
             </a>
           </li>
-            <li>
+          <li>
             <a href="{% url 'bolt_groups' %}">
               <i class="bi bi-alarm-fill"></i><span>Categories</span>
             </a>
-          </li><li>
+          </li>
+          <li>
             <a href="{% url 'retail_price_change' %}">
               <i class="bi bi-alarm-fill"></i><span>Price Change</span>
             </a>
-          </li><li>
+          </li>
+          <li>
             <a href="{% url 'wholesales' %}">
               <i class="bi bi-alarm-fill"></i><span>Wholesales</span>
             </a>
@@ -532,14 +538,14 @@
 
 
 
-    {% endif %}
-    {% if perms.retail.view_boltitems %}
-    <li class="nav-item">
+      {% endif %}
+      {% if perms.retail.view_boltitems %}
+      <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#bolt-nav" data-bs-toggle="collapse" href="#">
           <i class="bx bx-food-menu"></i><span>Bolt</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="bolt-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-            <li>
+          <li>
             <a href="{% url 'bolt_landing' %}">
               <i class="bi bi-circle"></i><span>Landing</span>
             </a>
@@ -554,14 +560,14 @@
               <i class="bi bi-circle"></i><span>Hidden</span>
             </a>
           </li>
-          
-            <li>
+
+          <li>
             <a href="{% url 'bolt_products_pending' %}">
               <i class="bi bi-circle"></i><span>bolt_products_pending</span>
             </a>
           </li>
 
-            <li>
+          <li>
             <a href="{% url 'bolt_groups' %}">
               <i class="bi bi-alarm-fill"></i><span>Categories</span>
             </a>
@@ -569,11 +575,11 @@
 
         </ul>
       </li>
-        {% endif %}
+      {% endif %}
 
-    <!-- STOCK -->
-        {% if perms.retail.add_recipegroup %}
-            <li class="nav-item">
+      <!-- STOCK -->
+      {% if perms.retail.add_recipegroup %}
+      <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#stock-nav" data-bs-toggle="collapse" href="#">
           <i class="bx bx-food-menu"></i><span>Stock</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
@@ -583,22 +589,22 @@
               <i class="bi bi-circle"></i><span>Retail Stock Monitor</span>
             </a>
           </li>
-            <li>
+          <li>
             <a href="{% url 'retail_stock' %}">
               <i class="bi bi-alarm-fill"></i><span>Retail Stock Count</span>
             </a>
-                <li>
+          <li>
             <a href="{% url 'retail_butch_moni' %}">
               <i class="bi bi-alarm-fill"></i><span>Butchery Monotir</span>
             </a>
           </li>
-            <li>
+          <li>
             <a href="{% url 'stock_to_send' %}">
               <i class="bi bi-alarm-fill"></i><span>Stock To Send</span>
             </a>
           </li>
 
-            <li>
+          <li>
             <a href="{% url 'samples' %}">
               <i class="bi bi-alarm-fill"></i><span>Samples</span>
             </a>
@@ -606,34 +612,34 @@
 
         </ul>
       </li>
-    {% endif %}
-    <!-- END OF STOCK -->
+      {% endif %}
+      <!-- END OF STOCK -->
 
 
-    {% if perms.retail.add_recipegroup %}
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'recipe' %}">
-              <i class="bi bi-list"></i><span>RECIPES</span>
-            </a>
-          </li>
-    {% endif %}
-
-
-
-
-
-    {% if perms.cmms.view_followup %}
-
-    
-
-        <!-- END OF CMMD -->
-        {% endif %}
-
-     
+      {% if perms.retail.add_recipegroup %}
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'recipe' %}">
+          <i class="bi bi-list"></i><span>RECIPES</span>
+        </a>
+      </li>
+      {% endif %}
 
 
 
-   
+
+
+      {% if perms.cmms.view_followup %}
+
+
+
+      <!-- END OF CMMD -->
+      {% endif %}
+
+
+
+
+
+
 
 
 
@@ -683,11 +689,11 @@
   <!-- Template Main JS File -->
   <script src="{% static 'assets/js/main.js' %}"></script>
 
-    <script>
+  <script>
 
-        $('#loader').delay(5000).modal('hide')
+    $('#loader').delay(5000).modal('hide')
 
-    </script>
+  </script>
 
 
 
@@ -695,5 +701,3 @@
 </body>
 
 </html>
-
-

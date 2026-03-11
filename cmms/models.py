@@ -732,6 +732,8 @@ class JobMaterials(models.Model):
     image = models.ImageField(upload_to='static/uploads/cmms/materials/%Y/%m/%d/', null=True, blank=True)
     requested_on = models.DateField(auto_now_add=True)
     is_issued = models.BooleanField(default=False)
+    is_purchase_requested = models.BooleanField(default=False)
+    purchase_request_date = models.DateField(null=True,blank=True)
     issued_on = models.DateField(auto_now_add=True)
     issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,related_name='issued_by')
     quantity = models.DecimalField(max_digits=10,decimal_places=2,default=0.00)
@@ -739,12 +741,20 @@ class JobMaterials(models.Model):
     price = models.DecimalField(max_digits=10,decimal_places=2,default=0.00)
 
 
+    def image_url(self):
+        if self.image:
+            return self.image.url
+        else:
+            return ''
+
     def total(self):
         return self.price * self.quantity
 
     def st(self):
         if self.is_issued:
             return '<span class="badge bg-success">issued</span>'
+        elif self.is_issued == False and self.is_purchase_requested:
+            return '<span class="badge bg-info">Purchasing</span>'
         else:
             return '<span class="badge bg-warning">pending</span>'
 

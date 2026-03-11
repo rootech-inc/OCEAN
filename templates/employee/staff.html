@@ -2,36 +2,49 @@
 {% load static %}
 
 {% block body %}
-    <div class="card-header">
-        <button class="btn btn-primary" id="new_employee">NEW</button>
-        <button class="btn btn-info" id="download"> Download</button>
-        
+<div class="card-header">
+    <button class="btn btn-primary" id="new_employee">NEW</button>
+    <button class="btn btn-info" id="download"> Download</button>
+    <button class="btn btn-success" id="upload"> Upload</button>
+
+</div>
+<div class="card-body p-2">
+    <div class="table-responsive">
+        <table id="myTable" class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>NAME</th>
+                    <th>DEPARTMENT</th>
+                    <th>POSITION</th>
+                    <th>ACTION</th>
+                </tr>
+            </thead>
+            <tbody id="empl"></tbody>
+        </table>
     </div>
-	<div class="card-body p-2">
-        <div class="table-responsive">
-            <table id="myTable" class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>ID</th><th>NAME</th><th>DEPARTMENT</th><th>POSITION</th><th>IS_BIO</th><th>BIO</th>
-                    </tr>
-                </thead>
-                <tbody id="empl"></tbody>
-            </table>
-        </div>
-    </div>
+</div>
 
-    <script>
-        let next_code = 0;
-        $(document).ready(function () {
+<script>
+    let next_code = 0;
+    $(document).ready(function () {
 
-            staff.loadStaff()
+        staff.loadStaff()
 
-            $('#new_employee').click(function (){
-                staff.newStaff()
-            })
-
-
-
+        $('#new_employee').click(function () {
+            staff.newStaff()
         })
-    </script>
+
+        $('#download').click(function () {
+            staff.download()
+        })
+
+        $('#upload').click(function () {
+            staff.upload()
+        })
+
+
+
+    })
+</script>
 {% endblock %}

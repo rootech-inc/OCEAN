@@ -44,6 +44,8 @@ urlpatterns = [
     path('logistic/', include('logistics.urls')),
     path('amc/',include('amc.urls')),
     path('accounts/', include('accounts.urls')),
+    path('anton/', include('anton.urls')),
+    path('iclock/', include('iclock.urls')),
 
 
 ]

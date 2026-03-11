@@ -1,9 +1,14 @@
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from admin_panel.models import UserAddOns
 from .models import Documents
 from django.shortcuts import redirect
+
+
+from iclock.models import Employee,Resignation
 
 
 @login_required()
@@ -262,4 +267,53 @@ def manual_punch(request):
         # Add more context as required for the page/layout.
     }
     return render(request, 'employee/manual_punch.html', context)
+@csrf_exempt
+def upload_resign_document(request):
+    if request.method == 'POST':
+
+        try:
+            form = request.POST
+            file = request.FILES
+
+            document = file['resign_document']
+            user_id = form['user_id']
+
+            employee = Employee.objects.get(user_id=user_id)
+            resign = Resignation.objects.get(employee=employee)
+
+            resign.resign_document = document
+
+            resign.save()
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+        except Exception as e:
+            return HttpResponse(f"Error: {e}")
+
+    else:
+        return HttpResponse("Invalid request method.")
+
+        
+
+def resigned_employees(request):
+    context = {
+        'nav': True,
+        'page': {
+            'title': "Resigned",
+            'nav':True
+        }
+    }
+
+    return render(request,'employee/resigned_employees.html',context=context)
+
+
+def devices(request):
+    context = {
+            'nav': True,
+            'page': {
+                'title': "Devices",
+                'nav':True
+            }
+        }
+
+    return render(request,'employee/devices.html',context=context)
+
 

@@ -18,6 +18,7 @@ from django.urls import path, include
 from . import views
 from . import ssml_api  
 from .api import contractor_api
+from . import location_import_api
 
 urlpatterns = [
     path('', views.index, name='ssml'),
@@ -85,6 +86,7 @@ urlpatterns = [
      path('meters/',views.meters,name='meters'),
     path('meters/phase-master/',views.phase_master,name='phase-master'),
     path('meters/import-shipment-file/',views.import_shipment_file,name='import_shipment_file'),
+    path('master/import-locations/', location_import_api.import_locations, name='import_locations'),
     path('ecg/reports/',views.ecg_reports,name='ecg_reports'),
 
 ]

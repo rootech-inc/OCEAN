@@ -4,40 +4,56 @@
 
 {% block body %}
 
-    <div class="container p-2 h-100 overflow-auto">
-        <div class="row justify-content-center no-gutters">
-            <div class="col-sm-12">
-                <div class="form-group mb-2">
-                    <label for="delivery_type">Type</label>
-                    <select id="delivery_type" class="form-control rounded-0">
-                        <option selected="selected" value="" disabled="disabled" >--Select--</option>
-                        {% for value, label in type_choices %}
-                            <option value="{{ value }}">{{ label }}</option>
-                          {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="col-sm-12">
-                <div class="form-group mb-2">
-                    <label for="source">Source</label>
-                    <input type="text" id="source" class="form-control rounded-0">
-                </div>
-            </div>
-            <div class="col-sm-12">
-                <div class="form-group mb-2">
-                    <label for="destination">Destination</label>
-                    <input type="text" id="destination" class="form-control rounded-0">
-                </div>
-            </div>
-            <div class="col-sm-12">
-                <div class="form-group mb-2">
-                    <label for="description">Description</label>
-                    <textarea id="description" class="form-control rounded-0" cols="30" rows="5"></textarea>
-                </div>
+    <div class="container-fluid py-4 h-100 overflow-auto">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-6">
+                <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <div class="rounded-circle bg-primary-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; background-color: var(--light-color);">
+                                <i class="bi bi-box-seam text-primary" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h3 class="h4 font-weight-bold text-dark">New Delivery Request</h3>
+                            <p class="text-muted small">Fill in the details below to request a new delivery</p>
+                        </div>
 
-                <button id="save_request" class="btn btn-success mx-auto w-100">REQUEST</button>
-            </div>
+                        <div class="mb-3">
+                            <label for="delivery_type" class="form-label small font-weight-bold text-muted text-uppercase">Delivery Type</label>
+                            <select id="delivery_type" class="form-select border-0 bg-light rounded-lg px-3 py-2" style="height: 45px;">
+                                <option selected="selected" value="" disabled="disabled">-- Select Type --</option>
+                                {% for value, label in type_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
+                        <div class="mb-3">
+                            <label for="source" class="form-label small font-weight-bold text-muted text-uppercase">Source Location</label>
+                            <div class="input-group">
+                                <span class="input-group-text border-0 bg-light rounded-start-lg px-3 text-danger"><i class="bi bi-geo-alt"></i></span>
+                                <input type="text" id="source" class="form-control border-0 bg-light rounded-end-lg py-2" style="height: 45px;" placeholder="Departure point">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="destination" class="form-label small font-weight-bold text-muted text-uppercase">Destination Location</label>
+                            <div class="input-group">
+                                <span class="input-group-text border-0 bg-light rounded-start-lg px-3 text-primary"><i class="bi bi-geo-fill"></i></span>
+                                <input type="text" id="destination" class="form-control border-0 bg-light rounded-end-lg py-2" style="height: 45px;" placeholder="Delivery point">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label small font-weight-bold text-muted text-uppercase">Additional Details</label>
+                            <textarea id="description" class="form-control border-0 bg-light rounded-lg p-3" rows="4" placeholder="Any special instructions..."></textarea>
+                        </div>
+
+                        <button id="save_request" class="btn btn-primary w-100 py-3 rounded-pill font-weight-bold shadow-sm transition-all hover-lift">
+                            <i class="bi bi-send me-2"></i> Submit Request
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

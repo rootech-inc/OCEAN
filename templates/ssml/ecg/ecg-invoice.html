@@ -1,0 +1,396 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+{% block body %}
+<!-- Modernized Invoicing Styles -->
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.18);
+        --accent-primary: #0d6efd;
+        --accent-secondary: #6c757d;
+        --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid var(--glass-border);
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .premium-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 1.5rem;
+        border-bottom: none;
+    }
+
+    .form-control-premium {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+        padding: 0.6rem 1rem;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+    }
+
+    .btn-premium {
+        border-radius: 10px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        font-size: 0.85rem;
+    }
+
+    .btn-premium-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-premium-dark {
+        background: linear-gradient(135deg, #343a40 0%, #23272b 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-premium-primary {
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-premium-success {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-premium-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        border: none;
+        color: #212529;
+    }
+
+    .nav-btn-group .btn {
+        padding: 0.6rem 1rem;
+    }
+</style>
+
+<div class="pagetitle mb-4">
+    <h1>ECG Invoice Viewer</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'ssml' %}">Home</a></li>
+            <li class="breadcrumb-item active">ECG Invoice Viewer</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="glass-card mb-4">
+    <div class="premium-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex gap-2 nav-btn-group">
+                <a href="{% url 'new-ecg-inv' %}" class="btn btn-premium btn-premium-info ms-2">
+                    <i class="bi bi-plus-circle"></i> NEW
+                </a>
+                <button id="prev_btn" class="btn btn-premium btn-premium-info">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button id="next_btn" class="btn btn-premium btn-premium-info">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            <div class="d-flex gap-2">
+                <button id="edit_btn" class="btn btn-premium btn-premium-warning">
+                    <i class="bi bi-pencil-square"></i> EDIT
+                </button>
+                <button id="print" class="btn btn-premium btn-premium-dark">
+                    <i class="bi bi-printer"></i> PRINT
+                </button>
+                <button id="approve" class="btn btn-premium btn-premium-primary">
+                    <i class="bi bi-check2-circle"></i> APPROVE
+                </button>
+                <button id="post" class="btn btn-premium btn-premium-success">
+                    <i class="bi bi-send-check"></i> POST
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="form-group mb-2">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Entry No</label>
+                    <input type="text" disabled id="entry_no" class="form-control form-control-premium bg-light">
+                </div>
+                <input type="hidden" id="id">
+                <div class="form-group mb-2">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Date</label>
+                    <input disabled type="date" id="entry_date" class="form-control form-control-premium bg-light">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group mb-2">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Location</label>
+                    <input type="text" disabled id="view_location" class="form-control form-control-premium bg-light">
+                </div>
+                <div class="form-group mb-2">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Total Amount</label>
+                    <input disabled type="text" id="total_amount"
+                        class="form-control form-control-premium bg-light font-monospace">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group mb-2">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Remarks</label>
+                    <input disabled type="text" id="remarks" class="form-control form-control-premium bg-light">
+                </div>
+                <div class="form-group mb-2">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Status</label>
+                    <input disabled type="text" id="status"
+                        class="form-control form-control-premium bg-light fw-bold text-primary">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group mb-2">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Created By</label>
+                    <input disabled type="text" id="created_by" class="form-control form-control-premium bg-light">
+                </div>
+                <div class="mt-4 pt-1">
+                    <input type="hidden" id="next">
+                    <input type="hidden" id="previous">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card">
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs nav-tabs-bordered d-flex" id="viewTabs" role="tablist" style="background: #f8f9fa;">
+        <li class="nav-item flex-fill" role="presentation">
+            <button class="nav-link w-100 active fw-bold py-3" id="view-jobs-tab" data-bs-toggle="tab"
+                data-bs-target="#view-jobs-content" type="button" role="tab">
+                <i class="bi bi-tools me-2"></i>JOBS DONE
+            </button>
+        </li>
+        <li class="nav-item flex-fill" role="presentation">
+            <button class="nav-link w-100 fw-bold py-3" id="view-meters-tab" data-bs-toggle="tab"
+                data-bs-target="#view-meters-content" type="button" role="tab">
+                <i class="bi bi-file-earmark-arrow-up me-2"></i>SUPPLIED METERS
+            </button>
+        </li>
+        <li class="nav-item flex-fill" role="presentation">
+            <button class="nav-link w-100 fw-bold py-3" id="view-invoiced-tab" data-bs-toggle="tab"
+                data-bs-target="#view-invoiced-content" type="button" role="tab">
+                <i class="bi bi-check-all me-2"></i>METERS INVOICED FOR
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="viewTabContent">
+        <!-- Jobs Done Tab -->
+        <div class="tab-pane fade show active" id="view-jobs-content" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th class="ps-4">DATE</th>
+                            <th>SERVICE</th>
+                            <th>METER</th>
+                            <th>CONTRACTOR</th>
+                            <th class="text-end pe-4">AMOUNT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobs_container"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Supplied Meters Tab -->
+        <div class="tab-pane fade" id="view-meters-content" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th class="ps-4">METER NO</th>
+                            <th>PHASE</th>
+                            <th>SYSTEM MATCH</th>
+                            <th class="text-end pe-4">AMOUNT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="meters_container"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Invoiced For Tab -->
+        <div class="tab-pane fade" id="view-invoiced-content" role="tabpanel">
+            <div class="p-4 text-center text-muted">
+                <i class="bi bi-info-circle me-1"></i> Data aggregated from Supplied Meters and Jobs Done.
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th class="ps-4">ITEM DESCRIPTION</th>
+                            <th>TYPE</th>
+                            <th class="text-end pe-4">TOTAL AMOUNT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aggregated_container"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let last_entry = `{{ last_entry }}`;
+
+    $(document).ready(function () {
+        viewEcgInvoice(last_entry)
+
+        $('#prev_btn').click(function () {
+            viewEcgInvoice($('#previous').val())
+        })
+        $('#next_btn').click(function () {
+            viewEcgInvoice($('#next').val())
+        })
+
+        $('#approve').click(function () {
+            approveEcgInvoice($('#id').val())
+        })
+
+        $('#post').click(function () {
+            postEcgInvoice($('#id').val())
+        })
+
+        $('#print').click(function () {
+            printEcgInvoice($('#id').val())
+        })
+
+        $('#edit_btn').click(function () {
+            let id = $('#id').val();
+            if (id) {
+                window.location.href = `/ssml/accounts/ecg-invoice/edit/${id}/`;
+            } else {
+                kasa.error("No invoice selected to edit");
+            }
+        })
+    })
+
+    async function viewEcgInvoice(id) {
+        if (!id || id == 0) return;
+
+        let payload = {
+            module: 'ecg_invoice',
+            data: { id: id }
+        }
+
+        await api.v2('VIEW', payload, '/ssml/api/').then(res => {
+            if (anton.IsRequest(res)) {
+                let data = res.message;
+                $('#id').val(data.id)
+                $('#entry_no').val(data.entry_no)
+                $('#entry_date').val(data.entry_date)
+                $('#total_amount').val('GHS ' + parseFloat(data.total_amount).toFixed(2))
+                $('#remarks').val(data.remarks)
+                $('#status').val(data.status.toUpperCase())
+                $('#created_by').val(data.created_by)
+                $('#view_location').val(data.location ? data.location.name : 'N/A')
+                $('#next').val(data.next || 0)
+                $('#previous').val(data.previous || 0)
+
+                // Populate Jobs Done Tab
+                let jobs_tr = "";
+                data.jobs_done.forEach(item => {
+                    jobs_tr += `
+                        <tr>
+                            <td class="ps-4">${item.service_order.service_date}</td>
+                            <td>${item.service_order.service_type.name}</td>
+                            <td>${item.service_order.new_meter_no}</td>
+                            <td>${item.service_order.contractor.name}</td>
+                            <td class="text-end pe-4">GHS ${parseFloat(item.amount).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                $('#jobs_container').html(jobs_tr || '<tr><td colspan="5" class="text-center py-4">No jobs in this invoice.</td></tr>');
+
+                // Populate Supplied Meters Tab
+                let meters_tr = "";
+                data.supplied_meters.forEach(item => {
+                    meters_tr += `
+                        <tr>
+                            <td class="ps-4">${item.meter_no}</td>
+                            <td>${item.phase}</td>
+                            <td>${item.is_found ? '<span class="badge bg-success">FOUND</span>' : '<span class="badge bg-warning">NOT FOUND</span>'}</td>
+                            <td class="text-end pe-4">GHS ${parseFloat(item.amount).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                $('#meters_container').html(meters_tr || '<tr><td colspan="4" class="text-center py-4">No uploaded meters in this invoice.</td></tr>');
+
+                // Aggregate for Invoiced For Tab
+                let agg_tr = "";
+                let jobs_total = data.jobs_done.reduce((acc, curr) => acc + curr.amount, 0);
+                let meters_total = data.supplied_meters.reduce((acc, curr) => acc + curr.amount, 0);
+
+                agg_tr += `
+                    <tr>
+                        <td class="ps-4">Total Completed Jobs</td>
+                        <td>SERVICE ORDERS</td>
+                        <td class="text-end pe-4">GHS ${jobs_total.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4">Total Meters Supplied</td>
+                        <td>METER ITEMS</td>
+                        <td class="text-end pe-4">GHS ${meters_total.toFixed(2)}</td>
+                    </tr>
+                `;
+                $('#aggregated_container').html(agg_tr);
+
+            } else {
+                kasa.response(res)
+            }
+        }).catch(error => {
+            kasa.error(error)
+        })
+    }
+
+    async function approveEcgInvoice(id) {
+        if (!id) return;
+        let payload = {
+            module: 'approve_ecg_invoice',
+            id: id
+        }
+        await api.v2('PATCH', payload, '/ssml/api/').then(res => {
+            kasa.confirm(res.message, 1, location.href)
+        }).catch(error => kasa.error(error))
+    }
+
+    async function postEcgInvoice(id) {
+        if (!id) return;
+        let payload = {
+            module: 'post_ecg_invoice',
+            id: id
+        }
+        await api.v2('PATCH', payload, '/ssml/api/').then(res => {
+            kasa.confirm(res.message, 1, location.href)
+        }).catch(error => kasa.error(error))
+    }
+
+    function printEcgInvoice(id) {
+        if (!id) return;
+        window.open(`/ssml/api/ecg_invoice_print/${id}/`, '_blank');
+    }
+</script>
+{% endblock %}

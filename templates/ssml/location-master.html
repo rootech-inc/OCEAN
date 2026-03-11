@@ -5,6 +5,9 @@
 
 <div class="card-header">
     <button class="btn btn-sm btn-info" id="new_location">NEW</button>
+    <button class="btn btn-sm btn-success" id="export_locations">EXPORT</button>
+    <button class="btn btn-sm btn-warning" id="import_locations_btn">IMPORT</button>
+    <input type="file" id="location_import_file" style="display: none;" accept=".xlsx">
 </div>
 
 <div class="card-body">
@@ -28,11 +31,26 @@
 </div>
 
 <script>
-    $(document).ready(function(){
+    $(document).ready(function () {
         ssml.loadLocations()
 
-        $('#new_location').click(function(){
+        $('#new_location').click(function () {
             ssml.newLocationScreen()
+        })
+
+        $('#export_locations').click(function () {
+            ssml.exportLocations()
+        })
+
+        $('#import_locations_btn').click(function () {
+            $('#location_import_file').click()
+        })
+
+        $('#location_import_file').change(function () {
+            let file = this.files[0]
+            if (file) {
+                ssml.importLocations(file)
+            }
         })
     })
 </script>

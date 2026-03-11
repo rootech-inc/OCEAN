@@ -35,7 +35,7 @@
   <!-- Template Main CSS File -->
   <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
   <link href="{% static 'general/css/recorder.css' %}" rel="stylesheet">
-    <link href="{% static 'general/css/colors.css' %}" rel="stylesheet">
+  <link href="{% static 'general/css/colors.css' %}" rel="stylesheet">
 
 
 
@@ -60,23 +60,23 @@
   <script src="{% static 'general/js/record.js' %}"></script>
   <script src="{% static 'general/js/classes/user.js' %}"></script>
   <script src="{% static 'general/js/classes/po.js' %}"></script>
-    <script src="{% static 'general/js/classes/sales.js' %}"></script>
-    <script src="{% static 'general/js/classes/sms.js' %}"></script>
-    <script src="{% static 'general/js/classes/cmms.js' %}"></script>
-    <script src="{% static 'general/js/trigger.js' %}"></script>
-    <script src="{% static 'general/js/classes/api.js' %}"></script>
-    <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
-    <script src="{% static 'general/js/classes/ticket.js' %}"></script>
-    <script src="{% static 'general/js/classes/app.js' %}"></script>
-    <script src="{% static 'general/js/classes/docs.js' %}"></script>
-    <script src="{% static 'general/js/classes/anton.js' %}"></script>
-    <script src="{% static 'general/js/classes/cmms_cust.js' %}"></script>
-    <script src="{% static 'general/js/classes/modal.js' %}"></script>
-    <script src="{% static 'general/js/classes/reports.js' %}"></script>
-    <script src="{% static 'general/js/classes/forms.js' %}"></script>
-    <script src="{% static 'general/js/classes/crm.js' %}"></script>
-    <script src="{% static 'general/js/classes/retail.js' %}"></script>
-    <script src="{% static 'general/js/classes/form.js' %}"></script>
+  <script src="{% static 'general/js/classes/sales.js' %}"></script>
+  <script src="{% static 'general/js/classes/sms.js' %}"></script>
+  <script src="{% static 'general/js/classes/cmms.js' %}"></script>
+  <script src="{% static 'general/js/trigger.js' %}"></script>
+  <script src="{% static 'general/js/classes/api.js' %}"></script>
+  <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
+  <script src="{% static 'general/js/classes/ticket.js' %}"></script>
+  <script src="{% static 'general/js/classes/app.js' %}"></script>
+  <script src="{% static 'general/js/classes/docs.js' %}"></script>
+  <script src="{% static 'general/js/classes/anton.js' %}"></script>
+  <script src="{% static 'general/js/classes/cmms_cust.js' %}"></script>
+  <script src="{% static 'general/js/classes/modal.js' %}"></script>
+  <script src="{% static 'general/js/classes/reports.js' %}"></script>
+  <script src="{% static 'general/js/classes/forms.js' %}"></script>
+  <script src="{% static 'general/js/classes/crm.js' %}"></script>
+  <script src="{% static 'general/js/classes/retail.js' %}"></script>
+  <script src="{% static 'general/js/classes/form.js' %}"></script>
 
 
   <script>
@@ -84,95 +84,100 @@
 
   </script>
 
-    <style type="text/css" media="screen">
+  <style type="text/css" media="screen">
     #editor {
 
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        height: 100% !important;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 100% !important;
     }
-</style>
+  </style>
 </head>
 
 <body>
-    <!-- MODALS -->
-    <div id="g_modal" class="modal fade">
-        <div id="g_modal_size"  class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="g_modal_title"></h5>
-                </div>
-                <div class="modal-body overflow-auto" style='max-height : 75vh'>
-                    <div class="w-100" id="g_modal_body">
-                        
-                    </div>
-                </div>
-                <div class="footer" id="g_footer"></div>
-            </div>
+  <!-- MODALS -->
+  <div id="g_modal" class="modal fade">
+    <div id="g_modal_size" class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="g_modal_title"></h5>
         </div>
-    </div>
+        <div class="modal-body overflow-auto" style='max-height : 75vh'>
+          <div class="w-100" id="g_modal_body">
 
-    <div class="modal fade" id="followUps">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <strong class="modal-title">Followup History</strong>
-{#                            <button id="newFolloupButton" class="close bx bx-plus btn btn-sm" data-bs-target="#newFolloup" data-bs-toggle="modal"></button>#}
-                        </div>
-                        <div class="modal-body" id="xfact" style="height: 60vh; overflow: auto">
-                            <table class="table table-bordered table-sm table-hover table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Person</th><th>Date</th><th>Title</th><th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="fTbody">
-                                    <tr>
-                                        <td>James</td>
-                                        <td>Date</td>
-                                        <td>Hello World</td>
-                                        <td><i class="fa fa-reply pointer" onclick="al('info','hello world')"></i></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="newFolloup">
-                <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <strong class="modal-title">NEW FOLLOWUP</strong>
-                        </div>
-                        <div class="modal-body">
-                            <label for="car_no">CAR NUMBER</label><input type="text" readonly id="car_no" name="car_no" class="form-control mb-2 rounded-0">
-                            <label for="ftitle">TItle</label><input type="text" class="form-control mb-2 rounded-0" id="ftitle">
-                            <label for="freply">Response</label><textarea name="" id="freply" cols="30" rows="10"
-                                                                  class="form-control rounded-0"></textarea>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" onclick="cmms.SaveFollowup()" class="btn btn-success">SAVE</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-    <div class="modal" id="loader">
-        <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
-            <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
-            <div class="w-100 text-center">
-                <br>
-                <small class="text-info" id="error_msg"></small>
-            </div>
+          </div>
         </div>
+        <div class="footer" id="g_footer"></div>
+      </div>
     </div>
-    <script>
-        $('#loader').modal('show')
-    </script>
+  </div>
+
+  <div class="modal fade" id="followUps">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <strong class="modal-title">Followup History</strong>
+          {# <button id="newFolloupButton" class="close bx bx-plus btn btn-sm" data-bs-target="#newFolloup"
+            data-bs-toggle="modal"></button>#}
+        </div>
+        <div class="modal-body" id="xfact" style="height: 60vh; overflow: auto">
+          <table class="table table-bordered table-sm table-hover table-striped">
+            <thead>
+              <tr>
+                <th>Person</th>
+                <th>Date</th>
+                <th>Title</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="fTbody">
+              <tr>
+                <td>James</td>
+                <td>Date</td>
+                <td>Hello World</td>
+                <td><i class="fa fa-reply pointer" onclick="al('info','hello world')"></i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="newFolloup">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <strong class="modal-title">NEW FOLLOWUP</strong>
+        </div>
+        <div class="modal-body">
+          <label for="car_no">CAR NUMBER</label><input type="text" readonly id="car_no" name="car_no"
+            class="form-control mb-2 rounded-0">
+          <label for="ftitle">TItle</label><input type="text" class="form-control mb-2 rounded-0" id="ftitle">
+          <label for="freply">Response</label><textarea name="" id="freply" cols="30" rows="10"
+            class="form-control rounded-0"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="cmms.SaveFollowup()" class="btn btn-success">SAVE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="loader">
+    <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
+      <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
+      <div class="w-100 text-center">
+        <br>
+        <small class="text-info" id="error_msg"></small>
+      </div>
+    </div>
+  </div>
+  <script>
+    $('#loader').modal('show')
+  </script>
 
   <input type="hidden" id="autos_url" value="{% url 'autos' 'ajax' %}">
   <input type="hidden" id="search_url" value="{% url 'search' %}">
@@ -212,9 +217,9 @@
 
           <a class="nav-link nav-icon">
             <small class="text-danger">
-                {% for message in messages %}
-                  {{ message }}
-                {% endfor %}
+              {% for message in messages %}
+              {{ message }}
+              {% endfor %}
             </small>
           </a><!-- End Messages Icon -->
 
@@ -510,34 +515,34 @@
           <i class="bi bi-people"></i><span>REPORTS</span>
         </a>
       </li>
-    <li class="nav-item">
+      <li class="nav-item">
         <a onclick="meeting.reportForm()" class="nav-link collapsed" href="javascript:void(0)">
           <i class="bi bi-people"></i><span>MEETINGS</span>
         </a>
       </li>
-    <li class="nav-item">
+      <li class="nav-item">
         <a onclick="location.href='{% url 'form-designer' %}'" class="nav-link collapsed" href="javascript:void(0)">
           <i class="bi bi-paint-bucket"></i><span>FORM DESIGNER</span>
         </a>
       </li>
 
-    {% if user.is_superuser %}
+      {% if user.is_superuser %}
 
-    {% endif %}
-    <li class="nav-item">
+      {% endif %}
+      <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#customer-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-people"></i><span>CUST MGMT</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="customer-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
 
-            <li>
+          <li>
             <a href="{% url 'customer_sales' %}">
               <i class="bi bi-boxes"></i><span>SALES</span>
             </a>
           </li>
 
           <li>
-            <a href='{% url 'service_customers' %}'>
+            <a href='{% url ' service_customers' %}'>
               <i class='bi bi-record'></i> Servicing
             </a>
           </li>
@@ -549,18 +554,18 @@
 
 
 
-    {% if perms.cmms.view_followup %}
-
-    
-
-        <!-- END OF CMMD -->
-        {% endif %}
-
-     
+      {% if perms.cmms.view_followup %}
 
 
 
-   
+      <!-- END OF CMMD -->
+      {% endif %}
+
+
+
+
+
+
 
 
 
@@ -608,18 +613,16 @@
   <!-- Template Main JS File -->
   <script src="{% static 'assets/js/main.js' %}"></script>
 
-    <script>
+  <script>
 
-        $('#loader').delay(5000).modal('hide')
+    $('#loader').delay(5000).modal('hide')
 
-    </script>
+  </script>
 
 
 
-{#{% endif %}#}
+  {#{% endif %}#}
 
 </body>
 
 </html>
-
-

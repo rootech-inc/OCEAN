@@ -2127,8 +2127,8 @@ class SSML {
     }
 
 
-    async loadExpensesByFilter(){
-        let html = fom.text('search_string','remarks, reference, amount',true)
+    async loadExpensesByFilter() {
+        let html = fom.text('search_string', 'remarks, reference, amount', true)
         amodal.setTitleText('Expenses Filter');
         amodal.setBodyHtml(html);
         amodal.setFooterHtml('<button class="btn btn-primary" id="filter_for_more_expense">Filter</button>');
@@ -2136,14 +2136,14 @@ class SSML {
 
         $('#filter_for_more_expense').click(async function () {
             let ids = ['search_string']
-            if(anton.validateInputs(ids)) {
+            if (anton.validateInputs(ids)) {
                 let payload = {
-                    module:'find_expense_by_search',
-                    data:anton.Inputs(ids)
+                    module: 'find_expense_by_search',
+                    data: anton.Inputs(ids)
                 }
                 loader.show()
-                await api.v2('VIEW',payload, '/ssml/api/').then(res => {
-                    if(anton.IsRequest(res)){
+                await api.v2('VIEW', payload, '/ssml/api/').then(res => {
+                    if (anton.IsRequest(res)) {
                         // load data
                         let expenses = res.message;
                         console.log(expenses);
@@ -2266,19 +2266,19 @@ class SSML {
                             }
                         })
 
-                        $('.set_zero').click(async function(){
+                        $('.set_zero').click(async function () {
                             let pk = $(this).data('id');
-                            if(confirm("Are you sure?")){
+                            if (confirm("Are you sure?")) {
                                 let payload = {
-                                    module:'set_expense_to_zero',
-                                    data:{
-                                        pk:pk
+                                    module: 'set_expense_to_zero',
+                                    data: {
+                                        pk: pk
                                     }
                                 }
 
-                                await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+                                await api.v2('PATCH', payload, '/ssml/api/').then(response => {
                                     kasa.response(response)
-                                }).catch(error=>{kasa.error(error)})
+                                }).catch(error => { kasa.error(error) })
 
                             } else {
                                 kasa.info("Operations Canceled")
@@ -2289,7 +2289,7 @@ class SSML {
                         kasa.response(res);
                         loader.hide();
                     }
-                }).catch(err => {kasa.error(err);loader.hide()})
+                }).catch(err => { kasa.error(err); loader.hide() })
             }
         })
     }
@@ -2968,8 +2968,6 @@ class SSML {
         await api.v2('VIEW', { module: 'contractor_wise', data: {} }, '/ssml/api/').then(response => {
             if (anton.IsRequest(response)) {
                 let data = response.message
-                google.charts.load('current', { 'packages': ['corechart'] });
-                google.charts.setOnLoadCallback(drawChart);
 
                 let xrx = api.call('VIEW', {
                     module: 'month_walk', data: {
@@ -2977,35 +2975,80 @@ class SSML {
                     }
                 }, '/ssml/api/')
                 let xr = xrx['message']
-                console.table(xr)
-                let x_def = [
-                    ['MOnth', 'Stock', 'Installed'],
-                    ['Jan', 1000, 400],
-                    ['Feb', 1170, 460],
-                    ['March', 660, 1120],
-                    ['April', 1030, 540]
-                ]
-                console.table(x_def)
 
-                function drawChart() {
-                    var data = google.visualization.arrayToDataTable(xr);
+                // Extract labels and data for Chart.js from xr
+                // xr generally looks like: [['Month', 'Stock', 'Installed'], ['Jan', 1000, 400], ...]
+                let labels = [];
+                let stockData = [];
+                let installedData = [];
 
-                    var options = {
-                        title: 'Company Performance',
-                        curveType: 'function',
-                        legend: { position: 'bottom' },
-                        height: 500
-                    };
-
-                    var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
-
-                    chart.draw(data, options);
+                if (xr && xr.length > 1) {
+                    for (let i = 1; i < xr.length; i++) {
+                        labels.push(xr[i][0]);
+                        stockData.push(xr[i][1]);
+                        installedData.push(xr[i][2]);
+                    }
                 }
+
+                // Destroy existing chart instance if it exists to prevent overlap issues
+                if (window.modernChartInstance) {
+                    window.modernChartInstance.destroy();
+                }
+
+                const ctx = document.getElementById('modernChart');
+                if (ctx) {
+                    window.modernChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Stock',
+                                    data: stockData,
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                    borderWidth: 2,
+                                    tension: 0.4,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Installed',
+                                    data: installedData,
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                    borderWidth: 2,
+                                    tension: 0.4,
+                                    fill: true
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                },
+                                title: {
+                                    display: false,
+                                    text: 'Company Performance'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+
+                    $('#modernChart').on('contextmenu', function (e) {
+                        e.preventDefault();
+                        window.open(`/${xrx.file}`, '_blank');
+                    });
+                }
+
                 loader.hide()
-                $('#curve_chart').on('contextmenu', function (e) {
-                    e.preventDefault();
-                    window.open(`/${xrx.file}`, '_blank');
-                });
             } else {
                 kasa.response(response)
                 loader.hide()
@@ -3142,10 +3185,10 @@ class SSML {
                 // })
                 loader.hide()
 
-                // $('.download-location-stock').click(function(){
-                //     let loc_id = $(this).data('loc');
-                //     ssml.downloadCardex(loc_id,pk)
-                // })
+                $('.download-location-stock').click(function(){
+                    let loc_id = $(this).data('loc');
+                    ssml.downloadCardex(loc_id,pk)
+                })
             } else {
                 kasa.response(response)
                 loader.hide()
@@ -3175,6 +3218,7 @@ class SSML {
 
 
     async downloadCardex(loc_id, pk) {
+        loader.show()
         let payload = {
             module: 'cardex',
             data: {
@@ -3187,10 +3231,13 @@ class SSML {
             if (anton.IsRequest(response)) {
                 let file = response['message']['excel'];
                 anton.viewFile(`/${file}`)
+                loader.hide()
             } else {
+                loader.hide()
                 kasa.response(response)
+
             }
-        }).catch(error => { kasa.error(error) })
+        }).catch(error => { loader.hide();kasa.error(error) })
 
     }
 
@@ -3614,6 +3661,48 @@ class SSML {
 
     async getLocations(id = '*') {
         return api.call('VIEW', { module: 'location', data: { id: id } }, '/ssml/api/')
+    }
+
+    async exportLocations() {
+        let payload = {
+            module: 'location',
+            data: { doc: 'excel' }
+        }
+
+        loader.show()
+        await api.v2('VIEW', payload, '/ssml/api/').then(response => {
+            loader.hide()
+            if (anton.IsRequest(response)) {
+                let file = response.message;
+                anton.viewFile('/' + file);
+            } else {
+                kasa.response(response)
+            }
+        }).catch(error => {
+            loader.hide()
+            kasa.error(error)
+        })
+    }
+
+    async importLocations(file) {
+        let fd = new FormData()
+        fd.append('excel_file', file)
+
+        loader.show()
+        await fetch('/ssml/master/import-locations/', {
+            method: 'POST',
+            body: fd
+        }).then(res => res.json()).then(response => {
+            loader.hide()
+            if (response.status_code == 200) {
+                kasa.confirm(response.message, 1, 'here')
+            } else {
+                kasa.error(response.message)
+            }
+        }).catch(error => {
+            loader.hide()
+            kasa.error(error)
+        })
     }
 
     async loadLocations() {

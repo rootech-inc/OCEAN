@@ -22,7 +22,7 @@ from admin_panel.anton import make_md5_hash, format_currency,shorten_url
 from admin_panel.models import MailQueues, MailSenders, MailAttachments, Sms, SmsApi
 from cmms.forms import NewSalesCustomer, NewSaleTransactions
 from crm.models import Logs
-from ocean.settings import DB_SERVER, DB_NAME, DB_USER, DB_PORT, DB_PASSWORD, CMMS_PROF_APPROVER
+from ocean.settings import DB_SERVER, DB_NAME, DB_USER, DB_PORT, DB_PASSWORD, CMMS_PROF_APPROVER, CMMS_MR_CONTACT
 from django.contrib.auth import get_user_model
 import pyodbc
 from cmms.models import *
@@ -48,6 +48,7 @@ def api(request):
         if method == 'VIEW':
             try:
                 arr = []
+
                 if module == 'product':
                     scope = data.get('range')
                     item_uni = data.get('item_uni')
@@ -81,6 +82,10 @@ def api(request):
                     response['message'] = resp
                     cursor.close()
                     connection.close()
+
+                elif module == 'pending_jobs':
+                    response['message'] = [j.obj() for j in JobCard.objects.filter(is_ended=False)]
+                    response['status_code'] = 200
 
                 elif module == 'service_follow_ups':
                     response['message'] = [ff.obj() for ff in ServiceFollowup.objects.filter(is_completed=False)]
@@ -2270,6 +2275,30 @@ def api(request):
                         else:
                             var = response['status_code'] = 404
                             response['message'] = f"CANNOT FIND DOCUMENT with key {count_pk}"
+
+                elif module == 'request_purchase':
+                    pk = data.get('pk')
+                    mypk = data.get('mypk')
+
+                    m_request = JobMaterials.objects.get(pk=pk)
+                    m_request.is_purchase_requested = True
+                    m_request.purchase_request_date = timezone.now().date()
+
+                    sms_message = f"New Purchase Request!! \n\nCompany: \n{m_request.jobcard.company}\nCar: {m_request.jobcard.carno}\nPart: {m_request.part}\nQuantity: {m_request.quantity}"
+                    Sms.objects.create(
+                        api=SmsApi.objects.get(is_default=True),
+                        message=sms_message,
+                        to=CMMS_MR_CONTACT
+                    )
+                    m_request.save()
+
+
+
+                    response['status_code'] = 200
+                    response['message'] = "Material Request Sent"
+
+                    # send sms
+
 
                 elif module == 'issue_material':
                     pk = data.get('pk')

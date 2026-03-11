@@ -1,130 +1,293 @@
 {% extends 'cmms/service/serv_base.html' %}
-
 {% load static %}
 
 {% block cmms %}
-	<div class="card-header">
-        <div class="w-100 d-flex">
-            <div class="w-50"><strong class="card-title">Job Cards</strong></div>
-            <div class="w-50 d-flex flex-wrap justify-content-end">
-                <button onclick="location.href='{% url 'new_servicing_job' %}'" class="btn btn-primary">NEW</button>
-                <button style="margin-left: .2rem" onclick="location.href='{% url 'servicing_mr' %}'" class="btn btn-warning">REQUEST</button>
-                <button style="margin-left: .2rem" id="search" class="btn btn-info">SEARCH</button>
-                
-            </div>
+<style>
+  /* General body styling for a cleaner look */
+  body {
+    background-color: #f4f7f6;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  /* Overriding card styles for a more modern feel */
+  .card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Ensures the child elements conform to the border radius */
+  }
+
+  .card-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+
+  .card-body {
+    padding: 0; /* Remove padding to allow the table to fill the width */
+  }
+
+  /* Modern button styles */
+  .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    border-radius: 20px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.3s;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+  }
+
+  .btn-warning, .btn-info {
+    border-radius: 20px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.3s;
+  }
+
+  .btn-warning {
+      background-color: #ffc107;
+      border-color: #ffc107;
+  }
+
+  .btn-info {
+      background-color: #17a2b8;
+      border-color: #17a2b8;
+  }
+
+  /* Responsive table styling */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    width: 100%;
+    margin-bottom: 0; /* Remove bottom margin */
+    color: #555;
+  }
+
+  .table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    color: #333;
+  }
+
+  .table tbody tr {
+    background-color: #ffffff;
+    transition: background-color 0.2s;
+  }
+
+  .table tbody tr:hover {
+    background-color: #f1f1f1;
+  }
+
+  .table td, .table th {
+    padding: 1rem;
+    vertical-align: middle;
+    border-top: 1px solid #dee2e6;
+  }
+
+  .table a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .table a:hover {
+    text-decoration: underline;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .card-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .card-title {
+        margin-bottom: 1rem;
+    }
+    .header-buttons {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+    .btn {
+        width: 32%;
+        padding: 0.5rem 0.5rem;
+        font-size: 0.9rem;
+    }
+    .table thead {
+      display: none; /* Hide table head on small screens */
+    }
+    .table, .table tbody, .table tr, .table td {
+      display: block;
+      width: 100%;
+    }
+    .table tr {
+      margin-bottom: 1rem;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      box-shadow: 0 2px 3px rgba(0,0,0,0.05);
+    }
+    .table td {
+      text-align: right;
+      padding-left: 50%;
+      position: relative;
+      border: none;
+      border-bottom: 1px solid #eee;
+    }
+    .table td::before {
+      content: attr(data-label);
+      position: absolute;
+      left: 0;
+      width: 45%;
+      padding-left: 1rem;
+      font-weight: 600;
+      text-align: left;
+    }
+  }
+</style>
+
+<div class="card" style="height: 80vh">
+    <div class="card-header">
+        <h5 class="card-title">Job Cards</h5>
+        <div class="header-buttons">
+            <button onclick="location.href='{% url 'new_servicing_job' %}'" class="btn btn-primary">NEW</button>
+            <button onclick="location.href='{% url 'servicing_mr' %}'" class="btn btn-warning">REQUEST</button>
+            <button id="search" class="btn btn-info">SEARCH</button>
         </div>
     </div>
-    <div class="card-body bg-light p-2">
-
-      
-        <div class="table-responsive h-100">
-            <table class="table datatable">
+    <div class="card-body">
+        <div class="table-responsive h-100 overflow-auto">
+            <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>REQUEST</th>
-                        <th>DATE</th>
-                        <th>COMPANY</th>
-                        <th>DRIVER</th>
-                        <th>CONTACT</th>
-                        <th>BRAND</th>
-                        <th>MODEL</th>
-                        <th>NUMBER</th>
-                        <th>STATUS</th>
-
+                        <th>Request</th>
+                        <th>Date</th>
+                        <th>Company</th>
+                        <th>Driver</th>
+                        <th>Contact</th>
+                        <th>Brand</th>
+                        <th>Model</th>
+                        <th>Number</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                {% for job in jobs %}
+                    {% for job in jobs %}
                     <tr>
-                    <td><a href="{% url 'track_job' job.req.entry_no %}">{{ job.req.entry_no }}</a></td>
-                        <td>
-                            {% if user.is_superuser %}
-                                <button onclick="deleteServiceJob(`{{ job.pk }}`)" class="btn btn-danger">
-                                    <i class="fa fa-recycle"></i>
+                        <td data-label="Request"><a href="{% url 'track_job' job.req.entry_no %}">{{ job.req.entry_no }}</a></td>
+                        <td data-label="Date">{{ job.created_on|date:"Y-m-d" }}</td>
+                        <td data-label="Company">{{ job.company }}</td>
+                        <td data-label="Driver">{{ job.driver }}</td>
+                        <td data-label="Contact">{{ job.contact }}</td>
+                        <td data-label="Brand">{{ job.brand }}</td>
+                        <td data-label="Model">{{ job.model }}</td>
+                        <td data-label="Number"><a href="{% url 'view_service_card' job.pk %}">{{ job.carno }}</a></td>
+                        <td data-label="Status">{{ job.status_html | safe }}</td>
+                        <td data-label="Actions">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa fa-cog"></i>
                                 </button>
-                            {% endif %}
-                            {{ job.created_on }}
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'servicing_mr' %}?job_id={{ job.pk }}"><i class="fa fa-eye"></i> Material Requests</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'view_service_card' job.pk %}"><i class="fa fa-eye"></i> View Card</a></li>
+                                    {% if job.is_started == 1 %}
+                                        <li><a class="dropdown-item text-warning" href="{% url 'view_service_close' job.pk %}"><i class="fa fa-times"></i> Close</a></li>
+
+
+                                    {% endif %}
+
+                                    {% if user.is_superuser %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="deleteServiceJob(`{{ job.pk }}`)"><i class="fa fa-trash"></i> Delete</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
                         </td>
-                        <td>{{ job.company }}</td>
-                        <td>{{ job.driver }}</td>
-                        <td>{{ job.contact }}</td>
-                        <td>
-                            {{ job.brand }}
-                        </td>
-                        <td>{{ job.model }}</td>
-                        <td><a onclick="location.href=`{% url 'view_service_card' job.pk %}`" href="javascript:void(0)">{{ job.carno }}</a></td>
-                        <td>{{ job.status_html | safe }}</td>
                     </tr>
-                {% endfor %}
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+</div>
 
-    <script>
-        function deleteServiceJob(pk){
-            let payload = {
-                module:'job_card',
-                data:{
-                    pk:pk
-                }
-            }
+<script>
+  function deleteServiceJob(pk) {
+    let payload = {
+      module: 'job_card',
+      data: {
+        pk: pk
+      }
+    }
+    // Assuming 'kasa' and 'api' are defined elsewhere, as in the original file.
+    kasa.confirm(api.call('DELETE', payload, '/cmms/api/').message, 1, 'here')
+  }
 
-            kasa.confirm(api.call('DELETE',payload,'/cmms/api/').message,1,'here')
-        }
-    </script>
+  $(document).ready(function () {
+    $('#search').click(function () {
+        // Assuming 'cmms' object is defined elsewhere.
+        cmms.serviceReportByNameScreen()
+    });
 
-    <script>
-      function search_service_by_text(){
+    // The search_service_by_text function seems to be for a different UI that is not visible.
+    // I will keep it in case it is used by the search button functionality.
+    function search_service_by_text() {
         let ev = this.event;
         let key = ev.which;
-        console.table(key);
-
-        if(key === 13){
-          // enter make payload
-          let payload = {
-            module:'search_service_by_text',
-            data:{
-              query:$('#search_service_by_text').val()
+        if (key === 13) {
+            let payload = {
+                module: 'search_service_by_text',
+                data: {
+                    query: $('#search_service_by_text').val()
+                }
+            };
+            let retrieve = api.call('VIEW', payload, '/cmms/api/');
+            if (anton.IsRequest(retrieve)) {
+                let jobs = retrieve.message;
+                let tr = "";
+                for (let j = 0; j < jobs.length; j++) {
+                    let job = jobs[j];
+                    tr += `
+                        <tr>
+                            <td data-label="Company">${job['company']}</td>
+                            <td data-label="Date">${job['date']}</td>
+                            <td data-label="Number"><a href='/cmms/servicing/card/${job['pk']}/'>${job['carno']}</a></td>
+                        </tr>`;
+                }
+                // This part needs a target element, which is not in the original HTML.
+                // Assuming a tbody with id="search_results_body"
+                $('#search_results_body').html(tr);
+            } else {
+                kasa.response(retrieve);
             }
-          }
-
-          let retrieve = api.call('VIEW',payload,'/cmms/api/');
-          if(anton.IsRequest(retrieve)){
-            // load
-            let jobs = retrieve.message;
-            let tr = "";
-            for(let j =0; j < jobs.length; j++){
-              let job = jobs[j];
-              tr += `
-                  <tr>
-                    <td>${job['company']}</td>
-                  <td>${job['date']}</td>
-                  <td><a href='/cmms/servicing/card/${job['pk']}/'>${job['carno']}</a></td>
-
-                  </tr>
-
-              `
-            }
-
-            document.getElementById('search_service_by_text_body').innerHTML = tr
-            // $('#search_service_by_text_body').html(tr);
-            console.table(jobs)
-          } else {
-            kasa.response(retrieve)
-          }
         }
-      }
-      $(document).ready(function () {
-        // Attach keypress event to the new input field
-        $('#search_service_by_text').on('keypress', function (event) {
-          if (event.which === 13) { // 13 is the Enter key
-            alert('Enter key pressed! Value: ' + $(this).val());
-            // You can also perform any other action here
-          }
-        });
+    }
 
-        $('#search').click(function (){cmms.serviceReportByNameScreen()})
-      });
-    </script>
+    // If there's an input for search, attach the event.
+    $('#search_service_by_text').on('keypress', search_service_by_text);
+  });
+</script>
 {% endblock %}

@@ -1,50 +1,37 @@
 {% load static %}
 {% load permission_tags %}
 
-
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>OCEAN</title>
-  <meta content="" name="description">
-  <meta content="" name="keywords">
+  <title>HR Management — OCEAN</title>
+  <meta name="description" content="OCEAN HR Management System">
+  <meta name="keywords" content="HR, Human Resources, Attendance, Leave, Payroll">
 
   <!-- Favicons -->
   <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
   <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
 
-  <!-- Google Fonts
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <link href="https://fonts.gstatic.com" rel="preconnect">
-
-  <link
-    href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
-    rel="stylesheet"> !-->
-
-  <!-- Vendor CSS Files -->
+  <!-- Bootstrap & Icons -->
   <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
   <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/quill/quill.snow.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/quill/quill.bubble.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/remixicon/remixicon.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/simple-datatables/style.css' %}" rel="stylesheet">
 
+  <!-- DataTables -->
+  <link href="{% static 'general/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
 
-  <!-- Template Main CSS File -->
-  <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
-  <link href="{% static 'general/css/cal.css' %}" rel="stylesheet">
-  <link href="{% static 'general/css/recorder.css' %}" rel="stylesheet">
-    <link rel="manifest" href="{% static 'general/manifest.json' %}">
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="{% static 'general/manifest.json' %}">
 
-
-
-
-
+  <!-- Scripts loaded early (jQuery needed globally) -->
   <script src="{% static 'blog/js/jquery.min.js' %}"></script>
   <script src="{% static 'blog/js/popper.min.js' %}"></script>
   <script src="{% static 'blog/js/bootstrap.min.js' %}"></script>
@@ -54,7 +41,6 @@
   <script src="{% static 'general/js/sweetalert2@11' %}"></script>
   <script src="{% static 'general/js/all.js' %}"></script>
   <script src="{% static 'general/js/prod_master.js' %}"></script>
-
   <script src="{% static 'general/js/classes/products.js' %}"></script>
   <script src="{% static 'general/js/classes/adjustment.js' %}"></script>
   <script src="{% static 'general/js/classes/grn.js' %}"></script>
@@ -65,486 +51,940 @@
   <script src="{% static 'general/js/record.js' %}"></script>
   <script src="{% static 'general/js/classes/user.js' %}"></script>
   <script src="{% static 'general/js/classes/po.js' %}"></script>
-    <script src="{% static 'general/js/classes/sales.js' %}"></script>
-    <script src="{% static 'general/js/classes/sms.js' %}"></script>
-    <script src="{% static 'general/js/classes/cmms.js' %}"></script>
-    <script src="{% static 'general/js/trigger.js' %}"></script>
-    <script src="{% static 'general/js/classes/api.js' %}"></script>
-    <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
-    <script src="{% static 'general/js/classes/ticket.js' %}"></script>
-    <script src="{% static 'general/js/classes/app.js' %}"></script>
-    <script src="{% static 'general/js/classes/docs.js' %}"></script>
-    <script src="{% static 'general/js/classes/anton.js' %}"></script>
-    <script src="{% static 'general/js/classes/reminder.js' %}"></script>
-    <script src="{% static 'general/js/classes/contact.js' %}"></script>
-    <script src="{% static 'general/js/classes/modal.js' %}"></script>
-    <script src="{% static 'general/js/classes/form.js' %}"></script>
-    <script src="{% static 'general/js/classes/maintenance.js' %}"></script>
-    <script src="{% static 'general/js/classes/staff.js' %}"></script>
-    <script src="{% static 'general/js/loader.js' %}"></script>
-    <!-- <link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.bootstrap4.min.css"> -->
-    <link href="{% static 'general/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
-    <!-- <script src="https://cdn.datatables.net/2.3.0/js/dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/2.3.0/js/dataTables.bootstrap4.min.js"></script> -->
-    <script src="{% static 'general/js/dataTables.min.js' %}"></script>
-    <script src="{% static 'general/js/dataTables.bootstrap4.min.js' %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/spark-md5@3.0.2/spark-md5.min.js"></script>
+  <script src="{% static 'general/js/classes/sales.js' %}"></script>
+  <script src="{% static 'general/js/classes/sms.js' %}"></script>
+  <script src="{% static 'general/js/classes/cmms.js' %}"></script>
+  <script src="{% static 'general/js/trigger.js' %}"></script>
+  <script src="{% static 'general/js/classes/api.js' %}"></script>
+  <script src="{% static 'general/js/classes/dev_mgmt.js' %}"></script>
+  <script src="{% static 'general/js/classes/ticket.js' %}"></script>
+  <script src="{% static 'general/js/classes/app.js' %}"></script>
+  <script src="{% static 'general/js/classes/docs.js' %}"></script>
+  <script src="{% static 'general/js/classes/anton.js' %}"></script>
+  <script src="{% static 'general/js/classes/reminder.js' %}"></script>
+  <script src="{% static 'general/js/classes/contact.js' %}"></script>
+  <script src="{% static 'general/js/classes/modal.js' %}"></script>
+  <script src="{% static 'general/js/classes/form.js' %}"></script>
+  <script src="{% static 'general/js/classes/maintenance.js' %}"></script>
+  <script src="{% static 'general/js/classes/staff.js' %}"></script>
+  <script src="{% static 'general/js/loader.js' %}"></script>
+  <script src="{% static 'general/js/dataTables.min.js' %}"></script>
+  <script src="{% static 'general/js/dataTables.bootstrap4.min.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/spark-md5@3.0.2/spark-md5.min.js"></script>
 
+  <script>var pClass = new Products()</script>
 
+  <style>
+    /* =============================================
+       HR MANAGEMENT — Design System
+       ============================================= */
+    :root {
+      --hr-primary: #4f6ef7;
+      --hr-primary-dark: #3a56d4;
+      --hr-primary-light: #eef1fe;
+      --hr-accent: #10b981;
+      --hr-warning: #f59e0b;
+      --hr-danger: #ef4444;
+      --hr-sidebar-bg: #0f172a;
+      --hr-sidebar-w: 260px;
+      --hr-topbar-h: 60px;
+      --hr-text: #1e293b;
+      --hr-text-muted: #64748b;
+      --hr-border: #e2e8f0;
+      --hr-bg: #f8fafc;
+      --hr-card-bg: #ffffff;
+      --hr-radius: 12px;
+      --hr-transition: 0.22s ease;
+      --hr-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .05);
+      --hr-shadow-md: 0 4px 16px rgba(0, 0, 0, .10);
+    }
 
-  <script>
-    var pClass = new Products()
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
 
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      background: var(--hr-bg);
+      color: var(--hr-text);
+      overflow-x: hidden;
+    }
 
-  </script>
+    /* =============================================
+       LOADER
+       ============================================= */
+    #hr-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(15, 23, 42, .88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      transition: opacity .4s ease;
+    }
 
-    <style>
-        .install-button {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-        .tox-promotion{
-            display: none !important;
-        }
-    </style>
+    #hr-loader .loader-ring {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(79, 110, 247, .25);
+      border-top-color: var(--hr-primary);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    #hr-loader .loader-text {
+      color: #94a3b8;
+      font-size: 12px;
+      letter-spacing: .05em;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* =============================================
+       SIDEBAR
+       ============================================= */
+    #hr-sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--hr-sidebar-w);
+      height: 100vh;
+      background: var(--hr-sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      z-index: 1040;
+      transition: transform var(--hr-transition);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #334155 transparent;
+    }
+
+    /* Brand */
+    .hr-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid #1e293b;
+      text-decoration: none;
+      min-height: var(--hr-topbar-h);
+    }
+
+    .hr-brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--hr-primary);
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .hr-brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: .01em;
+    }
+
+    .hr-brand-sub {
+      font-size: 10px;
+      color: #64748b;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    /* Nav sections */
+    .hr-nav {
+      flex: 1;
+      padding: 12px 0 20px;
+    }
+
+    .hr-nav-section-label {
+      padding: 16px 20px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #475569;
+    }
+
+    /* Nav items */
+    .hr-nav-item {
+      list-style: none;
+      padding: 0 12px 2px;
+    }
+
+    .hr-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: background var(--hr-transition), color var(--hr-transition);
+      cursor: pointer;
+    }
+
+    .hr-nav-link:hover,
+    .hr-nav-link.active {
+      background: rgba(79, 110, 247, .12);
+      color: #bfcffe;
+    }
+
+    .hr-nav-link.active {
+      color: var(--hr-primary);
+    }
+
+    .hr-nav-link .nav-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      width: 20px;
+      text-align: center;
+    }
+
+    .hr-nav-link .nav-chevron {
+      margin-left: auto;
+      font-size: 12px;
+      transition: transform var(--hr-transition);
+    }
+
+    .hr-nav-link[aria-expanded="true"] .nav-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* Submenu */
+    .hr-submenu {
+      list-style: none;
+      padding: 2px 0 4px 40px;
+      margin: 0;
+    }
+
+    .hr-submenu .hr-nav-item {
+      padding: 0 12px 2px 0;
+    }
+
+    .hr-submenu .hr-nav-link {
+      font-size: 13px;
+      font-weight: 400;
+      padding: 7px 10px;
+      color: #64748b;
+    }
+
+    .hr-submenu .hr-nav-link:hover {
+      color: #bfcffe;
+      background: rgba(79, 110, 247, .08);
+    }
+
+    .hr-submenu .hr-nav-link .nav-icon {
+      font-size: 7px;
+      color: #475569;
+    }
+
+    /* Footer */
+    .hr-sidebar-footer {
+      padding: 14px 20px;
+      border-top: 1px solid #1e293b;
+    }
+
+    .hr-sidebar-footer a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #475569;
+      text-decoration: none;
+      font-size: 13px;
+      padding: 8px 0;
+      transition: color var(--hr-transition);
+    }
+
+    .hr-sidebar-footer a:hover {
+      color: #94a3b8;
+    }
+
+    /* Overlay (mobile) */
+    #hr-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .45);
+      z-index: 1039;
+    }
+
+    /* =============================================
+       TOPBAR
+       ============================================= */
+    #hr-topbar {
+      position: fixed;
+      top: 0;
+      left: var(--hr-sidebar-w);
+      right: 0;
+      height: var(--hr-topbar-h);
+      background: var(--hr-card-bg);
+      border-bottom: 1px solid var(--hr-border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      z-index: 1030;
+      transition: left var(--hr-transition);
+    }
+
+    .hr-topbar-toggle {
+      background: none;
+      border: none;
+      padding: 6px;
+      color: var(--hr-text-muted);
+      cursor: pointer;
+      border-radius: 8px;
+      line-height: 1;
+      font-size: 20px;
+      transition: background var(--hr-transition);
+    }
+
+    .hr-topbar-toggle:hover {
+      background: var(--hr-primary-light);
+      color: var(--hr-primary);
+    }
+
+    .hr-page-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--hr-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Search */
+    .hr-search {
+      flex: 1;
+      max-width: 340px;
+      position: relative;
+    }
+
+    .hr-search input {
+      width: 100%;
+      padding: 7px 12px 7px 36px;
+      border: 1px solid var(--hr-border);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--hr-text);
+      background: var(--hr-bg);
+      outline: none;
+      transition: border-color var(--hr-transition), box-shadow var(--hr-transition);
+    }
+
+    .hr-search input:focus {
+      border-color: var(--hr-primary);
+      box-shadow: 0 0 0 3px rgba(79, 110, 247, .12);
+    }
+
+    .hr-search .search-icon {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--hr-text-muted);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    /* Topbar right */
+    .hr-topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hr-icon-btn {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-radius: 10px;
+      color: var(--hr-text-muted);
+      font-size: 18px;
+      display: grid;
+      place-items: center;
+      transition: background var(--hr-transition), color var(--hr-transition);
+      text-decoration: none;
+    }
+
+    .hr-icon-btn:hover {
+      background: var(--hr-primary-light);
+      color: var(--hr-primary);
+    }
+
+    .hr-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: var(--hr-danger);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+      line-height: 1;
+    }
+
+    /* Avatar / profile */
+    .hr-avatar-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px 4px 4px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: background var(--hr-transition);
+    }
+
+    .hr-avatar-btn:hover {
+      background: var(--hr-primary-light);
+    }
+
+    .hr-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--hr-primary-light);
+    }
+
+    .hr-avatar-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--hr-text);
+      max-width: 100px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* =============================================
+       MAIN CONTENT
+       ============================================= */
+    #hr-main {
+      margin-left: var(--hr-sidebar-w);
+      margin-top: var(--hr-topbar-h);
+      min-height: calc(100vh - var(--hr-topbar-h));
+      padding: 28px 24px;
+      transition: margin-left var(--hr-transition);
+    }
+
+    /* =============================================
+       MODAL (global)
+       ============================================= */
+    #g_modal .modal-content {
+      border: none;
+      border-radius: var(--hr-radius);
+      box-shadow: var(--hr-shadow-md);
+    }
+
+    #g_modal .modal-header {
+      border-bottom: 1px solid var(--hr-border);
+      padding: 16px 20px;
+    }
+
+    #g_modal .modal-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    #g_modal .modal-body {
+      padding: 20px;
+    }
+
+    /* =============================================
+       NOTIFICATION DROPDOWN
+       ============================================= */
+    .hr-dropdown-menu {
+      min-width: 320px;
+      border: 1px solid var(--hr-border);
+      border-radius: var(--hr-radius);
+      box-shadow: var(--hr-shadow-md);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .hr-dropdown-header {
+      padding: 14px 16px;
+      background: var(--hr-bg);
+      border-bottom: 1px solid var(--hr-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hr-dropdown-header strong {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .hr-dropdown-header a {
+      font-size: 12px;
+      color: var(--hr-primary);
+      text-decoration: none;
+    }
+
+    .hr-notif-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--hr-border);
+      transition: background var(--hr-transition);
+    }
+
+    .hr-notif-item:hover {
+      background: var(--hr-bg);
+    }
+
+    .hr-notif-item:last-child {
+      border-bottom: none;
+    }
+
+    .hr-notif-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .hr-notif-icon.warning {
+      background: #fef3c7;
+      color: var(--hr-warning);
+    }
+
+    .hr-notif-icon.danger {
+      background: #fee2e2;
+      color: var(--hr-danger);
+    }
+
+    .hr-notif-icon.success {
+      background: #d1fae5;
+      color: var(--hr-accent);
+    }
+
+    .hr-notif-icon.primary {
+      background: var(--hr-primary-light);
+      color: var(--hr-primary);
+    }
+
+    .hr-notif-body h6 {
+      font-size: 13px;
+      font-weight: 500;
+      margin: 0 0 2px;
+    }
+
+    .hr-notif-body p {
+      font-size: 12px;
+      color: var(--hr-text-muted);
+      margin: 0;
+    }
+
+    .hr-notif-body .time {
+      font-size: 11px;
+      color: var(--hr-text-muted);
+      margin-top: 2px;
+    }
+
+    /* =============================================
+       RESPONSIVE — Mobile
+       ============================================= */
+    @media (max-width: 767.98px) {
+      #hr-sidebar {
+        transform: translateX(-100%);
+      }
+
+      #hr-sidebar.open {
+        transform: translateX(0);
+      }
+
+      #hr-overlay.open {
+        display: block;
+      }
+
+      #hr-topbar {
+        left: 0;
+      }
+
+      #hr-main {
+        margin-left: 0;
+        padding: 20px 16px;
+      }
+
+      .hr-search {
+        max-width: 100%;
+      }
+
+      .hr-avatar-name {
+        display: none;
+      }
+
+      .hr-page-title {
+        display: none;
+      }
+    }
+
+    /* =============================================
+       UTILITIES
+       ============================================= */
+    .tox-promotion {
+      display: none !important;
+    }
+
+    .back-to-top {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 40px;
+      height: 40px;
+      background: var(--hr-primary);
+      color: #fff;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: var(--hr-shadow-md);
+      text-decoration: none;
+      z-index: 999;
+      transition: background var(--hr-transition);
+    }
+
+    .back-to-top:hover {
+      background: var(--hr-primary-dark);
+      color: #fff;
+    }
+
+    .back-to-top.show {
+      display: flex;
+    }
+  </style>
 </head>
 
 <body>
-    <!-- MODALS -->
-    <div id="g_modal" class="modal fade">
-        <div id="g_modal_size" class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="g_modal_title"></h5>
-                    <button class="close btn btn-outline-danger" data-bs-dismiss="modal">X</button>
-                </div>
-                <div class="modal-body">
-                    <div class="w-100" id="g_modal_body">
 
-                    </div>
-                </div>
-                <div class="modal-footer" id="g_footer"></div>
-            </div>
-        </div>
-    </div>
-    <div class="modal" id="loader">
-        <div class="w-100 bg_trans_80 h-100 d-flex flex-wrap align-content-center justify-content-center">
-            <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
-            <div class="w-100 text-center">
-                <br>
-                <small class="text-info" id="error_msg"></small>
-            </div>
-        </div>
-    </div>
-    <script>
-        $('#loader').modal('show')
-    </script>
+  <!-- LOADER -->
+  <div id="hr-loader">
+    <div class="loader-ring"></div>
+    <span class="loader-text">HR Management</span>
+  </div>
+  <script>$(document).ready(function () { setTimeout(function () { $('#hr-loader').fadeOut(400); }, 800); });</script>
 
+  <!-- GLOBAL MODAL -->
+  <div id="g_modal" class="modal fade" tabindex="-1">
+    <div id="g_modal_size" class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="g_modal_title"></h5>
+          <button class="btn btn-sm btn-outline-danger ms-auto" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="w-100" id="g_modal_body"></div>
+        </div>
+        <div class="modal-footer" id="g_footer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIDDEN INPUTS -->
   <input type="hidden" id="autos_url" value="{% url 'autos' 'ajax' %}">
   <input type="hidden" id="search_url" value="{% url 'search' %}">
   <input type="hidden" value="{{ request.user.pk }}" id="mypk">
 
-  <!-- ======= Header ======= -->
-  <header {% if nav != True %} style="display: none" {% endif %} id="header" class="header fixed-top d-flex align-items-center">
+  <!-- OVERLAY (mobile) -->
+  <div id="hr-overlay"></div>
 
-    <div class="d-flex align-items-center justify-content-between">
-      <a href="{% url 'home' %}" class="logo d-flex align-items-center">
-        <img src="{% static 'assets/img/logo.png' %}" alt="">
-        <span class="d-none d-lg-block">OCEAN</span>
-      </a>
-      <i class="bi bi-list toggle-sidebar-btn"></i>
-    </div><!-- End Logo -->
+  <!-- =============================================
+       SIDEBAR
+       ============================================= -->
+  {% if nav != False %}
+  <aside id="hr-sidebar">
 
-    <div class="search-bar">
-      <div class="search-form d-flex align-items-center" >
-        <input type="text" name="searchQuery" id="searchQuery" placeholder="Search" title="Enter search keyword">
-        <button type="button" id="{{ searchButton }}" title="Search"><i class="bi bi-search"></i></button>
+    <!-- Brand -->
+    <a href="{% url 'home' %}" class="hr-brand">
+      <div class="hr-brand-icon"><i class="bi bi-people-fill"></i></div>
+      <div>
+        <div class="hr-brand-name">HR&nbsp;Management</div>
+        <div class="hr-brand-sub">OCEAN Platform</div>
       </div>
-    </div><!-- End Search Bar -->
+    </a>
+
+    <!-- Navigation -->
+    <nav class="hr-nav">
+
+      <!-- Overview -->
+      <div class="hr-nav-section-label">Overview</div>
+      <ul class="p-0 m-0">
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'admin_panel' %}">
+            <i class="bi bi-grid-1x2 nav-icon"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'company' %}">
+            <i class="bi bi-building nav-icon"></i>
+            <span>Company Home</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Attendance & Records -->
+      <div class="hr-nav-section-label">Attendance &amp; Records</div>
+      <ul class="p-0 m-0">
+        <li class="hr-nav-item">
+          <a class="hr-nav-link collapsed" role="button" data-bs-toggle="collapse" data-bs-target="#sub-attendance"
+            aria-expanded="false">
+            <i class="bi bi-clock-history nav-icon"></i>
+            <span>Attendance</span>
+            <i class="bi bi-chevron-down nav-chevron"></i>
+          </a>
+          <ul id="sub-attendance" class="hr-submenu collapse">
+            <li class="hr-nav-item">
+              <a class="hr-nav-link" href="{% url 'staff_attendance' %}">
+                <i class="bi bi-circle-fill nav-icon"></i>
+                <span>Daily Attendance</span>
+              </a>
+            </li>
+            <li class="hr-nav-item">
+              <a class="hr-nav-link" href="{% url 'hrm_manual_punch' %}">
+                <i class="bi bi-circle-fill nav-icon"></i>
+                <span>Manual Punch</span>
+              </a>
+            </li>
+            <li class="hr-nav-item">
+              <a class="hr-nav-link" href="{% url 'monthly_attendance' %}">
+                <i class="bi bi-circle-fill nav-icon"></i>
+                <span>Monthly Summary</span>
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'employee_documents' %}">
+            <i class="bi bi-file-earmark-text nav-icon"></i>
+            <span>Documents</span>
+          </a>
+        </li>
+
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'master_leave' %}">
+            <i class="bi bi-calendar2-check nav-icon"></i>
+            <span>Leave Management</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Self Service -->
+      <div class="hr-nav-section-label">Self Service</div>
+      <ul class="p-0 m-0">
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'hrm_self_service' %}">
+            <i class="bi bi-person-check nav-icon"></i>
+            <span>My Dashboard</span>
+          </a>
+        </li>
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'staff_leave' %}">
+            <i class="bi bi-calendar-minus nav-icon"></i>
+            <span>Apply Leave</span>
+          </a>
+        </li>
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'hrm_my_attendance' %}">
+            <i class="bi bi-calendar3 nav-icon"></i>
+            <span>My Attendance</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Organisation -->
+      <div class="hr-nav-section-label">Organisation</div>
+      <ul class="p-0 m-0">
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'departments' %}">
+            <i class="bi bi-diagram-3 nav-icon"></i>
+            <span>Organisation Structure</span>
+          </a>
+        </li>
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'staffs' %}">
+            <i class="bi bi-people nav-icon"></i>
+            <span>Employees</span>
+          </a>
+        </li>
+
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'resigned_employees' %}">
+            <i class="bi bi-people nav-icon"></i>
+            <span>Resigned</span>
+          </a>
+        </li>
+
+        <li class="hr-nav-item">
+          <a class="hr-nav-link" href="{% url 'devices' %}">
+            <i class="bi bi-people nav-icon"></i>
+            <span>Devices</span>
+          </a>
+        </li>
+
+      </ul>
+
+    </nav>
+
+    <!-- Sidebar footer (user quick-links) -->
+    <div class="hr-sidebar-footer">
+      <a href="{% url 'profile' %}">
+        <i class="bi bi-person-circle"></i>
+        <span>My Profile</span>
+      </a>
+      <a href="{% url 'logout' %}">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Sign Out</span>
+      </a>
+    </div>
+
+  </aside>
+  {% endif %}
+
+  <!-- =============================================
+       TOPBAR
+       ============================================= -->
+  {% if nav != False %}
+  <header id="hr-topbar">
+
+    <!-- Toggle -->
+    <button class="hr-topbar-toggle" id="hr-toggle-btn" aria-label="Toggle sidebar">
+      <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Page title -->
+    <span class="hr-page-title">{{ page.title }}</span>
+
+    <!-- Search -->
+    <div class="hr-search">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" id="searchQuery" placeholder="Search employees, records…">
+    </div>
 
     {{ legend1 }}
 
-    <nav class="header-nav ms-auto">
-      <ul class="d-flex align-items-center">
+    <!-- Right actions -->
+    <div class="hr-topbar-right">
 
-        <li class="nav-item d-block d-lg-none">
-          <a class="nav-link nav-icon search-bar-toggle " href="#">
-            <i class="bi bi-search"></i>
-          </a>
-        </li><!-- End Search Icon-->
-
-        <li class="nav-item dropdown">
-
-          <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
-            <i class="bi bi-bell"></i>
-            <span class="badge bg-primary badge-number">{{ notifications.unread.count }}</span>
-          </a><!-- End Notification Icon -->
-
-          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow notifications">
-
-            <li class="dropdown-header">
-              You have {{ notifications.unread.count }} new notifications
-              <a href="#"><span class="badge rounded-pill bg-primary p-2 ms-2">View all</span></a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            {% for notification in notifications.unread %}
-            <li class="notification-item">
-              <i class="bi bi-exclamation-circle text-warning"></i>
-              <div>
-                <h4>{{ notification.title }}</h4>
-                <p>{{ notification.descr }}</p>
-                <p>{{ notification.created_date }} <span class="text-info">{{ notification.created_time }}</span></p>
-              </div>
-            </li>
-            {% endfor %}
-
-            <li class="notification-item">
-              <i class="bi bi-exclamation-circle text-warning"></i>
-              <div>
-                <h4>Lorem Ipsum</h4>
-                <p>Quae dolorem earum veritatis oditseno</p>
-                <p>30 min. ago</p>
-              </div>
-            </li>
-
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li class="notification-item">
-              <i class="bi bi-x-circle text-danger"></i>
-              <div>
-                <h4>Atque rerum nesciunt</h4>
-                <p>Quae dolorem earum veritatis oditseno</p>
-                <p>1 hr. ago</p>
-              </div>
-            </li>
-
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li class="notification-item">
-              <i class="bi bi-check-circle text-success"></i>
-              <div>
-                <h4>Sit rerum fuga</h4>
-                <p>Quae dolorem earum veritatis oditseno</p>
-                <p>2 hrs. ago</p>
-              </div>
-            </li>
-
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li class="notification-item">
-              <i class="bi bi-info-circle text-primary"></i>
-              <div>
-                <h4>Dicta reprehenderit</h4>
-                <p>Quae dolorem earum veritatis oditseno</p>
-                <p>4 hrs. ago</p>
-              </div>
-            </li>
-
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-            <li class="dropdown-footer">
-              <a href="#">Show all notifications</a>
-            </li>
-
-          </ul><!-- End Notification Dropdown Items -->
-
-        </li><!-- End Notification Nav -->
-
-        <li class="nav-item dropdown">
-
-          <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
-            <i class="bi bi-chat-left-text"></i>
-            <span class="badge bg-success badge-number">3</span>
-          </a><!-- End Messages Icon -->
-
-          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow messages">
-            <li class="dropdown-header">
-              You have 3 new messages
-              <a href="#"><span class="badge rounded-pill bg-primary p-2 ms-2">View all</span></a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li class="message-item">
-              <a href="#">
-                <img src="{% static 'assets/img/messages-1.jpg' %}" alt="" class="rounded-circle">
-                <div>
-                  <h4>Maria Hudson</h4>
-                  <p>Velit asperiores et ducimus soluta repudiandae labore officia est ut...</p>
-                  <p>4 hrs. ago</p>
-                </div>
-              </a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li class="message-item">
-              <a href="#">
-                <img src="{% static 'assets/img/messages-2.jpg' %}" alt="" class="rounded-circle">
-                <div>
-                  <h4>Anna Nelson</h4>
-                  <p>Velit asperiores et ducimus soluta repudiandae labore officia est ut...</p>
-                  <p>6 hrs. ago</p>
-                </div>
-              </a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li class="message-item">
-              <a href="#">
-                <img src="{% static 'assets/img/messages-3.jpg' %}" alt="" class="rounded-circle">
-                <div>
-                  <h4>David Muldon</h4>
-                  <p>Velit asperiores et ducimus soluta repudiandae labore officia est ut...</p>
-                  <p>8 hrs. ago</p>
-                </div>
-              </a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li class="dropdown-footer">
-              <a href="#">Show all messages</a>
-            </li>
-
-          </ul><!-- End Messages Dropdown Items -->
-
-        </li><!-- End Messages Nav -->
-
-        <li class="nav-item dropdown pe-3">
-
-          <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-            <img src="{{ request.user|my_profile_picture }}" alt="Profile" class="rounded-circle">
-            <span class="d-none d-md-block dropdown-toggle ps-2">{{ user.username }}</span>
-          </a><!-- End Profile Iamge Icon -->
-
-          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
-            <li class="dropdown-header">
-              <h6>{{ user.firstname }} {{ user.lastname }}</h6>
-              <span>Web Designer</span>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}">
-                <i class="bi bi-person"></i>
-                <span>My Profile</span>
-              </a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="users-profile.html">
-                <i class="bi bi-gear"></i>
-                <span>Account Settings</span>
-              </a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="pages-faq.html">
-                <i class="bi bi-question-circle"></i>
-                <span>Need Help?</span>
-              </a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
-
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
-
-      </ul>
-    </nav><!-- End Icons Navigation -->
-
-  </header><!-- End Header -->
-
-  <!-- ======= Sidebar ======= -->
-
-  <aside {% if page.nav != True %} style="display: none" {% endif %} id="sidebar" class="sidebar">
-
-    <ul class="sidebar-nav" id="sidebar-nav">
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="{% url 'admin_panel' %}">
-          <i class="bi bi-grid"></i>
-          <span>Dashboard</span>
-        </a>
-      </li><!-- End Dashboard Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="{% url 'company' %}">
-          <i class="bi bi-grid"></i>
-          <span>Landing</span>
-        </a>
-      </li>
-
-        <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#acct-masster" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-megaphone"></i><span>Master</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="acct-masster" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'staff_attendance' %}">
-              <i class="bi bi-grid"></i>
-              <span>Attendance</span>
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'hrm_manual_punch' %}">
-              <i class="bi bi-grid"></i>
-              <span>Manual Punch</span>
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'employee_documents' %}">
-              <i class="bi bi-grid"></i>
-              <span>Documents</span>
-            </a>
-          </li>
-
-            <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'master_leave' %}">
-              <i class="bi bi-grid"></i>
-              <span>Laves</span>
-            </a>
-          </li>
-
-            <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'monthly_attendance' %}">
-              <i class="bi bi-grid"></i>
-              <span>Monthly</span>
-            </a>
-          </li>
-
-        </ul>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#acct-selfservice" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-megaphone"></i><span>Self Service</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="acct-selfservice" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li class="nav-item">
-            <a class="nav-link collapsed" href="{% url 'staff_leave' %}">
-              <i class="bi bi-grid"></i>
-              <span>Leave</span>
-            </a>
-          </li>
-        </ul>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="{% url 'hrm_self_service' %}">
-          <i class="bi bi-grid"></i>
-          <span>Self Service</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#acct-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-megaphone"></i><span>Personal</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="acct-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="{% url 'area' %}">
-              <i class="bi bi-circle"></i><span>Area</span>
-            </a>
-          </li>
-            <li>
-            <a href="{% url 'departments' %}">
-              <i class="bi bi-circle"></i><span>Departments</span>
-            </a>
-          </li>
-
-            <li>
-            <a href="{% url 'staffs' %}">
-              <i class="bi bi-circle"></i><span>Staffs</span>
-            </a>
-          </li>
-
-
-
-
-          
-
-        </ul>
-      </li>
-
-    </ul>
-
-  </aside><!-- End Sidebar-->
-
-
-  <main id="main" class="main">
-
-    <div class="pagetitle">
-      <h1>{{ page.title }}</h1>
-      <nav>
-        {# <ol class="breadcrumb">#}
-          {# <li class="breadcrumb-item"><a href="index.html">Home</a></li>#}
-          {# <li class="breadcrumb-item">Pages</li>#}
-          {# <li class="breadcrumb-item active">Blank</li>#}
-          {# </ol>#}
-      </nav>
-      
-    </div><!-- End Page Title -->
-
-    <section class="section h-100" >
-      <div class="w-100 h-100 overflow-auto">
-          <button id="install-button" class="install-button">Install App</button>
-
-          {% block body %}
-
-          {% endblock %}
+      <!-- Notifications -->
+      <div class="dropdown">
+        <button class="hr-icon-btn" data-bs-toggle="dropdown" aria-label="Notifications">
+          <i class="bi bi-bell"></i>
+          {% if notifications.unread.count %}
+          <span class="hr-badge">{{ notifications.unread.count }}</span>
+          {% endif %}
+        </button>
+        <div class="dropdown-menu hr-dropdown-menu dropdown-menu-end p-0">
+          <div class="hr-dropdown-header">
+            <strong>Notifications</strong>
+            <a href="#">View all</a>
+          </div>
+          {% for notification in notifications.unread %}
+          <div class="hr-notif-item">
+            <div class="hr-notif-icon warning"><i class="bi bi-exclamation-circle"></i></div>
+            <div class="hr-notif-body">
+              <h6>{{ notification.title }}</h6>
+              <p>{{ notification.descr }}</p>
+              <p class="time">{{ notification.created_date }} <span>{{ notification.created_time }}</span></p>
+            </div>
+          </div>
+          {% empty %}
+          <div class="hr-notif-item justify-content-center text-muted py-4" style="font-size:13px;">
+            <i class="bi bi-check2-all me-2"></i> All caught up!
+          </div>
+          {% endfor %}
+        </div>
       </div>
-    </section>
 
-  </main><!-- End #main -->
+      <!-- Profile -->
+      <div class="dropdown">
+        <button class="hr-avatar-btn" data-bs-toggle="dropdown" aria-label="Profile">
+          <img src="{{ request.user|my_profile_picture }}" alt="Profile" class="hr-avatar">
+          <span class="hr-avatar-name">{{ user.username }}</span>
+          <i class="bi bi-chevron-down" style="font-size:11px;color:var(--hr-text-muted);"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end"
+          style="border-radius:var(--hr-radius);border:1px solid var(--hr-border);min-width:200px;">
+          <li class="px-3 py-2 border-bottom">
+            <div style="font-size:14px;font-weight:600;">{{ user.firstname }} {{ user.lastname }}</div>
+            <div style="font-size:11px;color:var(--hr-text-muted);">HR Management</div>
+          </li>
+          <li>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'profile' %}">
+              <i class="bi bi-person"></i> My Profile
+            </a>
+          </li>
+          <li>
+            <hr class="dropdown-divider my-1">
+          </li>
+          <li>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'logout' %}">
+              <i class="bi bi-box-arrow-right text-danger"></i>
+              <span class="text-danger">Sign Out</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </header>
+  {% endif %}
 
+  <!-- =============================================
+       MAIN CONTENT
+       ============================================= -->
+  <main id="hr-main" {% if not nav %}style="margin-left:0;margin-top:0;" {% endif %}>
+    {% block body %}
+    {% endblock %}
+  </main>
 
+  <!-- Back to top -->
+  <a href="#" class="back-to-top" id="backToTop"><i class="bi bi-arrow-up"></i></a>
 
-  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
-      class="bi bi-arrow-up-short"></i></a>
-
-  <!-- Vendor JS Files -->
+  <!-- Vendor JS -->
   <script src="{% static 'assets/vendor/apexcharts/apexcharts.min.js' %}"></script>
   <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'assets/vendor/chart.js/chart.min.js' %}"></script>
@@ -552,94 +992,76 @@
   <script src="{% static 'assets/vendor/quill/quill.min.js' %}"></script>
   <script src="{% static 'assets/vendor/simple-datatables/simple-datatables.js' %}"></script>
   <script src="{% static 'assets/vendor/tinymce/tinymce.min.js' %}"></script>
-  <script src="{% static 'assets/vendor/php-email-form/validate.js' %}"></script>
 
-
-  <!-- Template Main JS File -->
-  <script src="{% static 'assets/js/main.js' %}"></script>
-
-    <script>
-
-        $('#loader').delay(5000).modal('hide')
-
-    </script>
-
-
-{% if messages %}
+  {% if messages %}
   <script>
     {% for message in messages %}
-      kasa.info(`{{ message }}`)
+    kasa.info(`{{ message }}`)
     {% endfor %}
   </script>
-{% endif %}
+  {% endif %}
 
-    <script>
-        let deferredPrompt;
+  <script>
+    // ── Sidebar toggle ──────────────────────────────────────────
+    const sidebar = document.getElementById('hr-sidebar');
+    const overlay = document.getElementById('hr-overlay');
+    const toggleBtn = document.getElementById('hr-toggle-btn');
 
-window.addEventListener('beforeinstallprompt', (event) => {
-    // Prevent the default prompt
-    console.log('beforeinstallprompt event fired');
-    event.preventDefault();
-
-    // Stash the event so it can be triggered later
-    deferredPrompt = event;
-
-    // Automatically trigger the install prompt
-    deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
-    deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted the install prompt');
-        } else {
-            console.log('User dismissed the install prompt');
-        }
-
-        // Reset the deferredPrompt for future prompts
-        deferredPrompt = null;
-    });
-});
-
-window.addEventListener('load', () => {
-    const installButton = document.getElementById('install-button');
-    if (deferredPrompt) {
-        installButton.style.display = 'block';
-
-        installButton.addEventListener('click', () => {
-            // Show the browser's install prompt
-            deferredPrompt.prompt();
-
-            // Wait for the user to respond to the prompt
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('User accepted the install prompt');
-                } else {
-                    console.log('User dismissed the install prompt');
-                }
-
-                // Reset the deferredPrompt for future prompts
-                deferredPrompt = null;
-
-                // Hide the custom install button
-                installButton.style.display = 'none';
-            });
-        });
+    function openSidebar() {
+      sidebar?.classList.add('open');
+      overlay?.classList.add('open');
     }
-});
+    function closeSidebar() {
+      sidebar?.classList.remove('open');
+      overlay?.classList.remove('open');
+    }
 
-    </script>
+    toggleBtn?.addEventListener('click', () => {
+      if (window.innerWidth < 768) {
+        sidebar?.classList.contains('open') ? closeSidebar() : openSidebar();
+      } else {
+        // Desktop: collapse/expand
+        const isCollapsed = document.body.classList.toggle('hr-sidebar-collapsed');
+        if (isCollapsed) {
+          document.documentElement.style.setProperty('--hr-sidebar-w', '0px');
+        } else {
+          document.documentElement.style.setProperty('--hr-sidebar-w', '260px');
+        }
+      }
+    });
+    overlay?.addEventListener('click', closeSidebar);
 
+    // ── Active link highlight ───────────────────────────────────
+    const links = document.querySelectorAll('#hr-sidebar .hr-nav-link');
+    links.forEach(link => {
+      if (link.href && link.href === window.location.href) {
+        link.classList.add('active');
+        const parent = link.closest('.collapse');
+        if (parent) {
+          parent.classList.add('show');
+          const trigger = document.querySelector(`[data-bs-target="#${parent.id}"]`);
+          trigger?.setAttribute('aria-expanded', 'true');
+        }
+      }
+    });
 
-<script>
-  $(document).ready(function(){
-    $('#availability-report').click(function(){
-      ssml.itemAvailability()
-    })
-  })
-</script>
+    // ── Back to top ─────────────────────────────────────────────
+    const btt = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+      btt?.classList.toggle('show', window.scrollY > 200);
+    });
+    btt?.addEventListener('click', e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+    // ── PWA install prompt ──────────────────────────────────────
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+    });
+  </script>
 
 </body>
 
 </html>
-
-

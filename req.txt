@@ -81,3 +81,4 @@ typing_extensions==4.15.0
 tzdata==2024.2
 urllib3==2.2.3
 vswhere==1.4.0
+pyzk

@@ -4,20 +4,27 @@ class Staff {
     int = '/company/api/'
 
 
-    async getArea(){
-        return api.call('VIEW',{module:'area',data:{}},this.int)
+    async getArea() {
+        return api.call('VIEW', { module: 'area', data: {} }, '/iclock/api/')
     }
 
-    async loadArea(){
+    async loadArea() {
         await this.getArea().then(response => {
 
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 let tr = "";
                 response.message.map(area => {
-                    tr +=  `<tr><td>${area.area_code}</td><td>${area.area_name}</td></tr>`
+                    console.table(area)
+                    tr += `<tr>
+                                <td>${area.area_code}</td>
+                                <td>${area.area_name}</td>
+                                <td>${area.work_start_time}</td>
+                                <td>${area.work_end_time}</td>
+                                <td>${area.days_of_work}</td>
+                            </tr>`
                 })
 
-                $('#dept_ids').html(tr)
+                $('#area_ids').html(tr)
             } else {
                 kasa.response(response)
             }
@@ -28,40 +35,44 @@ class Staff {
 
     newArea() {
         let form = "";
-        form += fom.text('area_code','',true,5)
-        form += fom.text('area_name','',true,20)
+        form += fom.text('area_code', '', true, 5)
+        form += fom.text('area_name', '', true, 20)
+        form += fom.time('work_start_time', '', true)
+        form += fom.time('work_end_time', '', true)
+        form += fom.number('how_many_off_days', '', true, 1)
+        form += fom.selectv2('is_default', [{ desc: 'No', val: 0 }, { desc: 'Yes', val: 1 }, ''])
 
         amodal.setBodyHtml(form)
         amodal.setTitleHtml("New Are")
         amodal.setFooterHtml(`<button class="btn btn-success" id="save_area">SAVE</button>`)
         amodal.show()
 
-        $('#save_area').click(function(){
-            let ids = ['area_code','area_name']
-            if(anton.validateInputs(ids)){
+        $('#save_area').click(function () {
+            let ids = ['area_code', 'area_name', 'work_start_time', 'work_end_time', 'how_many_off_days', 'is_default']
+            if (anton.validateInputs(ids)) {
                 let payload = {
-                    module:'area',
-                    data:anton.Inputs(ids)
+                    module: 'area',
+                    data: anton.Inputs(ids)
                 }
 
-                kasa.confirm(api.call('PUT',payload,staff.int),1,'here')
+                kasa.confirm(api.call('PUT', payload, '/iclock/api/'), 1, 'here')
             } else {
                 kasa.error("Invalid Form")
             }
         })
     }
 
-    async getDepartments(){
-        return api.call('VIEW',{module:'department',data:{}},this.int)
+    async getDepartments() {
+        return api.call('VIEW', { module: 'department', data: {} }, '/iclock/api/')
     }
 
-    async loadDepartment(){
+    async loadDepartment() {
         await this.getDepartments().then(response => {
 
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 let tr = "";
                 response.message.map(dept => {
-                    tr +=  `<tr><td>${dept.dept_code}</td><td>${dept.dept_name}</td></tr>`
+                    tr += `<tr><td>${dept.dept_code}</td><td>${dept.dept_name}</td></tr>`
                 })
 
                 $('#dept_ids').html(tr)
@@ -75,23 +86,23 @@ class Staff {
 
     newDepartment() {
         let form = "";
-        form += fom.text('dept_code','',true,5)
-        form += fom.text('dept_name','',true,20)
+        form += fom.text('dept_code', '', true, 5)
+        form += fom.text('dept_name', '', true, 20)
 
         amodal.setBodyHtml(form)
         amodal.setTitleHtml("New save_dept")
         amodal.setFooterHtml(`<button class="btn btn-success" id="save_dept">SAVE</button>`)
         amodal.show()
 
-        $('#save_dept').click(function(){
-            let ids = ['dept_code','dept_name']
-            if(anton.validateInputs(ids)){
+        $('#save_dept').click(function () {
+            let ids = ['dept_code', 'dept_name']
+            if (anton.validateInputs(ids)) {
                 let payload = {
-                    module:'department',
-                    data:anton.Inputs(ids)
+                    module: 'department',
+                    data: anton.Inputs(ids)
                 }
 
-                kasa.confirm(api.call('PUT',payload,staff.int).message,1,'here')
+                kasa.confirm(api.call('PUT', payload, '/iclock/api/').message, 1, 'here')
             } else {
                 kasa.error("Invalid Form")
             }
@@ -99,17 +110,17 @@ class Staff {
     }
 
 
-    async getPosition(){
-        return api.call('VIEW',{module:'position',data:{}},this.int)
+    async getPosition() {
+        return api.call('VIEW', { module: 'position', data: {} }, '/iclock/api/')
     }
 
-    async loadPosition(){
+    async loadPosition() {
         await this.getPosition().then(response => {
 
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 let tr = "";
                 response.message.map(position => {
-                    tr +=  `<tr><td>${position.position_code}</td><td>${position.position_name}</td></tr>`
+                    tr += `<tr><td>${position.position_code}</td><td>${position.position_name}</td></tr>`
                 })
 
                 $('#position_ids').html(tr)
@@ -123,72 +134,110 @@ class Staff {
 
     newPosition() {
         let form = "";
-        form += fom.text('position_code','',true,5)
-        form += fom.text('position_name','',true,20)
+        form += fom.text('position_code', '', true, 5)
+        form += fom.text('position_name', '', true, 20)
 
         amodal.setBodyHtml(form)
         amodal.setTitleHtml("New pos")
         amodal.setFooterHtml(`<button class="btn btn-success" id="save_posti">SAVE</button>`)
         amodal.show()
 
-        $('#save_posti').click(function(){
-            let ids = ['position_code','position_name']
-            if(anton.validateInputs(ids)){
+        $('#save_posti').click(function () {
+            let ids = ['position_code', 'position_name']
+            if (anton.validateInputs(ids)) {
                 let payload = {
-                    module:'position',
-                    data:anton.Inputs(ids)
+                    module: 'position',
+                    data: anton.Inputs(ids)
                 }
 
-                kasa.confirm(api.call('PUT',payload,staff.int).message,1,'here')
+                kasa.confirm(api.call('PUT', payload, '/iclock/api/').message, 1, 'here')
             } else {
                 kasa.error("Invalid Form")
             }
         })
     }
 
-    async getStaff(){
-        return api.call('VIEW',{module:'staff',data:{}},this.int)
+    async getStaff(type = 'active') {
+        if (type == 'resigned') {
+            return api.call('VIEW', { module: 'resignation', data: {} }, '/iclock/api/')
+        } else {
+            return api.call('VIEW', { module: 'employee', data: {} }, '/iclock/api/')
+        }
+
     }
 
-    async loadStaff(){
+    async loadStaff(type = 'active') {
         loader.show()
-        await this.getStaff().then(response => {
+        await this.getStaff(type).then(response => {
 
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 let tr = "";
+                console.table(response)
                 next_code = response.message.length + 1
                 let arr_4_csv = [
-                    ['CODE','NAME','LOCATION','POSITION','ATTENDANCE','BIO']
+                    ['USER ID', 'NAME', 'AREA', 'DEPARTMENT', 'POSITION']
                 ]
 
                 response.message.map(staff => {
+                    console.table(staff)
+                    arr_4_csv.push([
+                        staff.user_id,
+                        staff.name,
+                        staff.area,
+                        staff.department,
+                        staff.position
+                    ])
 
-                    // console.table(staff['fingerprint'])
-                    const fingerprint = staff['fingerprint'];
-                    let is_bio = false;
-                    if(fingerprint !== '-'){
-                        is_bio = true;
+                    if (type === 'resigned') {
+                        let employee = staff.employee
+                        tr += `<tr>
+                                <td>${employee.user_id}</td>
+                                <td>${employee.name}</td>
+                                <td>${employee.area}</td>
+                                <td><kbd title="${staff.resign_reason}">${staff.resign_type}</kbd></td>
+                                <td>${staff.resign_date}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            Action
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item" href="#" onclick="anton.viewFile('${staff.resign_document}')">View Document</a>
+                                            
+                                        </div>
+                                    </div>
+                                </td>
+                           </tr>`
+                    } else {
+                        tr += `<tr>
+                                <td>${staff.user_id}</td>
+                                <td>${staff.name}</td>
+                                <td>${staff.area}</td>
+                                <td>${staff.department}</td>
+                                <td>${staff.position}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            Action
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item" href="#" onclick="staff.editStaff(${staff.user_id})">Edit</a>
+                                            <a class="dropdown-item" href="#" onclick="staff.deleteStaff(${staff.user_id})">Delete</a>
+                                            <a class="dropdown-item" href="#" onclick="staff.leaveManagement(${staff.user_id})">Leave Management</a>
+                                            <a class="dropdown-item" href="#" onclick="staff.resign(${staff.user_id})">Resign</a>
+                                        </div>
+                                    </div>
+                                </td>
+                           </tr>`
                     }
 
-                    arr_4_csv.push([staff.emp_code,`${staff.first_name} ${staff.last_name}`,
-                        staff.department.dept_name,staff.position.position_name,is_bio,fingerprint])
-                    
-                    console.log(is_bio)
-                    tr +=  `<tr>
-                                <td>${staff.emp_code}</td>
-                                <td>${staff.first_name} ${staff.last_name}</td>
-                                <td>${staff.department.dept_name}</td>
-                                <td>${staff.position.position_name}</td>
-                                <td>${is_bio}</td>
-                                <td>${fingerprint}</td>
-                           </tr>`
                 })
 
                 $('#empl').html(tr)
-                $('#myTable').DataTable();
-                $('#download').click(function(){
+                // $('#myTable').DataTable();
+                $('#download').click(function () {
                     let data = anton.convertToCSV(arr_4_csv);
-                    anton.downloadCSV('staff.csv',data)
+                    anton.downloadCSV('staff.csv', data)
                 })
                 loader.hide()
             } else {
@@ -201,16 +250,284 @@ class Staff {
         })
     }
 
+
+    async resign(user_id) {
+        loader.show()
+        let staffRes = await api.call('VIEW', { module: 'employee', data: { id: user_id } }, '/iclock/api/')
+        if (!anton.IsRequest(staffRes)) {
+            loader.hide()
+            kasa.response(staffRes)
+            return
+        }
+        let staffData = staffRes.message[0]
+        console.table(staffData)
+
+        let form = "";
+        form += fom.date('resign_date', '', true, 10)
+        form += fom.selectv2('resign_type', [
+            { 'val': '0', 'desc': 'Resigned' },
+            { 'val': '1', 'desc': 'Terminated' },
+            { val: '2', desc: 'Retired' },
+            { val: '3', desc: 'Others' }
+        ], '', true)
+        form += fom.textarea('resign_reason', '', true)
+
+        form += `
+            <form method='post' id='resign_supporting_file' enctype='multipart/form-data' action='/company/upload-resign-document/'>
+                <input type='hidden' id='user_id' name='user_id' value='${user_id}' >
+                <label for="resign_document">Resign Document</label>
+                <input type="file" name="resign_document" id="resign_document" class="form-control">
+            </form>
+        `
+
+        amodal.setBodyHtml(form)
+        amodal.setTitleHtml(`Resign ${staffData.name} ?`)
+        amodal.setFooterHtml(`<button class="btn btn-success" id="save_resign">SAVE</button>`)
+        amodal.show()
+
+        $('#save_resign').click(async function () {
+            let ids = ['resign_date', 'resign_type', 'resign_reason', 'resign_document', 'user_id']
+            if (anton.validateInputs(ids)) {
+                let payload = {
+                    module: 'resign',
+                    data: anton.Inputs(ids)
+                }
+
+
+
+                await api.v2('PATCH', payload, '/iclock/api/').then(response => {
+                    if (anton.IsRequest(response)) {
+                        kasa.success('Uploading File')
+                        $('#resign_supporting_file').submit()
+                        amodal.hide()
+                        staff.loadStaff()
+                    } else {
+                        kasa.response(response)
+                    }
+                }).catch(error => {
+                    kasa.error(error)
+                })
+
+
+            } else {
+                kasa.error("Invalid Form")
+            }
+        })
+
+    }
+
+    async leaveManagement(user_id) {
+        loader.show()
+        let staffRes = await api.call('VIEW', { module: 'employee', data: { id: user_id } }, '/iclock/api/')
+        if (!anton.IsRequest(staffRes)) {
+            loader.hide()
+            kasa.response(staffRes)
+            return
+        }
+        let staffData = staffRes.message[0]
+        console.table(staffData)
+        let html = "";
+
+        html += `
+        <div class="row">
+            <div class="col-md-6">
+                <div class='card'>
+                    <div class='card-header'>
+                        <h3>Leave Balance</h3>
+                    </div>
+                    <div class='card-body'>
+                        <table class='table'>
+                            <tr>
+                                <td>Leave Type</td>
+                                <td>Balance</td>
+                            </tr>
+                            <tr>
+                                <td>Sick Leave</td>
+                                <td>${staffData.sick_leave}</td>
+                            </tr>
+                            <tr>
+                                <td>Annual Leave</td>
+                                <td>${staffData.annual_leave}</td>
+                            </tr>
+                        </table>
+                    </div>  
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class='card'>
+                    <div class='card-header'>
+                        <h3>Leave History</h3>
+                    </div>
+                    <div class='card-body'>
+                        <table class='table'>
+                            <tr>
+                                <td>Leave Type</td>
+                                <td>Balance</td>
+                            </tr>
+                            <tr>
+                                <td>Sick Leave</td>
+                                <td>${staffData.sick_leave}</td>
+                            </tr>
+                            <tr>
+                                <td>Annual Leave</td>
+                                <td>${staffData.annual_leave}</td>
+                            </tr>
+                        </table>
+                    </div>  
+                </div>
+            </div>
+        </div>
+        <hr>
+        `;
+
+        html += `
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-primary" onclick="staff.newLeave(${user_id})">New</button>
+            <button class="btn btn-info" onclick="staff.setLeaveDays(${user_id})">Set Days</button>
+            <button class="btn btn-warning" onclick="staff.adjustLeave(${user_id})">Adjust</button>
+        </div>
+        `
+
+
+        html += `
+            <hr>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Leave Transactions</h3>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Days</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+
+
+        amodal.setBodyHtml(html)
+        amodal.setTitleHtml("Leave Management")
+        amodal.setFooterHtml(`< button class="btn btn-success" id = "save_staff" > SAVE</button > `)
+        amodal.show()
+        loader.hide()
+    }
+
+    async setLeaveDays(user_id) {
+        loader.show()
+        let staffRes = await api.call('VIEW', { module: 'employee', data: { id: user_id } }, '/iclock/api/')
+        if (!anton.IsRequest(staffRes)) {
+            loader.hide()
+            kasa.response(staffRes)
+            return
+        }
+        let staffData = staffRes.message[0]
+        console.table(staffData)
+
+        let form = fom.text('user_id', '', true, 5)
+
+
+
+        form += fom.text('annual_leave', 'Annual Leave', true)
+        form += fom.text('sick_leave', 'Sick Leave', true)
+        form += fom.text('casual_leave', 'Casual Leave', true)
+        form += fom.text('maternity_leave', 'Maternity Leave', true)
+
+        $('#user_id').val(staffData.user_id)
+        $('#user_id').attr('readonly', true)
+
+
+        amodal.setBodyHtml(form)
+        amodal.setTitleHtml("Set Leave Days")
+        amodal.setFooterHtml(`<button class="btn btn-success" id = "save_staff" > SAVE</button>`)
+        amodal.show()
+        loader.hide()
+
+    }
+
+    async editStaff(user_id) {
+        loader.show()
+        let staffRes = await api.call('VIEW', { module: 'employee', data: { id: user_id } }, '/iclock/api/')
+        if (!anton.IsRequest(staffRes)) {
+            loader.hide()
+            kasa.response(staffRes)
+            return
+        }
+        let staffData = staffRes.message[0]
+
+        let form = fom.text('user_id', '', true, 5)
+
+        let ar = []
+        await this.getArea().then(response => {
+            console.table(response)
+            if (anton.IsRequest(response)) {
+                response.message.map(area => ar.push({ val: area.pk, desc: area.area_name }))
+            }
+        })
+        form += fom.selectv2('area', ar, '', true)
+
+        let deps = []
+        await this.getDepartments().then(response => {
+            if (anton.IsRequest(response)) {
+                response.message.map(dep => deps.push({ val: dep.pk, desc: dep.dept_name }))
+            }
+        })
+        form += fom.selectv2('department', deps, staffData.department_id, true)
+
+        let posts = []
+        await this.getPosition().then(response => {
+            if (anton.IsRequest(response)) {
+                response.message.map(pos => posts.push({ val: pos.pk, desc: pos.position_name }))
+            }
+        })
+        form += fom.selectv2('position', posts, staffData.position_id, true)
+
+        amodal.setBodyHtml(form)
+        amodal.setTitleHtml("Edit Staff")
+        amodal.setFooterHtml(`<button class="btn btn-success" id = "save_staff"> SAVE</button> `)
+        amodal.show()
+
+        $('#user_id').val(staffData.user_id)
+        $('#user_id').attr('disabled', true)
+
+        $('#save_staff').click(function () {
+            let ids = ['area', 'user_id', 'department', 'position']
+            if (anton.validateInputs(ids)) {
+                let payload = {
+                    module: 'employee',
+                    data: anton.Inputs(ids)
+                }
+
+                kasa.confirm(api.call('PATCH', payload, '/iclock/api/').message, 1, 'here')
+            } else {
+                kasa.error("Invalid Form")
+            }
+        })
+
+    }
+
     async newStaff() {
         let form = "";
         form += fom.text('emp_code', '', true, 5)
 
         let deps = []
         await this.getDepartments().then(response => {
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 response.message.map(dep => {
                     console.table(dep)
-                    deps.push({val:dep.id,desc:dep.dept_name})
+                    deps.push({ val: dep.id, desc: dep.dept_name })
                 })
             } else {
                 kasa.response(response)
@@ -223,17 +540,17 @@ class Staff {
 
         let posts = []
         await staff.getPosition().then(response => {
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 response.message.map(pos => {
                     posts.push({
-                        val:pos.id,desc:pos.position_name
+                        val: pos.id, desc: pos.position_name
                     })
                 })
             } else {
                 kasa.response(response);
                 return
             }
-        }).catch(error => {kasa.error(error); return })
+        }).catch(error => { kasa.error(error); return })
         form += fom.selectv2('position', posts, '', true)
 
         // get areas
@@ -243,15 +560,15 @@ class Staff {
                 console.table(response)
                 response.message.map(area => {
                     areas.push({
-                        val:area.id,
-                        desc:area.area_name
+                        val: area.id,
+                        desc: area.area_name
                     })
                 })
             } else {
                 kasa.response(response)
 
             }
-        }).catch(error => {kasa.error(error)})
+        }).catch(error => { kasa.error(error) })
         form += fom.multiselect('area', areas, '', true)
 
 
@@ -264,12 +581,12 @@ class Staff {
 
         amodal.setBodyHtml(form)
         amodal.setTitleHtml("New pos")
-        amodal.setFooterHtml(`<button class="btn btn-success" id="save_staff">SAVE</button>`)
+        amodal.setFooterHtml(`< button class="btn btn-success" id = "save_staff" > SAVE</button > `)
         $('#emp_code').val(parseInt(next_code) + 1)
         amodal.show()
 
         $('#save_staff').click(function () {
-            let ids = ['emp_code', 'department','area','first_name','last_name','mobile','email','position']
+            let ids = ['emp_code', 'department', 'area', 'first_name', 'last_name', 'mobile', 'email', 'position']
 
             if (anton.validateInputs(ids)) {
                 let payload = {
@@ -287,52 +604,52 @@ class Staff {
 
     setBioData() {
         let form = '';
-        form += fom.number('bio_id','user id on clocking system',true,3)
-        form += fom.password('bio-password','password to use when accessing user data',true)
+        form += fom.number('bio_id', 'user id on clocking system', true, 3)
+        form += fom.password('bio-password', 'password to use when accessing user data', true)
 
         amodal.setBodyHtml(form)
         amodal.setTitleHtml("Update BIO-Credentials")
-        amodal.setFooterHtml(`<button id="verify_bio_credentials" class="btn btn-info btn-sm">SAVE</button>`)
+        amodal.setFooterHtml(`< button id = "verify_bio_credentials" class="btn btn-info btn-sm" > SAVE</button > `)
         amodal.show()
 
-        $('#verify_bio_credentials').click(async function(){
+        $('#verify_bio_credentials').click(async function () {
             // get otp
-            let idsx = ['bio_id','bio-password']
+            let idsx = ['bio_id', 'bio-password']
             let bio_id = $('#bio_id').val()
             let bio_password = $('#bio-password').val()
-            if(anton.validateInputs(idsx)){
+            if (anton.validateInputs(idsx)) {
                 let payload = {
-                    module:'otp_auth',
-                    data:anton.Inputs(idsx)
+                    module: 'otp_auth',
+                    data: anton.Inputs(idsx)
                 }
 
-                await api.v2('VIEW',payload,'/company/api/').then(response => {
-                    if(anton.IsRequest(response)){
+                await api.v2('VIEW', payload, '/company/api/').then(response => {
+                    if (anton.IsRequest(response)) {
                         let msg = response.message
                         let otp = msg.otp
                         let comment = msg.msg
-                        form = fom.text('otp',comment,true,6)
+                        form = fom.text('otp', comment, true, 6)
                         amodal.setBodyHtml(form)
                         amodal.setTitleHtml("Validate")
-                        amodal.setFooterHtml(`<button id='valid_otp' class="btn btn-success">Complete</button>`)
+                        amodal.setFooterHtml(`< button id = 'valid_otp' class="btn btn-success" > Complete</button > `)
 
-                        $('#valid_otp').click(async function(){
+                        $('#valid_otp').click(async function () {
                             let entered_otp = $('#otp').val();
-                            if(entered_otp == otp){
+                            if (entered_otp == otp) {
                                 // send update request
                                 let payload = {
-                                    module:'update_auth',
-                                    data:{
-                                        bio_id:bio_id,
-                                        bio_password:bio_password,
-                                        mypk:$('#mypk').val()
+                                    module: 'update_auth',
+                                    data: {
+                                        bio_id: bio_id,
+                                        bio_password: bio_password,
+                                        mypk: $('#mypk').val()
                                     }
                                 }
 
-                                await api.v2('PATCH',payload,'/company/api/').then(response => {
+                                await api.v2('PATCH', payload, '/company/api/').then(response => {
                                     console.table(response)
-                                    if(anton.IsRequest(response)){
-                                        kasa.confirm("Credentials Update",1,'here')
+                                    if (anton.IsRequest(response)) {
+                                        kasa.confirm("Credentials Update", 1, 'here')
                                     } else {
                                         kasa.error(response)
                                     }
@@ -353,35 +670,64 @@ class Staff {
 
 
 
-            
+
         })
     }
 
-    async loadAttendance(dt=today) {
+    async loadAttendance(dt = today) {
 
         await this.getAttendance(dt).then(response => {
             loader.show()
-            if(anton.IsRequest(response)){
-                let attds = response.message.array;
+
+            if (anton.IsRequest(response)) {
+                let attds = response.message.record;
                 let file = response.message.file;
+                let location_summary = response.message.location_summary;
+
+                console.table(location_summary)
+                let loc_tr = "";
+                location_summary.map(loc => {
+                    let cl = '';
+                    if (loc.attendance_percentage > 80) {
+                        cl = 'text-success';
+                    } else if (loc.attendance_percentage > 50) {
+                        cl = 'text-warning';
+                    } else {
+                        cl = 'text-danger';
+                    }
+                    loc_tr += `
+                    <tr>
+                                <td class="py-2 fw-medium">${loc.area}</td>
+                                <td class="py-2 fw-medium">${loc.total_workers}</td>
+                                <td class="text-center py-2">${loc.present}</td>
+                                <td class="text-center py-2">${loc.absent}</td>
+                                <td class="text-center py-2">
+                                    <span class="badge ${cl} rounded-pill">${loc.attendance_percentage}%</span>
+                                </td>
+                            </tr>
+                    `
+                })
+
+                $('#location-wise-stats').html(loc_tr)
+
                 let tr = "";
                 let st = "";
                 let attd_data = [
-                    ["NAME","LOCATION","CHECK IN","STATUS"]
+                    ["NAME", "LOCATION", "CHECK IN", "STATUS"]
                 ]
                 let ontime_count = 0
                 let late_count = 0
                 let absent_count = 0
 
                 attds.map(attd => {
-                    console.table(attd)
+
                     let tx = ''
-                    if (attd[5] === 'absent'){
+                    if (attd['abscent']) {
                         tx = 'text-danger'
-                        st = attd[5]
+                        st = attd['abscent']
                         absent_count++
                     } else {
-                        if(attd[7]){
+                        if (attd['late']) {
                             tx = 'text-warning'
                             st = 'late'
                             late_count++
@@ -394,16 +740,18 @@ class Staff {
 
 
                     tr += `
-                        <tr class="${tx}">
-                            <td>${attd[0]}</td>
-                            <td>${attd[1]}</td>
+            <tr class="${tx}">
+                            <td>${attd['name']}</td>
+                            <td>${attd['area']}</td>
+                            <td>${attd['department']}</td>
+                            <td>${attd['position']}</td>
                             <td>${st}</td>
-                            <td>${attd[3]}</td>
-                            <td>${attd[4]}</td>
+                            <td>${attd['first_log']}</td>
+                            <td>${attd['last_log']}</td>
 </tr>
-                    `
+            `
 
-                    attd_data.push([attd[0],attd[1],attd[3],st])
+                    attd_data.push([attd[0], attd[1], attd[3], st])
                 })
 
                 $('#absent-count').text(absent_count)
@@ -416,53 +764,144 @@ class Staff {
                 $('#attd_table').DataTable();
                 loader.hide()
                 $('#exp_attendance').click(async function () {
-                    anton.downloadCSV(`${dt.replace('-','_')}_attendance.csv`,anton.convertToCSV(attd_data))
+                    anton.downloadCSV(`${dt.replace('-', '_')} _attendance.csv`, anton.convertToCSV(attd_data))
                 })
             } else {
                 kasa.response(response)
                 // loader.hide()
             }
-        }).catch(error=>{
+        }).catch(error => {
             kasa.error(error);
-            loader.hide()}
+            loader.hide()
+        }
         )
     }
 
+    async upload() {
+        amodal.setBodyHtml(`
+            <div class="p-3">
+                <label class="form-label">Choose CSV File <a href="https://docs.google.com/spreadsheets/d/16edbxA4LTRhnUG2HL78KNg-BD4xYTGIYIIxXkQ-AZjw/edit?usp=sharing" target="_blank">Download Sample</a></label>
+                <input type="file" id="csv-file" class="form-control" accept=".csv" required>
+            </div>
+        `)
+        amodal.setFooterHtml(
+            `<button class="btn btn-primary" id="upload-staff">Upload</button>`
+        )
+        amodal.show()
+        amodal.setTitleHtml("Upload Staff CSV")
 
-    async loadManualPunch(dt=today) {
+        $('#upload-staff').click(async () => {
+            const fileInput = document.getElementById('csv-file');
+            const file = fileInput.files[0];
+            if (!file) return kasa.error("Please select a file");
 
-        await this.getAttendance(dt,false).then(response => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const content = e.target.result;
+                const lines = content.split('\n').filter(line => line.trim() !== '');
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+                const uidIdx = headers.indexOf('uid');
+                const nameIdx = headers.indexOf('name');
+                const areaIdx = headers.indexOf('area');
+
+                if (uidIdx === -1 || nameIdx === -1 || areaIdx === -1) {
+                    return kasa.error("CSV must include uid, name, and area columns.");
+                }
+
+                const payload = lines.slice(1).map(line => {
+                    const columns = line.split(',');
+                    return {
+                        module: 'recieve_user',
+                        data: {
+                            uid: columns[uidIdx]?.trim(),
+                            name: columns[nameIdx]?.trim(),
+                            area: columns[areaIdx]?.trim()
+                        }
+                    };
+                }).filter(item => item.data.uid && item.data.name && item.data.area);
+
+
+                let saved = 0;
+                let not_saved = 0;
+                for (let i = 0; i < payload.length; i++) {
+                    const item = payload[i];
+
+                    await api.v2('PUT', item, '/iclock/api/').then(response => {
+                        if (anton.IsRequest(response)) {
+                            saved++;
+                        } else {
+                            not_saved++;
+                        }
+                    })
+                }
+                kasa.confirm(`Saved ${saved} users, Not saved ${not_saved}`, 1, 'here')
+            };
+            reader.readAsText(file);
+        });
+
+
+    }
+
+    async loadDevices() {
+        await api.v2('VIEW', { module: 'devices', data: { pk: '*' } }, '/iclock/api/').then(response => {
+            if (anton.IsRequest(response)) {
+                let tr = "";
+                response.message.map(device => {
+                    console.table(device)
+                    tr += `
+                        <tr>
+                                    <td>${device.serial_no}</td>
+                                    <td>${device.area}</td>
+                                    <td>${device.name}</td>
+                                    <td>${device.ip_address}</td>
+                                    <td>${device.last_log}</td>
+                                    <td>Actions</td>
+                                </tr>
+                    `
+
+                    $('#devices_table').html(tr)
+                })
+            } else {
+                kasa.response(response)
+            }
+        }).catch(error => { kasa.error(error) })
+    }
+
+    async loadManualPunch(dt = today) {
+
+        await this.getAttendance(dt, false).then(response => {
             loader.show()
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
 
-                
+
                 let attds = response.message.array;
                 let file = response.message.file;
                 let tr = "";
                 let st = "";
                 let attd_data = [
-                    ["NAME","LOCATION","CHECK IN","STATUS"]
+                    ["NAME", "LOCATION", "CHECK IN", "STATUS"]
                 ]
                 let ontime_count = 0
                 let late_count = 0
                 let absent_count = 0
 
                 attds.map(attd => {
-                    
+
                     console.log("ED")
                     console.table(attd)
                     console.log("ED")
 
 
                     tr += `
-                        <tr >
+            < tr >
                             <td>${attd.name}</td>
                             <td>${attd.position}</td>
                             <td>${attd.status}</td>
                             <td>${attd.date}</td>
                             <td>${attd.time}</td>
-</tr>
-                    `
+</tr >
+            `
                 })
 
                 $('#absent-count').text(absent_count)
@@ -475,111 +914,113 @@ class Staff {
                 $('#attd_table').DataTable();
                 loader.hide()
                 $('#exp_attendance').click(async function () {
-                    anton.viewFile(`/${response.message.file}`)
+                    anton.viewFile(`/ ${response.message.file} `)
                 })
             } else {
                 kasa.response(response)
                 // loader.hide()
             }
-        }).catch(error=>{
+        }).catch(error => {
             kasa.error(error);
-            loader.hide()}
+            loader.hide()
+        }
         )
     }
 
-    
 
-    async getAttendance(dt=today,is_live=true) {
+
+    async getAttendance(dt = today, is_live = true) {
         console.log(is_live)
-        return api.call('PUT',{module:'sync_attendance',data:{
-            date:dt,
-            is_live:is_live
-        }},'/company/api/')
+        return api.call('VIEW', {
+            module: 'view_attendance', data: {
+                date: dt,
+            }
+        }, '/company/api/')
     }
 
     async loadMyAttendance(rg = 'week') {
         await this.getMyAttendance(rg).then(response => {
-            if(anton.IsRequest(response)){
-              
-                let xr = [["DATE","DAY","TIME IN","IS LATE"]]
+            if (anton.IsRequest(response)) {
+
+                let xr = [["DATE", "DAY", "TIME IN", "IS LATE"]]
                 let recs = response.message;
                 let tr = ""
-                if(recs.length > 0){
+                if (recs.length > 0) {
                     recs.map(record => {
 
-                    // Add click handler for send button
-                    $(document).on('click', '.send-leave-request', function () {
-                        let leaveId = $(this).data('id');
-                        let payload = {
-                            module: 'leave_resend',
-                            data: {
-                                leave_id: leaveId
+                        // Add click handler for send button
+                        $(document).on('click', '.send-leave-request', function () {
+                            let leaveId = $(this).data('id');
+                            let payload = {
+                                module: 'leave_resend',
+                                data: {
+                                    leave_id: leaveId
+                                }
                             }
+                            api.v2('PUT', payload, '/company/api/').then(response => {
+                                if (anton.IsRequest(response)) {
+                                    kasa.confirm("Leave request sent successfully", 1, 'here')
+                                } else {
+                                    kasa.response(response)
+                                }
+                            }).catch(error => {
+                                kasa.error(error)
+                            })
+                        });
+                        let text = '';
+                        if (record['is_late']) {
+                            text = 'text-warning'
+                        } else {
+                            text = 'text-success'
                         }
-                        api.v2('PUT', payload, '/company/api/').then(response => {
-                            if (anton.IsRequest(response)) {
-                                kasa.confirm("Leave request sent successfully", 1, 'here')
-                            } else {
-                                kasa.response(response)
-                            }
-                        }).catch(error => {
-                            kasa.error(error)
-                        })
-                    });
-                    let text = '';
-                    if(record['is_late']){
-                        text = 'text-warning'
-                    } else {
-                        text = 'text-success'
-                    }
-                    xr.push([record['date'],record['day'],record['time_in'],record['is_late']])
-                    tr += `
-                        <tr class="${text}">
+                        xr.push([record['date'], record['day'], record['time_in'], record['is_late']])
+                        tr += `
+            < tr class="${text}" >
                             <td>${record['date']}</td>
                             <td>${record['day']}</td>
                             <td>${record['time_in']}</td>
                             <td>${record['time_in']}</td>
                             <td>${record['is_late']}</td>
-                        </tr>
-                        
-                    `
-                })
+                        </tr >
+
+            `
+                    })
 
                 } else {
-                    tr = `<tr><td colspan="4"  class="text-danger text-center">NO RECORDS</td></tr>`
+                    tr = `< tr > <td colspan="4" class="text-danger text-center">NO RECORDS</td></tr > `
                 }
 
 
 
                 $('#att_bd').html(tr)
                 $('#exp_attendance').click(async function () {
-                    anton.downloadCSV('attendance.csv',anton.convertToCSV(xr))
+                    anton.downloadCSV('attendance.csv', anton.convertToCSV(xr))
                 })
             } else {
                 kasa.response(response)
             }
-        }).catch(error => {kasa.error(error)})
+        }).catch(error => { kasa.error(error) })
     }
 
     async getMyAttendance(rg) {
-        return api.call('VIEW',{module:'attendance',data:{mypk:$('#mypk').val(),range:rg}},'/company/api/')
+        return api.call('VIEW', { module: 'attendance', data: { mypk: $('#mypk').val(), range: rg } }, '/company/api/')
     }
 
-    LeaveRequestForm(emp_code){
+    LeaveRequestForm(emp_code) {
         let formHTML = `
-            <div id="employee_leave_form" class="p-3 container">
+            < div id = "employee_leave_form" class="p-3 container" >
                 <div class='row'>
-                <div class='col-sm-4'>${fom.selectv2('type_of_leave', [
-                        { val: 'annual', desc: 'Annual Leave' },
-                        { val: 'sick', desc: 'Sick Leave' },
-                        { val: 'casual', desc: 'Casual Leave' },
-                        { val: 'maternity', desc: 'Maternity Leave' },
-                        { val: 'paternity', desc: 'Paternity Leave' },
-                        { val: 'study', desc: 'Study Leave' },
-                        { val: 'compassionate', desc: 'Compassionate Leave' },
-                        { val: 'unpaid', desc: 'Unpaid Leave' },
-                        { val: 'other', desc: 'Other' }
-                    ], '', true)}</div>
+                    <div class='col-sm-4'>${fom.selectv2('type_of_leave', [
+            { val: 'annual', desc: 'Annual Leave' },
+            { val: 'sick', desc: 'Sick Leave' },
+            { val: 'casual', desc: 'Casual Leave' },
+            { val: 'maternity', desc: 'Maternity Leave' },
+            { val: 'paternity', desc: 'Paternity Leave' },
+            { val: 'study', desc: 'Study Leave' },
+            { val: 'compassionate', desc: 'Compassionate Leave' },
+            { val: 'unpaid', desc: 'Unpaid Leave' },
+            { val: 'other', desc: 'Other' }
+        ], '', true)}</div>
 
 
                     <div class='col-sm-4'>${fom.text('emp_code', 'Unique ID assigned to employee', true)}</div>
@@ -612,13 +1053,13 @@ class Staff {
                 
 
                 ${fom.button('submit_leave_form', 'submit', 'success')}
-            </div>
+            </div >
             `;
         amodal.setBodyHtml(formHTML)
         amodal.setSize('L')
         amodal.show()
         $('#emp_code').val(emp_code)
-        $('#emp_code').attr('disabled',true)
+        $('#emp_code').attr('disabled', true)
 
         $('#submit_leave_form').click(async function () {
             let ids = ['type_of_leave', 'emp_code', 'date_of_request', 'start_date', 'end_date', 'reliever_name', 'reason']
@@ -638,8 +1079,8 @@ class Staff {
                 }
 
                 await api.v2('PUT', payload, '/company/api/').then(response => {
-                    if(anton.IsRequest(response)){
-                        kasa.confirm(response.message,1,'here')
+                    if (anton.IsRequest(response)) {
+                        kasa.confirm(response.message, 1, 'here')
                     } else {
                         kasa.response(response)
                     }
@@ -652,23 +1093,23 @@ class Staff {
         })
     }
 
-    async loadMyLeave(pk='*',status='*') {
-        await this.getLeave(pk,status).then(response => {
-            if(anton.IsRequest(response)){
+    async loadMyLeave(pk = '*', status = '*') {
+        await this.getLeave(pk, status).then(response => {
+            if (anton.IsRequest(response)) {
                 let recs = response.message;
                 let tr = ""
                 recs.map(record => {
                     console.table(record)
                     let act = "";
-                    if(record['status'] == 'pending'){
+                    if (record['status'] == 'pending') {
                         act = `
-                                <a class="dropdown-item leave_approval_request" data-id="${record['id']}" href="javascript:void(0)">Request Approval</a>
-                                <a class="dropdown-item cancel-leave"  data-id="${record['id']}" href="javascript:void(0)" >Cancel</a>
-                                `
+            < a class="dropdown-item leave_approval_request" data - id="${record['id']}" href = "javascript:void(0)" > Request Approval</a >
+                <a class="dropdown-item cancel-leave" data-id="${record['id']}" href="javascript:void(0)" >Cancel</a>
+        `
 
                     }
                     tr += `
-                        <tr>
+            < tr >
                             <td>${record['req_date']}</td>
                             <td>${record['type']}</td>
                             <td>${record['start_date']}</td>
@@ -685,17 +1126,17 @@ class Staff {
                                     </div>
                                 </div>
                             </td>
-                        </tr>
-                            
-                            
-                    `
+                        </tr >
+
+
+            `
                 })
 
                 $('#leave_bd').html(tr)
                 $('#leave_table').DataTable();
-                $('#leave_table').on('click','.cancel-leave',async function () {
+                $('#leave_table').on('click', '.cancel-leave', async function () {
                     let leaveId = $(this).data('id');
-                    if(confirm('Are you sure you want to cancel this leave request?') === false){
+                    if (confirm('Are you sure you want to cancel this leave request?') === false) {
                         kasa.info('Cancelled')
                         return;
                     }
@@ -706,14 +1147,14 @@ class Staff {
                         }
                     }
                     await api.v2('DELETE', payload, '/company/api/').then(response => {
-                        kasa.confirm(response.message,1,'here')
+                        kasa.confirm(response.message, 1, 'here')
                     }).catch(error => {
                         kasa.error(error)
                     })
                 })
                 $('.leave_approval_request').click(async function () {
                     let leaveId = $(this).data('id');
-                    if(confirm('Are you sure you want to request approval for this leave request?') === false){
+                    if (confirm('Are you sure you want to request approval for this leave request?') === false) {
                         kasa.info('Cancelled')
                         return;
                     }
@@ -724,20 +1165,20 @@ class Staff {
                         }
                     }
                     await api.v2('PATCH', payload, '/company/api/').then(response => {
-                        kasa.confirm(response.message,1,'here')
+                        kasa.confirm(response.message, 1, 'here')
                     })
                 })
             } else {
                 kasa.response(response)
             }
-        }).catch(error => {kasa.error(error)})
+        }).catch(error => { kasa.error(error) })
     }
 
-    async getLeave(pk='*',status='*') {
-        return api.call('VIEW',{module:'leave',data:{mypk:$('#mypk').val(),pk:pk,status:status}},'/company/api/')
+    async getLeave(pk = '*', status = '*') {
+        return api.call('VIEW', { module: 'leave', data: { mypk: $('#mypk').val(), pk: pk, status: status } }, '/company/api/')
     }
 
-    async loadMonthlyAttendance(month = `${year}-${month}`) {
+    async loadMonthlyAttendance(month = `${year} -${month} `) {
         let payload = {
             module: 'month_attendance',
             data: {
@@ -753,13 +1194,13 @@ class Staff {
                 let tr = ""
                 let transactions = {}
                 let att_file_data = [
-                    ["Name", "Department",  "Total Late","Late Absent","Absent", "Total Absent + Late"],
+                    ["Name", "Department", "Total Late", "Late Absent", "Absent", "Total Absent + Late"],
                 ]
                 recs.map(record => {
-                    let  user_uni = anton.md5(record['name'].replace(' ','').toLowerCase())
+                    let user_uni = anton.md5(record['name'].replace(' ', '').toLowerCase())
                     let abscent = parseInt(record['total_absent']) / 3
                     tr += `
-                        <tr>
+            < tr >
                             <td>${record['name']}</td>
                             <td>${record['department']}</td>
                             <td>${record['total_late']}</td>
@@ -767,44 +1208,44 @@ class Staff {
                             <td>${record['absent']}</td>
                             <th>${record['total_absent']}</th>
                             <td><button data-user="${record['name']}" data-id="${user_uni}" class="btn btn-info see-trans">Transactions</button></td>
-                        </tr>
-                        
-                    `
+                        </tr >
 
-                    att_file_data.push([record['name'],record['department'],record['total_absent'],record['total_late'],abscent + record['total_absent']])
+            `
+
+                    att_file_data.push([record['name'], record['department'], record['total_absent'], record['total_late'], abscent + record['total_absent']])
 
                     // make transactions HTML
                     let attendance = record['attendance'];
                     let this_att_html = "";
                     let this_att_arr = [
-                        ['DATE','TIME IN','TIME OUT','STATUS','IS LATE']
+                        ['DATE', 'TIME IN', 'TIME OUT', 'STATUS', 'IS LATE']
                     ]
                     attendance.map(att => {
                         let text_clor = ""
-                        if(att['status'] == 'absent'){
+                        if (att['status'] == 'absent') {
                             text_clor = 'text-danger'
                         } else {
-                            if(att['is_late']){
+                            if (att['is_late']) {
                                 text_clor = 'text-warning'
                             } else {
                                 text_clor = 'text-success'
                             }
                         }
                         this_att_html += `
-                            <tr class="${text_clor}">
+            < tr class="${text_clor}" >
                                 <td>${att['date']}</td>
                                 <td>${att['time_in']}</td>
                                 <td>${att['time_out']}</td>
                                 <td>${att['status']}</td>
                                 <td>${att['is_late']}</td>
-                            </tr>
-                        `
+                            </tr >
+            `
 
-                        this_att_arr.push([att['date'],att['time_in'],att['time_out'],att['status'],att['is_late']])
+                        this_att_arr.push([att['date'], att['time_in'], att['time_out'], att['status'], att['is_late']])
                     })
 
                     transactions[user_uni] = {
-                        html:this_att_html,arr:this_att_arr
+                        html: this_att_html, arr: this_att_arr
                     };
 
                 })
@@ -819,69 +1260,69 @@ class Staff {
                     let name = $(this).data('user');
                     let html = transactions[user_uni]['html']
                     let table = `
-                        <table id="${user_uni}" class="table">
+            < table id = "${user_uni}" class="table" >
                             <thead><tr><th>DATE</th><th>TIME IN</th><th>TIME OUT</th><th>STATUS</th><th>IS LATE</th></tr></thead>
                             <tbody>${html}</tbody>
-                        </table>
-                    `
+                        </table >
+            `
                     const md = new Modal()
                     md.setBodyHtml(table)
                     md.setSize('L')
                     md.setTitleHtml(name)
-                    amodal.setFooterHtml(`<button class="btn btn-success download-att" id="">Download</button>`)
+                    amodal.setFooterHtml(`< button class="btn btn-success download-att" id = "" > Download</button > `)
                     md.show()
-                    $('#'+user_uni).DataTable();
+                    $('#' + user_uni).DataTable();
                     $('.download-att').click(function () {
                         let att_arr = transactions[user_uni]['arr']
-                        anton.downloadCSV(`${name}.csv`,anton.convertToCSV(att_arr))
+                        anton.downloadCSV(`${name}.csv`, anton.convertToCSV(att_arr))
                     })
                 })
 
                 $('#export_attendance').click(function () {
                     // anton.downloadCSV('attendance.csv',anton.convertToCSV(att_file_data))
-                    anton.viewFile(`/${response.message.file}`)
+                    anton.viewFile(`/ ${response.message.file} `)
                 })
 
             } else {
                 kasa.response(response)
             }
             loader.hide()
-        }).catch(error => {kasa.error(error)})
+        }).catch(error => { kasa.error(error) })
     }
 
-    async syncAttendance(){
-       
+    async syncAttendance() {
+
         let form = "";
-        form += fom.date('start_date','',true)
-        form += fom.date('end_date','',true)
+        form += fom.date('start_date', '', true)
+        form += fom.date('end_date', '', true)
 
         amodal.setBodyHtml(form);
         amodal.setTitleHtml("SYNC ATTENDANCE")
-        amodal.setFooterHtml(`<button id='sync_attendance'>SYNC</button>`)
+        amodal.setFooterHtml(`< button id = 'sync_attendance' > SYNC</button > `)
         amodal.show()
 
-        $('#sync_attendance').click(async function(){
+        $('#sync_attendance').click(async function () {
             loader.show()
-            let ids = ['start_date','end_date'];
-            if(anton.validateInputs(ids)){
+            let ids = ['start_date', 'end_date'];
+            if (anton.validateInputs(ids)) {
                 let data = anton.Inputs(ids);
                 let start = new Date(data.start_date);
                 let end = new Date(data.end_date);
                 let current = new Date(start);
-    
+
                 // Helper function to format date as 'YYYY-MM-DD'
                 function formatDate(dt) {
                     let y = dt.getFullYear();
                     let m = (dt.getMonth() + 1).toString().padStart(2, '0');
                     let d = dt.getDate().toString().padStart(2, '0');
-                    return `${y}-${m}-${d}`;
+                    return `${y} -${m} -${d} `;
                 }
-    
+
                 while (current <= end) {
                     let dtStr = formatDate(current);
                     console.log(dtStr)
                     await staff.loadAttendance(dtStr)
-    
+
                     current.setDate(current.getDate() + 1);
                 }
                 loader.hide()
@@ -890,9 +1331,9 @@ class Staff {
                 loader.hide()
             }
 
-            
+
         })
-        
+
     }
 }
 

@@ -69,3 +69,4 @@ urllib3==2.2.3
 vswhere==1.4.0
 
 pandas
+pyzk

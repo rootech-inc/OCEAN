@@ -5,10 +5,8 @@
 {% block cmms %}
 	<div class="card-header">
         <div class="w-100 d-flex">
-            <div class="w-50"><strong class="card-title">Job Cards</strong></div>
-            <div class="w-50 d-flex flex-wrap justify-content-end">
-                <button onclick="location.href='{% url 'new_servicing_job' %}'" class="btn btn-info">NEW</button>
-            </div>
+            <div class="w-50"><strong class="card-title">Material Request</strong></div>
+
         </div>
     </div>
     <div class="card-body bg-light">
@@ -24,6 +22,7 @@
                         <th>QUANTITY</th>
                         <th>REASON</th>
                         <th>STATUS</th>
+                        <th>ACTION</th>
 
                     </tr>
                 </thead>
@@ -31,14 +30,7 @@
                 {% for req in reqs %}
                     <tr>
                         <td>
-                            {% if user.is_superuser %}
-{#                                <button  class="btn btn-danger">#}
-{#                                    <i class="fa fa-recycle"></i>#}
-{#                                </button>#}
-                            {% endif %}
-                            <button onclick="issueMaterial(`{{ req.pk }}`)" class="btn btn-success">
-                                    <i class="fa fa-check-circle"></i>
-                                </button>
+                            <img onclick="windowPopUp('{{ req.image_url }}','',500,500)" class="pointer img-fluid" style="width: 50px; height: 50px;" src="{{ req.image_url }}" alt="">
                         </td>
                         <td><a onclick="location.href=`{% url 'view_service_card' req.jobcard.pk %}`" href="javascript:void(0)">{{ req.jobcard.carno }} ({{ req.jobcard.wr_no }})</a></td>
                         <td>{{ req.barcode }}</td>
@@ -47,6 +39,17 @@
                         <td>{{ req.reason }}</td>
 
                         <td>{{ req.st | safe }}</td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-toggle="dropdown">
+                                    Action
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick="issueMaterial(`{{ req.pk }}`)">Issue</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick="requestPurchase('{{ req.pk }}')">Request Purchase</a>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -55,8 +58,25 @@
     </div>
 
     <script>
-        function issueMaterial(pk){
-            let payload = {
+        function requestPurchase(s) {
+            if(confirm("Are You Sure you want to request for material")){
+                let payload = {
+                    module:'request_purchase',
+                    data:{
+                        pk:s,
+                        mypk:$('#mypk').val()
+                    }
+                }
+
+                kasa.confirm(api.call('PATCH',payload,'/cmms/api/').message,1,'here')
+            } else {
+                kasa.info("Operation Cancelled")
+            }
+        }
+
+    function issueMaterial(pk){
+            if(confirm("Are you sure you want to issue Material?")){
+                let payload = {
                 module:'issue_material',
                 data:{
                     pk:pk,
@@ -64,7 +84,11 @@
                 }
             }
 
-            kasa.confirm(api.call('PATCH',payload,'/cmms/api/').message,1,'here')
+                kasa.confirm(api.call('PATCH',payload,'/cmms/api/').message,1,'here')
+            } else {
+                kasa.info("Operation Cancelled")
+            }
+
         }
         function deleteServiceJob(pk){
             let payload = {

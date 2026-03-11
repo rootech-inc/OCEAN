@@ -52,6 +52,7 @@ def carjobs(request):
     service_due = JobCard.objects.filter(next_service_date__lte=today).count()
     ongoing_jobs = JobCard.objects.filter(is_started=True, is_ended=False).order_by('-pk')
     pending_requests = JobRequest.objects.filter(is_started=False).count()
+    pending_material_request = JobMaterials.objects.filter(is_issued=False).count()
 
 
     page = {
@@ -67,7 +68,8 @@ def carjobs(request):
             'ready': ready,
             'feedbacks': feedbacks,
             'service_due': service_due,
-            'requests': pending_requests
+            'requests': pending_requests,
+            'pending_material_request':pending_material_request
         },
         'ongoing_jobs': ongoing_jobs
     }

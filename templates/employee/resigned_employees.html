@@ -1,0 +1,42 @@
+{% extends 'employee/emp_base.html' %}
+{% load static %}
+
+{% block body %}
+<div class="card-header">
+    <button class="btn btn-primary" id="new_employee">NEW</button>
+    <button class="btn btn-info" id="download"> Download</button>
+
+</div>
+<div class="card-body p-2" style="height:85vh">
+    <div class="table-responsive h-100">
+        <table id="myTable" class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>NAME</th>
+                    <th>LOCATION</th>
+                    <th>TYPE</th>
+                    <th>DATE</th>
+                    <th>ACTION</th>
+                </tr>
+            </thead>
+            <tbody id="empl"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let next_code = 0;
+    $(document).ready(function () {
+
+        staff.loadStaff('resigned')
+
+        // $('#new_employee').click(function () {
+        //     staff.newStaff()
+        // })
+
+
+
+    })
+</script>
+{% endblock %}

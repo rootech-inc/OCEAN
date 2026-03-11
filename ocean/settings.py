@@ -82,6 +82,8 @@ INSTALLED_APPS = [
     'logistics.apps.LogisticsConfig',
     'amc.apps.AmcConfig',
     'accounts.apps.AccountsConfig',
+    'anton.apps.AntonConfig',
+    'iclock.apps.IclockConfig'
 ]
 
 MIDDLEWARE = [
@@ -327,3 +329,5 @@ COMPANY_DETAILS = {
     'email': os.environ.get('COMPANY_EMAIL', 'rootech.inc@proton.me'),
     'logo': os.environ.get('COMPANY_LOGO', '/static/images/logo.png'),
 }
+
+CMMS_MR_CONTACT = os.environ.get('CMMS_MR_CONTACT','0546310011')

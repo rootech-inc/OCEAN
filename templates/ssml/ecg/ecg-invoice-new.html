@@ -1,0 +1,516 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+{% block body %}
+<!-- Modernized Invoicing Styles -->
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.18);
+        --accent-primary: #0d6efd;
+        --accent-secondary: #6c757d;
+        --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid var(--glass-border);
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .premium-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 1.5rem;
+        border-bottom: none;
+    }
+
+    .form-control-premium {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+        padding: 0.6rem 1rem;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+    }
+
+    .btn-premium {
+        border-radius: 10px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-premium-success {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-premium-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        border: none;
+        color: white;
+    }
+</style>
+
+<div class="pagetitle mb-4">
+    <h1>Raise ECG Invoice</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'ssml' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ecg-invoice' %}">ECG Invoicing</a></li>
+            <li class="breadcrumb-item active">New Invoice</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="glass-card mb-4">
+    <div class="premium-header d-flex justify-content-between align-items-center">
+        <div class="d-flex gap-2">
+            <button class="btn btn-premium btn-premium-success d-flex align-items-center gap-2" id="save">
+                <i class="bi bi-save"></i> SAVE ECG INVOICE
+            </button>
+            <a href="{% url 'ecg-invoice' %}"
+                class="btn btn-premium btn-premium-secondary d-flex align-items-center gap-2">
+                <i class="bi bi-arrow-left"></i> BACK
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Invoice Date</label>
+                    <input id="entry_date" type="date" class="form-control form-control-premium">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Location</label>
+                    <select id="location" class="form-select form-control-premium"></select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Remarks</label>
+                    <input id="remarks" type="text" class="form-control form-control-premium"
+                        placeholder="Enter optional remarks...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex align-items-center gap-3 p-3 rounded-3 mt-4" style="background: #f8f9fa;">
+                    <span class="fw-bold text-muted text-uppercase small">Total:</span>
+                    <span class="h4 mb-0 text-primary fw-bold" id="total_display">GHS 0.00</span>
+                    <input type="hidden" id="total" value="0.00">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card mb-4">
+    <div class="card-body p-0">
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs nav-tabs-bordered d-flex" id="invoiceTabs" role="tablist" style="background: #f8f9fa;">
+            <li class="nav-item flex-fill" role="presentation">
+                <button class="nav-link w-100 active fw-bold py-3" id="jobs-tab" data-bs-toggle="tab"
+                    data-bs-target="#jobs-content" type="button" role="tab">
+                    <i class="bi bi-tools me-2"></i>1. JOBS DONE
+                </button>
+            </li>
+            <li class="nav-item flex-fill" role="presentation">
+                <button class="nav-link w-100 fw-bold py-3" id="meters-tab" data-bs-toggle="tab"
+                    data-bs-target="#meters-content" type="button" role="tab">
+                    <i class="bi bi-file-earmark-arrow-up me-2"></i>2. METERS UPLOAD
+                </button>
+            </li>
+            <li class="nav-item flex-fill" role="presentation">
+                <button class="nav-link w-100 fw-bold py-3" id="summary-tab" data-bs-toggle="tab"
+                    data-bs-target="#summary-content" type="button" role="tab">
+                    <i class="bi bi-calculator me-2"></i>3. SUMMARY
+                </button>
+            </li>
+            <li class="nav-item flex-fill" role="presentation">
+                <button class="nav-link w-100 fw-bold py-3 text-indigo" id="billable-tab" data-bs-toggle="tab"
+                    data-bs-target="#billable-content" type="button" role="tab">
+                    <i class="bi bi-cart-check me-2"></i>4. BILLABLE ITEMS
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content p-4" id="invoiceTabContent">
+            <!-- Jobs Done Tab -->
+            <div class="tab-pane fade show active" id="jobs-content" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0 text-muted text-uppercase small">Eligible Service Orders</h6>
+                    <button id="retrieve" class="btn btn-sm btn-primary py-2 px-3">
+                        <i class="bi bi-search me-1"></i> RETRIEVE JOBS
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>DATE</th>
+                                <th>SERVICE</th>
+                                <th>METER</th>
+                                <th>CONTRACTOR</th>
+                                <th class="text-end">AMOUNT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobs_container">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">Click "Retrieve Jobs" after
+                                    selecting location.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Meters Upload Tab -->
+            <div class="tab-pane fade" id="meters-content" role="tabpanel">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-4 rounded-3 border-dashed"
+                            style="border: 2px dashed #dee2e6; background: #fdfdfd;">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Upload Meters CSV</label>
+                            <div class="input-group">
+                                <input type="file" id="meter_csv" class="form-control" accept=".csv">
+                                <button id="parse_csv" class="btn btn-dark">PARSE & CALCULATE</button>
+                            </div>
+                            <div class="mt-2 small text-muted">Format: <code>meter_no,phase</code> (e.g., 100234,Single
+                                Phase)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 h-100">
+                            <h6 class="fw-bold text-muted small text-uppercase mb-3">Active Rates</h6>
+                            <div id="active_rates_display" class="small text-muted">Loading rates...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>#</th>
+                                <th>METER NO</th>
+                                <th>PHASE</th>
+                                <th class="text-end">APPLIED RATE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="meters_container">
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No meters uploaded yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Summary Tab -->
+            <div class="tab-pane fade" id="summary-content" role="tabpanel">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="list-group">
+                            <div class="list-group-item d-flex justify-content-between align-items-center p-4">
+                                <div>
+                                    <h5 class="mb-1 fw-bold">Jobs Done</h5>
+                                    <p class="mb-0 text-muted small" id="jobs_count_label">0 items selected</p>
+                                </div>
+                                <h4 class="mb-0 fw-bold" id="jobs_total_label">GHS 0.00</h4>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center p-4">
+                                <div>
+                                    <h5 class="mb-1 fw-bold">Meters Supplied</h5>
+                                    <p class="mb-0 text-muted small" id="meters_count_label">0 meters uploaded</p>
+                                </div>
+                                <h4 class="mb-0 fw-bold" id="meters_total_label">GHS 0.00</h4>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center p-4">
+                                <div>
+                                    <h5 class="mb-1 fw-bold">Billable Materials</h5>
+                                    <p class="mb-0 text-muted small" id="billable_count_label">0 items added</p>
+                                </div>
+                                <h4 class="mb-0 fw-bold" id="billable_total_label">GHS 0.00</h4>
+                            </div>
+                            <div
+                                class="list-group-item d-flex justify-content-between align-items-center p-4 bg-primary text-white">
+                                <h4 class="mb-0 fw-bold">GRAND TOTAL</h4>
+                                <h3 class="mb-0 fw-bold" id="grand_total_label">GHS 0.00</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billable Items Tab -->
+            <div class="tab-pane fade" id="billable-content" role="tabpanel">
+                <div class="row g-3 mb-4 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label-minimal">Select Billable Item</label>
+                        <select id="billable_select" class="form-select form-control-premium"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-minimal">Qty</label>
+                        <input type="number" id="billable_qty" class="form-control form-control-premium" value="1">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-minimal">Rate (Adjustable)</label>
+                        <input type="number" id="billable_rate" class="form-control form-control-premium" step="0.01">
+                    </div>
+                    <div class="col-md-2">
+                        <button id="add_billable" class="btn btn-dark btn-premium w-100">ADD ITEM</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr class="small text-uppercase">
+                                <th>Item Name</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Rate</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billable_container">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">No billable items added.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let job_transactions = [];
+    let meter_transactions = [];
+    let material_transactions = [];
+    let billable_available = [];
+    let rates = { job_rates: [], meter_rates: [] };
+
+    $(document).ready(function () {
+        loadLocations();
+        loadRates();
+        loadBillableItems();
+
+        async function loadLocations() {
+            let res = await api.v2('VIEW', { module: 'location', data: {} }, '/ssml/api/');
+            if (anton.IsRequest(res)) {
+                let html = '<option value="">Select Location...</option>';
+                res.message.forEach(loc => {
+                    html += `<option value="${loc.pk}">${loc.name}</option>`;
+                });
+                $('#location').html(html);
+            }
+        }
+
+        async function loadRates() {
+            let res = await api.v2('VIEW', { module: 'ecg_rates', data: {} }, '/ssml/api/');
+            if (anton.IsRequest(res)) {
+                rates = res.message;
+                let html = '<ul class="list-unstyled mb-0">';
+                rates.meter_rates.forEach(r => {
+                    html += `<li><strong>${r.phase}:</strong> GHS ${r.rate}</li>`;
+                });
+                html += '</ul>';
+                $('#active_rates_display').html(html);
+            }
+        }
+
+        async function loadBillableItems() {
+            let res = await api.v2('VIEW', { module: 'billable_materials', data: {} }, '/ssml/api/');
+            if (anton.IsRequest(res)) {
+                billable_available = res.message;
+                let html = '<option value="">Select Item...</option>';
+                billable_available.forEach(item => {
+                    html += `<option value="${item.id}">${item.name} (₵${item.value})</option>`;
+                });
+                $('#billable_select').html(html);
+            }
+        }
+
+        $('#billable_select').change(function () {
+            let id = $(this).val();
+            let item = billable_available.find(i => i.id == id);
+            if (item) {
+                $('#billable_rate').val(item.value);
+            }
+        });
+
+        $('#add_billable').click(function () {
+            let id = $('#billable_select').val();
+            let qty = parseFloat($('#billable_qty').val());
+            let rate = parseFloat($('#billable_rate').val());
+
+            if (!id || isNaN(qty) || isNaN(rate)) {
+                kasa.error("Invalid item details");
+                return;
+            }
+
+            let item = billable_available.find(i => i.id == id);
+            material_transactions.push({
+                id: item.id,
+                name: item.name,
+                qty: qty,
+                rate: rate,
+                amount: qty * rate
+            });
+
+            renderBillable();
+            updateSummary();
+            anton.clearInputs(['billable_select', 'billable_qty', 'billable_rate']);
+        });
+
+        function renderBillable() {
+            let tr = "";
+            material_transactions.forEach((m, index) => {
+                tr += `<tr>
+                    <td>${m.name}</td>
+                    <td class="text-center">${m.qty}</td>
+                    <td class="text-end">${m.rate.toFixed(2)}</td>
+                    <td class="text-end fw-bold">${m.amount.toFixed(2)}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-danger remove-billable" data-index="${index}"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            $('#billable_container').html(tr || '<tr><td colspan="5" class="text-center py-4 text-muted">No billable items added.</td></tr>');
+
+            $('.remove-billable').click(function () {
+                let idx = $(this).data('index');
+                material_transactions.splice(idx, 1);
+                renderBillable();
+                updateSummary();
+            });
+        }
+
+        $('#retrieve').click(async function () {
+            let loc_id = $('#location').val();
+            if (!loc_id) {
+                kasa.error("Please select a location first.");
+                return;
+            }
+
+            let res = await api.v2('VIEW', { module: 'ecg_eligible_jobs', data: { location: loc_id } }, '/ssml/api/');
+            if (anton.IsRequest(res)) {
+                job_transactions = res.message;
+                let tr = "";
+                let jobs_total = 0;
+                if (job_transactions.length > 0) {
+                    job_transactions.forEach(service => {
+                        tr += `<tr>
+                            <td>${service.date}</td>
+                            <td>${service.service}</td>
+                            <td>${service.meter}</td>
+                            <td>${service.contractor}</td>
+                            <td class="text-end">GHS ${parseFloat(service.amount).toFixed(2)}</td>
+                        </tr>`;
+                        jobs_total += parseFloat(service.amount);
+                    });
+                } else {
+                    tr = '<tr><td colspan="5" class="text-center py-4 text-warning">No eligible jobs found for this location.</td></tr>';
+                }
+                $('#jobs_container').html(tr);
+                updateSummary();
+            }
+        });
+
+        $('#parse_csv').click(function () {
+            const file = $('#meter_csv')[0].files[0];
+            if (!file) {
+                kasa.error("Please select a CSV file.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                meter_transactions = [];
+                let tr = "";
+                let meters_total = 0;
+
+                lines.forEach((line, index) => {
+                    if (line.trim() === '') return;
+                    const parts = line.split(',');
+                    if (parts.length >= 2) {
+                        const meter_no = parts[0].trim();
+                        const phase_input = parts[1].trim();
+
+                        // Phase matching logic
+                        let phase_key = phase_input.toLowerCase().includes('1') ? '1 phase ' : (phase_input.toLowerCase().includes('3') ? '3 phase' : phase_input);
+                        let rate_obj = rates.meter_rates.find(r => r.phase === phase_key);
+                        let rate = rate_obj ? parseFloat(rate_obj.rate) : 0;
+
+                        meter_transactions.push({ meter_no, phase: phase_key, amount: rate });
+                        tr += `<tr>
+                            <td>${meter_transactions.length}</td>
+                            <td>${meter_no}</td>
+                            <td>${phase_key}</td>
+                            <td class="text-end">GHS ${rate.toFixed(2)}</td>
+                        </tr>`;
+                        meters_total += rate;
+                    }
+                });
+
+                $('#meters_container').html(tr || '<tr><td colspan="4" class="text-center text-danger">Invalid CSV format.</td></tr>');
+                updateSummary();
+            };
+            reader.readAsText(file);
+        });
+
+        function updateSummary() {
+            let jobs_total = job_transactions.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+            let meters_total = meter_transactions.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+            let mats_total = material_transactions.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+            let grand_total = jobs_total + meters_total + mats_total;
+
+            $('#jobs_count_label').text(`${job_transactions.length} items selected`);
+            $('#jobs_total_label').text(`GHS ${jobs_total.toFixed(2)}`);
+            $('#meters_count_label').text(`${meter_transactions.length} meters uploaded`);
+            $('#meters_total_label').text(`GHS ${meters_total.toFixed(2)}`);
+            $('#billable_count_label').text(`${material_transactions.length} items added`);
+            $('#billable_total_label').text(`GHS ${mats_total.toFixed(2)}`);
+
+            $('#grand_total_label').text(`GHS ${grand_total.toFixed(2)}`);
+            $('#total_display').text(`GHS ${grand_total.toFixed(2)}`);
+            $('#total').val(grand_total.toFixed(2));
+        }
+
+        $('#save').click(async function () {
+            let ids = ['entry_date', 'remarks', 'location', 'mypk'];
+            if (anton.validateInputs(ids) && (job_transactions.length > 0 || meter_transactions.length > 0)) {
+                let payload = {
+                    module: 'ecg_invoice',
+                    data: anton.Inputs(ids)
+                }
+                payload['data']['job_transactions'] = job_transactions;
+                payload['data']['meter_transactions'] = meter_transactions;
+                payload['data']['material_transactions'] = material_transactions;
+
+                await api.v2('PUT', payload, '/ssml/api/').then(res => {
+                    kasa.confirm(res.message, 1, '/ssml/accounts/ecg-invoice/')
+                }).catch(error => {
+                    kasa.error(error)
+                })
+            } else {
+                kasa.error("Please fill required fields and ensure you have jobs or meters transactions.");
+            }
+        })
+    });
+</script>
+{% endblock %}

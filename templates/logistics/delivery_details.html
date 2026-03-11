@@ -3,107 +3,159 @@
 
 {% block body %}
 
-    <div style="max-height: 100%; overflow: hidden" class="overflow-auto">
-        <div class="card">
-        <div class="card-header">
-            <div class="w-100 d-flex flex-wrap">
-                <div class="w-50">
-                    <button class="btn btn-warning record_purchase"><i class="fa fa-gas-pump"></i></button>
+<div class="container-fluid py-4 h-100 overflow-auto">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
+                <div class="card-header bg-white border-0 py-4 px-4 px-md-5">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between">
+                        <div>
+                            <h3 class="h5 font-weight-bold text-dark mb-1">Delivery Details</h3>
+                            <p class="text-muted small mb-0">Track progress and update records</p>
+                        </div>
+                        <div class="w-50 d-flex flex-wrap justify-content-end mt-3 mt-md-0">
+                            {% if delivery.status == 'in_transit' %}
+                            <button
+                                class="btn btn-warning rounded-pill px-4 py-2 font-weight-bold record_purchase shadow-sm transition-all hover-lift">
+                                <i class="bi bi-fuel-pump me-2"></i> Record Fuel
+                            </button>
+                            {% endif %}
+                            <div class="bt"></div>
+                        </div>
+                    </div>
                 </div>
+                <div class="card-body px-4 px-md-5 pb-5">
+                    <div class="row mb-5 align-items-center">
+                        <div class="col-12 col-md-5 text-center text-md-left mb-4 mb-md-0">
+                            <div class="p-3 bg-light rounded-lg d-inline-block w-100">
+                                <small class="text-uppercase font-weight-bold text-danger d-block mb-2"
+                                    style="font-size: 0.7rem; letter-spacing: 0.1em;">Departure</small>
+                                <h4 class="h6 font-weight-bold text-dark mb-0 source">
+                                    <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-2 text-center mb-4 mb-md-0">
+                            <div class="position-relative d-flex align-items-center justify-content-center">
+                                <div class="w-100 bg-warning"
+                                    style="height: 2px; opacity: 0.2; position: absolute; z-index: 1;"></div>
+                                <div class="bg-white px-2 position-relative" style="z-index: 2;">
+                                    <i class="bi bi-arrow-right-circle-fill text-warning h3 mb-0"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-5 text-center text-md-right">
+                            <div class="p-3 bg-light rounded-lg d-inline-block w-100">
+                                <small class="text-uppercase font-weight-bold text-info d-block mb-2"
+                                    style="font-size: 0.7rem; letter-spacing: 0.1em;">Destination</small>
+                                <h4 class="h6 font-weight-bold text-dark mb-0 destination text-end">
+                                    <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="w-50 d-flex flex-wrap justify-content-end bt">
+                    <div class="mb-5">
+                        <h5 class="small font-weight-bold text-muted text-uppercase mb-3"
+                            style="letter-spacing: 0.1em;">Request Description</h5>
+                        <div class="p-4 bg-light rounded-lg border-start border-4 border-primary">
+                            <p class="text-dark mb-0 description" style="line-height: 1.6;">
+                                Loading description...
+                            </p>
+                        </div>
+                    </div>
 
+                    <div>
+                        <h5 class="small font-weight-bold text-muted text-uppercase mb-4"
+                            style="letter-spacing: 0.1em;">Activity Timeline</h5>
+                        <div class="container-fluid px-0">
+                            <div class="position-relative logs ps-4 border-start border-2 border-light ms-2">
+                                <!-- Logs populated by JS -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-
-        </div>
-        <div class="card-body p-2">
-            <div class="d-flex flex-wrap align-items-center justify-content-between">
-                <small class="text-danger float-left source">
-                    <div class="spinner-border" role="status">
-                  <span class="sr-only">Loading...</span>
-                </div>
-
-                </small>
-
-                <small class="text-warning">>>>>>>>>>>></small>
-
-                <small class="text-info destination float-right">
-                <div class="spinner-border" role="status">
-                  <span class="sr-only">Loading...</span>
-                </div>
-            </small>
-            </div>
-            <p class="text-justify description mt-2">
-
-            </p>
-
-
-            <hr>
-            <div class="container my-4">
-                  <div class="d-flex flex-column position-relative logs" style="border-left: 3px solid #28a745; margin-left: 20px; padding-left: 20px;">
-
-                  </div>
             </div>
         </div>
     </div>
+</div>
+
+<style>
+    .logs>div {
+        position: relative;
+        padding-bottom: 2rem;
+    }
+
+    .logs>div::before {
+        content: '';
+        position: absolute;
+        left: -33px;
+        top: 5px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid var(--primary-color);
+    }
+
+    .bg-primary-light {
+        background-color: rgba(var(--primary-rgb), 0.1);
+    }
+</style>
 
 
-    </div>
+<script>
+    $(document).ready(function () {
+        let enc = `{{ enc }}`
+        let car_pk = `{{car_pk}}`
 
-    <script>
-        $(document).ready(function () {
-            let enc = `{{ enc }}`
-            let car_pk = `{{car_pk}}`
-
-            
-
-            logistics.LoadDeliveryDetails(enc)
+        logistics.LoadDeliveryDetails(enc)
 
 
-                    $('.record_purchase').click(function(){
-                        let body = "";
-                        body += fom.number('amount','how much purchase?',true)
-                        body += fom.number('rate','price per lt',true)
-                        body +=  `
+        $('.record_purchase').click(function () {
+            let body = "";
+            body += fom.number('amount', 'how much purchase?', true)
+            body += fom.number('rate', 'price per lt', true)
+            body += `
                             <form id="snd_rep" method='post' enctype="multipart/form-data" action="/logistic/fuel-reciept/" >
                              <input type="hidden" name="block" id="block">
                             <input type="file" name="receipt" class="form-control" id="receipt"></form>
                         `
 
-                        amodal.setTitleText("NEW RECORD")
-                        amodal.setBodyHtml(body)
-                        amodal.setSize('L')
-                        amodal.show()
-                        amodal.setFooterHtml(`<button class="btn btn-primary" id="save_fuel">SAVE</button>`)
-                        amodal.show()
+            amodal.setTitleText("NEW RECORD")
+            amodal.setBodyHtml(body)
+            amodal.setSize('L')
+            amodal.show()
+            amodal.setFooterHtml(`<button class="btn btn-primary" id="save_fuel">SAVE</button>`)
+            amodal.show()
 
-                        $('#save_fuel').click(async function(){
-                            let ids = ['amount','rate','mypk','receipt']
-                            if(anton.validateInputs(ids)){
-                                let payload = {
-                                    module:'fuel_purchase',
-                                    data:anton.Inputs(ids)
-                                }
+            $('#save_fuel').click(async function () {
+                let ids = ['amount', 'rate', 'mypk', 'receipt']
+                if (anton.validateInputs(ids)) {
+                    let payload = {
+                        module: 'fuel_purchase',
+                        data: anton.Inputs(ids)
+                    }
 
-                                payload['data']['pk'] = car_pk
-                                payload['data']['trip_enc'] = enc
+                    payload['data']['pk'] = car_pk
+                    payload['data']['trip_enc'] = enc
 
-                                await api.v2('PUT',payload,logistics.interface).then(response => {
-                                    if(anton.IsRequest(response)){
-                                        $('#block').val(response.message)
-                                        $('#snd_rep').submit()
-                                    } else {
-                                        kasa.response(response)
-                                    }
-                                })
+                    console.table(payload)
 
-                            }
-                        })
-
+                    await api.v2('PUT', payload, logistics.interface).then(response => {
+                        if (anton.IsRequest(response)) {
+                            $('#block').val(response.message)
+                            $('#snd_rep').submit()
+                        } else {
+                            kasa.response(response)
+                        }
                     })
+
+                }
+            })
+
         })
-    </script>
+    })
+</script>
 
 {% endblock %}

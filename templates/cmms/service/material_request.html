@@ -5,7 +5,7 @@
 <style>
     .public-container {
         max-width: 600px;
-        margin: 2rem auto;
+
         padding: 0 1rem;
     }
 
@@ -89,7 +89,7 @@
 
 <div class="public-container">
     <div class="header-logo">
-        <img src="{% static 'assets/img/logo.png' %}" alt="Logo">
+
         <h1>Material Request</h1>
         <p class="text-muted small">Submit a request for materials for an active job.</p>
     </div>
@@ -111,9 +111,8 @@
     <div class="request-card">
         <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
             {% csrf_token %}
-            <div class="mb-4">
-                <label class="form-label-premium">Select Work Order</label>
-                <select name="job_pk" class="form-control-premium form-select-premium w-100" required>
+            <div class="mb-4 row g-2"> <div class="col-9 col-sm-10"> <label class="form-label-premium">Select Work Order</label>
+                <select name="job_pk" id="job_pk" class="form-control-premium w-100 form-select-premium" required>
                     <option value="" selected disabled>Choose Active Job...</option>
                     {% for job in jobs %}
                     <option value="{{ job.pk }}">{{ job.carno }} - {{ job.company }} ({{ job.brand }} {{ job.model }})
@@ -122,6 +121,12 @@
                 </select>
                 <div class="invalid-feedback">Please select a work order.</div>
             </div>
+
+            <div class="col-3 col-sm-2 d-flex align-items-end"> <button id="reload_pending_jobs" type="button" class="btn btn-info w-100">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
 
             <div class="row g-3 mb-4">
                 <div class="col-md-6">
@@ -188,5 +193,30 @@
                 }, false)
             })
     })()
+
+    $(document).ready(function(){
+        $('#reload_pending_jobs').click(async function(){
+            loader.show()
+            let payload = {
+                module:'pending_jobs',
+                data:{}
+            }
+
+            await api.v2('VIEW',payload,'/cmms/api/').then(response => {
+                if(anton.IsRequest(response)){
+                    console.table(response);
+                    let tr =   `<option value="" selected disabled>Select job</option>`;
+                    response.message.map(i => {
+                        tr += `<option value="${i.pk}">${i.carno} - ${i.company}</option>`
+                    })
+
+                    $('#job_pk').html(tr)
+                    loader.hide()
+                } else {
+                    kasa.response(response);loader.hide()
+                }
+            }).catch(error => {kasa.error(error);loader.hide()})
+        })
+    })
 </script>
 {% endblock %}

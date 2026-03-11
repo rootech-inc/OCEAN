@@ -1,20 +1,60 @@
 {% extends 'logistics/base.html' %}
 
 {% block body %}
-    <div class="container">
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="h4 font-weight-bold mb-0 text-dark">My Deliveries</h2>
+                <p class="text-muted small">Track your personal delivery requests</p>
+            </div>
+        </div>
         <div class="row">
             {% for order in delivery_requests %}
-            <div class="col-sm-4 order" data-enc="{{ order.enc }}">
-                <div class="card shadow-sm alert {% if order.status == 'in_transit' %}alert-info{% elif order.status == 'schedule' %}alert-warning{% endif %}">
-                    <div class="card-body p-2">
-                        <small>{{ order.request_date }}</small>
-                        <p class="m-0">{{ order.source }} -> {{ order.destination }}</p>
-                        <strong>{{ order.duration }}</strong>
+            <div class="col-12 col-sm-6 col-lg-4 mb-4 order" data-enc="{{ order.enc }}" style="cursor: pointer;">
+                <div class="card h-100 border-0 shadow-sm hover-shadow transition-all" style="border-radius: 16px; overflow: hidden;">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge {% if order.status == 'delivered' %}bg-success{% elif order.status == 'in_transit' %}bg-info{% elif order.status == 'schedule' %}bg-warning{% else %}bg-secondary{% endif %} rounded-pill py-2 px-3" style="font-size: 0.75rem;">
+                                {{ order.status|title }}
+                            </span>
+                            <small class="text-muted"><i class="bi bi-calendar3 me-1"></i> {{ order.request_date|date:"M d, Y" }}</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
+                                    <i class="bi bi-geo-alt text-danger" style="font-size: 0.8rem;"></i>
+                                </div>
+                                <span class="text-dark font-weight-500">{{ order.source }}</span>
+                            </div>
+                            <div class="ps-1 ms-3 border-start mb-2" style="height: 20px; border-color: #dee2e6 !important;"></div>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
+                                    <i class="bi bi-geo-fill text-primary" style="font-size: 0.8rem;"></i>
+                                </div>
+                                <span class="text-dark font-weight-500">{{ order.destination }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="pt-3 border-top d-flex justify-content-between align-items-center">
+                            <span class="text-muted small"><i class="bi bi-clock me-1"></i> {{ order.duration|default:"TBD" }}</span>
+                            <span class="text-primary small font-weight-bold">View Details <i class="bi bi-chevron-right ms-1"></i></span>
+                        </div>
                     </div>
-
                 </div>
             </div>
             {% endfor %}
+            
+            {% if not delivery_requests %}
+            <div class="col-12 py-5 text-center">
+                <div class="mb-4">
+                    <i class="bi bi-box-seam text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+                </div>
+                <h3 class="h5 text-dark">No Deliveries Found</h3>
+                <p class="text-muted">You haven't made any delivery requests yet.</p>
+                <a href="{% url 'logistics-home' %}" class="btn btn-primary rounded-pill px-4 mt-2">Create New Request</a>
+            </div>
+            {% endif %}
         </div>
     </div>
 

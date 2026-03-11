@@ -1,0 +1,204 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+{% block body %}
+<style>
+    .minimal-section {
+        background: #fff;
+        border: 1px solid #eef0f2;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        font-weight: 700;
+        color: #1a1a1a;
+        font-size: 1.5rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1>ECG Rates Management</h1>
+            <nav>
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'ssml' %}">Home</a></li>
+                    <li class="breadcrumb-item active">ECG Rates</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{% url 'ecg-invoice' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Invoices
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Job Rates -->
+        <div class="col-md-6">
+            <div class="minimal-section">
+                <h5 class="fw-bold mb-4">Job Rates</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label>Service Type</label>
+                            <select id="service_type" class="form-select">
+                                <option value="">Select Service...</option>
+                                {% for type in service_types %}
+                                <option value="{{ type.id }}">{{ type.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label>Rate (GHS)</label>
+                            <input type="number" id="job_rate" class="form-control" step="0.01" value="0.00">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button id="save_job_rate" class="btn btn-primary w-100 fw-bold">UPDATE RATE</button>
+                    </div>
+                </div>
+
+                <div class="border-top pt-4">
+                    <label class="d-block mb-3 fw-bold text-muted small text-uppercase">Active Job Rates</label>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th>SERVICE</th>
+                                    <th class="text-end">RATE</th>
+                                </tr>
+                            </thead>
+                            <tbody id="job_rates_container"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meter Rates -->
+        <div class="col-md-6">
+            <div class="minimal-section">
+                <h5 class="fw-bold mb-4">Meter Phase Rates</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label>Phase Specification</label>
+                            <select id="meter_phase" class="form-select">
+                                <option value="1 phase ">Single Phase</option>
+                                <option value="3 phase">Three Phase</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label>Rate (GHS)</label>
+                            <input type="number" id="meter_rate" class="form-control" step="0.01" value="0.00">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button id="save_meter_rate" class="btn btn-dark w-100 fw-bold">UPDATE RATE</button>
+                    </div>
+                </div>
+
+                <div class="border-top pt-4">
+                    <label class="d-block mb-3 fw-bold text-muted small text-uppercase">Active Meter Rates</label>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th>PHASE</th>
+                                    <th class="text-end">RATE</th>
+                                </tr>
+                            </thead>
+                            <tbody id="meter_rates_container"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        loadRates();
+
+        async function loadRates() {
+            let res = await api.v2('VIEW', { module: 'ecg_rates', data: {} }, '/ssml/api/');
+            if (anton.IsRequest(res)) {
+                let jobHtml = "";
+                res.message.job_rates.forEach(r => {
+                    jobHtml += `<tr><td>${r.service_type.name}</td><td class="text-end fw-bold">₵${parseFloat(r.rate).toFixed(2)}</td></tr>`;
+                });
+                $('#job_rates_container').html(jobHtml || '<tr><td colspan="2" class="text-center text-muted small py-3">No rates defined</td></tr>');
+
+                let meterHtml = "";
+                res.message.meter_rates.forEach(r => {
+                    meterHtml += `<tr><td>${r.phase.toUpperCase()}</td><td class="text-end fw-bold">₵${parseFloat(r.rate).toFixed(2)}</td></tr>`;
+                });
+                $('#meter_rates_container').html(meterHtml || '<tr><td colspan="2" class="text-center text-muted small py-3">No rates defined</td></tr>');
+            }
+        }
+
+        $('#save_job_rate').click(async function () {
+            if (anton.validateInputs(['service_type', 'job_rate'])) {
+                let btn = $(this);
+                btn.prop('disabled', true).text('SAVING...');
+                let payload = {
+                    module: 'ecg_job_rate',
+                    data: {
+                        service_type: $('#service_type').val(),
+                        rate: $('#job_rate').val(),
+                        mypk: $('#mypk').val()
+                    }
+                };
+                try {
+                    let res = await api.v2('PUT', payload, '/ssml/api/');
+                    kasa.info(res.message);
+                    await loadRates();
+                } finally {
+                    btn.prop('disabled', false).text('UPDATE RATE');
+                }
+            }
+        });
+
+        $('#save_meter_rate').click(async function () {
+            if (anton.validateInputs(['meter_rate'])) {
+                let btn = $(this);
+                btn.prop('disabled', true).text('SAVING...');
+                let payload = {
+                    module: 'ecg_meter_rate',
+                    data: {
+                        phase: $('#meter_phase').val(),
+                        rate: $('#meter_rate').val()
+                    }
+                };
+                try {
+                    let res = await api.v2('PUT', payload, '/ssml/api/');
+                    kasa.info(res.message);
+                    await loadRates();
+                } finally {
+                    btn.prop('disabled', false).text('UPDATE RATE');
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,5 +1,6 @@
 
-from datetime import datetime
+from django.db.models import Count, Sum
+from datetime import datetime, date
 from decimal import Decimal
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
@@ -41,8 +42,64 @@ def index(request):
     context['today_installs'] = ServiceOrder.objects.filter(service_date=datetime.now().date()).count()
     context['materials'] = InventoryMaterial.objects.all()
     context['locations'] = Location.objects.all().order_by('loc_name')
-    # context['low_stock'] = InventoryMaterial.objects.filter()
+    
+    # Calculate stock ready for re-order
+    reorder_materials = []
+    active_materials = InventoryMaterial.objects.filter(is_active=True, reorder_qty__gt=0)
+    for mat in active_materials:
+        current_stock = mat.stock()
+        if current_stock <= mat.reorder_qty:
+            reorder_materials.append({
+                'material': mat,
+                'stock': current_stock
+            })
+    context['reorder_materials'] = reorder_materials
+
+    # Advanced Dashboard Metrics
+    total_service_orders = ServiceOrder.objects.count()
+    first_service_order = ServiceOrder.objects.order_by('service_date').first()
+    
+    avg_per_day = 0
+    avg_per_month = 0
+    
+    if first_service_order and total_service_orders > 0:
+        days_diff = (date.today() - first_service_order.service_date).days or 1
+        months_diff = (date.today().year - first_service_order.service_date.year) * 12 + (date.today().month - first_service_order.service_date.month) or 1
+        
+        avg_per_day = round(total_service_orders / days_diff, 1)
+        avg_per_month = round(total_service_orders / months_diff, 1)
+
+    # Best Contractor & Best FOC Avg Day
+    best_contractor = "N/A"
+    best_foc_avg_day = 0
+    
+    top_contractor = ServiceOrder.objects.values('contractor__company').annotate(
+        total_installations=Count('id')
+    ).order_by('-total_installations').first()
+
+    if top_contractor:
+        best_contractor = top_contractor['contractor__company']
+        if first_service_order:
+             best_foc_avg_day = round(top_contractor['total_installations'] / days_diff, 1)
+
+    # Billable Stock Estimate
+    total_billable_stock = 0
+    billable_materials = InventoryMaterial.objects.filter(is_billable=True, is_active=True)
+    for b_mat in billable_materials:
+        total_billable_stock += b_mat.stock()
+
+    stock_estimate_days = "N/A"
+    if avg_per_day > 0 and total_billable_stock > 0:
+        stock_estimate_days = round(float(total_billable_stock) / float(avg_per_day))
+
+    context['avg_per_day'] = avg_per_day
+    context['avg_per_month'] = avg_per_month
+    context['best_contractor'] = best_contractor
+    context['best_foc_avg_day'] = best_foc_avg_day
+    context['stock_estimate_days'] = stock_estimate_days
+    
     return render(request, 'ssml/index.html', context)
+
 
 @login_required
 def materials(request):

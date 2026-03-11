@@ -2,49 +2,126 @@
 {% load static %}
 
 {% block body %}
-    <div class="card h-100">
-        <div class="card-header">
-            <div class="w-100 d-flex justify-content-between">
-                <div style="width: fit-content">
-                    <select name="" id="status" class="form-control form-control-sm rounded-0">
-                        <option value="pending">Pending</option>
+    <div class="container-fluid py-4">
+        <div class="row mb-4 align-items-center">
+            <div class="col-12 col-md-6 mb-3 mb-md-0">
+                <h2 class="h4 font-weight-bold mb-0 text-dark">Logistics Dashboard</h2>
+                <p class="text-muted small mb-0">Manage and track your company deliveries</p>
+            </div>
+            <div class="col-12 col-md-6 d-flex justify-content-md-end">
+                <div class="btn-group mr-2">
+                    <select id="status" class="form-select border-0 shadow-sm px-3 rounded-pill bg-white" style="height: 40px; cursor: pointer;">
+                        <option value="pending">Pending Requests</option>
                         <option value="schedule">Scheduled</option>
                         <option value="in_transit">In Transit</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Canceled</option>
+                        <option value="delivered">Completed</option>
+                        <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
-
                 <div class="dropdown">
-                  <a class="btn btn-secondary btn-sm rounded-0" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fa fa-bars"></i>
-                  </a>
-
-                  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink">
-                    <a class="dropdown-item" id="new_delivery_request" href="javascript:void(0)"><i class="fa fa-plus"></i> New Request</a>
-                      <a href="javascript:void(0)" class="dropdown-item" id="weekly_report"><i class="fa fa-file"></i> Weekly Report</a>
-
-                  </div>
+                    <button class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" type="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right shadow border-0 rounded-lg mt-2" aria-labelledby="dropdownMenuLink">
+                        <a class="dropdown-item py-2" id="new_delivery_request" href="javascript:void(0)"><i class="bi bi-plus-circle me-2"></i> New Request</a>
+                        <a class="dropdown-item py-2" id="weekly_report" href="javascript:void(0)"><i class="bi bi-file-earmark-bar-graph me-2"></i> Weekly Report</a>
+                    </div>
                 </div>
-
             </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="del">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>REQUEST BY</th>
-                            <th>DESTINATION</th>
-                            <th>REQUEST DATE</th>
-                            <th>STATUS</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                </table>
+
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="del">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="px-4 py-3 border-0 text-uppercase small font-weight-bold text-muted">Requested By</th>
+                                <th class="py-3 border-0 text-uppercase small font-weight-bold text-muted">Destination</th>
+                                <th class="py-3 border-0 text-uppercase small font-weight-bold text-muted">Request Date</th>
+                                <th class="py-3 border-0 text-uppercase small font-weight-bold text-muted">Status</th>
+                                <th class="px-4 py-3 border-0 text-uppercase small font-weight-bold text-muted text-end">Action</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+
+    <style>
+        /* Mobile Card Styling for DataTable */
+        @media (max-width: 767.98px) {
+            #del thead {
+                display: none;
+            }
+            
+            #del, #del tbody, #del tr, #del td {
+                display: block;
+                width: 100%;
+            }
+            
+            #del tr {
+                margin-bottom: 20px;
+                background: white;
+                border: 1px solid #edf2f9;
+                border-radius: 12px;
+                padding: 15px;
+                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.04);
+            }
+            
+            #del td {
+                text-align: right;
+                padding: 8px 0;
+                position: relative;
+                border: none !important;
+            }
+            
+            #del td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 0;
+                width: 50%;
+                text-align: left;
+                font-weight: 600;
+                font-size: 0.8rem;
+                color: #6c757d;
+                text-transform: uppercase;
+            }
+            
+            #del td:last-child {
+                text-align: center;
+                padding-top: 15px;
+                margin-top: 10px;
+                border-top: 1px solid #f1f4f8 !important;
+            }
+            
+            .dataTables_wrapper .row {
+                margin: 0;
+            }
+            
+            .dataTables_info {
+                padding: 15px !important;
+            }
+            
+            .dataTables_paginate {
+                padding: 15px !important;
+            }
+        }
+
+        /* Badge Styling */
+        .badge {
+            padding: 0.5em 1em;
+            border-radius: 50px;
+            font-weight: 500;
+        }
+        
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-schedule { background-color: #cce5ff; color: #004085; }
+        .status-in_transit { background-color: #d1ecf1; color: #0c5460; }
+        .status-delivered { background-color: #d4edda; color: #155724; }
+        .status-cancelled { background-color: #f8d7da; color: #721c24; }
+    </style>
 
     <script>
         $(document).ready(function(){

@@ -93,6 +93,7 @@ class InventoryMaterial(models.Model):
     auto_issue = models.BooleanField(default=False)
     uom = models.CharField(max_length=255, default='PCS',blank=False,null=False)
     required_qty = models.DecimalField(max_digits=10,default=0.00, decimal_places=2)
+    is_billable = models.BooleanField(default=False)
 
 
     item_type_choices = [
@@ -130,7 +131,8 @@ class InventoryMaterial(models.Model):
             'auto_issue':self.auto_issue,
             'service_rates':self.service_rates(),
             'loc_stock':self.loc_stock(),
-            'services':self.services()
+            'services':self.services(),
+            'is_billable':self.is_billable
         }
     
     def service_rates(self):
@@ -683,7 +685,8 @@ class Cardex(models.Model):
             'qty':self.qty,
             'created_at':self.created_at,
             'updated_at':self.updated_at,
-            'balance':self.balance
+            'balance':self.balance,
+            'location':self.location.loc_name
         }
     
 
@@ -1410,7 +1413,7 @@ class Expense(models.Model):
     ]
     transaction_type = models.CharField(max_length=255, choices=transaction_type_choices)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    ori_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    ori_amount = models.DecimalField(max_digits=10, decimal_places=2,default=0.00)
 
     reference = models.CharField(max_length=255)
     description = models.TextField()
@@ -1599,7 +1602,8 @@ class ECGInvoiceHD(models.Model):
             'status': self.status(),
             'transactions': self.transactions(),
             'location': self.location.obj() if self.location else None,
-            'items': [item.obj() for item in ECGInvoiceItem.objects.filter(entry=self)]
+            'items': [item.obj() for item in ECGInvoiceItem.objects.filter(entry=self)],
+            'materials': [item.obj() for item in ECGInvoiceMaterial.objects.filter(entry=self)]
         }
 
 class ECGJobRate(models.Model):
@@ -1657,6 +1661,24 @@ class ECGInvoiceTransactions(models.Model):
             'service_order': self.service_order.obj(),
             'amount': self.amount
         }
+
+
+class ECGInvoiceMaterial(models.Model):
+    entry = models.ForeignKey(ECGInvoiceHD, on_delete=models.CASCADE)
+    material = models.ForeignKey(InventoryMaterial, on_delete=models.CASCADE)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'material': self.material.obj(),
+            'quantity': self.quantity,
+            'rate': self.rate,
+            'amount': self.amount,
+        }
+
     
 
 class InvoiceTransactions(models.Model):

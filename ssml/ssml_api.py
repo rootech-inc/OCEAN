@@ -61,7 +61,7 @@ def interface(request):
         InventoryGroup, InventoryMaterial, Issue, IssueTransaction, Ledger, MaterialOrderItem, Meter, PaySlipHD, Plot, \
         RedeemTransactions, Reedem, Service, ServiceMaterials, ServiceOrder, ServiceOrderItem, ServiceOrderReturns, \
         ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash,RetiredMetersBox,RetiredMetersTransactions,Phase, \
-        ECGInvoiceHD, ECGInvoiceTransactions
+        ECGInvoiceHD, ECGInvoiceTransactions, ECGJobRate, ECGMeterRate, ECGInvoiceItem, ECGInvoiceMaterial
     from admin_panel.models import Emails, Locations, BusinessEntityTypes, MailSenders, MailQueues, MailAttachments, \
         Sms, SmsApi
     from admin_panel.anton import make_md5_hash
@@ -611,6 +611,7 @@ def interface(request):
                     remarks = data.get('remarks')
                     job_transactions = data.get('job_transactions', [])
                     meter_transactions = data.get('meter_transactions', [])
+                    material_transactions = data.get('material_transactions', [])
                     created_by = User.objects.get(pk=data.get('mypk'))
 
                     ecg_hd = ECGInvoiceHD(
@@ -661,6 +662,18 @@ def interface(request):
                             is_found=is_found
                         ).save()
                         total += amt
+
+                    # Process Material Transactions
+                    for mat in material_transactions:
+                        material = InventoryMaterial.objects.get(id=mat.get('id'))
+                        ECGInvoiceMaterial(
+                            entry=ecg_hd,
+                            material=material,
+                            quantity=mat.get('qty'),
+                            rate=mat.get('rate'),
+                            amount=mat.get('amount')
+                        ).save()
+                        total += Decimal(str(mat.get('amount')))
                     
                     ecg_hd.total_amount = total
                     ecg_hd.save()
@@ -669,6 +682,7 @@ def interface(request):
                     if 'ecg_hd' in locals():
                         ECGInvoiceTransactions.objects.filter(entry=ecg_hd).delete()
                         ECGInvoiceItem.objects.filter(entry=ecg_hd).delete()
+                        ECGInvoiceMaterial.objects.filter(entry=ecg_hd).delete()
                         ecg_hd.delete()
                     raise Exception(e)
 
@@ -747,6 +761,7 @@ def interface(request):
                 group = InventoryGroup.objects.get(id=data.get('group'))
                 reorder_qty = data.get('reorder_qty')
                 value = data.get('value')
+                is_billable = data.get('is_billable', False)
 
 
                 # check name and barcode
@@ -762,7 +777,8 @@ def interface(request):
                         name=name,
                         group=group,
                         reorder_qty=reorder_qty,
-                        value=value
+                        value=value,
+                        is_billable=is_billable
                     )
                     success_response['message'] = "Material Created Successfully"
 
@@ -2194,10 +2210,35 @@ def interface(request):
 
                 elif module == 'location':
                     id = data.get('id','*')
-                    if id == '*':
-                        success_response['message'] = [loc.obj() for loc in Location.objects.all().order_by('loc_name')]
+                    doc = data.get('doc', 'json')
+                    if doc == 'excel':
+                        import openpyxl
+                        book = openpyxl.Workbook()
+                        sheet = book.active
+                        sheet.title = "Locations"
+                        sheet.append(["LOC ID", "NAME", "COUNTRY", "CITY", "STREET", "ADDRESS", "PHONE", "EMAIL", "DEFAULT"])
+                        for loc in Location.objects.all().order_by('loc_name'):
+                            sheet.append([
+                                loc.loc_id,
+                                loc.loc_name,
+                                loc.country,
+                                loc.city,
+                                loc.street,
+                                loc.address,
+                                loc.phone,
+                                loc.email,
+                                "YES" if loc.is_default else "NO"
+                            ])
+                        import uuid
+                        unique_id = uuid.uuid4()
+                        filename = f"static/general/tmp/locations_{unique_id}.xlsx"
+                        book.save(filename)
+                        success_response['message'] = filename
                     else:
-                        success_response['message'] =[loc.obj() for loc in Location.objects.get(id=id)]
+                        if id == '*':
+                            success_response['message'] = [loc.obj() for loc in Location.objects.all().order_by('loc_name')]
+                        else:
+                            success_response['message'] = [loc.obj() for loc in Location.objects.filter(id=id)]
                     
 
                 elif module == 'expense':
@@ -2335,6 +2376,10 @@ def interface(request):
                         'job_rates': job_rates,
                         'meter_rates': meter_rates
                     }
+
+                elif module == 'billable_materials':
+                    materials = [m.obj() for m in InventoryMaterial.objects.filter(is_billable=True, is_active=True)]
+                    success_response['message'] = materials
 
                 elif module == 'ecg_invoice':
                     id = data.get('id', '*')
@@ -2633,9 +2678,9 @@ def interface(request):
                     book = openpyxl.Workbook()
                     sheet = book.active
                     sheet.title = "Cardex"
-                    sheet.append(['Doc No', 'Doc Type', 'Qty',"Balance", 'Created At'])
+                    sheet.append(['Location','Doc No', 'Doc Type', 'Qty',"Balance", 'Created At'])
                     for row in cd:
-                        sheet.append([row.get('doc_no'),row.get('doc_type'),row.get('qty'),row.get('balance'),row.get('created_at')])
+                        sheet.append([row.get('location'),row.get('doc_no'),row.get('doc_type'),row.get('qty'),row.get('balance'),row.get('created_at')])
 
                     import hashlib
                     name = hashlib.md5(item.name.encode()).hexdigest()

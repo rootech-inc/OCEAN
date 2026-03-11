@@ -183,11 +183,20 @@ class DeliveryRequest(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,related_name='updated_by')
 
     
+   
     def duration(self):
         if not self.arrival_time or self.arrival_time == '':
             return "comp..."
         end_time = self.arrival_time if self.arrival_time else timezone.now()
-        delta = end_time - self.departure_time
+        
+        if self.departure_time:
+            start_time = self.departure_time
+        elif self.scheduled_date:
+            start_time = self.scheduled_date
+        else:
+            return "N/A"
+        
+        delta = end_time - start_time
         hours = delta.total_seconds() / 3600
         if hours < 1:
             return f"{int(delta.total_seconds() / 60)} minutes"

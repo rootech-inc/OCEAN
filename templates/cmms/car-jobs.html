@@ -169,8 +169,20 @@
 
     <!-- Bottom Row: 2 Cards -->
     <div class="row g-4 mb-4 justify-content-center">
+        <div class="col-lg-4 col-md-6" onclick="windowPopUp('{% url 'servicing_mr' %}','Material Request',900,500)">
+            <div class="card-stat variant-yellow">
+                <div class="icon-box">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-value">{{ metrics.pending_material_request }}</span>
+                    <span class="stat-label">Material Request</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Pending Feedbacks -->
-        <div class="col-lg-6 col-md-6" onclick="location.href='{% url 'cmms_servicing_feedback' %}';">
+        <div class="col-lg-4 col-md-6" onclick="location.href='{% url 'cmms_servicing_feedback' %}';">
             <div class="card-stat variant-yellow">
                 <div class="icon-box">
                     <i class="bi bi-chat-left-dots-fill"></i>
@@ -183,7 +195,7 @@
         </div>
 
         <!-- Pending Service Due -->
-        <div class="col-lg-6 col-md-6" onclick="location.href='{% url 'cmms_service_due' %}';">
+        <div class="col-lg-4 col-md-6" onclick="location.href='{% url 'cmms_service_due' %}';">
             <div class="card-stat variant-red">
                 <div class="icon-box">
                     <i class="bi bi-exclamation-triangle-fill"></i>
