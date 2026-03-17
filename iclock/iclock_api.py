@@ -72,6 +72,34 @@ def api_interface(request):
                             zk.disconnect()
                 response['status_code'] = 200
                 response['message'] = f"Synced {sync_users} users"
+
+            elif module == 'import_attendance':
+                records = data.get('records')
+                success = 0
+                failed = 0
+                for record in records:
+                    print(record)
+                    try:
+                        uid = record.get('uid')
+                        timestamp = record.get('timestamp')
+                        employee = Employee.objects.get(user_id=uid)
+                        from datetime import datetime
+
+                        timestamp = datetime.strptime(timestamp, "%m/%d/%Y %H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
+                        
+                        AttendanceLog.objects.create(
+                        user_id=uid,
+                        timestamp=timestamp,
+                        employee=employee
+
+                    )
+                        success += 1
+                    except Exception as e:
+                        print(f"Error: {e}")
+                        failed += 1
+
+                response['status_code'] = 200
+                response['message'] = f"Attendance Imported Successfully {success} success, {failed} failed"
             
             elif module == 'sync_attendance':
                 user_id = data.get('user_id')
@@ -99,6 +127,8 @@ def api_interface(request):
                 uid = data.get('uid')
                 name = data.get('name')
                 area_name = data.get('area')
+                wage = data.get('wage')
+                off_days = data.get('off_days')
 
                 if not Area.objects.filter(area_name=area_name).exists():
                     area_code = f"00{Area.objects.all().count() + 1}" if Area.objects.all().exists() else '001'
@@ -118,7 +148,7 @@ def api_interface(request):
 
                 Employee.objects.update_or_create(
                         user_id=uid,
-                        defaults={'name': name, 'area': area},
+                        defaults={'name': name, 'area': area, 'wage': wage, 'how_many_off_days': off_days},
                     )
                 response['status_code'] = 200
                 response['message'] = f"User {uid} saved successfully"

@@ -777,6 +777,82 @@ class Staff {
         )
     }
 
+    async importAttendance() {
+        amodal.setBodyHtml(`
+            <div class="p-3">
+                <label class="form-label">Choose CSV File <a href="https://docs.google.com/spreadsheets/d/1JqKI_TxHcXxZo9nIeRtf1JeDELeZrFJ-c90I6Bi0uzc/edit?gid=1298518032#gid=1298518032" target="_blank">Download Sample</a></label>
+                <input type="file" id="csv-file" class="form-control" accept=".csv" required>
+            </div>
+        `)
+        amodal.setFooterHtml(
+            `<button class="btn btn-primary" id="import_attendance">Upload</button>`
+        )
+        amodal.show()
+        amodal.setTitleHtml("Import Attendance")
+
+        $('#import_attendance').click(async () => {
+            const fileInput = document.getElementById('csv-file');
+            const file = fileInput.files[0];
+            if (!file) return kasa.error("Please select a file");
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const content = e.target.result;
+                const lines = content.split('\n').filter(line => line.trim() !== '');
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+                const uidIdx = headers.indexOf('uid');
+                const timestampIdx = headers.indexOf('timestamp');
+
+                if (uidIdx === -1 || timestampIdx === -1) {
+                    return kasa.error("CSV must include uid, timestamp  , and time columns.");
+                }
+
+                const data = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(',').map(c => c.trim());
+                    if (cols.length < headers.length) continue;
+
+                    const uid = cols[uidIdx];
+                    const timestamp = cols[timestampIdx];
+
+                    if (!uid || !timestamp) continue;
+
+                    data.push({
+                        uid: uid,
+                        timestamp: timestamp
+                    });
+                }
+
+                if (data.length === 0) return kasa.error("No valid data found in CSV.");
+
+                loader.show();
+                let payload = {
+                    module: 'import_attendance',
+                    data: {
+                        'records': data
+                    }
+                }
+
+                console.table(payload)
+
+                api.v2("PUT", payload, '/iclock/api/').then(response => {
+                    loader.hide();
+                    if (anton.IsRequest(response)) {
+                        kasa.confirm(response.message, 1, 'here');
+                        amodal.hide();
+                    } else {
+                        kasa.response(response);
+                    }
+                }).catch(error => {
+                    loader.hide();
+                    kasa.error(error);
+                })
+            };
+            reader.readAsText(file);
+        });
+    }
+
     async upload() {
         amodal.setBodyHtml(`
             <div class="p-3">
@@ -804,9 +880,11 @@ class Staff {
                 const uidIdx = headers.indexOf('uid');
                 const nameIdx = headers.indexOf('name');
                 const areaIdx = headers.indexOf('area');
+                const wageIdx = headers.indexOf('wage');
+                const off_daysIdx = headers.indexOf('off_days');
 
-                if (uidIdx === -1 || nameIdx === -1 || areaIdx === -1) {
-                    return kasa.error("CSV must include uid, name, and area columns.");
+                if (uidIdx === -1 || nameIdx === -1 || areaIdx === -1 || wageIdx === -1 || off_daysIdx === -1) {
+                    return kasa.error("CSV must include uid, name, area, wage, and off_days columns.");
                 }
 
                 const payload = lines.slice(1).map(line => {
@@ -816,10 +894,12 @@ class Staff {
                         data: {
                             uid: columns[uidIdx]?.trim(),
                             name: columns[nameIdx]?.trim(),
-                            area: columns[areaIdx]?.trim()
+                            area: columns[areaIdx]?.trim(),
+                            wage: columns[wageIdx]?.trim(),
+                            off_days: columns[off_daysIdx]?.trim()
                         }
                     };
-                }).filter(item => item.data.uid && item.data.name && item.data.area);
+                }).filter(item => item.data.uid && item.data.name && item.data.area && item.data.wage && item.data.off_days);
 
 
                 let saved = 0;
@@ -1178,41 +1258,51 @@ class Staff {
         return api.call('VIEW', { module: 'leave', data: { mypk: $('#mypk').val(), pk: pk, status: status } }, '/company/api/')
     }
 
-    async loadMonthlyAttendance(month = `${year} -${month} `) {
+    async loadMonthlyAttendance(start_date, end_date) {
         let payload = {
             module: 'month_attendance',
             data: {
-                month: month
+                start_date: start_date,
+                end_date: end_date
             }
         }
+
+        console.table(payload)
 
         loader.show()
         await api.v2('VIEW', payload, '/company/api/').then(response => {
             if (anton.IsRequest(response)) {
-                console.table(response)
+
                 let recs = response.message.data;
+
                 let tr = ""
                 let transactions = {}
                 let att_file_data = [
-                    ["Name", "Department", "Total Late", "Late Absent", "Absent", "Total Absent + Late"],
+                    ["Name", "Department", "Work Days", "Total Late", "Late Absent", "Absent", "Off Days", "Total Absent + Late", "Salary"],
                 ]
+                let total_salary = 0;
                 recs.map(record => {
                     let user_uni = anton.md5(record['name'].replace(' ', '').toLowerCase())
                     let abscent = parseInt(record['total_absent']) / 3
+                    total_salary += parseFloat(record['salary'])
                     tr += `
-            < tr >
+            <tr>
                             <td>${record['name']}</td>
                             <td>${record['department']}</td>
+                            <td>${record['number_of_days']}</td>
                             <td>${record['total_late']}</td>
                             <td>${record['late_absent']}</td>
                             <td>${record['absent']}</td>
+                            <td>${record['off_days']}</td>
                             <th>${record['total_absent']}</th>
+                            <th>${record['days_present']}</th>
+                            <th><kbd class='pointer' data-bs-toggle="tooltip" data-bs-placement="top" title='${record['wage']} * ${record['days_present']}'>${record['salary']}</kbd></th>
                             <td><button data-user="${record['name']}" data-id="${user_uni}" class="btn btn-info see-trans">Transactions</button></td>
-                        </tr >
+                        </tr>
 
             `
 
-                    att_file_data.push([record['name'], record['department'], record['total_absent'], record['total_late'], abscent + record['total_absent']])
+                    att_file_data.push([record['name'], record['department'], record['number_of_days'], record['total_late'], record['late_absent'], record['absent'], record['off_days'], record['total_absent'], record['salary']])
 
                     // make transactions HTML
                     let attendance = record['attendance'];
@@ -1232,14 +1322,14 @@ class Staff {
                             }
                         }
                         this_att_html += `
-            < tr class="${text_clor}" >
-                                <td>${att['date']}</td>
-                                <td>${att['time_in']}</td>
-                                <td>${att['time_out']}</td>
-                                <td>${att['status']}</td>
-                                <td>${att['is_late']}</td>
-                            </tr >
-            `
+                    <tr class="${text_clor}">
+                                        <td>${att['date']}</td>
+                                        <td>${att['time_in']}</td>
+                                        <td>${att['time_out']}</td>
+                                        <td>${att['status']}</td>
+                                        <td>${att['is_late']}</td>
+                                    </tr>
+                    `
 
                         this_att_arr.push([att['date'], att['time_in'], att['time_out'], att['status'], att['is_late']])
                     })
@@ -1251,7 +1341,10 @@ class Staff {
                 })
 
 
-                $('#att_bd').html(tr)
+
+
+                $('#some_killed_meat').html(tr)
+                $('#total_salary').html(total_salary.toFixed(2))
 
                 // $('#table').DataTable();
 
@@ -1260,16 +1353,16 @@ class Staff {
                     let name = $(this).data('user');
                     let html = transactions[user_uni]['html']
                     let table = `
-            < table id = "${user_uni}" class="table" >
+            <table id = "${user_uni}" class="table">
                             <thead><tr><th>DATE</th><th>TIME IN</th><th>TIME OUT</th><th>STATUS</th><th>IS LATE</th></tr></thead>
                             <tbody>${html}</tbody>
-                        </table >
+                        </table>
             `
                     const md = new Modal()
                     md.setBodyHtml(table)
                     md.setSize('L')
                     md.setTitleHtml(name)
-                    amodal.setFooterHtml(`< button class="btn btn-success download-att" id = "" > Download</button > `)
+                    md.setFooterHtml(`<button class="btn btn-success download-att" id = ""> Download</button> `)
                     md.show()
                     $('#' + user_uni).DataTable();
                     $('.download-att').click(function () {
@@ -1280,7 +1373,7 @@ class Staff {
 
                 $('#export_attendance').click(function () {
                     // anton.downloadCSV('attendance.csv',anton.convertToCSV(att_file_data))
-                    anton.viewFile(`/ ${response.message.file} `)
+                    anton.viewFile(`/${response.message.file} `)
                 })
 
             } else {

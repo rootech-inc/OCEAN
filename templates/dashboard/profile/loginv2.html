@@ -14,13 +14,13 @@
 
   <style>
     :root {
-      --ocean-bg: #0a192f;
-      --ocean-dark: #061121;
-      --ocean-card: #112240;
-      --ocean-primary: #64ffda;
-      --ocean-secondary: #8892b0;
-      --ocean-text: #ccd6f6;
-      --ocean-surface: rgba(17, 34, 64, 0.7);
+      --ocean-bg: #e0f2fe;
+      --ocean-dark: #f0f9ff;
+      --ocean-card: #ffffff;
+      --ocean-primary: #0284c7;
+      --ocean-secondary: #38bdf8;
+      --ocean-text: #0c4a6e;
+      --ocean-surface: rgba(255, 255, 255, 0.9);
     }
 
     body {
@@ -55,7 +55,7 @@
     }
 
     .shape-1 {
-      background: #0056b3;
+      background: #0ea5e9;
       width: 500px;
       height: 500px;
       top: -100px;
@@ -64,7 +64,7 @@
     }
 
     .shape-2 {
-      background: #008080;
+      background: #06b6d4;
       width: 400px;
       height: 400px;
       bottom: -50px;
@@ -90,12 +90,12 @@
     .login-card {
       background: var(--ocean-surface);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(100, 255, 218, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.05);
       border-radius: 16px;
       padding: 2.5rem;
       width: 100%;
       max-width: 400px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 8px 32px rgba(149, 157, 165, 0.15);
       position: relative;
       z-index: 10;
     }
@@ -124,23 +124,21 @@
 
     /* Form Controls */
     .form-floating>.form-control {
-      background: rgba(255, 255, 255, 0.05);
-      /* Slightly visible input bg */
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #fff;
+      background: rgba(0, 0, 0, 0.03);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: var(--ocean-text);
       border-radius: 8px;
     }
 
     .form-floating>.form-control:focus {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.01);
       border-color: var(--ocean-primary);
-      box-shadow: 0 0 0 0.25rem rgba(100, 255, 218, 0.25);
-      color: #fff;
+      box-shadow: 0 0 0 0.25rem rgba(2, 132, 199, 0.25);
+      color: var(--ocean-text);
     }
 
     .form-floating>label {
-      color: rgba(136, 146, 176, 0.5);
-      /* Blended ocean-secondary */
+      color: rgba(12, 74, 110, 0.6);
     }
 
     .form-floating>.form-control:focus~label,
@@ -184,7 +182,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(10, 25, 47, 0.8);
+      background: rgba(255, 255, 255, 0.8);
       border-radius: 16px;
       display: flex;
       align-items: center;

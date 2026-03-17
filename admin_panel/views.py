@@ -39,7 +39,7 @@ from inventory.models import AssetGroup
 from meeting.models import MeetingHD, MeetingTalkingPoints, MeetingTrans
 from ocean.settings import EMAIL_HOST_USER
 from .models import Company
-from servicing.models import ServiceTechnicians
+from servicing.models import ServiceTechnicians,ServiceCard
 from admin_panel.anton import validateDocuments
 
 
@@ -137,7 +137,9 @@ def index(request):
         'scheduled': TicketHd.objects.filter(owner=request.user.pk, status=1).count(),
         'close': TicketHd.objects.filter(owner=request.user.pk, status=2).count(),
     }
+    leaderboard_tasks = ServiceCard.objects.filter(status=1, is_leaderboard=True).order_by('-pk')[:4]
     context = {
+        'leaderboard_tasks': leaderboard_tasks,
         'notifications': notifications,
         'nav': True,
         'page': page,
@@ -2711,3 +2713,32 @@ def magic_key(request,key):
 
     return redirect(destination)
 
+
+@login_required(login_url='/login/')
+def list_pending_tasks_for_leaderboard(request):
+    tasks = ServiceCard.objects.filter(status=1,is_leaderboard=False)
+    context = {'tasks': tasks, 'page': {'title': 'Select Leaderboard Tasks'}, 'nav': True}
+    return render(request, 'dashboard/leaderboard_pending_tasks.html', context=context)
+
+@csrf_exempt
+@login_required(login_url='/login/')
+def toggle_leaderboard(request):
+    if request.method == 'POST':
+        service_id = request.POST.get('service_id')
+        try:
+            task = ServiceCard.objects.get(pk=service_id)
+            if task.is_leaderboard:
+                task.is_leaderboard = False
+                task.save()
+                return JsonResponse({'status': 'success', 'message': 'Removed from leaderboard', 'is_leaderboard': False})
+            else:
+                # Check how many are currently on leaderboard
+                current_count = ServiceCard.objects.filter(is_leaderboard=True).count()
+                if current_count >= 4:
+                    return JsonResponse({'status': 'error', 'message': 'Maximum of 4 tasks can be flagged for leaderboard.'})
+                task.is_leaderboard = True
+                task.save()
+                return JsonResponse({'status': 'success', 'message': 'Added to leaderboard', 'is_leaderboard': True})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})

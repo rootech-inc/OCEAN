@@ -1,5 +1,6 @@
 import PIL.ImageChops
 from django.db import models
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 
 class Area(models.Model):
@@ -127,13 +128,20 @@ class Employee(models.Model):
 
     is_resigned = models.BooleanField(default=False)
 
+    wage = models.DecimalField(max_digits=10, decimal_places=2, default=21.77)
+    how_many_off_days = models.IntegerField(default=1)
+
+    
+
+
     class Meta:
         verbose_name = "Biometric Employee"
         verbose_name_plural = "Biometric Employees"
         ordering = ['user_id']
 
 
-
+    
+    
     def attd_logs(self, work_date=None):
         if work_date is None:
             work_date = timezone.now().date()
@@ -151,6 +159,92 @@ class Employee(models.Model):
                 'name': self.name,
                 'log': log.obj()
             }  
+
+    def day_record(self, work_day=None):
+        if work_day is None:
+            work_day = timezone.now().date()
+        
+        first = AttendanceLog.objects.filter(
+            employee=self, timestamp__date=work_day
+        ).order_by('timestamp').first()
+        
+        last = AttendanceLog.objects.filter(
+            employee=self, timestamp__date=work_day
+        ).order_by('-timestamp').first()
+        
+        return {
+            'first_log': first.timestamp.replace(tzinfo=None) if first else None,
+            'last_log': last.timestamp.replace(tzinfo=None) if last else None,
+        }
+
+    def off_days(self):
+        weekly_off_days = self.how_many_off_days
+        
+        if weekly_off_days == 0:
+            return 0
+        
+        return weekly_off_days * 4
+
+    def total_late_days(self, start_date, end_date):
+
+        if not self.area:
+            return 0
+
+        work_start = self.area.work_start_time
+
+        late_days = (
+            AttendanceLog.objects
+            .filter(
+                employee=self,
+                timestamp__date__range=[start_date, end_date],
+                punch_state=0,
+                timestamp__time__gt=work_start
+            )
+            .annotate(day=TruncDate("timestamp"))
+            .values("day")
+            .distinct()
+            .count()
+        )
+
+        return late_days
+
+    def total_late_abscent(self, start_date, end_date):
+
+        total_late_days = self.total_late_days(start_date, end_date)
+
+        tabs =  total_late_days // 3
+
+        print()
+        print('#' * 10)
+        print('employee', self.name)
+        print('total late days', total_late_days)
+        print('tabs', tabs)
+        print('#' * 10)
+        print()
+
+        return tabs
+
+    def month_abscent(self, start_date, end_date):
+
+        total_days = (end_date - start_date).days + 1
+
+        present_days = self.month_present(start_date, end_date)
+
+        return total_days - present_days
+
+    def month_present(self, start_date, end_date):
+
+        return (
+            AttendanceLog.objects
+            .filter(
+                employee=self,
+                timestamp__date__range=[start_date, end_date]
+            )
+            .annotate(day=TruncDate("timestamp"))
+            .values("day")
+            .distinct()
+            .count()
+        )
 
     def obj(self):
         return {
@@ -196,6 +290,9 @@ class AttendanceLog(models.Model):
     def __str__(self):
         return f"{self.user_id} at {self.timestamp}"
 
+    def status(self):
+        return 'Unknown'
+
     def obj(self):
         return {
             'user_id': self.user_id,
@@ -205,6 +302,13 @@ class AttendanceLog(models.Model):
             'verify_type': self.verify_type,
             'temperature': self.temperature,
         }
+
+    def is_late(self):
+        if self.employee.area.work_start_time is None:
+            return False
+        return self.timestamp.time() > self.employee.area.work_start_time
+
+    
 
 
 class Resignation(models.Model):

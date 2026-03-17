@@ -95,6 +95,7 @@ class ServiceCard(models.Model):
     deleted_time = models.TimeField(null=True, blank=True)
 
     client_approval = models.IntegerField(default=0)  # 0 not sent, 1 sent, 2 approved
+    is_leaderboard = models.BooleanField(default=False)
 
     def obj(self):
         return {

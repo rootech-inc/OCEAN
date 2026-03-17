@@ -22,7 +22,7 @@
 
   .nav-card {
     background: var(--ocean-card);
-    border: 1px solid rgba(100, 255, 218, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.04);
     border-radius: 16px;
     padding: 2rem;
     text-align: center;
@@ -35,11 +35,12 @@
     aspect-ratio: 1;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 12px rgba(149, 157, 165, 0.05);
   }
 
   .nav-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px -10px rgba(100, 255, 218, 0.3);
+    box-shadow: 0 12px 28px rgba(149, 157, 165, 0.15);
     border-color: var(--ocean-primary);
   }
 
@@ -79,7 +80,7 @@
   }
 
   .shape-1 {
-    background: #0056b3;
+    background: #0ea5e9;
     width: 600px;
     height: 600px;
     top: -100px;
@@ -87,7 +88,7 @@
   }
 
   .shape-2 {
-    background: #008080;
+    background: #06b6d4;
     width: 500px;
     height: 500px;
     bottom: -50px;
@@ -130,118 +131,195 @@
     <div class="shape shape-1"></div>
     <div class="shape shape-2"></div>
   </div>
-  <div class="nav-grid">
+  <div class="row w-100" style="max-width: 1400px; margin: 0 auto;">
+    <div class="col-lg-8 col-md-12 mb-4">
+      <div class="nav-grid" style="max-width: 100%;">
+        <!-- AMC -->
+        <a href="{% url 'asset_management_center' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-hdd-network text-info"></i></div>
+          <div class="nav-title">AMC</div>
+        </a>
 
-    <!-- AMC -->
-    <a href="{% url 'asset_management_center' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-hdd-network text-info"></i></div>
-      <div class="nav-title">AMC</div>
-    </a>
+        <!-- Anton AI -->
+        <a href="{% url 'anton_index' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-robot text-primary"></i></div>
+          <div class="nav-title">Anton AI</div>
+        </a>
 
-    <!-- Anton AI -->
-    <a href="{% url 'anton_index' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-robot text-primary"></i></div>
-      <div class="nav-title">Anton AI</div>
-    </a>
+        <!-- Apps -->
+        <a href="{% url 'apps-center' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-grid-3x3-gap text-primary"></i></div>
+          <div class="nav-title">Apps</div>
+        </a>
 
-    <!-- Apps -->
-    <a href="{% url 'apps-center' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-grid-3x3-gap text-primary"></i></div>
-      <div class="nav-title">Apps</div>
-    </a>
+        <!-- Blog -->
+        <a href="{% url 'blog-home' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-journal-text text-info"></i></div>
+          <div class="nav-title">Blog</div>
+        </a>
 
-    <!-- Blog -->
-    <a href="{% url 'blog-home' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-journal-text text-info"></i></div>
-      <div class="nav-title">Blog</div>
-    </a>
+        <!-- CMMS -->
+        {% if perms.cmms.view_followup %}
+        <a href="{% url 'car-jobs' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-tools text-warning"></i></div>
+          <div class="nav-title">CMMS</div>
+        </a>
+        {% endif %}
 
-    <!-- CMMS -->
-    {% if perms.cmms.view_followup %}
-    <a href="{% url 'car-jobs' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-tools text-warning"></i></div>
-      <div class="nav-title">CMMS</div>
-    </a>
-    {% endif %}
+        <!-- CRM -->
+        <a href="{% url 'crm_logs' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-person text-danger"></i></div>
+          <div class="nav-title">CRM</div>
+        </a>
 
-    <!-- CRM -->
-    <a href="{% url 'crm_logs' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-person text-danger"></i></div>
-      <div class="nav-title">CRM</div>
-    </a>
+        <!-- Dashboard -->
+        <a href="{% url 'admin_panel' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-speedometer2"></i></div>
+          <div class="nav-title">Dashboard</div>
+        </a>
 
-    <!-- Dashboard -->
-    <a href="{% url 'admin_panel' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-speedometer2"></i></div>
-      <div class="nav-title">Dashboard</div>
-    </a>
+        <!-- HRM -->
+        <a href="{% url 'company' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-people text-secondary"></i></div>
+          <div class="nav-title">HRM</div>
+        </a>
 
-    <!-- HRM -->
-    <a href="{% url 'company' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-people text-secondary"></i></div>
-      <div class="nav-title">HRM</div>
-    </a>
+        <!-- Inventory (Superuser) -->
+        {% if user.is_superuser %}
+        <a href="{% url 'inventory' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-boxes text-info"></i></div>
+          <div class="nav-title">Inventory</div>
+        </a>
+        {% endif %}
 
-    <!-- Inventory (Superuser) -->
-    {% if user.is_superuser %}
-    <a href="{% url 'inventory' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-boxes text-info"></i></div>
-      <div class="nav-title">Inventory</div>
-    </a>
-    {% endif %}
+        <!-- Logistics -->
+        <a href="{% url 'logistics-home' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-truck text-warning"></i></div>
+          <div class="nav-title">Logistics</div>
+        </a>
 
-    <!-- Logistics -->
-    <a href="{% url 'logistics-home' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-truck text-warning"></i></div>
-      <div class="nav-title">Logistics</div>
-    </a>
+        <!-- Meetings -->
+        <a href="{% url 'meeting' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-calendar-check text-primary"></i></div>
+          <div class="nav-title">Meetings</div>
+        </a>
 
-    <!-- Meetings -->
-    <a href="{% url 'meeting' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-calendar-check text-primary"></i></div>
-      <div class="nav-title">Meetings</div>
-    </a>
+        <!-- Ocean Stream -->
+        <a href="{% url 'stream' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-play-circle-fill text-danger"></i></div>
+          <div class="nav-title">Ocean Stream</div>
+        </a>
 
-    <!-- Ocean Stream -->
-    <a href="{% url 'stream' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-play-circle-fill text-danger"></i></div>
-      <div class="nav-title">Ocean Stream</div>
-    </a>
+        <!-- Service Master (Superuser) -->
+        {% if user.is_superuser %}
+        <a href="{% url 'service_jobcard' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-screwdriver text-success"></i></div>
+          <div class="nav-title">Service Master</div>
+        </a>
+        {% endif %}
 
-    <!-- Service Master (Superuser) -->
-    {% if user.is_superuser %}
-    <a href="{% url 'service_jobcard' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-screwdriver text-success"></i></div>
-      <div class="nav-title">Service Master</div>
-    </a>
-    {% endif %}
+        <!-- Setup (Superuser) -->
+        {% if user.is_superuser %}
+        <a href="{% url 'organization' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-buildings text-secondary"></i></div>
+          <div class="nav-title">Setup</div>
+        </a>
+        {% endif %}
 
-    <!-- Setup (Superuser) -->
-    {% if user.is_superuser %}
-    <a href="{% url 'organization' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-buildings text-secondary"></i></div>
-      <div class="nav-title">Setup</div>
-    </a>
-    {% endif %}
+        <!-- SSML -->
+        <a href="{% url 'ssml' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-lightning-charge text-warning"></i></div>
+          <div class="nav-title">SSML</div>
+        </a>
 
-    <!-- SSML -->
-    <a href="{% url 'ssml' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-lightning-charge text-warning"></i></div>
-      <div class="nav-title">SSML</div>
-    </a>
+        <!-- Tasks -->
+        <a href="{% url 'my_tasks' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-check2-square text-success"></i></div>
+          <div class="nav-title">Tasks</div>
+        </a>
 
-    <!-- Tasks -->
-    <a href="{% url 'my_tasks' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-check2-square text-success"></i></div>
-      <div class="nav-title">Tasks</div>
-    </a>
+        <!-- Tickets -->
+        <a href="{% url 'open-ticket' %}" class="nav-card">
+          <div class="nav-icon-wrapper"><i class="bi bi-ticket-perforated text-warning"></i></div>
+          <div class="nav-title">Tickets</div>
+        </a>
 
-    <!-- Tickets -->
-    <a href="{% url 'open-ticket' %}" class="nav-card">
-      <div class="nav-icon-wrapper"><i class="bi bi-ticket-perforated text-warning"></i></div>
-      <div class="nav-title">Tickets</div>
-    </a>
+      </div>
+    </div>
 
+    <div class="col-lg-4 col-md-12 d-flex flex-column" style="gap: 1.5rem;">
+      <div class="card shadow-sm border-0 d-flex flex-column"
+        style="border-radius: 16px; background: var(--ocean-card, #ffffff); max-height: 50vh;">
+        <div
+          class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center flex-shrink-0 pt-3 px-4">
+          <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-trophy text-warning me-2"></i>Leaderboard</h5>
+          <a href="{% url 'list_pending_tasks_for_leaderboard' %}"
+            class="btn btn-sm btn-outline-primary rounded-pill pb-1 pt-1 px-3">Manage</a>
+        </div>
+        <div class="card-body px-4 pb-4 overflow-auto">
+          {% if leaderboard_tasks %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="table-layout: fixed;">
+              <thead class="text-muted small bg-transparent">
+                <tr>
+                  <th style="width: 40%;" class="fw-semibold border-0 pb-2">Requested By</th>
+                  <th style="width: 25%;" class="fw-semibold border-0 pb-2 text-end">Owner</th>
+                </tr>
+              </thead>
+              <tbody class="border-top-0">
+                {% for l_task in leaderboard_tasks %} 
+                <tr>
+                  <td class="py-2 px-0 border-bottom border-light">
+                    <h6 class="mb-1 text-truncate fw-semibold" title="{{ l_task.ticket.title }}">
+                      {{ l_task.ticket.title }}
+                    </h6>
+                    <small class="text-primary text-truncate d-block"><i class="bi bi-person"></i>
+                      {{ l_task.owner.get_full_name|default:l_task.owner.username }}
+                    </small>
+                  </td>
+
+                  <td class="py-2 border-bottom border-light text-end">
+                    <small class="text-muted"><i class="bi bi-person"></i>
+                      {{l_task.owner.get_full_name|default:l_task.owner.username }}</small>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center text-muted py-4">
+            <i class="bi bi-clipboard-x display-6 mb-2 text-light"></i>
+            <p class="mb-0 small">No tasks on leaderboard.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0 d-flex flex-column"
+        style="border-radius: 16px; background: var(--ocean-card, #ffffff); max-height: 50vh;">
+        <div class="card-header bg-transparent border-0 flex-shrink-0 pt-3 px-4">
+          <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-robot me-2"></i>Anton AI</h5>
+        </div>
+        <div class="card-body px-4 pb-4 d-flex flex-column" style="flex: 1 1 auto; overflow: hidden;">
+          <div class="chat-box rounded p-3 mb-3 d-flex flex-column overflow-auto"
+            style="background: rgba(0, 0, 0, 0.03); flex: 1; min-height: 180px;">
+            <div class="d-flex mb-3">
+              <div class="bg-primary text-white p-2 rounded-3 shadow-sm" style="max-width: 85%;">
+                <small>Hi, I am Anton. How can I assist you with your tasks today?</small>
+              </div>
+            </div>
+          </div>
+          <div class="input-group mt-auto flex-shrink-0">
+            <input type="text" class="form-control rounded-pill border-0 shadow-sm ps-3" placeholder="Ask Anton..."
+              style="background: rgba(0,0,0,0.03);">
+            <button
+              class="btn btn-primary rounded-circle ms-2 shadow-sm d-flex align-items-center justify-content-center"
+              style="width: 40px; height: 40px;"><i class="bi bi-send-fill" style="margin-right: 2px;"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

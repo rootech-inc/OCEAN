@@ -94,6 +94,7 @@ class TaskHD(models.Model):  ## task model
     added_on = models.DateTimeField(auto_now=True)
     edited_on = models.DateTimeField(auto_now=True)
     status = models.IntegerField(default=0)
+    is_leaderboard = models.BooleanField(default=False)
     domain = models.ForeignKey('community.tags', on_delete=models.CASCADE)
 
     def url(self):

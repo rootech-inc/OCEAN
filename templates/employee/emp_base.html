@@ -795,6 +795,12 @@
                 <span>Monthly Summary</span>
               </a>
             </li>
+            <li class="hr-nav-item">
+              <a class="hr-nav-link" id="import_attendance">
+                <i class="bi bi-circle-fill nav-icon"></i>
+                <span>Import Attendance</span>
+              </a>
+            </li>
           </ul>
         </li>
 
@@ -816,12 +822,7 @@
       <!-- Self Service -->
       <div class="hr-nav-section-label">Self Service</div>
       <ul class="p-0 m-0">
-        <li class="hr-nav-item">
-          <a class="hr-nav-link" href="{% url 'hrm_self_service' %}">
-            <i class="bi bi-person-check nav-icon"></i>
-            <span>My Dashboard</span>
-          </a>
-        </li>
+
         <li class="hr-nav-item">
           <a class="hr-nav-link" href="{% url 'staff_leave' %}">
             <i class="bi bi-calendar-minus nav-icon"></i>
@@ -1006,6 +1007,10 @@
     const sidebar = document.getElementById('hr-sidebar');
     const overlay = document.getElementById('hr-overlay');
     const toggleBtn = document.getElementById('hr-toggle-btn');
+
+    $('#import_attendance').click(function () {
+      staff.importAttendance();
+    })
 
     function openSidebar() {
       sidebar?.classList.add('open');

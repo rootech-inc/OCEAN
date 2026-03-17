@@ -557,90 +557,148 @@ def interface(request):
 
             elif module == 'month_attendance':
 
-                distinct_names = Attendance.objects.values_list('name', flat=True).distinct().order_by('name')
-                mt = data.get('month', datetime.now().strftime('%Y-%m'))
-                try:
-                    month_year = datetime.strptime(mt, '%Y-%m')
-                    start_date = month_year.replace(day=1, tzinfo=timezone.utc)
-                    if month_year.month == 12:
-                        end_date = month_year.replace(year=month_year.year + 1, month=1, day=1,
-                                                      tzinfo=timezone.utc) - timedelta(days=1)
-                    else:
-                        end_date = month_year.replace(month=month_year.month + 1, day=1,
-                                                      tzinfo=timezone.utc) - timedelta(days=1)
-                except ValueError:
-                    success_response['message'] = "Invalid month format. Use YYYY-MM"
-                    success_response['status_code'] = 400
-                    return JsonResponse(success_response, safe=False)
+                from datetime import datetime
+                from collections import defaultdict
+                import openpyxl
+
+                start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d').date()
+                end_date = datetime.strptime(data.get('end_date'), '%Y-%m-%d').date()
+
+                print("start_date", start_date)
+                print("end_date", end_date)
+
+                number_of_days = (end_date - start_date).days + 1
 
                 results = []
-                import openpyxl
+
                 book = openpyxl.Workbook()
                 sheet = book.active
-                hd = ["NAME","DEPARTMENT","TOTAL LATE","LATE ABSENT","ABSENT","TOTAL ABSENT"]
-                sheet.append(hd)
+                sheet.title = "Summary"
 
-                for name in distinct_names:
-                    attendance = Attendance.objects.filter(
-                        name=name,
-                        date__range=[start_date, end_date]
-                    ).order_by('date')
+                headers = [
+                    "NAME", "DEPARTMENT", "WORK DAYS", "TOTAL LATE", "LATE ABSENT",
+                    "ABSENT", "OFF DAYS", "TOTAL ABSENT", "DAYS PRESENT",
+                    "WAGE (GHS)", "SALARY (GHS)"
+                ]
+
+                sheet.append(headers)
+
+                employees = Employee.objects.filter(is_resigned=False).select_related("department")
+
+                for employee in employees:
+
+                    attendance = AttendanceLog.objects.filter(
+                        employee=employee,
+                        timestamp__date__range=[start_date, end_date]
+                    ).order_by("timestamp")
+
+                    logs_by_day = defaultdict(list)
+
+                    # group logs per day
+                    for log in attendance:
+                        logs_by_day[log.timestamp.date()].append(log)
 
                     attendance_records = []
-                    total_late = 0
-                    absent = 0
-                    new_sheet = book.create_sheet()
-                    new_sheet.title = name
-                    new_sheet.append(["DATE","CHECK IN","CHECK OUT","STATUS","IS LATE"])
-                    for record in attendance:
+
+
+                    absent = employee.month_abscent(start_date, end_date)
+
+                    # create safe excel sheet name
+                    safe_name = employee.name.replace("/", "_").replace("\\", "_")[:30]
+
+                    new_sheet = book.create_sheet(title=safe_name)
+                    new_sheet.append(["DATE", "CHECK IN", "CHECK OUT", "STATUS", "IS LATE"])
+
+                    # process grouped logs
+                    for day, logs in logs_by_day.items():
+
+                        first_log = logs[0].timestamp.replace(tzinfo=None) if logs[0].timestamp else None
+                        last_log = logs[-1].timestamp.replace(tzinfo=None) if logs[-1].timestamp else None
+
+                        record = logs[0]
+
+                        status = record.status()
+                        is_late = record.is_late()
+
+
+
+                        new_row = [
+                            day,
+                            first_log,
+                            last_log,
+                            status,
+                            is_late
+                        ]
+
+                        new_sheet.append(new_row)
+
                         attendance_records.append({
-                            'date': record.date,
-                            'time_in': record.time_in,
-                            'time_out': record.time_out,
-                            'status': record.status,
-                            'is_late': record.is_late
+                            "date": day,
+                            "time_in": first_log,
+                            "time_out": last_log,
+                            "status": status,
+                            "is_late": is_late
                         })
-                        total_late += 1 if record.is_late else 0
 
-                        if record.is_off() is False and record.status != 'present':
-                            absent += 1
+                    # payroll calculations
+                    total_late = employee.total_late_days(start_date, end_date)
+                    present_days = employee.month_present(start_date, end_date)
 
-                        new_li = [record.date,record.time_in,record.time_out,record.status,record.is_late]
-                        new_sheet.append(new_li)
+                    late_absent = employee.total_late_abscent(start_date, end_date)
 
-                    # calculate total late
-                    late_abcent = round(total_late / 3 if total_late > 0 else 0)
-                    total_absent = absent + late_abcent
+                    off_days = employee.off_days()
+
+                    days_present = present_days + off_days - late_absent
+
+                    total_absent = absent + late_absent - off_days
+
+                    if days_present < 0:
+                        days_present = 0
+
+                    salary = employee.wage * days_present
+
                     results.append({
-                        'name': name,
-                        'department': attendance.first().dep_text if attendance.exists() else None,
-                        'total_late': total_late,
-                        'late_absent': late_abcent,
-                        'absent':absent,
-                        'total_absent': total_absent,
-                        'attendance': attendance_records
+                        "name": employee.name,
+                        "department": employee.department.dept_name if employee.department else None,
+                        "number_of_days": number_of_days,
+                        "total_late": total_late,
+                        "late_absent": late_absent,
+                        "absent": absent,
+                        "off_days": off_days,
+                        "total_absent": total_absent,
+                        "salary": salary,
+                        "attendance": attendance_records,
+                        "wage": employee.wage,
+                        "days_present": days_present
                     })
-                    li = [
-                        name,
-                        attendance.first().dep_text if attendance.exists() else None,
-                        total_late,
-                        late_abcent,
-                        absent,
-                        total_absent
-                    ]
-                    sheet.append(li)
-                    print(f"\nEmployee: {name}")
-                    for record in attendance_records:
-                        print(
-                            f"Date: {record['date']}, Time In: {record['time_in']}, Time Out: {record['time_out']}, Status: {record['status']}")
 
-                file = f'static/general/tmp/month_as_of_{str(datetime.now().strftime("%Y-%m-%d"))}.xlsx'
+                    summary_row = [
+                        employee.name,
+                        employee.department.dept_name if employee.department else "Unknown",
+                        number_of_days,
+                        total_late,
+                        late_absent,
+                        absent,
+                        off_days,
+                        total_absent,
+                        days_present,
+                        employee.wage,
+                        salary
+                    ]
+
+                    sheet.append(summary_row)
+
+                    print(f"Processed Employee: {employee.name}")
+
+                file = f"static/general/tmp/month_as_of_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
 
                 book.save(file)
-                success_response['message'] = {
-                    'data':results,
-                    'file':file
+
+                success_response["message"] = {
+                    "data": results,
+                    "file": file
                 }
+
                 response = success_response
 
             elif module == 'department':
