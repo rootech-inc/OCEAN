@@ -2,13 +2,14 @@ import os.path
 import pathlib
 from decimal import Decimal
 
+import requests
 from attr.validators import max_len
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
-
+from api.extras import sms_balance
 from community.models import questions, QuestionTags
 from blog.models import Providers
 from django.db.models import Sum
@@ -823,13 +824,65 @@ class Sms(models.Model):
     to = models.CharField(max_length=20, null=False)
     message = models.TextField(null=False)
 
-    last_tried_date = models.TextField()
-    last_tried_time = models.TextField()
+    last_tried_date = models.DateField(null=True, blank=True)  # ✅ was TextField
+    last_tried_time = models.TimeField(null=True, blank=True)  # ✅ was TextField
 
     created_date = models.DateField(auto_now_add=True)
-    created_time = models.TimeField(auto_now=True)
+    created_time = models.TimeField(auto_now_add=True)  # ✅ was auto_now=True
+
+
     status = models.IntegerField(default=0)
 
+    def send(self):
+        try:
+            api_key = self.api.api_key
+            sender_id = self.api.sender_id
+
+            balance = sms_balance(api_key)
+            if balance <= 0:
+                raise Exception(f"Insufficient balance: {balance}")
+
+            endpoint = 'https://api.mnotify.com/api/sms/quick'
+            payload = {
+                "recipient": [self.to],
+                "sender": sender_id,
+                "message": self.message,
+                "is_schedule": False,
+                "schedule_date": "",
+            }
+
+            response = requests.post(f"{endpoint}?key={api_key}", json=payload)
+            response.raise_for_status()
+            data = response.json()
+
+            code = data.get('code')
+
+            if code == '2000':
+                self.status = 1
+
+            # Single save for timestamps — no redundant DB fetches
+            # ✅ Fix
+            now = timezone.now()
+            self.last_tried_date = now.date()
+            self.last_tried_time = now.time()
+            self.save(update_fields=['status', 'last_tried_date', 'last_tried_time'])
+
+            SmsResponse.objects.create(
+                sms=self,
+                resp_code=code,
+                resp_msg=f"{self.message} - {endpoint}"
+            )
+
+            return True
+
+        except Exception as e:
+            print(f"SMS send error: {e}")
+            return False
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:          # only send on first save (creation)
+            self.send()
 
 
 # log sms responses

@@ -1282,6 +1282,7 @@ class Staff {
                 ]
                 let total_salary = 0;
                 recs.map(record => {
+                    console.table(record)
                     let user_uni = anton.md5(record['name'].replace(' ', '').toLowerCase())
                     let abscent = parseInt(record['total_absent']) / 3
                     total_salary += parseFloat(record['salary'])
@@ -1289,14 +1290,15 @@ class Staff {
             <tr>
                             <td>${record['name']}</td>
                             <td>${record['department']}</td>
-                            <td>${record['number_of_days']}</td>
-                            <td>${record['total_late']}</td>
-                            <td>${record['late_absent']}</td>
-                            <td>${record['absent']}</td>
+                            <td>${record['working_days']}</td>
+                            <td>${record['days_present']}</td>
                             <td>${record['off_days']}</td>
-                            <th>${record['total_absent']}</th>
-                            <th>${record['days_present']}</th>
-                            <th><kbd class='pointer' data-bs-toggle="tooltip" data-bs-placement="top" title='${record['wage']} * ${record['days_present']}'>${record['salary']}</kbd></th>
+                            <td>${record['total_present']}</td>
+                            <th>${record['days_late']}</th>
+                            <th>${record['late_absent']}</th>
+                            <th>${record['days_payable']}</th>
+                            <th>${record['wage']}</th>
+                            <th><kbd class='pointer' data-bs-toggle="tooltip" data-bs-placement="top" title='${record['wage']} * ${record['total_present']}'>${record['salary']}</kbd></th>
                             <td><button data-user="${record['name']}" data-id="${user_uni}" class="btn btn-info see-trans">Transactions</button></td>
                         </tr>
 

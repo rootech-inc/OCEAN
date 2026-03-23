@@ -97,6 +97,11 @@ class Device(models.Model):
     last_user_sync = models.DateTimeField(null=True, blank=True)
     last_log_sync = models.DateTimeField(null=True, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    last_cmd_id = models.IntegerField(null=True, blank=True)
+
+    # models.py
+    needs_backfill = models.BooleanField(default=False)
+    backfill_from = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.serial_number})"
@@ -158,23 +163,24 @@ class Employee(models.Model):
                 'user_id': self.user_id,
                 'name': self.name,
                 'log': log.obj()
-            }  
+            }
+        return None
 
     def day_record(self, work_day=None):
         if work_day is None:
             work_day = timezone.now().date()
         
-        first = AttendanceLog.objects.filter(
-            employee=self, timestamp__date=work_day
-        ).order_by('timestamp').first()
+        first = RawAttendance.objects.filter(
+            employee=self, day=work_day
+        ).first()
         
-        last = AttendanceLog.objects.filter(
-            employee=self, timestamp__date=work_day
-        ).order_by('-timestamp').first()
+        last = RawAttendance.objects.filter(
+            employee=self, day=work_day
+        ).first()
         
         return {
-            'first_log': first.timestamp.replace(tzinfo=None) if first else None,
-            'last_log': last.timestamp.replace(tzinfo=None) if last else None,
+            'first_log': first.first_punch.replace(tzinfo=None) if first else None,
+            'last_log': last.last_punch.replace(tzinfo=None) if last else None,
         }
 
     def off_days(self):
@@ -193,15 +199,14 @@ class Employee(models.Model):
         work_start = self.area.work_start_time
 
         late_days = (
-            AttendanceLog.objects
+            RawAttendance.objects
             .filter(
                 employee=self,
-                timestamp__date__range=[start_date, end_date],
-                punch_state=0,
-                timestamp__time__gt=work_start
+                day__range=[start_date, end_date],
+                first_punch__gt=work_start
             )
-            .annotate(day=TruncDate("timestamp"))
-            .values("day")
+            .annotate(x_day=TruncDate("day"))
+            .values("x_day")
             .distinct()
             .count()
         )
@@ -224,6 +229,20 @@ class Employee(models.Model):
 
         return tabs
 
+    def month_present(self, start_date, end_date):
+
+        return (
+            RawAttendance.objects
+            .filter(
+                employee=self,
+                day__range=[start_date, end_date]
+            )
+            .annotate(x_day=TruncDate("day"))
+            .values("x_day")
+            .distinct()
+            .count()
+        )
+
     def month_abscent(self, start_date, end_date):
 
         total_days = (end_date - start_date).days + 1
@@ -232,19 +251,7 @@ class Employee(models.Model):
 
         return total_days - present_days
 
-    def month_present(self, start_date, end_date):
 
-        return (
-            AttendanceLog.objects
-            .filter(
-                employee=self,
-                timestamp__date__range=[start_date, end_date]
-            )
-            .annotate(day=TruncDate("timestamp"))
-            .values("day")
-            .distinct()
-            .count()
-        )
 
     def obj(self):
         return {
@@ -308,8 +315,17 @@ class AttendanceLog(models.Model):
             return False
         return self.timestamp.time() > self.employee.area.work_start_time
 
-    
 
+class RawAttendance(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE,null=False,blank=False)
+    day = models.DateField()
+    first_punch = models.TimeField()
+    last_punch = models.TimeField()
+
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    def is_late(self):
+        return self.first_punch > self.employee.area.work_start_time
 
 class Resignation(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE,null=False,blank=False)

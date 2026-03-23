@@ -1071,6 +1071,7 @@ def api_call(request, module, crud):
                         core_api = SmsApi.objects.get(is_default=1)
 
                     Sms(api=core_api, to=to, message=message).save()
+
                     response['status'] = 200
                     response['message'] = "Message Added To Queuq"
                 except Exception as e:

@@ -1,4 +1,6 @@
-from iclock.models import Area
+import datetime
+
+from iclock.models import Area, RawAttendance
 from iclock.models import AttendanceLog,Employee
 import json
 import sys
@@ -483,6 +485,8 @@ def interface(request):
             
             elif module == 'view_attendance':
                 arr = []
+
+                from datetime import datetime
                 work_day = data.get('date',datetime.now().date())
                 for emp in Employee.objects.all().order_by('name'):
                     first_log_of_the_day = AttendanceLog.objects.filter(
@@ -575,28 +579,27 @@ def interface(request):
                 sheet = book.active
                 sheet.title = "Summary"
 
+                h1 = ["NN","DD","WD","SP","DO","TP","DL","LA","DP","WG","SR"]
                 headers = [
-                    "NAME", "DEPARTMENT", "WORK DAYS", "TOTAL LATE", "LATE ABSENT",
-                    "ABSENT", "OFF DAYS", "TOTAL ABSENT", "DAYS PRESENT",
-                    "WAGE (GHS)", "SALARY (GHS)"
+                    "NAME","DEPARTMENT","WORKING DAYS",
+                    "DAYS PRESENT","DAYS OFF","TOTAL PRESENT",
+                    "DAYS LATE","LATE ABSENT","DAYS PAYABLE (RP-LA)",
+                    "WAGE","SALARY(WG * DP)"
                 ]
 
+                sheet.append(h1)
                 sheet.append(headers)
 
                 employees = Employee.objects.filter(is_resigned=False).select_related("department")
 
                 for employee in employees:
 
-                    attendance = AttendanceLog.objects.filter(
+                    attendance = RawAttendance.objects.filter(
                         employee=employee,
-                        timestamp__date__range=[start_date, end_date]
-                    ).order_by("timestamp")
+                        day__range=[start_date, end_date]
+                    ).order_by("day")
 
-                    logs_by_day = defaultdict(list)
 
-                    # group logs per day
-                    for log in attendance:
-                        logs_by_day[log.timestamp.date()].append(log)
 
                     attendance_records = []
 
@@ -610,15 +613,15 @@ def interface(request):
                     new_sheet.append(["DATE", "CHECK IN", "CHECK OUT", "STATUS", "IS LATE"])
 
                     # process grouped logs
-                    for day, logs in logs_by_day.items():
+                    for log in attendance:
+                        day = log.day
+                        first_log = log.first_punch
+                        last_log = log.last_punch
 
-                        first_log = logs[0].timestamp.replace(tzinfo=None) if logs[0].timestamp else None
-                        last_log = logs[-1].timestamp.replace(tzinfo=None) if logs[-1].timestamp else None
 
-                        record = logs[0]
 
-                        status = record.status()
-                        is_late = record.is_late()
+                        status = ''
+                        is_late = log.is_late()
 
 
 
@@ -641,54 +644,59 @@ def interface(request):
                         })
 
                     # payroll calculations
-                    total_late = employee.total_late_days(start_date, end_date)
-                    present_days = employee.month_present(start_date, end_date)
-
-                    late_absent = employee.total_late_abscent(start_date, end_date)
-
+                    wd  = number_of_days
+                    days_present = employee.month_present(start_date, end_date)
+                    sp = days_present
                     off_days = employee.off_days()
+                    do = off_days
+                    total_present = off_days + days_present
+                    tp = total_present
 
-                    days_present = present_days + off_days - late_absent
+                    days_absent = number_of_days - total_present
+                    days_late = employee.total_late_days(start_date,end_date)
+                    dl = days_late
+                    late_absent = days_late // 3
+                    la = late_absent
 
-                    total_absent = absent + late_absent - off_days
+                    total_absent = days_absent + late_absent
+                    days_payable = total_present
+                    days_payable -= la
+                    dp = days_payable
+                    wages = employee.wage
+                    wg = wages
+                    salary = wages * days_payable
+                    sr = salary
 
-                    if days_present < 0:
-                        days_present = 0
+                    name = employee.name
+                    dept = employee.department.dept_name if employee.department else "Unknown"
+                    summary_row = [
+                        name,dept,wd,sp,do,tp,dl,la,dp,wg,sr
+                    ]
 
-                    salary = employee.wage * days_present
+
 
                     results.append({
-                        "name": employee.name,
-                        "department": employee.department.dept_name if employee.department else None,
-                        "number_of_days": number_of_days,
-                        "total_late": total_late,
-                        "late_absent": late_absent,
-                        "absent": absent,
-                        "off_days": off_days,
-                        "total_absent": total_absent,
-                        "salary": salary,
                         "attendance": attendance_records,
-                        "wage": employee.wage,
-                        "days_present": days_present
+                        'name':name,
+                        'department':dept,
+                        'working_days':wd,
+                        'days_present':sp,
+                        'off_days':do,
+                        'total_present':tp,
+                        'days_late':dl,
+                        'late_absent':la,
+                        'days_payable':dp,
+                        'salary':sr,
+                        'wage':wg
                     })
 
-                    summary_row = [
-                        employee.name,
-                        employee.department.dept_name if employee.department else "Unknown",
-                        number_of_days,
-                        total_late,
-                        late_absent,
-                        absent,
-                        off_days,
-                        total_absent,
-                        days_present,
-                        employee.wage,
-                        salary
-                    ]
+
+
 
                     sheet.append(summary_row)
 
                     print(f"Processed Employee: {employee.name}")
+
 
                 file = f"static/general/tmp/month_as_of_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
 
