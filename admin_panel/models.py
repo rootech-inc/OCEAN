@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
-from api.extras import sms_balance
+
 from community.models import questions, QuestionTags
 from blog.models import Providers
 from django.db.models import Sum
@@ -838,6 +838,7 @@ class Sms(models.Model):
             api_key = self.api.api_key
             sender_id = self.api.sender_id
 
+            from api.extras import sms_balance
             balance = sms_balance(api_key)
             if balance <= 0:
                 raise Exception(f"Insufficient balance: {balance}")
