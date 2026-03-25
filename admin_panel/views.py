@@ -2170,6 +2170,21 @@ def profile(request):
         'nav': True
     }
     return render(request, 'dashboard/profile/profile.html', context=context)
+@csrf_exempt
+def public_profile(request, username):
+    user = get_object_or_404(User, username=username)
+    if UserAddOns.objects.filter(user=user.pk).exists():
+        ad_on = UserAddOns.objects.get(user=user.pk)
+    else:
+        # Fallback if no add-on exists
+        ad_on = None
+
+    context = {
+        'target_user': user,
+        'ad_on': ad_on,
+        'nav': False  # Hide sidebar/header for public view
+    }
+    return render(request, 'dashboard/profile/public_profile.html', context=context)
 
 
 def logout_view(request):

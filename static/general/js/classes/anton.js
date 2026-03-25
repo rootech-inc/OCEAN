@@ -14,7 +14,7 @@ class Anton {
             let id_string = ids[i];
             const value = $(`#${ids[i]}`).val();
             console.log(`${id_string} = ${value}`);
-            if (value === '' || value === undefined ||  value.length < 1) {
+            if (value === '' || value === undefined || value.length < 1) {
                 // alert('False');
 
                 $(`#${ids[i]}`).addClass('border-danger')
@@ -65,11 +65,11 @@ class Anton {
     }
 
 
-    IsRequest(request,cry=false) {
+    IsRequest(request, cry = false) {
         if (request['status_code'] === 200 || request['status'] === 200 || request['status'] === 202 || request['status_code'] === 202) {
             return true
         }
-        if (cry){
+        if (cry) {
             kasa.error(request['message'])
         }
         return false;
@@ -136,7 +136,7 @@ class Anton {
 
             await anton.shorterUrn(url).then(response => {
                 console.table(response)
-                if(anton.IsRequest(response)){
+                if (anton.IsRequest(response)) {
                     let short_url = response['message']
                     amodal.setFooterHtml(`<a href="${short_url}" target="_blank">SHORTENED</a> <a class="x_share">Share</a>`)
                     $('.x_share').click(function () {
@@ -147,9 +147,9 @@ class Anton {
                             console.error(err);
                         });
                     })
-                    
+
                 }
-            }).catch(error => {console.error(error)})
+            }).catch(error => { console.error(error) })
 
         }
         $('#g_modal_body').prepend(`<p>${description}</p>`)
@@ -158,15 +158,17 @@ class Anton {
 
     }
 
-    
+
+
+
 
     printPDF(url) {
-                
+
         var iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         iframe.src = url;
         document.body.appendChild(iframe);
-        iframe.onload = function() {
+        iframe.onload = function () {
             iframe.contentWindow.print();
         };
     }
@@ -184,24 +186,24 @@ class Anton {
         let previous = header['previous'];
 
 
-        if(next === 0 || next === undefined){
+        if (next === 0 || next === undefined) {
 
-            $('#next').prop('disabled',true)
+            $('#next').prop('disabled', true)
             $('#next').val(undefined)
         } else {
 
-            $('#next').prop('disabled',false)
+            $('#next').prop('disabled', false)
             $('#next').val(next)
         }
 
 
-        if(previous === 0 || previous === undefined){
+        if (previous === 0 || previous === undefined) {
 
-            $('#previous').prop('disabled',true)
+            $('#previous').prop('disabled', true)
             $('#previous').val(undefined)
         } else {
 
-            $('#previous').prop('disabled',false)
+            $('#previous').prop('disabled', false)
             $('#previous').val(next)
         }
     }
@@ -224,9 +226,9 @@ class Anton {
 
     isInputFiles(element) {
         const input = document.getElementById(`${element}`);
-            const fileStatus = document.getElementById('fileStatus');
+        const fileStatus = document.getElementById('fileStatus');
 
-            return input.files.length > 0;
+        return input.files.length > 0;
     }
 
     hide(list = []) {
@@ -245,7 +247,7 @@ class Anton {
         }
     }
 
-    pageCenter(url,title,height,width) {
+    pageCenter(url, title, height, width) {
         // Calculate center position for popup window
         const left = (screen.width - width) / 2;
         const top = (screen.height - height) / 2;
@@ -257,26 +259,83 @@ class Anton {
         if (popup) {
             popup.focus();
             // Add event listener to keep focus on popup
-            window.onblur = function() {
+            window.onblur = function () {
                 if (!popup.closed) {
                     popup.focus();
                 }
             };
             // Remove event listener when popup closes
-            popup.onbeforeunload = function() {
+            popup.onbeforeunload = function () {
                 window.onblur = null;
             };
         }
     }
 
-    md5(text='') {
+    md5(text = '') {
         const timestamp = Date.now(); // current time in milliseconds
         const combined = text + timestamp;
 
         return SparkMD5.hash(combined);
     }
 
-    async shorterUrn(url=window.location.href) {
+
+    async makeShortUrl() {
+        let form = "";
+        form += fom.text('url', window.location.href, true)
+
+        amodal.setTitleText("Make Short Url")
+        amodal.setBodyHtml(form)
+        amodal.setFooterHtml(`<button class='btn btn-primary' id='shorten_url_btn'>Shorten</button>`)
+        amodal.show()
+
+
+        $('#shorten_url_btn').click(async function () {
+            let ids = ['url'];
+            if (anton.validateInputs(ids)) {
+                let url = $('#url').val();
+                let response = await anton.shorterUrn(url);
+                if (anton.IsRequest(response)) {
+                    let short_url = response['message'];
+                    let qr_code = response['qr_code'];
+
+                    let html = `
+                        <div>
+                            <div class='card'>
+                                <div class='card-body text-center'>
+                                    <img class='img-fluid' src='${qr_code}' alt='QR Code'>
+                                </div>
+
+                                <p class='text-center card-text'>${short_url}</p>
+
+                            </div>
+                            
+                        </div>  
+                    `;
+
+                    amodal.setBodyHtml(html)
+                    amodal.setFooterHtml(`
+                        <a href="${qr_code}" target="_blank">Download QR Code</a> 
+                        <button class='btn btn-primary' id='copy_url_btn'>Copy</button>`)
+                    $('#copy_url_btn').click(function () {
+                        navigator.clipboard.writeText(short_url).then(() => {
+                            kasa.success("URL copied to clipboard");
+                        }).catch(err => {
+                            kasa.error("Failed to copy URL");
+                            console.error(err);
+                        });
+                    })
+                } else {
+                    kasa.error("Failed to shorten URL");
+                }
+            } else {
+                kasa.error("Invalid URL")
+            }
+        })
+
+    }
+
+
+    async shorterUrn(url = window.location.href) {
         let payload = {
             'module': 'tools',
             'data': {
@@ -511,12 +570,12 @@ class Loader {
         $('#loader').hide()
     }
 
-    setMessage(message=""){
+    setMessage(message = "") {
         $("#loader_message").html(message)
     }
 }
 
-class Cookies{
+class Cookies {
     getCookie(name) {
         let value = `; ${document.cookie}`;
         let parts = value.split(`; ${name}=`);
@@ -549,7 +608,7 @@ $(document).ready(function () {
         let host = window.location.origin;  // includes protocol + host + port if present
         let remaining_url = url.replace(host, "");
         let form = '';
-        form += fom.text("title",'',true)
+        form += fom.text("title", '', true)
         amodal.setTitleText("Add To Shorcut");
         amodal.setBodyHtml(form)
         amodal.show()

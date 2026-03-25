@@ -14,7 +14,7 @@ import os
 
 from django.views.decorators.csrf import csrf_exempt
 
-from admin_panel.anton import shorten_url
+from admin_panel.anton import shorten_url, generate_qr_code
 from admin_panel.models import TicketHd, SmsApi, Sms, TaskHD, TaskTrans, ProductMaster, ProductPacking, ProductTrans, \
     UserAddOns
 from api.extras import get_stock, suppler_details, cardex
@@ -126,7 +126,16 @@ def api_function(request):
                         url = data.get('url')
                         short_url = shorten_url(url)
 
+
+
                         response['message'] = short_url
+                        response['qr_code'] = generate_qr_code(short_url)
+
+                    elif module == 'generate_qr_code':
+                        pass
+
+                    else:
+                        raise Exception("Invalid task for tools module")
 
                 elif module == 'ticket':
                     owner = data.get('owner')

@@ -140,6 +140,12 @@
           <div class="nav-title">AMC</div>
         </a>
 
+        <!--SHORTEN URL-->
+        <a href="javascript:void(0)" class="nav-card" onclick="anton.makeShortUrl()">
+          <div class="nav-icon-wrapper"><i class="bi bi-link text-primary"></i></div>
+          <div class="nav-title">Shorten URL</div>
+        </a>
+
         <!-- Anton AI -->
         <a href="{% url 'anton_index' %}" class="nav-card">
           <div class="nav-icon-wrapper"><i class="bi bi-robot text-primary"></i></div>
@@ -267,7 +273,7 @@
                 </tr>
               </thead>
               <tbody class="border-top-0">
-                {% for l_task in leaderboard_tasks %} 
+                {% for l_task in leaderboard_tasks %}
                 <tr>
                   <td class="py-2 px-0 border-bottom border-light">
                     <h6 class="mb-1 text-truncate fw-semibold" title="{{ l_task.ticket.title }}">

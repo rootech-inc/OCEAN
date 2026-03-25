@@ -1,4 +1,5 @@
 import hashlib
+import os
 import uuid
 from urllib.parse import urlencode
 
@@ -97,7 +98,29 @@ def remove_html_tags(text):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
 
-
+def generate_qr_code(text=''):
+    import qrcode
+    
+    # Create QR code instance
+    qr = qrcode.QRCode(
+        version=None,  # Controls the size of the QR Code (1 is the smallest)
+        error_correction=qrcode.constants.ERROR_CORRECT_L,  # Error correction level
+        box_size=10,  # Size of each "box" in the QR code
+        border=1,  # Thickness of the border
+    )
+    
+    # Add data to the QR code
+    qr.add_data(text)
+    qr.make(fit=True)
+    
+    # Create an image from the QR Code instance
+    os.makedirs("static/qr_codes", exist_ok=True)
+    image_path = f"static/qr_codes/{md5only(text)}.png"
+    img = qr.make_image(fill_color="black", back_color="white")
+    img.save(image_path)
+    
+    # Return the image (you can save it to a file or return it as bytes)
+    return image_path
 
 def shorten_url(url):
 

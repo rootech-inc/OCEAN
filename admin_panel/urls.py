@@ -99,6 +99,7 @@ urlpatterns = [
     path('profile/resetpword/', views.resetpassword, name='resetpassword'),
     path('logout_view/', views.logout_view, name='logout'),
     path('update_user_settings/', views.update_user_settings, name='update_user_settings'),
+    path('u/<str:username>/', views.public_profile, name='public_profile'),
 
     path('login/', views.login, name='login'),
     path('register/', views.new_user, name='new-user'),
