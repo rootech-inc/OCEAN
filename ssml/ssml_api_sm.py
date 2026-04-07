@@ -3,6 +3,7 @@ from admin_panel.models import UserAddOns
 from crm.views import contacts
 
 
+
 def safe_add_image_to_pdf(pdf, image_path, x, y, w, h=None):
     """
     Safely add an image to PDF with fallback options
