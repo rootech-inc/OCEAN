@@ -27,6 +27,9 @@ urlpatterns = [
    
     path('master/retired_meters/',views.retired_meters,name='retired_meters'),
     path('accounts/finlog/',views.accounts,name='accounts'),
+    path('accounts/ledger/',views.ledger,name='ssml_ledger'),
+    path('accounts/jv/',views.journal_voucher,name='ssml_journal_voucher'),
+    path('accounts/jv/new/',views.journal_voucher_add,name='ssml_journal_voucher_add'),
     path('accounts/invoice/',views.invoice,name='cont-invoice'),
     path('account/new-cont-inv/',views.invoice_new,name='new-cont-inv'),
     path('accounts/invoice/edit/<int:pk>/', views.invoice_edit, name='edit-cont-inv'),
@@ -59,6 +62,7 @@ urlpatterns = [
     path('work-order/services/', views.services, name='services'),
     path('work-order/service-orders/', views.service_orders, name='service_orders'),
     path('master/contractors/', views.contractors, name='contractors'),
+    path('master/contractors/list/',views.contractor_list,name='contractor_list'),
     path('api/contractor/', contractor_api.contractor_api, name='contractors_api'),
     path('service-order/new/', views.service_order_new, name='service_order_new'),
     path('contractor-errors/', views.contractor_errors, name='contractor_errors'),

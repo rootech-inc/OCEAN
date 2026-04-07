@@ -129,8 +129,7 @@
                     <label class="form-label fw-bold text-muted small text-uppercase">Contractor</label>
                     <select id="contractor" class="form-select form-control-premium">
                         {% for contractor in contractors %}
-                        <option value="{{ contractor.id }}" {% if contractor.id==invoice.contractor.id %}selected{%
-                            endif %}>
+                        <option value="{{ contractor.id }}" {% if contractor.id == invoice.contractor.id %}selected{% endif %}>
                             {{ contractor.company }}
                         </option>
                         {% endfor %}

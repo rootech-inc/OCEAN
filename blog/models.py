@@ -2,6 +2,8 @@ from datetime import datetime
 
 from django.contrib.auth.models import User
 from django.db import models
+import os
+
 
 
 # Create your models here.
@@ -23,6 +25,56 @@ class articles(models.Model):
     date_created = models.DateField(auto_now_add=True)
     time_created = models.TimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    
+
+    scope_type = (
+        ('public','Public'),
+        ('private','Private'),
+        ('protected','Protected'),
+    )
+
+    scope = models.CharField(max_length=200, choices=scope_type, default='public')
+
+    def author_dp(self):
+        if self.author:
+            from admin_panel.models import UserAddOns
+            if UserAddOns.objects.filter(user=self.author).exists():
+                addOn = UserAddOns.objects.get(user=self.author)
+                return addOn.dp_url()
+            else:
+                return "static/general/img/articles/def_img.png"
+        return ""
+
+    def image_url(self):
+        # check if file exist
+        if os.path.exists(self.image.path):
+            return self.image.url
+        return ""
+
+    def thumbnail_url(self):
+        if os.path.exists(self.thumbnail.path):
+            return self.thumbnail.url
+        return ""
+
+    def obj(self):
+        return {
+            'uni': self.uni,
+            'author': self.author.username,
+            'status': self.status,
+            'article': self.article,
+            'title': self.title,
+            'tag': self.tag,
+            'intro': self.intro,
+            'meta': self.meta,
+            'image': self.image_url(),
+            'thumbnail': self.thumbnail_url(),
+            'date_created': self.date_created,
+            'time_created': self.time_created,
+            'updated_at': self.updated_at,
+            'scope': self.scope,
+            'author_dp': self.author_dp(),
+        }
 
 
 class article_meta(models.Model):

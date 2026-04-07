@@ -1,8 +1,12 @@
+import calendar
+import datetime
 from decimal import Decimal
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, F
+from django.utils import timezone
+
 
 from ssml.models import Contractor, InventoryMaterial, IssueTransaction, Ledger, MaterialOrderItem, Plot, RedeemTransactions, ServiceOrder, ServiceOrderItem, ServiceOrderReturns
 
@@ -347,8 +351,31 @@ def contractor_api(request):
                     import openpyxl
                     contractor = Contractor.objects.get(id=id)
                     doc = data.get('document')
-                    services = ServiceOrder.objects.filter(contractor=contractor).order_by('service_date')
+                    purpose = data.get('purpose', '*')
+
+                    inv_date = data.get('inv_date', timezone.localdate())
+                    if isinstance(inv_date, str):
+                        inv_date = datetime.date.fromisoformat(inv_date)
+
+                    # Start and end of the month
+                    start_date = inv_date.replace(day=1)
+                    end_date = inv_date.replace(day=calendar.monthrange(inv_date.year, inv_date.month)[1])
+
+                    print(f"Start Date: {start_date}, End Date: {end_date}")
+
+                    if purpose == 'for_invoice':
+                        services = ServiceOrder.objects.filter(
+                            contractor=contractor,
+                            service_date__gte=start_date,
+                            service_date__lte=end_date,
+                            flag_for_invoice=True,
+                            inv_number=None
+                        ).order_by('service_date')
+
+                    else:
+                        services = ServiceOrder.objects.filter(contractor=contractor).order_by('service_date')
                     filt = data.get('filter','*')
+
                     if filt != '*':
                         services.filter(status=filt)
                     tr = []
@@ -358,13 +385,16 @@ def contractor_api(request):
                         hd = ["DATE","TYPE","METER","CUSTOMER","AMOUNT"]
                         sheet.append(hd)
                     for service in services:
-                        li = [service.service_date,service.service_type.name,service.new_meter,service.customer,service.total_amount()]
+                        li = [service.service_date, service.service_type.name, service.new_meter, service.customer,
+                              service.total_amount()]
                         tr.append({
-                            "date":service.service_date,
-                            "meter":service.new_meter,
-                            "amount":Decimal(service.total_amount()),
-                            'service':service.service_type.name
+                            "date": service.service_date,
+                            "meter": service.new_meter,
+                            "amount": Decimal(service.install_amount()),
+                            'service': service.service_type.name,
+                            'installation_type': service.installation_type.name
                         })
+
                         if doc == 'excel':
                             sheet.append(li)
 

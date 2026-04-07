@@ -1,0 +1,192 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+
+{% block body %}
+
+    <div class="card" style="height:80vh">
+
+        <div class="card-header">
+            <div class="w-100 d-flex">
+                <div class="w-50">
+                    <button id="save" class="btn btn-success ms-2 rounded-0">
+                        <i class="bi bi-save"></i>
+                    </button>
+                    <button id="cancel" class="btn btn-info ms-2 rounded-0">
+                        <i class="bi bi-x"></i>
+                    </button>
+
+                    <button id="new_line" class="btn btn-secondary ms-2 rounded-0">
+                        <i class="bi bi-grip-horizontal"></i>
+                    </button>
+
+
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="container-fluid mt-4">
+                <div class="row">
+                    <div class="col-sm-4">
+
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="entry_date">Date</label></div>
+                            <div class="col-sm-8">
+                                <input type="date"  class="form-control rounded-0" id="entry_date" placeholder="">
+                            </div>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="narration">Narration</label></div>
+                            <div class="col-sm-8">
+                                <textarea class="form-control rounded-0" id="narration" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12">
+                        <div class="table table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Ledger</th>
+                                        <th>Description</th>
+                                        <th>Debit</th>
+                                        <th>Credit</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                            <td>
+                                                <select class="form-select ledger" aria-label="Default select example">
+                                                    {{ ledge_options|safe }}
+                                                </select>
+                                            </td>
+                                            <td><input type="text" placeholder="Description"  class="form-control description rounded-0"></td>
+                                            <td><input type="number" style="width:100px" value="0" class="form-control debit rounded-0"></td>
+                                            <td><input type="number" style="width:100px" value="0" class="form-control credit rounded-0"></td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <script>
+    $(document).ready(function () {
+        let ledge_options = `{{ ledge_options }}`
+        $('#save').click(async function () {
+            // validate debit and credit
+            let table_body = $('.table tbody tr')
+            let debit = 0;
+            let credit = 0;
+            let transactions = []
+            for (let i = 0; i < table_body.length; i++) {
+                let row = table_body[i]
+                let ledger = $(row).find('.ledger').val()
+                let debit_input = $(row).find('.debit')
+                let credit_input = $(row).find('.credit')
+                let description_input = $(row).find('.description').val().trim().replace(/\s+/g, '')
+
+                if (!ledger) {
+                    kasa.error(`Ledger is required for row ${i+1}`)
+                    return
+                }
+
+                if (!debit_input.val() || !credit_input.val()) {
+                    kasa.error(`Debit and Credit are required for row ${i+1}`)
+                    return
+                }
+
+                if (description_input.length === 0) {
+                    kasa.error(`Description is required for row ${i+1}`)
+                    return
+                }
+
+                // checl of ledger exist in trasactions already
+                let ledger_exist = false
+                for (let j = 0; j < transactions.length; j++) {
+                    if (transactions[j].ledger === ledger) {
+                        ledger_exist = true
+                        break
+                    }
+                }
+
+                if (ledger_exist) {
+                    kasa.error(`Ledger '${ledger}' already exists in transactions`)
+                    return
+                }
+
+                const obj = {
+                    ledger: ledger,
+                    debit: parseFloat(debit_input.val()),
+                    credit: parseFloat(credit_input.val()),
+                    description: description_input
+                }
+
+                transactions.push(obj)
+
+                debit += parseFloat(debit_input.val())
+                credit += parseFloat(credit_input.val())
+            }
+
+            if(debit === 0 || credit === 0){
+                kasa.error("Cannot save on 0 transactions")
+                return
+            }
+
+            if (debit + credit !== 0) {
+                kasa.error(`Debit(${debit}) and Credit(${credit}) do not match`)
+            } else {
+                let ids = ['entry_date', 'narration', 'mypk']
+                if(anton.validateInputs(ids)){
+                    let payload = {
+                        "module":"jv_entry",
+                        "data":anton.Inputs(ids)
+                    }
+
+                    payload.data.transactions = transactions
+
+                    console.table(payload)
+
+                    await api.v2('PUT',payload,'/ssml/api/').then(res => {
+                        if(anton.IsRequest(res)){
+                            kasa.confirm(res.message,1,'/ssml/accounts/jv/')
+                        } else {
+                            kasa.response(res)
+                        }
+                    }).catch(err => {
+                        console.log(err)
+                        kasa.error("Error Creating Journal Voucher")
+                    })
+
+                } else {
+                    kasa.error("Please fill in all required fields")
+                }
+
+
+
+            }
+
+        })
+
+
+        $('#new_line').click(function () {
+            let table_body = $('.table tbody')
+            let row = table_body.find('tr:last')
+            let new_row = row.clone()
+            new_row.find('input').val('0')
+            new_row.find('.description').val('')
+            table_body.append(new_row)
+        })
+    })
+    </script>
+{% endblock %}

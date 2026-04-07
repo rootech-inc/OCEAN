@@ -1,0 +1,41 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+{% block body %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Contractor List</h5>
+        <table class="table table-bordered datatable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Address</th>
+                    <th>Last Service Date</th>
+                    <th>Last Seen</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contractor in contractors %}
+                <tr>
+                    <td>{{ contractor.code }}</td>
+                    <td>{{ contractor.company }}</td>
+                    <td>{{ contractor.phone }}</td>
+                    <td>{{ contractor.email }}</td>
+                    <td>{{ contractor.address }}</td>
+                    <td>{{ contractor.last_active_date }}</td>
+                    <td>{{ contractor.last_seen_days }}</td>
+                    <td>
+                        <a href="" class="btn btn-primary">Edit</a>
+                        <a href="" class="btn btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

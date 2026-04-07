@@ -24,6 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-q^#wfi0xy1z-7nv9vj9r^137i=j@zzij8na9q4zr!dsg$-&q!b'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+from dotenv import load_dotenv
+load_dotenv()
+
 DEBUG = True
 SHOW_ERROR_LINE = os.environ.get('DB_PASSWORD', False)
 
@@ -39,6 +42,8 @@ CORS_ALLOW_METHODS = list(default_methods) + [
 
 CORS_ALLOWED_ORIGINS = [
     "https://rootechits.com",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
 ]
 # If you want to allow everything during testing:
 CORS_ALLOW_ALL_ORIGINS = True
@@ -83,7 +88,8 @@ INSTALLED_APPS = [
     'amc.apps.AmcConfig',
     'accounts.apps.AccountsConfig',
     'anton.apps.AntonConfig',
-    'iclock.apps.IclockConfig'
+    'iclock.apps.IclockConfig',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -283,6 +289,9 @@ REST_DB_NAME = os.environ.get('REST_DB_NAME','SMSEXP_REST_2022')
 REST_DB_USER = os.environ.get('REST_DB_USER','sa')
 REST_DB_PASS = os.environ.get('REST_DB_PASS','sa@123456')
 REST_DB_PORT = os.environ.get('REST_DB_PORT','1433')
+
+
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY','[ENCRYPTION_KEY]')
 
 
 # approvers email

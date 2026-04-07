@@ -464,6 +464,16 @@
               <i class="bi bi-circle"></i><span>ECG Rates</span>
             </a>
           </li>
+          <li>
+            <a href="javascript:void(0)" id="flag_ready_4_invoice">
+              <i class="bi bi-circle"></i><span>Flag Ready 4 Invoice</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" id="month_inv_report">
+              <i class="bi bi-circle"></i><span>Report For Invoice</span>
+            </a>
+          </li>
         </ul>
       </li><!-- End ECG Invoicing Nav -->
 
@@ -472,6 +482,18 @@
           <i class="bi bi-megaphone"></i><span>Accounts</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="acct-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+
+            <li>
+            <a href="{% url 'ssml_ledger' %}">
+              <i class="bi bi-circle"></i><span>Ledgers</span>
+            </a>
+          </li>
+
+            <li>
+            <a href="{% url 'ssml_journal_voucher' %}">
+              <i class="bi bi-circle"></i><span>JV</span>
+            </a>
+          </li>
           <li>
             <a href="{% url 'accounts' %}">
               <i class="bi bi-circle"></i><span>Finalcial Log</span>
@@ -547,6 +569,11 @@
           <li>
             <a href="{% url 'contractors' %}">
               <i class="bi bi-circle"></i><span>Contractors</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'contractor_list' %}">
+              <i class="bi bi-circle"></i><span>Contractor List</span>
             </a>
           </li>
           <li>
@@ -758,11 +785,7 @@
         </a>
       </li>
 
-      <li>
-        <a href="javascript:void(0)" id="month_inv_report">
-          <i class="bi bi-circle"></i><span>Month4Invoice</span>
-        </a>
-      </li>
+
 
       <li>
         <a href="javascript:void(0)" id="retired_to_return">
@@ -865,6 +888,55 @@
       })
       $('#month_inv_report').click(function () {
         ssml.monthInvReport()
+      })
+
+      $('#flag_ready_4_invoice').click(function () {
+        // make modal to accesp cvs file inpit
+        let form = `<input class="form-control" type="file" id="csv_file" accept=".csv" >`
+        amodal.setBodyHtml(form)
+        amodal.setFooterHtml(`<button class="btn btn-primary" id="flag_ready_4_invoice_btn">Process</button>`)
+        amodal.show()
+
+        $('#flag_ready_4_invoice_btn').click(function () {
+          let csv_file = $('#csv_file').val()
+          if (csv_file) {
+            // loop through csv file and get all col 1 valies into an array
+            let meter_numbers = []
+            let file = $('#csv_file')[0].files[0]
+            let reader = new FileReader()
+            reader.onload = async function (e) {
+              let text = e.target.result
+              let lines = text.split('\n')
+              lines.forEach(line => {
+                let columns = line.split(',')
+                if (columns[0]) {
+                  const meter_no = columns[0].trim()
+                  meter_numbers.push(meter_no)
+                }
+              })
+              console.table(meter_numbers)
+
+              let payload = {
+                module: 'flat_for_invoice',
+                data: JSON.stringify(meter_numbers)
+              }
+
+              await api.v2('PATCH', payload, '/ssml/api/').then(response => {
+                if (anton.IsRequest(response)) {
+                  kasa.confirm(`${meter_numbers.length} Meters Flagged for invoice`, 1, 'here')
+                } else {
+                  kasa.response(response)
+                }
+              }).catch(error => { kasa.error(error) })
+
+            }
+            reader.readAsText(file)
+          } else {
+            kasa.error('Please select a CSV file')
+          }
+        })
+
+
       })
 
       $('#retired_to_return').click(function () {

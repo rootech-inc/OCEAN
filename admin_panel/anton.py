@@ -380,3 +380,36 @@ def month_by_name():
     # Get abbreviated month name (e.g., "May")
     month_abbr = datetime.now().strftime("%b")
     return month_abbr
+
+import google.generativeai as genai
+from django.conf import settings
+
+def generate_text(prompt: str) -> str:
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+    for m in genai.list_models():
+        if "generateContent" in m.supported_generation_methods:
+            print(m.name)
+    model = genai.GenerativeModel("gemini-2.5-flash")
+
+    response = model.generate_content(prompt)
+    return response.text
+
+from PIL import Image
+import os
+from io import BytesIO
+from django.core.files.base import ContentFile
+
+def make_thumbnail(image_field, size=(300, 200)):
+    img = Image.open(image_field)
+    img.convert('RGB')
+    img.thumbnail(size)  # resizes in place, maintains aspect ratio
+    
+    thumb_io = BytesIO()
+    img.save(thumb_io, format='JPEG', quality=85)
+    
+    # Generate thumbnail filename
+    name = os.path.splitext(image_field.name)[0]
+    thumb_name = f"{name}_thumb.jpg"
+    
+    return ContentFile(thumb_io.getvalue(), name=thumb_name)
+    

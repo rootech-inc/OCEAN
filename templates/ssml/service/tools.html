@@ -2,69 +2,71 @@
 {% load static %}
 
 {% block body %}
-    <div class="container-fluid h-100">
-        <div class="row">
+<div class="container-fluid h-100">
+    <div class="row">
 
-            <div class="col-sm-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>Installation Types</h4>
-                        <small class="text-info">Based on job done</small>
-                    </div>
-                    <div class="card-body p-2">
-                        <div class="table-responsive" id="installation_types_table">
+        <div class="col-sm-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Installation Types</h4>
+                    <small class="text-info">Based on job done</small>
+                </div>
+                <div class="card-body p-2">
+                    <div class="table-responsive" id="installation_types_table">
                         <!-- INSERT_YOUR_CODE -->
-                        <div class="d-flex justify-content-center my-4" id="installation_types_loader" style="display:none;">
+                        <div class="d-flex justify-content-center my-4" id="installation_types_loader"
+                            style="display:none;">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
                         </div>
-                        </div>
-                        <button id="new_installation_type" class="btn btn-primary">New</button>
                     </div>
-                </div>
-                
-            </div>
-
-            <div class="col-sm-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>Service Order Type</h4>
-                        <small class="text-info">Request from Customer</small>
-                    </div>
-                    <div class="card-body p-2">
-                        <div class="table-responsive" id="service_order_types_table">
-                            <!-- INSERT_YOUR_CODE -->
-                            <div class="d-flex justify-content-center my-4" id="service_order_types_loader" style="display:none;">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                    </div>
-                    <div class="card-footer">
-                        <button id="new_service_order_type" class="btn btn-primary">New</button>
-                    </div>
+                    <button id="new_installation_type" class="btn btn-primary">New</button>
                 </div>
             </div>
 
         </div>
+
+        <div class="col-sm-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Service Order Type</h4>
+                    <small class="text-info">Request from Customer</small>
+                </div>
+                <div class="card-body p-2">
+                    <div class="table-responsive" id="service_order_types_table">
+                        <!-- INSERT_YOUR_CODE -->
+                        <div class="d-flex justify-content-center my-4" id="service_order_types_loader"
+                            style="display:none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="card-footer">
+                    <button id="new_service_order_type" class="btn btn-primary">New</button>
+                </div>
+            </div>
+        </div>
+
     </div>
+</div>
 
 
-    <script>
-        $(document).ready(function(){
-            ssml.loadInstallationTypes()
-            ssml.loadOrderTypes()
+<script>
+    $(document).ready(function () {
+        ssml.loadInstallationTypes()
+        ssml.loadOrderTypes()
 
-            $('#new_installation_type').click(function(){
-                ssml.newInstallationType()
-            });
-
-            $('#new_service_order_type').click(function(){
-                ssml.newServiceOrderType()
-            })
+        $('#new_installation_type').click(function () {
+            ssml.newInstallationType()
         });
-    </script>
+
+        $('#new_service_order_type').click(function () {
+            ssml.newServiceOrderType()
+        })
+    });
+</script>
 {% endblock %}

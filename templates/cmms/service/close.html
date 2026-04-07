@@ -236,9 +236,9 @@
 
                     await api.v2('VIEW',print_payload,'/cmms/api/').then(response => {
                         if(anton.IsRequest(response)){
-                            anton.viewFile(`/${rep.message}`,'Job Card','')
+                            anton.viewFile(`/${response.message}`,'Job Card','')
                         } else {
-                            kasa.response(rep)
+                            kasa.response(response)
                         }
                     }).catch(error => {kasa.error(error)})
                     

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from admin_panel.anton import make_md5_hash
+from admin_panel.anton import make_md5_hash, generate_text
 from blog.models import articles
 
 
@@ -40,13 +40,29 @@ def interface(request):
                 tags = data.get('tags')
                 uni = f"{tags} {title}".replace(' ','-').lower().replace(':','-')
 
+                # make intro from content
+                intro = generate_text(
+                    f"Summarize this in one sentence, maximum 150 characters, plain text only, no markdown:\n\n{content}"
+                )   
                 # Save the object and get the pk
-                new_article = articles(uni=uni, article=content, author=author, tag=tags, title=title)
+                new_article = articles(uni=uni, article=content, author=author, tag=tags, title=title, intro=intro)
                 new_article.save()
 
                 # Access the pk of the just-created object
                 just_created_pk = new_article.pk
                 success_response['message'] = uni
+        elif method == 'VIEW':
+            if module == 'article':
+                uni = data.get('uni','*')
+                scope = data.get('scope','*')
+
+                if uni == '*':
+                    if scope == '*':
+                        success_response['message'] = [bg.obj() for bg in articles.objects.all()]
+                    else:
+                        success_response['message'] = [bg.obj() for bg in articles.objects.filter(scope=scope)]
+                else:
+                    success_response['message'] = [articles.objects.get(uni=uni).obj()]
 
 
         else:

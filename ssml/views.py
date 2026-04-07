@@ -15,8 +15,9 @@ from ssml.form import ContractorErrorForm
 from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, InventoryMaterial, InvoiceHD, Issue, \
     IssueTransaction, Location, MaterialOrderItem, Meter, Plot, Reedem, RequiredReturn, Service, ServiceMaterialRates, \
     ServiceMaterials, ServiceOrder, \
-    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments,PettyCash,RetiredMetersBox,InstallationType,Cardex,Phase,MaterialRequestHeader, \
-    ECGInvoiceHD, ECGInvoiceTransactions
+    ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments, PettyCash, \
+    RetiredMetersBox, InstallationType, Cardex, Phase, MaterialRequestHeader, \
+    ECGInvoiceHD, ECGInvoiceTransactions, AccountLedger
 from dolphine.models import Documents
 
 
@@ -354,6 +355,22 @@ def contractors(request):
 
 
 @login_required
+def contractor_list(request):
+    page = {
+        'title': 'Contractor List',
+        'page': 'contractor_list',
+        'page_title': 'Contractor List',
+        'page_description': 'Contractor List',
+        'nav':True
+    }
+    context = {
+        'page': page,
+        'contractors': Contractor.objects.filter(is_installer=True).order_by('company'),
+        
+    }
+    return render(request, 'ssml/contractor_list.html', context)
+
+@login_required
 def service_order_new(request):
     
     page = {
@@ -563,6 +580,9 @@ def add_service_to_type(request):
 def upload_service_order(request):
     if request.method == 'POST':
 
+        # Meter.objects.all().delete()
+        # ServiceOrder.objects.all().delete()
+
         # for tp in ServiceType.objects.all():
         #     if ServiceOrder.objects.filter(service_type=tp) == 0:
         #         tp.delete()
@@ -649,7 +669,7 @@ def upload_service_order(request):
                     linked_phase=phase_by_desc
                 )
 
-                phase = phase_by_desc.description
+                phase =  'Unknown'
                 print("Phase created for", meter_no, "to", phase)
 
             else:
@@ -657,7 +677,8 @@ def upload_service_order(request):
                 meter = Meter.objects.get(meter_no=meter_no)
                 meter.linked_phase = phase_by_desc
                 meter.save()
-                print("Phase updated to", phase_by_desc.description)
+                phase =  'Unknown'
+                print("Phase updated to", phase)
 
             old_meter = row_dict['OLD METER NUMBER'] if row_dict.get('OLD METER NUMBER') else meter_no
             spn = row_dict['SERVICE POINT NUMBER'] if row_dict.get('SERVICE POINT NUMBER') else row_dict.get('SERVICE POINT NUMBER')
@@ -1031,6 +1052,7 @@ def delete_type_service_rate(request,id):
 
 @login_required
 def invoice(request):
+    # InvoiceHD.objects.all().delete()
     if InvoiceHD.objects.all().count() == 0:
         return redirect('new-cont-inv')
     
@@ -1745,3 +1767,44 @@ def ecg_rates(request):
         'service_types': ServiceType.objects.all().order_by('name')
     }
     return render(request, 'ssml/ecg/ecg-rates.html', context=context)
+
+@login_required()
+def ledger(request):
+    page = {
+        'title': 'Ledgers',
+        'page': 'accounts_ledge',
+        'nav': True
+    }
+    context = {
+        'page': page,
+    }
+    return render(request, 'ssml/accounts/ledger.html', context=context)
+@login_required()
+
+def journal_voucher(request):
+    page = {
+        'title': 'Journal Voucher',
+        'page': 'jv',
+        'nav': True
+    }
+    context = {
+        'page': page,
+    }
+    return render(request, 'ssml/accounts/jv.html', context=context)
+@login_required()
+
+def journal_voucher_add(request):
+    page = {
+        'title': 'New Journal Voucher',
+        'page': 'new_jv',
+        'nav': True
+    }
+
+    options = ""
+    for lg in AccountLedger.objects.all():
+        options += f"<option value='{lg.pk}'>{lg.name}</option>\n"
+    context = {
+        'page': page,
+        'ledge_options': options
+    }
+    return render(request, 'ssml/accounts/new_jv.html', context=context)

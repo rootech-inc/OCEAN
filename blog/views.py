@@ -15,6 +15,8 @@ from blog.forms import *
 from blog.anton import *
 from blog.models import *
 from community.models import *
+from django.views.decorators.csrf import csrf_exempt
+from admin_panel.anton import make_thumbnail
 
 # general values
 search_form = SearchForm()
@@ -411,3 +413,25 @@ def handler404(request, *args, **argv):
 def print_article(request,uni):
     art = articles.objects.get(uni=uni)
     return render(request,'blog/print-page.html',context={'article':art})
+
+
+@csrf_exempt
+def upload_image(request):
+    if request.method == 'POST':
+        form = request.POST
+        image = request.FILES['post_img']
+        uni = form['uni']
+        try:
+            # save image
+            article = articles.objects.get(uni=uni)
+
+            # make thumbnail
+
+
+
+            article.image = image
+            article.thumbnail = make_thumbnail(image)
+            article.save()
+            return redirect('article',uni)
+        except Exception as e:
+            return HttpResponse(f'error%%{e}')

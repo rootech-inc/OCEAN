@@ -1,0 +1,101 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+
+{% block body %}
+
+    <div class="card" style="height:80vh">
+
+        <div class="card-header">
+            <div class="w-100 d-flex">
+                <div class="w-50">
+                    <button id="new" class="btn btn-primary ms-2 rounded-0">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                    <button class="btn btn-info ms-2 rounded-0">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <button class="btn btn-info ms-2 rounded-0">
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                    <button class="btn btn-info ms-2 rounded-0">
+                        <i class="bi bi-printer"></i>
+                    </button>
+                    <button title="Approve" class="btn btn-secondary ms-2 rounded-0">
+                        <i class="bi bi-check2-circle"></i>
+                    </button>
+                    <button title="Delete" class="btn btn-danger ms-2 rounded-0">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                    <button title="Post" class="btn btn-success ms-2 rounded-0">
+                        <i class="bi bi-send-check"></i>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="container-fluid mt-4">
+                <div class="row">
+                    <div class="col-sm-4">
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="voucher_number">Voucher #</label></div>
+                            <div class="col-sm-8">
+                                <input type="text"  class="form-control rounded-0" id="voucher_number" placeholder="">
+                            </div>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="entry_date">Date</label></div>
+                            <div class="col-sm-8">
+                                <input type="date"  class="form-control rounded-0" id="entry_date" placeholder="">
+                            </div>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><label for="narration">Narration</label></div>
+                            <div class="col-sm-8">
+                                <textarea class="form-control rounded-0" id="narration" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12">
+                        <div class="table table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Ledger</th>
+                                        <th>Debit</th>
+                                        <th>Credit</th>
+                                        <th>Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                            <td>Hello</td>
+                                            <td>Hello</td>
+                                            <td>Hello</td>
+                                            <td>100.00</td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <script>
+    $(document).ready(function () {
+        $('#new').click(function () {
+            location.href = '/ssml/accounts/jv/new/'
+        })
+    })
+    </script>
+{% endblock %}

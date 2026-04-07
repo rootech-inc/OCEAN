@@ -2454,7 +2454,10 @@ class SSML {
         form += `
             <div class="form-group">
                 <label for="date">Date</label>
-                <input type="date" class="form-control" id="start_date" name="start_date" value="${new Date().toISOString().split('T')[0]}">
+                <input type="date" class="form-control mb-2" id="start_date" name="start_date" value="${new Date().toISOString().split('T')[0]}">
+
+                <label for ='remarks'>Include Remarks</label>
+                <textarea class='form-control' id='remarks' placeholder='Reason for performance' name='remarks'></textarea>
             </div>
         `
 
@@ -2465,13 +2468,14 @@ class SSML {
 
         $('#get_report').click(async function () {
             let start_date = $('#start_date').val()
-            ssml.getDailyReport(start_date)
+            let remarks = $('#remarks').val()
+            ssml.getDailyReport(start_date, remarks)
         })
     }
 
-    async getDailyReport(start_date = new Date().toISOString().split('T')[0]) {
+    async getDailyReport(start_date = new Date().toISOString().split('T')[0], remarks = '') {
         loader.show()
-        await api.v2('VIEW', { module: 'daily_report', data: { date: start_date } }, '/ssml/api/').then(response => {
+        await api.v2('VIEW', { module: 'daily_report', data: { date: start_date, remarks: remarks } }, '/ssml/api/').then(response => {
             if (anton.IsRequest(response)) {
                 anton.viewFile('/' + response.message)
                 loader.hide()
@@ -2618,13 +2622,15 @@ class SSML {
         }).catch(error => { kasa.error(error); loader.hide() })
     }
 
-    async getJobs(doc, id, filter) {
+    async getJobs(doc, id, filter,purpose='*',inv_date='01-01-2000') {
         let payload = {
             module: 'service_order',
             data: {
                 document: doc,
                 contractor_id: id,
-                filter: filter
+                filter: filter,
+                purpose:purpose,
+                inv_date:inv_date
             }
         }
 
@@ -3185,9 +3191,9 @@ class SSML {
                 // })
                 loader.hide()
 
-                $('.download-location-stock').click(function(){
+                $('.download-location-stock').click(function () {
                     let loc_id = $(this).data('loc');
-                    ssml.downloadCardex(loc_id,pk)
+                    ssml.downloadCardex(loc_id, pk)
                 })
             } else {
                 kasa.response(response)
@@ -3237,7 +3243,7 @@ class SSML {
                 kasa.response(response)
 
             }
-        }).catch(error => { loader.hide();kasa.error(error) })
+        }).catch(error => { loader.hide(); kasa.error(error) })
 
     }
 
@@ -3609,15 +3615,39 @@ class SSML {
 
     async approveInvoice(id) {
         if (confirm("Are You Sure")) {
-            loader.show()
-            await api.v2('PUT', { module: 'approve_invoice', data: { id: id, mypk: $('#mypk').val() } }, '/ssml/api/').then(res => {
-                kasa.response(res);
-                ssml.viewInvoice(id)
-                loader.hide()
-            }).catch(error => {
-                kasa.error(error)
-                loader.hide()
+            let form = '';
+            form += fom.number('foc_debt','',true)
+            form += fom.text('foc_debt_reason','Debt Reason',true)
+            amodal.setTitleText('Approve Invoice')
+            amodal.setBodyHtml(form)
+            amodal.setFooterHtml(`<button class='btn btn-success' id='approve_invoice'>Approve</button>`)
+            amodal.show()
+
+            $('#approve_invoice').click(async function () {
+                loader.show()
+                let ids = ['foc_debt', 'foc_debt_reason', 'mypk']
+                if(anton.validateInputs(ids)){
+                    let payload = {
+                        module: 'approve_invoice',
+                        data: anton.Inputs(ids)
+                    }
+
+                    payload['data']['id'] = id
+                    await api.v2('PUT', payload, '/ssml/api/').then(res => {
+                        kasa.response(res);
+                        ssml.viewInvoice(id)
+                        loader.hide()
+                    }).catch(error => {
+                        kasa.error(error)
+                        loader.hide()
+                    })
+                } else {
+                    kasa.error('Please fill all the fields')
+                }
+
+
             })
+
         } else {
             kasa.info("Operation Cancelled")
         }
@@ -4653,8 +4683,9 @@ class SSML {
                 loader.hide()
                 let tr = ``;
                 data.forEach(item => {
+                    console.table(item)
                     tr += `
-                        <tr><td>${item.name}</td><td>${item.description}</td><td><button class="btn btn-primary edit_installation_type" data-name="${item.name}" data-description="${item.description}" data-pk="${item.pk}">Edit</button></td></tr>`;
+                        <tr><td>${item.name}</td><td>${item.description}</td><td>${item.rate}</td><td><button class="btn btn-primary edit_installation_type" data-name="${item.name}" data-description="${item.description}" data-rate="${item.rate}" data-pk="${item.pk}">Edit</button></td></tr>`;
                 });
 
                 let body = `
@@ -4662,9 +4693,10 @@ class SSML {
                         <table class="table table-bordered">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>Action</th>
                                     <th>Name</th>
                                     <th>Description</th>
+                                    <th>Rate</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="installation_types_table">
@@ -4679,11 +4711,38 @@ class SSML {
                 $('.edit_installation_type').click(function () {
                     let name = $(this).data('name')
                     let description = $(this).data('description')
+                    let rate = $(this).data('rate')
                     let pk = $(this).data('pk')
 
                     let form = "";
                     form += fom.text('edit_name', '', true, 255)
                     form += fom.textarea('edit_description', 3, true)
+                    form += fom.text('edit_rate', '', true, 255)
+
+                    form += `<hr>`
+                    form += `
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Phase</th>
+                                    <th>Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="phase_rate_table">
+                                <tr>
+                                    <td>Single Phase</td>
+                                    <td><input value=1 data-phase=1 id='single_phase_rate' class='form-control' type='number' ></td>
+                                </tr>
+                                <tr>
+                                    <td>Three Phase</td>
+                                    <td><input value=1 data-phase=3 id='three_phase_rate' class='form-control' type='number' ></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    `
+
                     amodal.setBodyHtml(form)
                     amodal.setTitleText('Edit Installation Type')
                     amodal.setFooterHtml(fom.button('save_installation_type_edit', 'button', 'success'))
@@ -4691,9 +4750,10 @@ class SSML {
 
                     $('#edit_name').val(name)
                     $('#edit_description').val(description)
+                    $('#edit_rate').val(rate)
 
                     $('#save_installation_type_edit').click(async function () {
-                        let ids = ['edit_name', 'edit_description', 'mypk']
+                        let ids = ['edit_name', 'edit_description', 'edit_rate', 'mypk']
                         if (anton.validateInputs(ids)) {
                             let payload = {
                                 module: 'installation_type',
@@ -4701,6 +4761,20 @@ class SSML {
                             }
                             payload.data.id = pk;
                             payload.data.pk = pk;
+
+                            let phase_rates = []
+                            phase_rates.push({
+                                phase: $('#single_phase_rate').data('phase'),
+                                rate: $('#single_phase_rate').val()
+                            })
+                            phase_rates.push({
+                                phase: $('#three_phase_rate').data('phase'),
+                                rate: $('#three_phase_rate').val()
+                            })
+                            payload.data.phase_rates = phase_rates
+
+                            console.table(payload)
+
                             await api.v2('PATCH', payload, '/ssml/api/').then(response => {
                                 kasa.response(response)
                                 amodal.hide()
@@ -4985,6 +5059,68 @@ class SSML {
 
     }
 
+    async newLedger() {
+
+
+
+        let form = "";
+        form += fom.selectv2('foc', [{ val: "INCOME", desc: "INCOME" }, { val: "EXPENSE", desc: "EXPENSE" }])
+        form += fom.text('ledger_name', 'Ledger Name', true)
+        form += fom.text('ledger_desc', 'Ledger Description', true)
+        form += fom.number('opening_balance', 'Opening Balance', true)
+
+        amodal.setBodyHtml(form)
+        amodal.setTitleText('New Ledger')
+        amodal.setFooterHtml(fom.button('save_new_ledger', 'button', 'success'))
+        amodal.show()
+
+        $('#foc').html('<option value="">Loading....</option>')
+        $('#foc').attr('disabled', true)
+
+        $('#opening_balance').val(0)
+
+        let foc_payload = {
+            module: 'minimal_contractor',
+            data: { doc: 'json' }
+        }
+
+        await api.v2('VIEW', foc_payload, '/ssml/api/contractor/').then(response => {
+            let xr = ""
+            if (anton.IsRequest(response, true)) {
+                response.message.map(item => {
+                    xr += `<option value="${item.id}">${item.company}</option>`
+                })
+            } else {
+                xr = `<option value="">${response['message']}</option>`
+            }
+
+            $('#foc').html(xr)
+            $('#foc').attr('disabled', false)
+        })
+
+        $('#foc').change(function () {
+            let select_text = $('#foc option:selected').text()
+            $('#ledger_name').val(`FOC :: ${select_text}`)
+            $('#ledger_desc').val(`Ledger for ${select_text}`)
+        });
+
+        $('#save_new_ledger').click(async function () {
+            let ids = ['foc', 'ledger_name', 'ledger_desc', 'mypk','opening_balance']
+            if (anton.validateInputs(ids)) {
+                let payload = {
+                    module: 'ledger',
+                    data: anton.Inputs(ids)
+                }
+
+                await api.v2('PUT', payload, '/ssml/api/').then(response => {
+                    if (anton.IsRequest(response, true)) {
+                        kasa.confirm(response.message, 1, 'here')
+                    }
+                }).catch(error => { kasa.error(error) })
+
+            }
+        })
+    }
 }
 
 const ssml = new SSML();

@@ -726,6 +726,16 @@ class UserAddOns(models.Model):
 
     department = models.ForeignKey(Departments, on_delete=models.SET_NULL, null=True, blank=True)
 
+    def dp_url(self):
+        # Guard — no file associated
+        if not self.profile_pic:
+            return "static/general/img/articles/blogger.jpg"
+        
+        if os.path.exists(self.profile_pic.path):
+            return self.profile_pic.url
+        
+        return "static/general/img/articles/blogger.jpg"
+
     def settings(self):
         return UserSettings.objects.get(user=self.user)
 

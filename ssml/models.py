@@ -337,6 +337,31 @@ class Contractor(models.Model):
         else:
             return True
 
+    def last_active_date(self):
+        order = ServiceOrder.objects.filter(contractor=self).order_by('-service_date').first()
+        return order.service_date if order else None
+
+    def last_seen_days(self):
+        from datetime import date
+        last_date = self.last_active_date()
+        if not last_date:
+            return None
+        days = (date.today() - last_date).days
+        if days == 0:
+            return "Today"
+        if days == 1:
+            return "Yesterday"
+        if days < 7:
+            return f"{days} days ago"
+        if days < 30:
+            weeks = days // 7
+            return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+        if days < 365:
+            months = days // 30
+            return f"{months} month{'s' if months > 1 else ''} ago"
+        years = days // 365
+        return f"{years} year{'s' if years > 1 else ''} ago"
+
     def error_limit(self):
         return {
             'week': 3,
@@ -983,6 +1008,10 @@ class ServiceOrder(models.Model):
     box_no = models.IntegerField(max_length=100,default=0)
     final_readings = models.DecimalField(max_digits=65, decimal_places=2, default=0)
 
+    flag_for_invoice = models.BooleanField(default=False)
+    inv_number = models.CharField(max_length=255,null=True,blank=True)
+    inv_date = models.DateField(null=True,blank=True)
+
     
 
     def items(self):
@@ -994,6 +1023,34 @@ class ServiceOrder(models.Model):
 
     def meter_phase(self):
         return Meter.objects.filter(meter_no=self.new_meter).first().linked_phase.description if Meter.objects.filter(meter_no=self.new_meter).exists() else "Not Set"
+
+    def install_amount(self):
+        sts_no = self.new_meter
+        # get meter phase
+        meter = Meter.objects.filter(meter_no=sts_no).first()
+        text_phase = self.phase
+        meter_text_phase = meter.phase
+        linked_phase = meter.linked_phase
+        print("#" * 5 , sts_no , "#" * 5)
+        print(f"Meter phase: {meter_text_phase}, Order phase: {text_phase}, Linked phase: {linked_phase.description if linked_phase else 'Not Set'}")
+
+        # get installation type
+        install_type = self.installation_type
+        print(f"Installation Type: {install_type.name if install_type else 'Not Set'}")
+
+        # get rate
+        job_rate = InstallationTypePhaseRate.objects.filter(installation_type=install_type, phase=linked_phase).first()
+        if job_rate:
+            job_rate = job_rate.rate
+        else:
+            job_rate = 0
+        print(f"Job Rate: {job_rate}")
+
+        print("#" * 5, sts_no, "#" * 5)
+        print("")
+
+
+        return job_rate
 
     def total_amount(self):
         return ServiceOrderItem.objects.filter(service_order=self).aggregate(total_amount=models.Sum('amount'))['total_amount'] or 0
@@ -1037,6 +1094,7 @@ class ServiceOrder(models.Model):
             'id':self.id,
             'service_type':self.service_type.obj(),
             'service_date':self.service_date,
+            'installation_type':self.installation_type.obj(),
             'contractor':self.contractor.obj(),
             'plot':self.plot,
             'geo_code':self.geo_code,
@@ -1506,6 +1564,12 @@ class InvoiceHD(models.Model):
     approved_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,related_name='invapproved_by')
     posted_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,related_name='invposted_by')
 
+    is_paid = models.BooleanField(default=False)
+    payment_reciept = models.CharField(max_length=255,null=True,blank=True)
+
+    foc_debt = models.DecimalField(max_digits=10,max_length=10,decimal_places=2,default=0.00)
+    foc_debt_reason = models.TextField(null=True,blank=True)
+
     class Meta:
         unique_together = (('entry_date','contractor'),)
 
@@ -1684,7 +1748,7 @@ class ECGInvoiceMaterial(models.Model):
 class InvoiceTransactions(models.Model):
     entry = models.ForeignKey(InvoiceHD,on_delete=models.CASCADE)
     service_date = models.DateField(null=False)
-    asset = models.CharField(max_length=255,null=False, blank=False)
+    asset = models.CharField(max_length=255,null=False, blank=False,unique=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     remarks = models.CharField(max_length=255,null=False, blank=False)
 
@@ -2094,3 +2158,81 @@ class MaterialRequestTransactions(models.Model):
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }
+
+
+class InstallationTypePhaseRate(models.Model):
+    installation_type = models.ForeignKey(InstallationType, on_delete=models.CASCADE)
+    phase = models.ForeignKey('Phase', on_delete=models.CASCADE)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('installation_type', 'phase')
+
+    def __str__(self):
+        return f"{self.installation_type.name} - {self.phase} Phase"
+
+    def obj(self):
+        return {
+            'id': self.id,
+            'installation_type_id': self.installation_type.id,
+            'phase': self.phase,
+            'rate': self.rate,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+        }
+
+
+class AccountLedger(models.Model):
+    key = models.CharField(max_length=255, unique=True, null=False, blank=False)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    time_created = models.TimeField(auto_now_add=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    description = models.TextField(blank=True, null=True)
+    name = models.CharField(max_length=200,unique=True,null=False,blank=False)
+    reference = models.CharField(max_length=200, blank=True, null=True)
+
+
+    def obj(self):
+        return {
+
+        }
+
+class AccountLedgerTransactions(models.Model):
+    ledger = models.ForeignKey(AccountLedger, on_delete=models.CASCADE, related_name='transactions')
+
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    tran_type_choices = (
+        ('deb',"Debit"),('cr',"Credit")
+    )
+    tran_type = models.CharField(max_length=3,null=False,blank=False,choices=tran_type_choices) # credit if money is put into, debit if money is taken out
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+
+class JournalVoucherHd(models.Model):
+    entry_no = models.CharField(max_length=10, null=False, blank=False,unique=True)
+    entry_date = models.DateField(null=False, blank=False)
+    narration = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    time_created = models.TimeField(auto_now_add=True)
+    debit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    credit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    is_posted = models.BooleanField(default=False)
+
+
+class JournalVoucherTransactions(models.Model):
+    hd = models.ForeignKey(JournalVoucherHd, on_delete=models.CASCADE, related_name='transactions')
+    ledger = models.ForeignKey(AccountLedger, on_delete=models.CASCADE, related_name='journal_transactions')
+
+    debit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    credit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    date_created = models.DateField(auto_now_add=True)
+    time_created = models.TimeField(auto_now_add=True)
+    description = models.TextField(blank=True, null=True)

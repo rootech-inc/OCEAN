@@ -139,6 +139,7 @@
                 <tr>
                     <th class="ps-4">DATE</th>
                     <th>SERVICE</th>
+                    <th>INSTALLATION TYPE</th>
                     <th>METER</th>
                     <th class="text-end pe-4">AMOUNT</th>
                 </tr>
@@ -161,7 +162,8 @@
         $('#retrieve').click(async function () {
             let ids = ['contractor', 'entry_date']
             if (anton.validateInputs(ids)) {
-                await ssml.getJobs('json', $('#contractor').val(), 'completed').then(res => {
+                let inv_date = $('#entry_date').val()
+                await ssml.getJobs('json', $('#contractor').val(), 'completed', 'for_invoice',inv_date).then(res => {
                     if (anton.IsRequest(res)) {
                         let data = res.message;
                         dt = data
@@ -169,9 +171,11 @@
                         let total_amount = 0;
                         if (data.length > 0) {
                             data.map(service => {
+                                console.table(service)
                                 tr += `
                                     <tr>
                                         <td class="ps-4">${service.date}</td>
+                                        <td>${service.installation_type}</td>
                                         <td>${service.service}</td>
                                         <td>${service.meter}</td>
                                         <td class="text-end pe-4">GHS ${parseFloat(service.amount).toFixed(2)}</td>
