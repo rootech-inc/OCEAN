@@ -310,13 +310,13 @@ def index(request):
                             phone = add_on.phone
                             message = f"Title : {reminder.title} \nDate : {reminder.rem_date} \nTime : {reminder.rem_time} \nDetails : {reminder.message}"
                             Sms.objects.create(
-                                sender=sms_api,
+                                api=sms_api,
                                 to=phone,
                                 message=message,
                             )
 
 
-                            
+
 
                             reminder.status = 99
                             reminder.save()
