@@ -304,32 +304,17 @@ def index(request):
                         # Compare
                         if rem_datetime <= current_datetime:
                             # send
-                            print(
-                                f"The reminder {rem_datetime} datetime is less than or equal to the current datetime {current_datetime}")
+
                             sms_api = SmsApi.objects.get(is_default=1)
-                            api_key = sms_api.api_key
-                            sender = sms_api.sender_id
+
                             phone = add_on.phone
                             message = f"Title : {reminder.title} \nDate : {reminder.rem_date} \nTime : {reminder.rem_time} \nDetails : {reminder.message}"
+                            Sms.objects.create(
+                                sender=sms_api,
+                                to=phone,
+                                message=message,
+                            )
 
-                            endPoint = f"https://apps.mnotify.net/smsapi?key={api_key}&to={phone}&msg={message}&sender_id={sender}"
-                            resp = requests.post(endPoint)
-                            data = resp.json()
-
-                            # status = data['status']
-                            code = data['code']
-                            resp_msg = data['message']
-
-                            if code == '1000':
-                                reminder.resp_code = code
-                                reminder.resp_message = f"{resp_msg} to {phone}"
-
-                                reminder.status = 99
-                                reminder.save()
-
-                                sent += 1
-                            else:
-                                not_sent += 1
                         else:
                             # dont send
                             not_sent += 1

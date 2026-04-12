@@ -1,3 +1,5 @@
+#sometimes i font know
+
 from admin_panel.anton import shorten_url
 from admin_panel.models import UserAddOns
 from crm.views import contacts
