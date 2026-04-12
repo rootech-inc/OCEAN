@@ -315,6 +315,12 @@ def index(request):
                                 message=message,
                             )
 
+
+                            reminder.resp_message = f"{resp_msg} to {phone}"
+
+                            reminder.status = 99
+                            reminder.save()
+
                         else:
                             # dont send
                             not_sent += 1
