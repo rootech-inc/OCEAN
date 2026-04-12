@@ -316,7 +316,7 @@ def index(request):
                             )
 
 
-                            reminder.resp_message = f"{resp_msg} to {phone}"
+                            
 
                             reminder.status = 99
                             reminder.save()
