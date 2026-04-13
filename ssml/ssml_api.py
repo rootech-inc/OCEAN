@@ -4957,9 +4957,16 @@ def interface(request):
             elif module == 'flat_for_invoice':
                 meter_numbers = json.loads(data)
                 print(meter_numbers)
-                for sts in meter_numbers:
+                for meter_data in meter_numbers:
+                    service_date = meter_data.get('service_date')
+                    meter_no = meter_data.get('meter_no')
+
+                    print(meter_no,service_date)
                     ## update flag in service
-                    ServiceOrder.objects.filter(new_meter=sts).update(flag_for_invoice=True)
+                    ServiceOrder.objects.filter(
+                        new_meter=meter_no,
+                        service_date=service_date
+                    ).update(flag_for_invoice=True)
                     print(f"Meter {sts} flagged for invoice")
 
 

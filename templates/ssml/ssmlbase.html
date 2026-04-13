@@ -909,9 +909,15 @@
               let lines = text.split('\n')
               lines.forEach(line => {
                 let columns = line.split(',')
+                  let meter_no = columns[0];
+                  let service_date = columns[2];
+
                 if (columns[0]) {
                   const meter_no = columns[0].trim()
-                  meter_numbers.push(meter_no)
+                  meter_numbers.push({
+                      meter_no:meter_no,
+                      service_date:service_date
+                  })
                 }
               })
               console.table(meter_numbers)
