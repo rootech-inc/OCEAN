@@ -4967,7 +4967,7 @@ def interface(request):
                         new_meter=meter_no,
                         service_date=service_date
                     ).update(flag_for_invoice=True)
-                    print(f"Meter {sts} flagged for invoice")
+                    print(f"Meter {sts}- {service_date} flagged for invoice")
 
 
                 success_response['message'] = "Meters Flagged for Invoice"
