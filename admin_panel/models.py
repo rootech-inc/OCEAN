@@ -889,11 +889,11 @@ class Sms(models.Model):
         except Exception as e:
             print(f"SMS send error: {e}")
             return False
-    def save(self, *args, **kwargs):
-        # is_new = self.pk is None
-        super().save(*args, **kwargs)
-        if self.status == 0:          # only send on first save (creation)
-            self.send()
+    # def save(self, *args, **kwargs):
+    #     # is_new = self.pk is None
+    #     super().save(*args, **kwargs)
+    #     if self.status == 0:          # only send on first save (creation)
+    #         self.send()
 
 
 # log sms responses
