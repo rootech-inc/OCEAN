@@ -890,9 +890,9 @@ class Sms(models.Model):
             print(f"SMS send error: {e}")
             return False
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
+        # is_new = self.pk is None
         super().save(*args, **kwargs)
-        if is_new:          # only send on first save (creation)
+        if self.status == 0:          # only send on first save (creation)
             self.send()
 
 
