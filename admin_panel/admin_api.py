@@ -442,7 +442,7 @@ def index(request):
                 subject = data.get('subject')
                 body = data.get('body')
                 cc = data.get('cc','')
-                queu_by = User.objects.get(pk=data.get('mypk'))
+
                 mail_key = make_md5(f"{timezone.now()}{subject}{recipient}{body}{sender.pk}{sender.address}")
                 MailQueues(sender=sender, recipient=recipient, subject=subject, body=body, cc=cc,mail_key=mail_key).save()
                 just_q = MailQueues.objects.get(mail_key=mail_key)
@@ -450,6 +450,7 @@ def index(request):
                 trigger = data.get('trigger')
                 ref = data.get('ref')
                 if trigger == 'servicing':
+                    queu_by = User.objects.get(pk=data.get('mypk'))
                     service = ServiceCard.objects.get(pk=ref)
                     docs = service.documents()
                     for doc in docs:
