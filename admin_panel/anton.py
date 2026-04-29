@@ -394,7 +394,7 @@ def generate_text(prompt: str) -> str:
     print("MODEL NAME")
     model = genai.GenerativeModel(settings.GEMINI_MODEL)
 
-    response = model.generate_content(prompt)
+    response = model.generate_content(prompt[:5000])
     return response.text
 
 from PIL import Image
