@@ -5105,7 +5105,7 @@ def interface(request):
 
                 # Email template
                 email_template = f"""
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
                     <h2 style="color: #FF8C00;">Profile Verified: Welcome to FOC NODE</h2>
 
                     <p>Dear {foc.owner},</p>
@@ -5115,34 +5115,38 @@ def interface(request):
                     <p><strong>System Access Granted:</strong> You now have full access to <strong>FOC NODE</strong>, our comprehensive enterprise solution for managing electricity smart meter installations, inventory tracking, financial billing, and contractor compliance.</p>
 
                     <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #FF8C00; margin: 20px 0;">
-                        <h3 style="margin-top: 0; color: #333; font-size: 16px;">Key Features Now Available to You:</h3>
-                        <ul style="margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
-                            <li><strong>Billing & Invoicing:</strong> Manage your complete invoice lifecycle (Pending, Accepted, Posted) and download professional PDF invoice reports.</li>
-                            <li><strong>Material & Inventory:</strong> Track your issued versus used materials in real-time with a visual balance ledger.</li>
-                            <li><strong>Waybill Tracking:</strong> Access the digital history of all material transfers with detailed barcode verification.</li>
-                            <li><strong>Compliance Management:</strong> Natively upload and preview mandatory documents (Ghana Card, Business Certificates) to maintain your active status.</li>
+                        <h3 style="margin-top: 0; color: #333; font-size: 16px;">Training & Guides</h3>
+                        <p style="margin-bottom: 10px; font-size: 14px;">Before you begin, please review our training materials to understand how to navigate the system and process your claims:</p>
+                        <ul style="margin-bottom: 0; padding-left: 20px; line-height: 1.6; font-size: 14px;">
+                            <li><strong>Video Tutorials:</strong> <a href="https://ocean.rootechits.com/stream/series/27ODXPfa1mkA" style="color: #FF8C00; font-weight: bold; text-decoration: none;">Watch Step-by-Step Videos</a></li>
+                            <li><strong>Written Guide:</strong> <a href="https://rootechits.com/blog.php?uni=sneda-foc-node-app" style="color: #FF8C00; font-weight: bold; text-decoration: none;">Read the Official Blog Manual</a></li>
                         </ul>
                     </div>
 
-                    <h3 style="color: #333; font-size: 16px; margin-top: 25px;">Quick Access & App Download</h3>
-                    <p>You can manage your operations directly from your browser or by installing our dedicated mobile application on your Android device.</p>
+                    <h3 style="color: #333; font-size: 16px; margin-top: 25px;">Quick Access & App Downloads</h3>
+                    <p>You can manage your operations directly from your browser, or install our dedicated applications for Android and Windows.</p>
 
-                    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 25px 0;">
+                    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 20px 0;">
                         <tr>
-                            <td align="center" style="padding-bottom: 15px;">
-                                <a href="https://focnode.rootechits.com/" style="background-color: #333333; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; width: 220px;">Open Web Dashboard</a>
+                            <td align="center" style="padding-bottom: 12px;">
+                                <a href="https://focnode.rootechits.com/" style="background-color: #333333; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; width: 250px;">Open Web Dashboard</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" style="padding-bottom: 12px;">
+                                <a href="https://ocean.rootechits.com/static/uploads/appversion/app-release.apk" style="background-color: #FF8C00; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; width: 250px;">Download Android App</a>
                             </td>
                         </tr>
                         <tr>
                             <td align="center">
-                                <a href="https://ocean.rootechits.com/static/uploads/apps/2026-04-23_06-50-55/FOC_NODE.apk" style="background-color: #FF8C00; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; width: 220px;">Download Android APK</a>
+                                <a href="https://ocean.rootechits.com/static/uploads/apps/2026-04-29_18-01-17/Release.zip" style="background-color: #005A9C; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; width: 250px;">Download Windows App</a>
                             </td>
                         </tr>
                     </table>
 
-                    <p style="font-size: 13px; color: #555; text-align: center;"><em>*The Android app file is named <strong>FOC_NODE.apk</strong>.</em></p>
+                    <p style="font-size: 13px; color: #555; text-align: center;"><em>*For the best mobile experience, Android users should install the APK. Windows users can extract and run the desktop Release.zip file.</em></p>
 
-                    <p>If you experience any issues accessing the web dashboard, installing the Android APK, or viewing your invoices, please reach out to Felix or Raymond for immediate technical support.</p>
+                    <p>If you experience any issues accessing the web dashboard, installing the applications, or viewing your invoices, please reach out to Felix or Raymond for immediate technical support.</p>
 
                     <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
 
