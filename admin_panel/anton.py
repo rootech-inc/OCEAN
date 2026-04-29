@@ -389,6 +389,9 @@ def generate_text(prompt: str) -> str:
     for m in genai.list_models():
         if "generateContent" in m.supported_generation_methods:
             print(m.name)
+    print("MODEL NAME")
+    print(settings.GEMINI_MODEL)
+    print("MODEL NAME")
     model = genai.GenerativeModel(settings.GEMINI_MODEL)
 
     response = model.generate_content(prompt)
