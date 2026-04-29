@@ -751,23 +751,7 @@ class SSML {
 
                 let form = `
                     <div class='row'>
-                        <div class="form-group mb-2 col-sm-3">
-                            <label for="code" class="text-primary">Code</label>
-                            <input type="text" class="form-control" value="${contractor.code}" id="code" name="code">
-                        </div>
-                        <div class="form-group mb-2 col-sm-3">
-                            <label for="link" class="text-primary">Link</label>
-                            <input type="text" class="form-control" value="${contractor.link}" id="link" name="link">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="company" class="text-primary">Company</label>
-                            <input type="text" class="form-control" value="${contractor.company}" id="company" name="company">
-                        </div>
-                   
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="owner_name" class="text-primary">Owner</label>
-                            <input type="text" class="form-control" value="${contractor.owner}" id="owner_name" name="owner_name">
-                        </div>
+                        
                         
                         <div class="form-group mb-2 col-sm-6">
                             <label for="owner_phone" class="text-primary">owner_phone</label>
@@ -778,33 +762,8 @@ class SSML {
                             <label for="owner_email" class="text-primary">owner_email</label>
                             <input type="text" class="form-control" value="${contractor.owner_email}" id="owner_email" name="owner_phone">
                         </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="ghana_card" class="text-primary">gh_card_no</label>
-                            <input type="text" class="form-control" value="${contractor.gh_card_no}" id="ghana_card" name="ghana_card">
-                        </div>
                         
-                        <div class="col-sm-12"><hr></div>
-                        
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="comp_reg_number" class="text-primary">comp_reg_number</label>
-                            <input type="text" class="form-control" value="${contractor.comp_reg_number}" id="comp_reg_number" name="comp_reg_number">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="business_type" class="text-primary">business_type</label>
-                            <input type="text" class="form-control" value="${contractor.business_type}" id="business_type" name="business_type">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="region" class="text-primary">region</label>
-                            <input type="text" class="form-control" value="${contractor.region}" id="region" name="region">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="gh_post" class="text-primary">gh_post</label>
-                            <input type="text" class="form-control" value="${contractor.gh_post}" id="gh_post" name="gh_post">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="business_address" class="text-primary">business_address</label>
-                            <input type="text" class="form-control" value="${contractor.business_address}" id="business_address" name="business_address">
-                        </div>
+                       
                         <div class="form-group mb-2 col-sm-6">
                             <label for="business_phone_number" class="text-primary">business_phone_numbere</label>
                             <input type="text" class="form-control" value="${contractor.business_phone_number}" id="business_phone_number" name="business_phone_number">
@@ -813,47 +772,7 @@ class SSML {
                             <label for="business_email" class="text-primary">business_email</label>
                             <input type="text" class="form-control" value="${contractor.business_email}" id="business_email" name="business_email">
                         </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="city" class="text-primary">city</label>
-                            <input type="text" class="form-control" value="${contractor.city}"   id="city" name="city">
-                        </div>
                         
-                       
-                        
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="bank_name" class="text-primary">bank_name</label>
-                            <input type="text" class="form-control" value="${contractor.bank_name}"   id="bank_name" name="bank_name">
-                        </div>
-                        
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="bank_acct_number" class="text-primary">bank_acct_number</label>
-                            <input type="text" class="form-control" value="${contractor.bank_acct_number}"   id="bank_acct_number" name="bank_acct_number">
-                        </div>
-                        <div class="form-group mb-2 col-sm-6">
-                            <label for="bank_branch" class="text-primary">bank_branch</label>
-                            <input type="text" class="form-control" value="${contractor.bank_branch}"   id="bank_branch" name="bank_branch">
-                        </div>
-                        
-                        
-                        <div class="form-group mb-2 col-sm-6">
-                            <input type="hidden" class="form-control" value="${contractor.pk}"   id="id" name="id">
-                            <label for="is_installer">Is Installler?</label>
-                            <select class="form-control" id="is_installer">
-                                <option value="0">No</option>
-                                <option value="1">Yes</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group mb-2 col-sm-6">
-                            
-                            <label for="debit">Debit</label>
-                            <select class="form-control" id="debit">
-                                ${ledop}
-                            </select>
-                            
-                            
-                            
-                        </div>
                         
                         
 
@@ -871,7 +790,9 @@ class SSML {
                 amodal.show();
 
                 $('#update_contractor').click(async function () {
-                    let ids = ['link', 'owner_name', 'ghana_card', 'owner_phone', 'owner_email', 'company', 'comp_reg_number', 'business_type', 'business_phone_number', 'business_email', 'region', 'city', 'gh_post', 'business_address', 'bank_name', 'bank_acct_number', 'bank_branch', 'id', 'is_installer','debit']
+                    let ids = [
+                        'owner_phone','owner_email','business_phone_number','business_email'
+                    ]
                     if (anton.validateInputs(ids)) {
                         let payload = {
                             module: 'contractor',

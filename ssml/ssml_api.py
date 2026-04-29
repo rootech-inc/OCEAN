@@ -5069,52 +5069,93 @@ def interface(request):
                 print(data)
                 id = data.get('id')
                 contractor = Contractor.objects.get(id=id)
+
+
                 # contractor.link = data.get('link')
-                contractor.owner = data.get('owner_name')
-                contractor.company = data.get('company')
-                contractor.gh_card_no = data.get('ghana_card')
+                # contractor.owner = data.get('owner_name')
+                # contractor.company = data.get('company')
+                # contractor.gh_card_no = data.get('ghana_card')
 
                 contractor.owner_phone = data.get('owner_phone')
                 contractor.owner_email = data.get('owner_email')
-                contractor.comp_reg_number = data.get('comp_reg_number')
-                contractor.business_type = data.get('business_type')
-                contractor.region = data.get('region')
-                contractor.gh_post = data.get('gh_post')
-                contractor.business_address = data.get('business_address')
+                # contractor.comp_reg_number = data.get('comp_reg_number')
+                # contractor.business_type = data.get('business_type')
+                # contractor.region = data.get('region')
+                # contractor.gh_post = data.get('gh_post')
+                # contractor.business_address = data.get('business_address')
 
                 contractor.phone = data.get('business_phone_number')
                 contractor.email = data.get('business_email')
 
-                contractor.city = data.get('city')
-                contractor.postal_code = data.get('gh_post')
-                contractor.gh_post_code = data.get('gh_post')
-                contractor.is_installer = data.get('is_installer', True)
-                contractor.bank_name = data.get('bank_name')
-                contractor.bank_acct_number = data.get('bank_acct_number')
-                contractor.bank_branch = data.get('bank_branch')
-                debit = data.get('debit')
-                debit_ledger = Ledger.objects.get(pk=debit)
-                contractor.debit_ledger = debit_ledger
+                # contractor.city = data.get('city')
+                # contractor.postal_code = data.get('gh_post')
+                # contractor.gh_post_code = data.get('gh_post')
+                # contractor.is_installer = data.get('is_installer', True)
+                # contractor.bank_name = data.get('bank_name')
+                # contractor.bank_acct_number = data.get('bank_acct_number')
+                # contractor.bank_branch = data.get('bank_branch')
+                # debit = data.get('debit')
+                # debit_ledger = Ledger.objects.get(pk=debit)
+                # contractor.debit_ledger = debit_ledger
 
                 contractor.save()
 
+                foc = Contractor.objects.get(id=id)
                 link = shorten_url(f"{BASE_URL}ssml/foc-portal/my-company/")
 
                 # Email template
                 email_template = f"""
-                                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                                    <h2 style="color: #333;">Account Update Notification</h2>
-                                    <p>Dear {data.get('owner_name')},</p>
-                                    <p>Your contractor account information has been updated in the SSML Cloud ERP system.</p>
-                                    <p>To review these changes and stay informed about your account status, please visit:</p>
-                                    <p><a href="{link}" style="color: #007bff;">Sneda SML Cloud ERP Portal</a></p>
-                                    <p>Thank you for your continued partnership.</p>
-                                    <p>Best regards,<br>Sneda SML Team</p>
-                                </div>
-                                """
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                    <h2 style="color: #FF8C00;">Profile Verified: Welcome to FOC NODE</h2>
+
+                    <p>Dear {foc.owner},</p>
+
+                    <p>Your contractor profile has been successfully updated and verified in the SSML Cloud ERP system.</p>
+
+                    <p><strong>System Access Granted:</strong> You now have full access to <strong>FOC NODE</strong>, our comprehensive enterprise solution for managing electricity smart meter installations, inventory tracking, financial billing, and contractor compliance.</p>
+
+                    <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #FF8C00; margin: 20px 0;">
+                        <h3 style="margin-top: 0; color: #333; font-size: 16px;">Key Features Now Available to You:</h3>
+                        <ul style="margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
+                            <li><strong>Billing & Invoicing:</strong> Manage your complete invoice lifecycle (Pending, Accepted, Posted) and download professional PDF invoice reports.</li>
+                            <li><strong>Material & Inventory:</strong> Track your issued versus used materials in real-time with a visual balance ledger.</li>
+                            <li><strong>Waybill Tracking:</strong> Access the digital history of all material transfers with detailed barcode verification.</li>
+                            <li><strong>Compliance Management:</strong> Natively upload and preview mandatory documents (Ghana Card, Business Certificates) to maintain your active status.</li>
+                        </ul>
+                    </div>
+
+                    <h3 style="color: #333; font-size: 16px; margin-top: 25px;">Quick Access & App Download</h3>
+                    <p>You can manage your operations directly from your browser or by installing our dedicated mobile application on your Android device.</p>
+
+                    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 25px 0;">
+                        <tr>
+                            <td align="center" style="padding-bottom: 15px;">
+                                <a href="https://focnode.rootechits.com/" style="background-color: #333333; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; width: 220px;">Open Web Dashboard</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center">
+                                <a href="https://ocean.rootechits.com/static/uploads/apps/2026-04-23_06-50-55/FOC_NODE.apk" style="background-color: #FF8C00; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; width: 220px;">Download Android APK</a>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <p style="font-size: 13px; color: #555; text-align: center;"><em>*The Android app file is named <strong>FOC_NODE.apk</strong>.</em></p>
+
+                    <p>If you experience any issues accessing the web dashboard, installing the Android APK, or viewing your invoices, please reach out to Felix or Raymond for immediate technical support.</p>
+
+                    <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+
+                    <p style="font-size: 14px; color: #666;">
+                        Best regards,<br>
+                        <strong>System Administration | FOC NODE</strong><br>
+                        <span style="font-size: 12px; color: #999;">Powered by RITS & Sneda SML Team</span>
+                    </p>
+                </div>
+                """
 
                 # SMS template
-                sms_template = f"SSML: Dear {data.get('owner_name')}, your contractor account has been updated. Visit SSML Cloud ERP to review changes. Thank you. \n{link}"
+                sms_template = f"SSML: Dear {foc.owner}, your profile is now verified! Please check your email ({foc.email}) for your FOC NODE app download and login instructions."
 
                 # Send notifications
                 if contractor.email:
@@ -5126,8 +5167,8 @@ def interface(request):
                         mail_key=make_md5_hash(f"contractor_update_{contractor.id}")
                     )
 
-                if contractor.phone:
-                    to = data.get('owner_phone').replace('233', '0').replace('+233', '0')
+                if foc.phone:
+                    to = foc.phone.replace('233', '0').replace('+233', '0')
                     if len(to) == 10:
                         Sms.objects.create(
                             api=SmsApi.objects.get(is_default=True),

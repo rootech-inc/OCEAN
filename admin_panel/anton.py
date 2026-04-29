@@ -389,7 +389,7 @@ def generate_text(prompt: str) -> str:
     for m in genai.list_models():
         if "generateContent" in m.supported_generation_methods:
             print(m.name)
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    model = genai.GenerativeModel(settings.GEMINI_MODEL)
 
     response = model.generate_content(prompt)
     return response.text

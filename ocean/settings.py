@@ -292,6 +292,7 @@ REST_DB_PORT = os.environ.get('REST_DB_PORT','1433')
 
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY','[ENCRYPTION_KEY]')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL','[ENCRYPTION_KEY]')
 
 
 # approvers email

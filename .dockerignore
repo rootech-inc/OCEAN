@@ -7,3 +7,10 @@ db.sqlite3
 .vscode
 static/general/uploads
 docker_built.bat
+__pycache__/
+.Python
+env/
+venv/
+.venv
+.gitignore
+
