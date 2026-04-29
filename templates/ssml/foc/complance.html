@@ -1,0 +1,117 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+{% block body %}
+    <div class="card h-100">
+        <div class="card-header">
+            <div class="w-100 d-flex">
+                <div class="w-50 d-flex flex-wrap"></div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="container-fluid p-2">
+                <div class="row">
+                    <div class="col-sm-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="w-100 d-flex flex-wrap justify-content-between">
+                                    <div class="w-50"><strong class="card-title">Compliance Type</strong></div>
+                                    <div class="w-50 d-flex flex-wrap justify-content-end">
+                                        <button id="new_compliance_type" class="btn btn-warning"><i class="fa fa-plus"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>NAME</th>
+                                            <th>DESCRIPTION</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ct_tab">
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="w-100 d-flex flex-wrap justify-content-between">
+                                    <div class="w-50"><strong class="card-title">FOC COMPLIANCE</strong></div>
+                                    <div class="w-50 d-flex flex-wrap justify-content-end">
+                                        <button id="new_compliance" class="btn btn-warning"><i class="fa fa-plus"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>NAME</th>
+                                            <th>COMPLIANCE</th>
+                                            <th>REFERENCE</th>
+                                            <th>FILE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="c">
+                                        <tr>
+                                            <td colspan="4">Loading...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('#new_compliance_type').click(function(){
+                let form = ``;
+                form += fom.text('name',"",true)
+                form += fom.textarea('description',3,true)
+                form += fom.selectv2('is_required',[
+                    {val:'YES',desc:'YES'},{val:'NO',desc:'NO'},
+                ])
+
+                amodal.setTitleText("New Compliance Type")
+                amodal.setBodyHtml(form)
+                amodal.setFooterHtml(`<button class="btn btn-success" id="save_new_compliance_type">SAVE</button>`)
+                amodal.show()
+
+                $('#save_new_compliance_type').click(async function(){
+                    let ids = ['mypk','name','description','is_required'];
+
+                    if(anton.validateInputs(ids)){
+                        let payload = {
+                            module:'foc_compliance_type',
+                            data:anton.Inputs(ids)
+                        }
+
+                        await api.v2('PUT',payload,'/ssml/api/').then(response => {
+                            kasa.confirm(response.message,1,'here')
+                        }).catch(error => {kasa.error(error)})
+                    } else {
+                        kasa.error("Invalid Form")
+                    }
+                })
+
+            })
+
+            ssml.loadFocComplianceType()
+
+            $('#new_compliance').click(function () {
+                ssml.newFocCompliance()
+            })
+        })
+    </script>
+{% endblock %}

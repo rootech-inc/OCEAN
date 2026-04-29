@@ -134,7 +134,7 @@ WSGI_APPLICATION = 'ocean.wsgi.application'
 DATABASE_ENGINE = os.environ.get('DB_ENGINE', 'django.db.backends.mysql')
 # DATABASE_NAME = os.environ.get('DB_NAME', 'meters')
 
-DATABASE_NAME = os.environ.get('DB_NAME', 'ocean')
+DATABASE_NAME = os.environ.get('DB_NAME', 'meters')
 DATABASE_USER = os.environ.get('DB_USER', 'root')
 
 DATABASE_PASSWORD = os.environ.get('DB_PASSWORD', 'Sunderland@411')
@@ -340,3 +340,8 @@ COMPANY_DETAILS = {
 }
 
 CMMS_MR_CONTACT = os.environ.get('CMMS_MR_CONTACT','0546310011')
+
+TAX_RATE = {
+    '2025':20.9,
+    '2026':20
+}

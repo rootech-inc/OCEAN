@@ -178,7 +178,16 @@ def api_interface(request):
                 Position.objects.create(position_code=position_code, position_name=position_name)
                 response['status_code'] = 200
                 response['message'] = "Position created successfully"
-            
+
+            elif module == 'reset_device_sync_date':
+                from datetime import datetime
+                first_day = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+                for device in Device.objects.all():
+                    device.needs_backfill = True
+                    device.backfill_from = first_day
+                    device.save()
 
         elif method == 'VIEW':
             # Handle VIEW (GET-like) requests

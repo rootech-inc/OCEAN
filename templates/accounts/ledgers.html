@@ -2,189 +2,94 @@
 {% load static %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Ledgers</h5>
-                <button class="btn btn-sm btn-primary" onclick="openCreateLedger()">
-                    <i class="bi bi-plus-lg me-1"></i>New Ledger
-                </button>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover table-striped mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th class="text-end">Total Balance</th>
-                                <th class="text-end">Spent</th>
-                                <th class="text-end">Available</th>
-                                <th>Owner</th>
-                                <th>Date</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="ledgerRows">
-                            <tr>
-                                <td colspan="9" class="text-center text-muted py-3">Loading…</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+<div class="container-fluid py-4" style="font-family: 'Inter', sans-serif;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0">General Ledgers</h4>
+            <p class="text-muted small mb-0">Overview of all active ledger accounts</p>
+        </div>
+        <button id="new" class="btn btn-primary px-4 py-2" style="border-radius: 4px; font-weight: 500;">
+            <i class="fas fa-plus me-2"></i>New Ledger Account
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0" style="border-radius: 8px;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-4 py-3 text-muted fw-semibold" style="font-size: 0.85rem; width: 25%;">Ledger Name</th>
+                            <th class="px-4 py-3 text-muted fw-semibold" style="font-size: 0.85rem;">Description</th>
+                            <th class="px-4 py-3 text-muted fw-semibold text-end" style="font-size: 0.85rem; width: 20%;">Current Balance</th>
+                            <th class="px-4 py-3 text-muted fw-semibold text-center" style="font-size: 0.85rem; width: 10%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="fw-bold text-dark">Petty Cash</div>
+                            </td>
+                            <td class="px-4 py-3 text-muted small">Small amount of discretionary funds in the form of cash used for expenditures.</td>
+                            <td class="px-4 py-3 text-end fw-bold text-success">GH₵ 2,500.00</td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="btn btn-light btn-sm text-primary"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="fw-bold text-dark">Main Bank Account</div>
+                            </td>
+                            <td class="px-4 py-3 text-muted small">Primary operational bank account for company transactions.</td>
+                            <td class="px-4 py-3 text-end fw-bold text-success">GH₵ 122,500.00</td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="btn btn-light btn-sm text-primary"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="fw-bold text-dark">Trade Debtors</div>
+                            </td>
+                            <td class="px-4 py-3 text-muted small">Amounts owed by customers for goods or services supplied on credit.</td>
+                            <td class="px-4 py-3 text-end fw-bold text-success">GH₵ 45,200.00</td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="btn btn-light btn-sm text-primary"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="fw-bold text-dark">Office Equipment</div>
+                            </td>
+                            <td class="px-4 py-3 text-muted small">Furniture, computers, and other physical assets used in operations.</td>
+                            <td class="px-4 py-3 text-end fw-bold text-dark">GH₵ 280,000.00</td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="btn btn-light btn-sm text-primary"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="fw-bold text-dark">Accounts Payable</div>
+                            </td>
+                            <td class="px-4 py-3 text-muted small">Amounts owed to suppliers for products or services purchased on credit.</td>
+                            <td class="px-4 py-3 text-end fw-bold text-danger">GH₵ 18,500.00</td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="btn btn-light btn-sm text-primary"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Create Ledger Modal -->
-<div class="modal fade" id="createLedgerModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-journal-plus me-2"></i>New Ledger</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Ledger Name <span class="text-danger">*</span></label>
-                    <input type="text" id="l_name" class="form-control" placeholder="e.g. Petty Cash">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Description</label>
-                    <textarea id="l_desc" class="form-control" rows="2" placeholder="Optional description"></textarea>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Opening Balance <span class="text-danger">*</span></label>
-                    <input type="number" id="l_balance" class="form-control" step="0.01" value="0.00">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary" onclick="saveLedger()"><i class="bi bi-save me-1"></i>Save</button>
-            </div>
-        </div>
-    </div>
-</div>
+    <script>
+        $(document).ready(function(){
+            accountant.loadLedger()
+        })
 
-<!-- Top-up Ledger Modal -->
-<div class="modal fade" id="topUpModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Top-up / Deduct Balance</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="tu_pk">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Amount</label>
-                    <input type="number" id="tu_amount" class="form-control" step="0.01" value="0.00">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Action</label>
-                    <select id="tu_action" class="form-select">
-                        <option value="add">Add (Top-up)</option>
-                        <option value="subtract">Subtract (Deduct)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-warning" onclick="doTopUp()"><i
-                        class="bi bi-arrow-up-circle me-1"></i>Apply</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    const ACCT_API = '/accounts/api/';
-    const createModal = new bootstrap.Modal(document.getElementById('createLedgerModal'));
-    const topUpModal = new bootstrap.Modal(document.getElementById('topUpModal'));
-
-    function loadLedgers() {
-        let res = api.call('VIEW', { module: 'get_ledgers', data: {} }, ACCT_API);
-        let tbody = '';
-        if (res.status_code === 200) {
-            let rows = res.message;
-            if (!rows.length) {
-                tbody = '<tr><td colspan="9" class="text-center text-muted py-3">No ledgers found. Create one!</td></tr>';
-            } else {
-                rows.forEach((l, i) => {
-                    let availBadge = l.available <= 0
-                        ? `<span class="badge bg-danger">${l.available.toLocaleString('en', { minimumFractionDigits: 2 })}</span>`
-                        : `<span class="badge bg-success">${l.available.toLocaleString('en', { minimumFractionDigits: 2 })}</span>`;
-                    tbody += `<tr>
-            <td><small>${i + 1}</small></td>
-            <td><strong>${l.name}</strong></td>
-            <td><small class="text-muted">${l.description || '—'}</small></td>
-            <td class="text-end"><small>${l.balance.toLocaleString('en', { minimumFractionDigits: 2 })}</small></td>
-            <td class="text-end text-danger"><small>${l.spent.toLocaleString('en', { minimumFractionDigits: 2 })}</small></td>
-            <td class="text-end">${availBadge}</td>
-            <td><small>${l.owner}</small></td>
-            <td><small>${l.created_date}</small></td>
-            <td>
-              <button class="btn btn-xs btn-outline-secondary" onclick="openTopUp(${l.pk})">
-                <i class="bi bi-plus-minus"></i>
-              </button>
-            </td>
-          </tr>`;
-                });
-            }
-        } else {
-            tbody = `<tr><td colspan="9" class="text-danger py-3 text-center">${res.message}</td></tr>`;
-        }
-        document.getElementById('ledgerRows').innerHTML = tbody;
-    }
-
-    function openCreateLedger() { createModal.show(); }
-
-    function saveLedger() {
-        let payload = {
-            module: 'create_ledger',
-            data: {
-                name: $('#l_name').val(),
-                description: $('#l_desc').val(),
-                balance: parseFloat($('#l_balance').val()) || 0
-            }
-        };
-        let res = api.call('PUT', payload, ACCT_API);
-        if (res.status_code === 200) {
-            alert(res.message);
-            createModal.hide();
-            document.getElementById('createLedgerModal').querySelector('form')?.reset();
-            loadLedgers();
-        } else {
-            alert('Error: ' + res.message);
-        }
-    }
-
-    function openTopUp(pk) {
-        document.getElementById('tu_pk').value = pk;
-        document.getElementById('tu_amount').value = '0.00';
-        topUpModal.show();
-    }
-
-    function doTopUp() {
-        let payload = {
-            module: 'update_ledger_balance',
-            data: {
-                pk: document.getElementById('tu_pk').value,
-                amount: parseFloat(document.getElementById('tu_amount').value) || 0,
-                action: document.getElementById('tu_action').value
-            }
-        };
-        let res = api.call('PATCH', payload, ACCT_API);
-        alert(res.message);
-        topUpModal.hide();
-        loadLedgers();
-    }
-
-    loadLedgers();
-</script>
+        $('#new').click(function(){
+            accountant.newLedger()
+        })
+    </script>
 {% endblock %}

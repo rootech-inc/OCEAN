@@ -1,12 +1,14 @@
 import os.path
 import pathlib
+import threading
 from decimal import Decimal
+import datetime
 
 import requests
 from attr.validators import max_len
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 
@@ -834,67 +836,83 @@ class Sms(models.Model):
     to = models.CharField(max_length=20, null=False)
     message = models.TextField(null=False)
 
-    last_tried_date = models.DateField(null=True, blank=True)  # ✅ was TextField
-    last_tried_time = models.TimeField(null=True, blank=True)  # ✅ was TextField
+    last_tried_date = models.DateField(null=True, blank=True)
+    last_tried_time = models.TimeField(null=True, blank=True)
 
     created_date = models.DateField(auto_now_add=True)
-    created_time = models.TimeField(auto_now_add=True)  # ✅ was auto_now=True
+    created_time = models.TimeField(auto_now_add=True)
+
+    sms_response = models.TextField(null=True, blank=True)
 
 
     status = models.IntegerField(default=0)
 
     def send(self):
+        # 1. Prevent double sending or sending without a PK
+        if self.status == 1 or not self.pk:
+            return False
+
         try:
             api_key = self.api.api_key
             sender_id = self.api.sender_id
 
+            # Balance Check
             from api.extras import sms_balance
-            balance = sms_balance(api_key)
-            if balance <= 0:
-                raise Exception(f"Insufficient balance: {balance}")
+            if sms_balance(api_key) <= 0:
+                raise Exception("Insufficient SMS balance")
 
-            endpoint = 'https://api.mnotify.com/api/sms/quick'
+            # API Call
+            url = f'https://api.mnotify.com/api/sms/quick?key={api_key}'
             payload = {
                 "recipient": [self.to],
                 "sender": sender_id,
                 "message": self.message,
                 "is_schedule": False,
-                "schedule_date": "",
             }
 
-            response = requests.post(f"{endpoint}?key={api_key}", json=payload)
-            response.raise_for_status()
-            data = response.json()
+            response = requests.post(url, json=payload, timeout=10)
+            res_data = response.json()
 
-            code = data.get('code')
+            code = res_data.get('code')
+            resp_msg = res_data.get('message', 'No message')
 
-            if code == '2000':
-                self.status = 1
+            # 2. Update status based on MNotify code
+            # MNotify success code is usually '2000'
+            new_status = 1 if code == '2000' else 0
 
-            # Single save for timestamps — no redundant DB fetches
-            # ✅ Fix
-            now = timezone.now()
-            self.last_tried_date = now.date()
-            self.last_tried_time = now.time()
-            self.save(update_fields=['status', 'last_tried_date', 'last_tried_time'])
+            # 3. Use .filter().update() to avoid re-triggering save()
+            import datetime
+            now = datetime.datetime.now()
+            Sms.objects.filter(pk=self.pk).update(
+                status=new_status,
+                last_tried_date=now.date(),
+                last_tried_time=now.time(),
+                sms_response=resp_msg
+            )
 
+            # Record detailed response
             SmsResponse.objects.create(
                 sms=self,
                 resp_code=code,
-                resp_msg=f"{self.message} - {endpoint}"
+                resp_msg=resp_msg
             )
 
-            return True
+            return new_status == 1
 
         except Exception as e:
             print(f"SMS send error: {e}")
+            Sms.objects.filter(pk=self.pk).update(sms_response=str(e), status=0)
             return False
-    # def save(self, *args, **kwargs):
-    #     # is_new = self.pk is None
-    #     super().save(*args, **kwargs)
-    #     if self.status == 0:          # only send on first save (creation)
-    #         self.send()
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        # If it's a new SMS and pending, send it NOW
+        if is_new and self.status == 0:
+            # We use on_commit to ensure the DB has actually saved the record
+            # before the background thread tries to look for it.
+            transaction.on_commit(lambda: threading.Thread(target=self.send).start())
 
 # log sms responses
 class SmsResponse(models.Model):

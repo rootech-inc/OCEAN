@@ -1,29 +1,117 @@
+from attr.validators import max_len
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
 
+class AccountType(models.Model):
+    code = models.CharField(max_length=10, unique=True, null=False, blank=False)
+    name = models.CharField(max_length=255, unique=True, null=False, blank=False)
+    description = models.TextField(blank=True, null=True)
+    NORMAL_BALANCE_CHOICES = [
+        ('DR', 'Debit'),
+        ('CR', 'Credit'),
+    ]
+    normal_balance = models.CharField(max_length=2, choices=NORMAL_BALANCE_CHOICES, default='DR')
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+    def balance(self):
+        return 0
+
+    def obj(self):
+        return {
+            'code':self.code,
+            'name':self.name,
+            'description':self.description,
+            'normal_balance':self.normal_balance,
+            'created_by':self.created_by.get_full_name() if self.created_by else '',
+            'balance':self.balance()
+        }
+
+
+
 
 class Ledger(models.Model):
+    account_type = models.ForeignKey(AccountType, on_delete=models.PROTECT, related_name='ledgers')
+    code = models.CharField(max_length=10, unique=True, null=False, blank=False)
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     balance = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='accounts_ledgers')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='accounts_ledgers_top')
     created_date = models.DateField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    sledge = models.CharField(max_length=255,null=False,unique=True,blank=False)
 
     def __str__(self):
         return self.name
 
-    def spent(self):
-        """Total confirmed amount drawn from this ledger."""
-        return PaymentVoucher.objects.filter(
-            ledger=self, is_confirmed=True
-        ).aggregate(total=Sum('total_amount'))['total'] or 0.00
+    class Meta:
+        unique_together = (('account_type','name'))
 
-    def available_balance(self):
-        return self.balance - self.spent()
+    def obj(self):
+        return {
+            'code':self.code,
+            'account_type':self.account_type.obj(),
+            'name':self.name,
+            'description':self.description,
+            'owner': self.owner.get_full_name() if self.owner else '',
+            'balance':self.balance,
+            'pk':self.pk
+        }
 
+
+
+class SubLedger(models.Model):
+    ledger = models.ForeignKey(Ledger, on_delete=models.PROTECT, related_name='subledgers')
+    code = models.CharField(max_length=10, unique=True, null=False, blank=False)
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    balance = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='accounts_ledgers')
+
+
+class JVHeader(models.Model):
+    voucher_no = models.CharField(max_length=50, unique=True) # e.g., JV-2026-0001
+    date = models.DateField()
+    narration = models.TextField() # General description of the whole event
+    # total_amount = models.DecimalField(max_digits=20, decimal_places=2)
+    prepared_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    is_posted = models.BooleanField(default=False) # Draft vs. Finalized
+    created_at = models.DateTimeField(auto_now_add=True)
+    ref = models.CharField(max_length=255,null=False,blank=False)
+
+    def __str__(self):
+        return f"{self.voucher_no} - {self.date}"
+
+
+class JVTransaction(models.Model):
+    header = models.ForeignKey(JVHeader, related_name='items', on_delete=models.CASCADE)
+
+    # Links to Ledger via 'code' as you requested
+    ledger = models.ForeignKey(
+        'Ledger',
+        to_field='code',
+        on_delete=models.PROTECT
+    )
+    sub_ledger = models.ForeignKey(
+        'SubLedger',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True
+    )
+
+    # Use two fields instead of a type choice
+    debit = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
+    credit = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
+
+    line_description = models.CharField(max_length=255, blank=True)
+    created_by = models.ForeignKey(User,models.PROTECT, related_name='transactions_by',null=True)
+
+    def __str__(self):
+        return f"{self.header.voucher_no} | {self.type} | {self.amount}"
 
 class PaymentVoucher(models.Model):
     voucher_no = models.CharField(max_length=20, unique=True)
@@ -75,5 +163,7 @@ class VoucherTransaction(models.Model):
     description = models.TextField(null=True, blank=True)
     amount = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
 
+
     def __str__(self):
         return f"{self.voucher.voucher_no} — {self.title}"
+

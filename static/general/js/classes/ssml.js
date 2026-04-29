@@ -724,10 +724,30 @@ class SSML {
             }
         }
 
-        await api.v2('VIEW', payload, '/ssml/api/').then(response => {
+        await api.v2('VIEW', payload, '/ssml/api/').then(async response => {
             if (anton.IsRequest(response)) {
                 let contractor = response.message;
-                console.log(contractor);
+                console.table(contractor);
+
+                let ledop = ""
+                await accountant.getLedger('*').then(response => {
+                    if(anton.IsRequest(response)){
+                        response.message.map(op => {
+                            console.table(op)
+                            if(op.account_type.normal_balance === 'DR'){
+                                ledop += `<option value="${op.pk}">${op.name}</option>`
+                            }
+
+                        })
+                    } else {
+                        kasa.response(response);
+                        console.error(response)
+                        return
+                    }
+                }).catch(error =>{
+                    kasa.error(response.message)
+                    console.error(error)
+                    ;return})
 
                 let form = `
                     <div class='row'>
@@ -751,7 +771,7 @@ class SSML {
                         
                         <div class="form-group mb-2 col-sm-6">
                             <label for="owner_phone" class="text-primary">owner_phone</label>
-                            <input type="text" class="form-control" value="${contractor.owner_phone}" id="owner_phone" name="owner_phone">
+                            <input type="text" class="form-control" value="${contractor.phone}" id="owner_phone" name="owner_phone">
                         </div>
                         
                         <div class="form-group mb-2 col-sm-6">
@@ -823,6 +843,19 @@ class SSML {
                                 <option value="1">Yes</option>
                             </select>
                         </div>
+                        
+                        <div class="form-group mb-2 col-sm-6">
+                            
+                            <label for="debit">Debit</label>
+                            <select class="form-control" id="debit">
+                                ${ledop}
+                            </select>
+                            
+                            
+                            
+                        </div>
+                        
+                        
 
                     </div>
                     
@@ -838,7 +871,7 @@ class SSML {
                 amodal.show();
 
                 $('#update_contractor').click(async function () {
-                    let ids = ['link', 'owner_name', 'ghana_card', 'owner_phone', 'owner_email', 'company', 'comp_reg_number', 'business_type', 'business_phone_number', 'business_email', 'region', 'city', 'gh_post', 'business_address', 'bank_name', 'bank_acct_number', 'bank_branch', 'id', 'is_installer']
+                    let ids = ['link', 'owner_name', 'ghana_card', 'owner_phone', 'owner_email', 'company', 'comp_reg_number', 'business_type', 'business_phone_number', 'business_email', 'region', 'city', 'gh_post', 'business_address', 'bank_name', 'bank_acct_number', 'bank_branch', 'id', 'is_installer','debit']
                     if (anton.validateInputs(ids)) {
                         let payload = {
                             module: 'contractor',
@@ -3547,21 +3580,37 @@ class SSML {
             })
     }
 
-    async getInvoice(id = '*') {
+    async getInvoice(entry_no = '*') {
         return await api.call('VIEW', {
-            module: 'invoice',
-            data: { id }
+            module: 'foc_invoice',
+            data: { entry_no }
         }, '/ssml/api/');
     }
 
-    async viewInvoice(id) {
+    async viewInvoice(entry_no) {
         try {
-            const response = await ssml.getInvoice(id);
+            const response = await ssml.getInvoice(entry_no);
             if (anton.IsRequest(response)) {
                 let data = response.message[0];
-                anton.setValues(data)
-                $('#contractor').val(data.contractor.name)
                 console.table(data)
+                anton.setValues(data)
+                let tr = ``;
+                let sn = 1;
+                data.transactions.map(tran => {
+                    tr += `<tr>
+                        <td>${sn}</td>
+                        <td>${tran.item}</td>
+                         <td>${tran.quantity}</td>
+                          <td>${tran.rate}</td>
+                          <td>${tran.amount}</td>
+                    </tr>`
+
+                    sn ++
+                })
+                $('#invoice_transactions').html(tr)
+
+
+
                 if (data.previous) {
                     $('#prev_btn').attr('disabled', false)
                 } else {
@@ -3574,36 +3623,27 @@ class SSML {
                     $('#next_btn').attr('disabled', true)
                 }
 
-                switch (data.stage) {
-                    case 1: // pending approval
-                        $('#approve').attr('disabled', false)
-                        $('#post').attr('disabled', true)
-                        break;
-                    case 2: // pending posting
-                        $('#approve').attr('disabled', true)
-                        $('#post').attr('disabled', false)
-                        break;
-                    case 3: // posted
-                        $('#approve').attr('disabled', true)
-                        $('#post').attr('disabled', true)
-                        break;
-                    default:
-                        $('#approve').attr('disabled', true)
-                        $('#post').attr('disabled', true)
+                // if not validated
+                if(data.is_accepted){
+                    $('#post').attr('disabled',false)
+                } else {
+                    $('#post').attr('disabled',true)
+                }
 
+                $('#validate').attr('disabled',false)
+                if(data.is_valid){
+                    $('#validate').attr('disabled',true)
+                }
+
+                if(data.is_posted){
+                    $('#post').attr('disabled',true)
+                } else {
+                    $('#post').attr('disabled',false)
                 }
 
 
 
-                let tr = ``;
-                data.transactions.map(tran => {
-                    tr += `<tr>
-                        <td>${tran.remarks}</td>
-                         <td>${tran.asset}</td>
-                          <td>${tran.amount}</td>
-                    </tr>`
-                })
-                $('#god').html(tr)
+
             } else {
                 kasa.response(response)
             }
@@ -3653,12 +3693,12 @@ class SSML {
         }
     }
 
-    async postInvoice(id) {
+    async postInvoice(entry_no=$('#entry_no').val()) {
         if (confirm("Are You Sure")) {
             loader.show()
-            await api.v2('PUT', { module: 'post_invoice', data: { id: id, mypk: $('#mypk').val() } }, '/ssml/api/').then(res => {
+            await api.v2('PATCH', { module: 'post_foc_invoice', data: { entry_no: entry_no, mypk: $('#mypk').val() } }, '/ssml/api/').then(res => {
                 kasa.response(res);
-                ssml.viewInvoice(id)
+                ssml.viewInvoice(entry_no)
                 loader.hide()
             }).catch(error => {
                 kasa.error(error)
@@ -5121,6 +5161,281 @@ class SSML {
             }
         })
     }
+
+    updateMaterial() {
+        let form = `
+            <form method="post" enctype="multipart/form-data" action="/ssml/update-material/">
+                
+                <label for="file">Select File</label>
+                <input required type="file" class="form-control rounded" name="excel_file" id="excel_file">
+                
+                <button type="submit" class="btn btn-success w-100">Submit</button>
+            </form>
+        `
+
+        amodal.setBodyHtml(form)
+        amodal.setTitleText(`Update Materials Used`)
+        amodal.setFooterHtml(``)
+        amodal.show()
+    }
+
+    async newFocInvoiceScreen() {
+        loader.show()
+        let focs = ssml.getContractor('*');
+        let locations = ssml.getLocations('*');
+        let loc_opts = []
+
+        await locations.then(response => {
+            if(anton.IsRequest(response)){
+                response.message.map(loc => {
+                    loc_opts.push({
+                        val:loc.loc_id,
+                        desc:loc.name
+                    })
+                })
+            } else {
+                kasa.response(response)
+                return
+            }
+        }).catch(error => {error; return})
+
+        let opts = []
+        await focs.then(response => {
+            if(anton.IsRequest(response)){
+                response.message.map(foc => {
+                    opts.push({
+                        val:foc.code,
+                        desc:foc.company
+                    })
+                })
+            } else {
+                kasa.response(response)
+            }
+        }).catch(error => {kasa.error(error)})
+
+        let invoice_date = fom.date('new_invoice_date','Last date of the month invoiced for',true);
+        let foc = fom.selectv2('new_foc_name',opts,'Contractor Code',true);
+        let loc = fom.selectv2('new_loc_id',loc_opts,'Contractor Code',true);
+        let remarks = fom.textarea('new_remarks',2,true,'');
+
+        let form_header = `
+            <div class="container">
+            
+                <div class="row">
+                    <div class="col-sm-6">${invoice_date}</div>
+                    <div class="col-sm-6">${foc}</div>
+                    <div class="col-sm-6">${loc}</div>
+                    <div class="com-sm-12">${remarks}</div>
+                </div>
+            
+            </div>
+            <hr>
+        `
+
+        let items_table = `
+            <div class="card">
+                <div class="card-header">
+                    <button class="btn btn-sm btn-info new_line"><i class="fa fa-plus"></i> LINE</button>
+                </div>
+                <div class="card-body p-2">
+                    <table class="table table-bordered table-hover">
+                        <thead><tr><th>ITEM</th><th style="width: 100px">QUANTITY</th><th style="width: 100px">RATE</th><th></th></tr></thead>
+                        <tbody id="foc_inv_items">
+                            <tr>
+                                <td><input type="text" class="form-control name"></td>
+                                <td><input type="text" style="width: 100px" class="form-control quantity"></td>
+                                <td><input type="text" style="width: 100px" class="form-control rate"></td>
+                                <td><button class="btn btn-danger delete_foc_inv_line"><i class="fa fa-trash"></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `
+
+        form_header += items_table
+
+        amodal.setTitleText("Create FOC Invoice")
+        amodal.setBodyHtml(form_header)
+        amodal.setFooterHtml(`<button class="btn btn-success save_foc_invoice">Save</button>`)
+        amodal.setSize('L')
+        amodal.show()
+
+        loader.hide()
+
+
+
+        $('.new_line').click(function (){
+            $('#foc_inv_items').append(`
+                <tr>
+                                <td><input type="text" class="form-control name"></td>
+                                <td><input type="text" style="width: 100px" class="form-control quantity"></td>
+                                <td><input type="text" style="width: 100px" class="form-control rate"></td>
+                                <td><button class="btn btn-danger delete_foc_inv_line"><i class="fa fa-trash"></i></button></td>
+                            </tr>
+            `)
+        })
+
+        // Delegated — works for dynamically added rows, never stacks
+        $(document).on('click', '.delete_foc_inv_line', function () {
+            if(confirm("Are you sure?")){
+                $(this).closest('tr').remove();
+            }
+        });
+
+        $('.save_foc_invoice').click(async function(){
+            let header_ids = ['mypk','new_invoice_date','new_foc_name','new_remarks','new_loc_id'];
+            if(anton.validateInputs(header_ids)){
+
+                // Target only data rows, not header rows
+                const $rows = $('#foc_inv_items tr');
+
+                if ($rows.length < 1) {
+                    kasa.error("Invalid Transactions List");
+                    return;
+                }
+
+                let trans = [];
+
+                $rows.each(function () {
+                    const $row = $(this);
+
+                    const item     = $row.find('.name').val().trim();
+                    const quantity = parseFloat($row.find('.quantity').val());
+                    const rate     = parseFloat($row.find('.rate').val());
+
+                    // Row-level validation
+                    if (!item || isNaN(quantity) || isNaN(rate)) {
+                        kasa.error(`Invalid data in row: "${item || 'unnamed'}"`);
+                        trans = null; // signal failure
+                        return false; // break out of .each()
+                    }
+
+                    trans.push({
+                        item,
+                        quantity,
+                        rate,
+                    });
+                });
+
+                if (!trans){
+                    kasa.error("No Transactions")
+                    return
+                } // aborted due to invalid row
+
+                let payload = {
+                    module:'save_invoice',
+                    data:{
+                        header:anton.Inputs(header_ids),
+                        transactions:trans
+                    }
+                }
+
+                console.table(payload)
+
+                loader.show()
+                await api.v2('PUT',payload,'/ssml/api/').then(response => {
+                    if(anton.IsRequest(response)){
+                        kasa.confirm("Invoice Created",1,'here')
+                        loader.hide()
+                    } else {
+                        kasa.response(response)
+                        loader.hide()
+                    }
+                }).catch(error => {kasa.error(error);loader.hide()})
+
+            }
+        })
+
+    }
+
+    async validateInvoice() {
+        if(confirm("Are You Sure?")){
+            loader.show()
+            let ids = ['entry_no','mypk'];
+            if(anton.validateInputs(ids)){
+                let payload = {
+                    module:'validate_foc_invoice',
+                    data:anton.Inputs(ids)
+                }
+
+                await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+                    kasa.response(response);
+                    ssml.viewInvoice(payload['data']['entry_no'])
+                    loader.hide()
+                }).catch(error => {kasa.error(error);loader.hide()})
+
+            } else {
+                kasa.error("Invalid Fields")
+            }
+        } else {
+            kasa.info("Operation Cancelled")
+        }
+    }
+
+    async getJv(entry_no){
+        return api.call('VIEW',{
+            module:'jv',
+            data:{
+                entry_no:entry_no
+            }
+        },'/ssml/api/')
+    }
+
+    async viewJv(entry_no) {
+        loader.show()
+        await ssml.getJv(entry_no).then(response => {
+            if(anton.IsRequest(response)){
+                let data = response.message[0];
+                anton.setValues(data)
+                console.table(data)
+                let tr = "";
+                data.transactions.map(transaction => {
+                    console.table(transaction)
+                    tr += `
+                        <tr>
+                                            <td>${transaction.ledger}</td>
+                                            <td>${transaction.debit}</td>
+                                            <td>${transaction.credit}</td>
+                                            <td>100.00</td>
+                                        </tr>
+                    `
+                })
+                $('tbody').html(tr)
+                loader.hide()
+            } else {
+                kasa.error(response)
+                loader.hide()
+            }
+        }).catch(error => {kasa.error(error);loader.hide()})
+    }
+
+    async loadFocComplianceType() {
+        await this.getFocComplianceType().then(response => {
+            if(anton.IsRequest(response)){
+                let data = response.message;
+                let tr = "";
+                data.map(ct => {
+                    tr += `
+                        <tr><td>${ct.name}</td><td>${ct.description}</td></tr>
+                    `
+                })
+
+                $('#ct_tab').html(tr)
+            } else {
+                kasa.response(response)
+            }
+        }).catch(error => {kasa.error(error)})
+    }
+
+    async getFocComplianceType() {
+        return api.call('VIEW',{
+            module:'foc_compliance_type',
+            data:{}
+        },'/ssml/api/')
+    }
+
+
 }
 
 const ssml = new SSML();

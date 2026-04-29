@@ -1,6 +1,9 @@
 
 from django.db.models import Sum, F
-from ssml.models import Contractor, InventoryMaterial, IssueTransaction, Ledger, MaterialOrderItem, ServiceOrderReturns
+
+from accounts.models import JVHeader
+from ssml.models import Contractor, InventoryMaterial, IssueTransaction, Ledger, MaterialOrderItem, ServiceOrderReturns, \
+    JournalVoucherHd
 
 
 def returns(contractor_id):
@@ -72,6 +75,28 @@ def lederhd(contractor_id):
                 'total_debit':debit,
                 'total_balance':balance
         }
+
+
+def generate_entry_entry(doc):
+    prefix = f"SSML-{doc}"
+
+    # 1. Map the doc type to the correct Model
+    model_map = {
+        'JV': JVHeader
+    }
+
+    TargetModel = model_map.get(doc, JVHeader)  # Default to JV if not found
+
+    # 2. Get the next available number
+    count = TargetModel.objects.count() + 1
+    entry_no = f"{prefix}{str(count).zfill(5)}"
+
+    # 3. Collision Check
+    while TargetModel.objects.filter(voucher_no=entry_no).exists():
+        count += 1
+        entry_no = f"{prefix}{str(count).zfill(5)}"
+
+    return entry_no
 
 
                         

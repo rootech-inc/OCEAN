@@ -153,16 +153,31 @@
                         })
 
                         let form = ``
-                        form += `<select class='form-control mb-2 rounded-0' id='loc'>${options}</select>`
-                        form += `<label for='boxx_no'>Box No.</label><input type='number' class='form-control mb-2 rounded-0' id='from' >`
-                        form += `<label for='boxx_no'>Box No.</label><input type='number' class='form-control mb-2 rounded-0' id='to' >`
-                        amodal.setBodyHtml(form)
+                        form += `<select class='form-control mb-2 rounded-0' name='loc' id='loc'>${options}</select>`
+                        form += `<label for='boxx_no'>Box No.</label><input type='text' name="boxx_no" class='form-control mb-2 rounded-0' id='boxx_no' >`
+                        {#form += `<label for='boxx_no'>Box No.</label><input type='number' class='form-control mb-2 rounded-0' id='to' >`#}
+
+                        form += `<input type="file" name='excel_file' id='excel_file' class="form-control" >`
+
+                        let form_leg = `
+                            <form id="retirn_form" method="post" action="/ssml/sync_retired_meter/" enctype="multipart/form-data">
+                                ${form}
+                            </form>
+                        `
+
+                        amodal.setBodyHtml(form_leg)
                         amodal.setFooterHtml(`<button id='sync_box' class='btn btn-info'>SYNC</button>`)
                         amodal.setTitleHtml("Import Retired Meters")
                         amodal.show()
                         
                         $('#sync_box').click(async function(){
-                            let ids = ['mypk','loc','from','to']
+                            let ids = ['mypk','loc','excel_file','boxx_no']
+                            if(anton.validateInputs(ids)){
+                                $('#retirn_form').submit()
+                            } else {
+                                kasa.error("Invalid Form")
+                            }
+                            return
 
                             if(anton.validateInputs(ids)){
                                 loader.show()

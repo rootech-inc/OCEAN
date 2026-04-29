@@ -1,10 +1,16 @@
-import now
+from calendar import monthrange
 
+import now
+from django.db.models import Model
+
+from accounts.models import Ledger, JVHeader, SubLedger, JVTransaction
 from admin_panel.anton import shorten_url
 from admin_panel.models import UserAddOns
 from crm.views import contacts
-from ssml.models import ServiceOrderType, InstallationTypePhaseRate, AccountLedger, AccountLedgerTransactions, \
-    JournalVoucherHd, JournalVoucherTransactions
+from ssml.helper import generate_entry_entry
+from ssml.models import ServiceOrderType, InstallationTypePhaseRate, AccountLedger, \
+    JournalVoucherHd, JournalVoucherTransactions, FocInvoiceHd, FocInvoiceTransactions, FocInvoiceAssets, \
+    FocComplianceType
 
 
 def safe_add_image_to_pdf(pdf, image_path, x, y, w, h=None):
@@ -61,7 +67,7 @@ def interface(request):
     from ocean.settings import BASE_URL
 
     from ssml.models import Cardex, Location, RequiredReturn, InvoiceHD, InvoiceTransactions, Contractor, Expense, \
-        InventoryGroup, InventoryMaterial, Issue, IssueTransaction, Ledger, MaterialOrderItem, Meter, PaySlipHD, Plot, \
+        InventoryGroup, InventoryMaterial, Issue, IssueTransaction, MaterialOrderItem, Meter, PaySlipHD, Plot, \
         RedeemTransactions, Reedem, Service, ServiceMaterials, ServiceOrder, ServiceOrderItem, ServiceOrderReturns, \
         ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash,RetiredMetersBox,RetiredMetersTransactions,Phase, \
         ECGInvoiceHD, ECGInvoiceTransactions, ECGJobRate, ECGMeterRate, ECGInvoiceItem, ECGInvoiceMaterial
@@ -108,6 +114,114 @@ def interface(request):
                                           city=city,postal_code=postal_code,gh_card_no=gh_card_no,gh_post_code=gh_post_code,created_by=created_by)
 
                 success_response['message'] = "Contractor Created Successfully"
+
+            elif module == 'foc_compliance_type':
+                mypk = data.get('mypk')
+                name = data.get('name')
+                description = data.get('description')
+                is_required = data.get('is_required')
+                if is_required == 'YES':
+                    is_required = True
+                else:
+                    is_required = False
+
+                FocComplianceType.objects.create(
+                    name=name,
+                    description=description,
+                    is_required=is_required
+                )
+
+                success_response['message'] = "Foc Compliance Type Created Successfully"
+
+            elif module == 'save_invoice':
+
+                print(data)
+                header = data.get('header')
+                user = User.objects.get(pk=header.get('mypk'))
+                transactions = data.get('transactions')
+                foc = Contractor.objects.get(code=header.get('new_foc_name'))
+
+                invoice_date = header.get('new_invoice_date')
+                loc_id = header.get('new_loc_id')
+                location = Location.objects.get(loc_id=loc_id)
+                # log meters of invoices that pass
+                from datetime import date, datetime
+
+                d = datetime.strptime(invoice_date, '%Y-%m-%d').date()
+
+
+                first_day = date(d.year, d.month, 1)
+                last_day = date(d.year, d.month, monthrange(d.year, d.month)[1])
+                services = ServiceOrder.objects.filter(
+                    contractor=foc,
+                    service_date__gte=first_day,service_date__lte=last_day,
+                    flag_for_invoice=True,
+                    location=location
+                )
+
+                if services.count() < 0:
+                    raise Exception("Cannot save invoice becuase no related services for location and month")
+
+
+                if len(transactions) > 0:
+                    entry_no = f"FOC-INV-{FocInvoiceHd.objects.all().last().pk + 1 if FocInvoiceHd.objects.all().count() > 0 else 1}"
+                    FocInvoiceHd.objects.create(
+                        entry_no=entry_no,
+                        foc=foc,
+                        remarks=header.get('new_remarks'),
+                        invoice_date=header.get('new_invoice_date'),
+                        created_by=user
+                    )
+
+                    invoice = FocInvoiceHd.objects.get(entry_no=entry_no)
+                    for tran in transactions:
+                        quantity = Decimal( tran.get('quantity'))
+                        rate = Decimal(tran.get('rate'))
+                        amount = quantity * rate
+
+                        FocInvoiceTransactions.objects.create(
+                            invoice=invoice,
+                            item=tran.get('item'),
+                            rate=rate,
+                            amount=amount,
+                            quantity=quantity
+
+                        )
+
+                    invoice.update_totals()
+
+                    # add invoice assets
+                    for service in services:
+
+                        installation_type = service.installation_type
+                        sts = service.new_meter
+                        print(sts)
+                        spn=service.spn
+                        phase = service.phase
+
+                        if not FocInvoiceAssets.objects.filter(sts=sts).exists():
+                            FocInvoiceAssets.objects.create(
+                                invoice=invoice,
+                                sts=sts,
+                                spn=spn,
+                                installation=installation_type.name,
+                                phase=phase
+                            )
+
+                    invoice.update_totals()
+
+
+
+
+
+
+
+
+
+                    success_response['message'] = f"Invoice created with entry {entry_no}"
+
+                else:
+                    raise Exception("Cannot Save Empty Invoice")
 
             elif module == 'jv_entry':
                 entry_date = data.get('entry_date')
@@ -164,7 +278,7 @@ def interface(request):
 
                 ledger = AccountLedger.objects.get(key=key)
 
-                AccountLedgerTransactions.objects.create(ledger=ledger, tran_type='cr', amount=ob, description='Opening Balance', created_by=created_by)
+
 
                 
 
@@ -1747,6 +1861,16 @@ def interface(request):
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
 
+                elif module == 'foc_compliance_type':
+                    success_response['message'] = [ct.obj() for ct in FocComplianceType.objects.all().order_by('name')]
+
+                elif module == 'ledger':
+                    success_response['message'] = [ledge.obj() for ledge in AccountLedger.objects.all()]
+
+                elif module == 'jv':
+                    entry_no = data.get('entry_no','*')
+                    success_response['message'] = [jv.obj() for jv in JournalVoucherHd.objects.all()] if entry_no == '*' else [jv.obj() for jv in JournalVoucherHd.objects.filter(entry_no=entry_no)]
+
                 elif module == 'print_petty_cash':
                     from fpdf import FPDF
                     import datetime
@@ -1970,13 +2094,13 @@ def interface(request):
                         fosn = 1
                         print("FOC SUMMARY....")
                         for foc in Contractor.objects.filter(is_installer=True).order_by('company'):
-                            total_jobs = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,flag_for_invoice=True).count()
+                            total_jobs = ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,contractor=foc,flag_for_invoice=True).count()
                             
                             if total_jobs > 0:
                                 li = [fosn,foc.company,total_jobs]
                                 for so in InstallationType.objects.all().order_by('name'):
 
-                                    this_total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,contractor=foc,installation_type=so,flag_for_invoice=True).count()
+                                    this_total = ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,contractor=foc,installation_type=so,flag_for_invoice=True).count()
                                         
                                     print(foc.company,so.name,this_total)
                                     print("--------------------------------")
@@ -1991,20 +2115,20 @@ def interface(request):
 
                         print("INSTALLATIONS")
                         sheet.append(["DATE","METER","OLD METER","SPN","JOB TYPE","FOC"])
-                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,flag_for_invoice=True):
-                            sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+                        for service in ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,flag_for_invoice=True):
+                            sheet.append([service.ecg_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
                             # print(service.service_type.name)
                             # if service.service_type.name in ['Replacement', 'Regularization']:
                                 
                             #     if service.is_boxed:
                             #         print(f"BOXING EXPECTED FOR {service.service_type.name} and FOUND")
-                            #         sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+                            #         sheet.append([service.ecg_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
                             #     else:
                             #         print(f"BOXING EXPECTED FOR {service.service_type.name} and NOT FOUND")
                             # else:
                                 
                             #     print(f"BOXING NOT EXPECTED FOR {service.service_type.name}")
-                            #     sheet.append([service.service_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
+                            #     sheet.append([service.ecg_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
 
                             # print("--------------------------------")
 
@@ -2019,8 +2143,8 @@ def interface(request):
 
                             
                             consumned = MaterialOrderItem.objects.filter(
-                                service_order__service_date__gte=start_date,
-                                service_order__service_date__lte=end_date,
+                                service_order__ecg_date__gte=start_date,
+                                service_order__ecg_date__lte=end_date,
                                 material=mat,
                                 service_order__flag_for_invoice=True
                             ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
@@ -2045,7 +2169,7 @@ def interface(request):
 
                         ms.append(hd)
                         sn = 1
-                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,flag_for_invoice=True):
+                        for service in ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,flag_for_invoice=True):
 
                             # check if old meter is boxed
                         
@@ -2057,7 +2181,7 @@ def interface(request):
                                     service.location.loc_name,
                                     service.contractor.company,
                                     service.spn,
-                                    service.service_date,
+                                    service.ecg_date,
                                     service.meter_phase(),
                                     service.gps_code,
                                     service.service_type.name
@@ -2082,7 +2206,7 @@ def interface(request):
                         sc.append(["NAME","TOTAL"])
                         for st in ServiceType.objects.all():
                             name = st.name
-                            total = ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,service_type=st,flag_for_invoice=True).count()
+                            total = ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,service_type=st,flag_for_invoice=True).count()
                             if total > 0:
                                 sc.append([name,total])
 
@@ -2093,16 +2217,35 @@ def interface(request):
                         mirhd = ["No","Material Description","Unit of Measurement","Total Request"]
                         
                         months_data = []
-                        year = 2025
-                        from datetime import datetime
+                        from datetime import datetime, date
+
+                        start_year = 2025
+                        start_month = 1  # January
+
                         if isinstance(end_date, str):
                             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
-                        for month in range(1, end_date.month + 1):
-                            start_date_of_month = date(year, month, 1)
+
+                        # Build a list of (year, month) tuples from Jan 2025 → end_date
+                        current = date(start_year, start_month, 1)
+                        end_of_range = date(end_date.year, end_date.month, 1)
+
+                        while current <= end_of_range:
+                            start_date_of_month = current
+                            year = current.year
+                            month = current.month
+
                             if month == 12:
                                 next_month = date(year + 1, 1, 1)
                             else:
                                 next_month = date(year, month + 1, 1)
+
+                            # --- your existing logic using start_date_of_month and next_month ---
+
+                            # Advance to next month
+                            if month == 12:
+                                current = date(year + 1, 1, 1)
+                            else:
+                                current = date(year, month + 1, 1)
                             end_date_of_month = next_month - timedelta(days=1)
                             month_name_yy = start_date_of_month.strftime("%b'%y")  # e.g. Jun'24
                             lx = [start_date_of_month,end_date_of_month,month_name_yy]
@@ -2239,18 +2382,18 @@ def interface(request):
                             hd = ["No","District","FOC Company Name","SPN","Date of Installation","Meter Type","GPS or Digital Address","Installation Type","Serial Number for Meter to be replaced","Is Meter serial number same as work order?","Cable Re-Routing Required","Input Meter STS number","Meter Enclosure used?","Colours of Meter Seal Installed","CIU Handed over to Consumer"]
                             this_sheet.append(hd)
                             mx = 1
-                            for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,location=loc,flag_for_invoice=True):
+                            for service in ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,location=loc,flag_for_invoice=True):
                                 if len(service.old_meter_no) > 0:
                                     is_x = service.installation_type.name if service.installation_type else 'Unknown'
                                     print("ISX:",is_x)
                                     if True:
                                         rr = "YES" if service.is_routing else "NO"
                                         is_same = service.sn_same_as_wo().get('is_same')
-                                        li = [mx,name,service.contractor.company,service.spn,service.service_date,service.meter_phase(),service.gps_code,is_x,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
+                                        li = [mx,name,service.contractor.company,service.spn,service.ecg_date,service.meter_phase(),service.gps_code,is_x,service.spn,is_same,rr,service.new_meter,"YES","BLUE","YES"]
                                         mx += 1
                                         this_sheet.append(li)
                                 else:
-                                    li = [mx,name,service.contractor.company,service.spn,service.service_date,service.meter_phase(),service.gps_code,is_x,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
+                                    li = [mx,name,service.contractor.company,service.spn,service.ecg_date,service.meter_phase(),service.gps_code,is_x,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
                                     mx += 1
                                     this_sheet.append(li)
                     
@@ -2259,8 +2402,8 @@ def interface(request):
                         sheet.title = "Meters Installed"
                         sn = 1
                         sheet.append(["SN","DATE INSTALLED","SERVICE","INSTALLATION TYPE","METER","SPN","OLD METER","PHASE","FOC","BOX","ROUTING","IS BOXED"])
-                        for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date,flag_for_invoice=True):
-                            li = [sn,service.service_date,service.service_type.name,
+                        for service in ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,flag_for_invoice=True):
+                            li = [sn,service.ecg_date,service.service_type.name,
                                   service.installation_type.name if service.installation_type else 'Unknown'
                                 ,service.new_meter,service.spn,service.old_meter_no,service.meter_phase(),service.contractor.company,service.box_no,service.is_routing]
                             sheet.append(li)
@@ -2298,8 +2441,8 @@ def interface(request):
                     sheet.title = "RETIRED METERS"
                     sheet.append(["LN","SERVICE","DATE","FOC","NEW METER","SPN","OLD METER"])
                     sn = 1
-                    for service in ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=False).order_by('service_date'):
-                        li = [sn,service.service_type.name,service.service_date,service.contractor.company,service.new_meter,service.spn,service.old_meter_no]
+                    for service in ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=False).order_by('ecg_date'):
+                        li = [sn,service.service_type.name,service.ecg_date,service.contractor.company,service.new_meter,service.spn,service.old_meter_no]
                         sheet.append(li)
                         print(li)
                         sn += 1
@@ -2385,9 +2528,10 @@ def interface(request):
                     if Contractor.objects.filter(otp=foc_verify_token).exists():
                         contractor = Contractor.objects.get(otp=foc_verify_token)
                         c_code = contractor.code
+                        code = c_code
                         contractor.otp = None
                         contractor.save()
-                        success_response['message'] = c_code
+                        success_response['message'] = Contractor.objects.get(code=code).minimal_obj()
                     else:
                         raise Exception("Invalid OTP")
 
@@ -2499,9 +2643,9 @@ def interface(request):
 
                         from ssml.models import ServiceOrder
                         if location == '*':
-                            total_service_orders = ServiceOrder.objects.filter(service_date__gte=first_day, service_date__lt=last_day).count()
+                            total_service_orders = ServiceOrder.objects.filter(ecg_date__gte=first_day, ecg_date__lt=last_day).count()
                         else:
-                            total_service_orders = ServiceOrder.objects.filter(service_date__gte=first_day, service_date__lt=last_day,location=location).count()
+                            total_service_orders = ServiceOrder.objects.filter(ecg_date__gte=first_day, ecg_date__lt=last_day,location=location).count()
 
 
                         stock_sum = round(stock_sum, 2)
@@ -2649,13 +2793,13 @@ def interface(request):
                     success_response['message'] = arr
                     response = success_response
 
-                elif module == 'invoice':
-                    
-                    id = data.get('id','*')
-                    if id == '*':
-                        arr = [inv.obj() for inv in InvoiceHD.objects.all()]
+                elif module == 'foc_invoice':
+
+                    entry_no = data.get('entry_no','*')
+                    if entry_no == '*':
+                        arr = [inv.obj() for inv in FocInvoiceHd.objects.all()]
                     else:
-                        arr = [inv.obj() for inv in InvoiceHD.objects.filter(id=id)]
+                        arr = [inv.obj() for inv in FocInvoiceHd.objects.filter(entry_no=entry_no)]
 
                     success_response['message'] = arr
 
@@ -2673,7 +2817,7 @@ def interface(request):
                         
                         res.append({
                             'id': job.id,
-                            'date': str(job.service_date),
+                            'date': str(job.ecg_date),
                             'service': job.service_type.name,
                             'meter': job.new_meter,
                             'contractor': job.contractor.company,
@@ -2715,7 +2859,7 @@ def interface(request):
                              jobs_done.append({
                                  'id': t.id,
                                  'service_order': {
-                                     'service_date': str(t.service_order.service_date),
+                                     'service_date': str(t.service_order.ecg_date),
                                      'service_type': {'name': t.service_order.service_type.name},
                                      'new_meter_no': t.service_order.new_meter,
                                      'contractor': {'name': t.service_order.contractor.company}
@@ -3985,6 +4129,167 @@ def interface(request):
                 material.save()
                 success_response['message'] = "Material Updated Successfully"
 
+            elif module == 'validate_foc_invoice':
+                entry_no = data.get('entry_no')
+                invoice = FocInvoiceHd.objects.get(entry_no=entry_no)
+                validated_by = User.objects.get(pk=data.get('mypk'))
+                foc = invoice.foc
+
+                rows_html = """
+                    <tr>
+                        <th>SN</th>
+                        <th>Item</th>
+                        <th>Quantity</th>
+                        <th>Rate</th>
+                        <th>Amount</th>
+                    </tr>
+                """
+
+                trsn = 1
+                for row in invoice.trans():
+                    rows_html += f"""
+                        <tr>
+                            <td>{trsn}</td>
+                            <td>{row.get('item')}</td>
+                            <td>{row.get('quantity')}</td>
+                            <td>{row.get('rate')}</td>
+                            <td>{row.get('amount')}</td>
+                        </tr>
+                    """
+                    trsn += 1
+
+                html_body = f"""
+                    Dear {foc.company}, an Invoice has been issued to your company, please accept it in FOC Node app for payment to begin. You can also reject it with remarks
+                    Invoice: {invoice.entry_no}
+                    Gross: {invoice.gross_amount}
+                    Tax: {invoice.tax_amount}
+                    Net: {invoice.net_amount}
+                    
+                    {rows_html}
+                    
+                    Note: Without required compliance document, net will be paid to you, else, we will pay the whole gross and hold onto 6% for administrative cost
+                    
+                """
+
+                sms = f"Dear {foc.company}, and invoice has been raised to your company with remarks: {invoice.remarks}. Please accept or reject with the FOC Node App"
+
+                # Que Mail
+                MailQueues.objects.create(
+                    sender=MailSenders.objects.get(is_default=True),
+                    recipient=foc.email,
+                    cc='mohan@snedaghana.com,ajay@snedaghana.com,bharat@snedaghana.com',
+                    body=html_body,
+                    mail_key=make_md5_hash(invoice.remarks),
+                    subject=f"SNEDA - {invoice.remarks}",
+                )
+
+                # send sms
+                Sms.objects.create(
+                    api=SmsApi.objects.get(is_default=True),
+                    to=foc.phone,
+                    message=sms
+                )
+
+                invoice.is_valid = True
+                invoice.validated_by = validated_by
+                from django.utils import timezone
+                date_validated=timezone.now().date()
+                invoice.save()
+
+                success_response['message'] = "Invoice Validated Successfully"
+
+            elif module == 'post_foc_invoice':
+
+                entry_no = data.get('entry_no')
+                invoice = FocInvoiceHd.objects.get(entry_no=entry_no)
+                invoice.update_totals()
+                posted_by = User.objects.get(pk=data.get('mypk'))
+
+                #JVHeader.objects.all().delete()
+
+                # check if invoice is ready to post
+                if not invoice.is_valid:
+                    raise Exception("Invoice is not valid")
+
+                # check if foc accepted invoice
+                if not invoice.is_accepted:
+                    raise Exception("Invoice is not accepted")
+
+
+                # write to ledger
+                foc = invoice.foc
+                if SubLedger.objects.filter(code=foc.code).count() == 0:
+                    # create ledger
+
+                    SubLedger.objects.create(
+                        code=foc.code,
+                        name=f"FOC - {foc.company}",
+                        description=f"Ledger for {foc.company} installations",
+                        owner=posted_by,
+                        ledger=Ledger.objects.get(sledge='all_payable')
+                    )
+
+                foc_ledger = SubLedger.objects.get(code=foc.code)
+
+
+                # create JV
+                jv_entry_no = generate_entry_entry('JV')
+                JVHeader.objects.create(
+                    date=invoice.invoice_date,
+                    narration=invoice.remarks,
+                    prepared_by=posted_by,
+                    ref=invoice.entry_no,
+                    voucher_no=jv_entry_no
+
+                )
+
+                jv = JVHeader.objects.get(voucher_no=jv_entry_no)
+                for it in FocInvoiceTransactions.objects.filter(invoice=invoice):
+                    item = it.item
+                    quantity = it.quantity
+                    rate = it.rate
+                    amount = it.net_amount
+
+                    JVTransaction.objects.create(
+                        header=jv,
+                        sub_ledger=foc_ledger,
+                        ledger=foc_ledger.ledger,
+                        credit=amount,
+                        created_by=posted_by,
+                        line_description=f"{item}: {rate} * {quantity}"
+                    )
+
+                # write tax ledger
+
+
+                vatledge = Ledger.objects.get(sledge='vat')
+
+                JVTransaction.objects.create(
+                    header=jv,
+                    ledger=vatledge,
+                    credit=invoice.tax_amount,
+                    created_by=posted_by,
+                    line_description=f"Vat to pay on {invoice.remarks}"
+                )
+
+                # record expense
+                exp_ledge = Ledger.objects.get(sledge='foc_install_expense')
+                JVTransaction.objects.create(
+                    header=jv,
+                    ledger=exp_ledge,
+                    debit=invoice.gross_amount,
+                    created_by=posted_by,
+                    line_description=f"Installation Cost: {invoice.remarks}"
+                )
+
+                from django.utils import timezone
+                invoice.is_posted = True
+                invoice.posted_by = posted_by
+                invoice.date_posted = timezone.now().date()
+                invoice.save()
+
+                success_response['message'] = 'Invoice Posted Successfully'
+
 
             elif module == 'installation_type':
                 id = data.get('id')
@@ -4498,9 +4803,6 @@ def interface(request):
 
                 print(reg_amt + rep_amt + new_amt)
 
-                
-                
-            
             elif module == 'post_grn':
                 grn_id = data.get('id')
                 grn = Grn.objects.get(id=grn_id)
@@ -4790,6 +5092,9 @@ def interface(request):
                 contractor.bank_name = data.get('bank_name')
                 contractor.bank_acct_number = data.get('bank_acct_number')
                 contractor.bank_branch = data.get('bank_branch')
+                debit = data.get('debit')
+                debit_ledger = Ledger.objects.get(pk=debit)
+                contractor.debit_ledger = debit_ledger
 
                 contractor.save()
 
@@ -4963,11 +5268,20 @@ def interface(request):
 
                     print(meter_no,service_date)
                     ## update flag in service
-                    ServiceOrder.objects.filter(
-                        new_meter=meter_no,
-                        service_date=service_date
-                    ).update(flag_for_invoice=True)
-                    print(f"Meter {sts}- {service_date} flagged for invoice")
+
+                    service =ServiceOrder.objects.filter(
+                        new_meter=meter_no
+                    ).last()
+
+                    if service:
+
+                        print(f"Meter {meter_no}- {service_date} flagged for invoice")
+                        service.flag_for_invoice = True
+                        service.ecg_date = service_date
+                        service.save()
+                    else:
+                        print(f"Service does not exist {service_date}")
+                    print()
 
 
                 success_response['message'] = "Meters Flagged for Invoice"

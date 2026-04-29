@@ -1,12 +1,16 @@
-
+import os
 from datetime import datetime
 from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Value, DecimalField
+from django.db.models.functions import Coalesce
 
+from accounts.models import Ledger
 from admin_panel.models import BankAccounts
 from django.utils import timezone
+
+from ocean.settings import TAX_RATE
 
 
 # locations class
@@ -325,7 +329,18 @@ class Contractor(models.Model):
     code = models.CharField(max_length=255, unique=False, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
     is_installer = models.BooleanField(default=True)
-
+    debit_ledger = models.ForeignKey(Ledger,on_delete=models.PROTECT,null=True, blank=True)
+    owner_phone = models.CharField(max_length=10,null=True,blank=True)
+    owner_email = models.CharField(max_length=255,null=True,blank=True)
+    comp_reg_number = models.CharField(max_length=255,null=True,blank=True)
+    business_type = models.CharField(max_length=255,null=True,blank=True)
+    region = models.CharField(max_length=255,null=True,blank=True)
+    business_address = models.CharField(max_length=255,null=True,blank=True)
+    business_phone_number = models.CharField(max_length=255,null=True,blank=True)
+    business_email = models.CharField(max_length=255,null=True,blank=True)
+    bank_name = models.CharField(max_length=255,null=True,blank=True)
+    bank_acct_number = models.CharField(max_length=255,null=True,blank=True)
+    bank_branch = models.CharField(max_length=255,null=True,blank=True)
 
 
     def __str__(self):
@@ -410,18 +425,37 @@ class Contractor(models.Model):
 
     def minimal_obj(self):
         return {
-            'id':self.id,
-            'company':self.company,
-            'owner':self.owner,
-            'phone':self.phone,
-            'email':self.email,
-            'country':self.country,
-            'city':self.city,
-            'postal_code':self.postal_code,
-            'gh_post_code':self.gh_post_code,
-            'gh_card_no':self.gh_card_no,
-            'code':self.code,
+            "foc_code":self.code,
+            "company":self.company,
+            "owner":self.owner,
+
+            "phone":self.phone,
+            "email":self.email,
+            "country":self.country,
+
+            "city":self.city,
+            "postal_code":self.postal_code,
+            "gh_post_code":self.gh_post_code,
+
+            "gh_card_no":self.gh_card_no,
+            "link":self.link,
+            "owner_phone":self.owner_phone,
+
+            "owner_email":self.owner_email,
+            "comp_reg_number":self.comp_reg_number,
+            "business_type":self.business_type,
+
+            "region":self.region,
+            "business_address":self.business_address,
+            "business_phone_number":self.business_phone_number,
+
+            "business_email":self.business_email,
+            "bank_name":self.bank_name,
+            "bank_acct_number":self.bank_acct_number,
+            "bank_branch":self.bank_branch,
             'can_work':self.can_work(),
+            'is_complied':self.is_complied(),
+            'complete_profile':self.profile_complete()
         }
 
     def documents(self):
@@ -518,8 +552,150 @@ class Contractor(models.Model):
             'total_issued':self.total_issued_meters(),
             'daily_average':self.on_average(),
             'jobs_by_month':self.jobs_by_month(),
+            'owner_phone':self.owner_phone,
+            'owner_email':self.owner_email,
+            'comp_reg_number':self.comp_reg_number,
+            'business_type':self.business_type,
+            'region':self.region,
+            'business_address':self.business_address,
+            'business_phone_number':self.business_phone_number,
+            'bank_name':self.bank_name,
+            'bank_acct_number':self.bank_acct_number,
+            'bank_branch':self.bank_branch
             
         }
+
+    def dashboard(self,star_date='2000-01-01',end_date=timezone.now().date()):
+        bd = {}
+        for st in InstallationType.objects.all():
+            bd[st.name] = ServiceOrder.objects.filter(
+                contractor=self,
+                service_date__gt=star_date,
+                service_date__lte=end_date,
+                installation_type=st
+            ).count()
+        return {
+            'total_installed':ServiceOrder.objects.filter(contractor=self,service_date__gte=star_date,service_date__lte=end_date).count(),
+            'install_types':bd
+        }
+
+    def waybill(self, start_date='2000-01-01',end_date=timezone.now().date()):
+        obj = []
+        for issue in Issue.objects.filter(contractor=self,issue_date__gte=start_date,issue_date__lte=end_date).order_by('issue_date'):
+            obj.append({
+                'id': issue.id,
+                'issue_no': issue.issue_no,
+                'issue_date': issue.issue_date,
+                'remarks': issue.remarks,
+                'created_by': issue.created_by.username,
+                'created_at': issue.created_at,
+                'updated_at': issue.updated_at,
+                'issue_type': issue.issue_type,
+            })
+
+        return obj
+
+    def invoices(self, start_date, end_date):
+        ob = []
+        for invoice in FocInvoiceHd.objects.filter(foc=self,invoice_date__gte=start_date,invoice_date__lte=end_date,is_valid=True).order_by('invoice_date'):
+            ob.append(invoice.obj())
+
+        return ob
+
+    def inventory(self):
+        materials = InventoryMaterial.objects.filter(is_issue=True).order_by('name')
+
+        # Pre-aggregate outside the loop — 2 queries total regardless of material count
+        issued_map = {
+            row['material']: row['total']
+            for row in IssueTransaction.objects.filter(
+                material__in=materials,
+                issue__contractor=self
+            ).values('material').annotate(
+                total=Coalesce(Sum('total_qty'), Value(0, output_field=DecimalField()))
+            )
+        }
+
+        used_map = {
+            row['material']: row['quantity']
+            for row in MaterialOrderItem.objects.filter(
+                material__in=materials,
+                service_order__contractor=self,
+                material_type='is'
+            ).values('material').annotate(
+                quantity=Coalesce(Sum('quantity'), Value(0, output_field=DecimalField()))
+            )
+        }
+
+        arr = []
+        total_balance = 0
+        for material in materials:
+            total_issued = issued_map.get(material.pk, Decimal('0'))
+            total_used = used_map.get(material.pk, Decimal('0'))
+            balance = total_issued - total_used
+            value = Decimal(str(material.value)) * balance
+            total_balance += value
+
+            arr.append({
+                "material": material.name,
+                "issued": total_issued,
+                "used": total_used,
+                "balance": balance,
+                "value": value,
+            })
+
+        return {
+            "total":total_balance,
+            "materials":arr
+        }
+
+    def compliance(self):
+        return [cp.obj() for cp in FocCompliance.objects.filter(foc=self)]
+
+    def is_complied(self):
+        # 1. Get all types that are marked as required
+        required_types = FocComplianceType.objects.filter(is_required=True)
+
+        for cc in required_types:
+            # 2. Check for the record
+            record = FocCompliance.objects.filter(foc=self, c_type=cc).first()
+
+            # 3. If record doesn't exist, OR the file is physically missing from the server
+            if not record or not record.actual_file():
+                return {
+                    'status':False,
+                    "message":f"{cc.name} not submitted"
+                }
+
+        # If we made it through the whole loop without returning False, they are compliant
+        return {
+            'status':True,
+            'message':"All compliances certified"
+        }
+
+    def profile_complete(self):
+        # List only the fields the contractor needs to fill manually
+        required_fields = [
+            'company', 'owner', 'phone', 'email', 'country', 'city',
+            'gh_post_code', 'gh_card_no', 'owner_phone', 'owner_email',
+            'comp_reg_number', 'business_type', 'region', 'business_address',
+            'bank_name', 'bank_acct_number', 'bank_branch'
+        ]
+
+        for field in required_fields:
+            value = getattr(self, field)
+            # Check if the field is None, an empty string, or just whitespace
+            if value is None or str(value).strip() == "":
+                return {
+                    'status':False,
+                    'message':"Profile not up to date"
+                }
+
+        return {
+            "status":True,
+            "message":"Profile Up to date"
+        }
+
 
 class ContractorDocuments(models.Model):
     contractor = models.ForeignKey(Contractor,on_delete=models.CASCADE)
@@ -1005,12 +1181,14 @@ class ServiceOrder(models.Model):
     gps_code = models.CharField(unique=False,null=True,blank=True,max_length=255,default="none")
     phase = models.CharField(unique=False,null=True,blank=True,max_length=255,default="1 phase")
     is_boxed = models.BooleanField(default=False)
-    box_no = models.IntegerField(max_length=100,default=0)
+    box_no = models.CharField(max_length=100,default=0)
     final_readings = models.DecimalField(max_digits=65, decimal_places=2, default=0)
 
     flag_for_invoice = models.BooleanField(default=False)
     inv_number = models.CharField(max_length=255,null=True,blank=True)
     inv_date = models.DateField(null=True,blank=True)
+
+    ecg_date = models.DateField(null=True,blank=True)
 
     
 
@@ -1060,7 +1238,7 @@ class ServiceOrder(models.Model):
 
             row =  RetiredMetersTransactions.objects.filter(spn=self.spn).last()
             
-            is_same = "NO" if len(row.diff_old_meter_no) == 0 else "YES"
+            is_same = "NO" if row.diff_old_meter_no and len(row.diff_old_meter_no) == 0 else "YES"
             return {
                 "application":True,
                 "is_same" : is_same
@@ -2017,6 +2195,7 @@ class RetiredMetersBox(models.Model):
     location = models.ForeignKey(Location,on_delete=models.SET_NULL,null=True)
     created_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    file = models.FileField(upload_to='static/general/upload', null=True, blank=True)
 
 
     class Meta:
@@ -2193,25 +2372,36 @@ class AccountLedger(models.Model):
     description = models.TextField(blank=True, null=True)
     name = models.CharField(max_length=200,unique=True,null=False,blank=False)
     reference = models.CharField(max_length=200, blank=True, null=True)
+    lty = (
+        ("FOC", "Contractors"), ("UNK", "Unknown"),("GOV", "Government")
+    )
+    ledge_type = models.CharField(max_length=5, choices=lty,null=False,blank=False, default='UNK')
+
+    debit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    credit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
 
     def obj(self):
+        self.update_ledger()
         return {
-
+            "key":self.key,
+            "name":self.name,
+            "description":self.description,
+            "debit":self.debit,
+            "credit":self.credit,
+            "balance":self.balance(),
         }
 
-class AccountLedgerTransactions(models.Model):
-    ledger = models.ForeignKey(AccountLedger, on_delete=models.CASCADE, related_name='transactions')
+    def update_ledger(self):
+        total_debit = JournalVoucherTransactions.objects.filter(ledger=self).aggregate(Sum('debit'))['debit__sum'] or 0
+        total_credit = JournalVoucherTransactions.objects.filter(ledger=self).aggregate(Sum('credit'))['credit__sum'] or 0
 
-    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    tran_type_choices = (
-        ('deb',"Debit"),('cr',"Credit")
-    )
-    tran_type = models.CharField(max_length=3,null=False,blank=False,choices=tran_type_choices) # credit if money is put into, debit if money is taken out
-    description = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+        self.debit = total_debit
+        self.credit = total_credit
+        self.save()
+
+    def balance(self):
+        return self.debit - self.credit
 
 
 class JournalVoucherHd(models.Model):
@@ -2225,6 +2415,33 @@ class JournalVoucherHd(models.Model):
     credit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_posted = models.BooleanField(default=False)
 
+    ref = models.CharField(max_length=200, blank=False, null=False, unique=True)
+
+
+    def update_totals(self):
+        self.debit = JournalVoucherTransactions.objects.filter(hd=self).aggregate(Sum('debit'))['debit__sum'] or 0
+        self.credit = JournalVoucherTransactions.objects.filter(hd=self).aggregate(Sum('credit'))['credit__sum'] or 0
+        self.save()
+
+    def trans(self):
+        return [son.obj() for son in JournalVoucherTransactions.objects.filter(hd=self)]
+
+    def obj(self):
+        self.update_totals()
+        return {
+            "entry_no":self.entry_no,
+            "entry_date":self.entry_date,
+            "narration":self.narration,
+            "created_by":self.created_by.username if self.created_by else '',
+            'date_created':self.date_created,
+            "time_created":self.time_created,
+            "debit":self.debit,
+            "credit":self.credit,
+            "is_posted":self.is_posted,
+            "ref":self.ref,
+            "transactions":self.trans()
+        }
+
 
 class JournalVoucherTransactions(models.Model):
     hd = models.ForeignKey(JournalVoucherHd, on_delete=models.CASCADE, related_name='transactions')
@@ -2236,3 +2453,179 @@ class JournalVoucherTransactions(models.Model):
     date_created = models.DateField(auto_now_add=True)
     time_created = models.TimeField(auto_now_add=True)
     description = models.TextField(blank=True, null=True)
+
+    def obj(self):
+        return {
+            "debit":self.debit,
+            "credit":self.credit,
+            "created_by":self.created_by.username if self.created_by else '',
+            "date_created":self.date_created,
+            "description":self.description,
+            "ledger":f"{self.ledger.ledge_type} - {self.ledger.name}"
+        }
+
+
+class FocInvoiceHd(models.Model):
+    entry_no = models.CharField(max_length=10, null=False, blank=False,unique=True)
+    foc = models.ForeignKey(Contractor,models.CASCADE,related_name='invoices_foc')
+    remarks = models.TextField(blank=True, null=True)
+    invoice_date = models.DateField(null=False, blank=False)
+
+    is_valid = models.BooleanField(default=False)
+    validated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,related_name='invoices_validator')
+    date_validated = models.DateField(null=True, blank=True)
+
+    is_accepted = models.BooleanField(default=False)
+    date_accepted = models.DateField(null=True, blank=True)
+    accept_remark = models.TextField(blank=True, null=True)
+
+    is_posted = models.BooleanField(default=False)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    date_posted = models.DateField(null=True, blank=True)
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,related_name='invoices_creator')
+    posted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    gross_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    net_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+
+
+    def update_totals(self):
+        gross_amount = FocInvoiceTransactions.objects.filter(invoice=self).aggregate(
+            total=Coalesce(models.Sum('amount'), models.Value(0, output_field=models.DecimalField()))
+        )['total']
+
+        invoice_year = self.invoice_date.year
+        print(TAX_RATE)
+        tax_rate = TAX_RATE.get(f"{invoice_year}", 0)
+        print(tax_rate)
+        tax_amount = Decimal((tax_rate / 100)) * Decimal(gross_amount)
+        net_amount = gross_amount - tax_amount
+
+        self.net_amount = net_amount
+        self.tax_amount = tax_amount
+        self.gross_amount = gross_amount
+        self.save()
+
+        # update transactions
+        for tr in FocInvoiceTransactions.objects.filter(invoice=self):
+            amount = tr.amount
+            tax_amount = Decimal((tax_rate / 100)) * Decimal(amount)
+            net_amount = amount - tax_amount
+
+            tr.net_amount = net_amount
+            tr.tax_amount = tax_amount
+            tr.save()
+
+    def trans(self):
+
+
+        return [ch.obj() for ch in FocInvoiceTransactions.objects.filter(invoice=self)]
+
+    def previous(self):
+        return FocInvoiceHd.objects.filter(pk__lt=self.pk).last().entry_no if FocInvoiceHd.objects.filter(pk__lt=self.pk).exists() else False
+
+    def next(self):
+        return FocInvoiceHd.objects.filter(pk__gt=self.pk).first().entry_no if FocInvoiceHd.objects.filter(pk__gt=self.pk).exists() else False
+
+    def obj(self):
+        self.update_totals()
+        return {
+            "entry_no":self.entry_no,
+            'foc':self.foc.company,
+            'date':self.invoice_date,
+            'is_posted':self.is_posted,
+            'is_accepted':self.is_accepted,
+            'gross':self.gross_amount,
+            'tax':self.tax_amount,
+            'net':self.net_amount,
+            'remarks':self.remarks,
+            "phone":self.foc.phone,
+            "email":self.foc.email,
+            "is_valid":self.is_valid,
+            "transactions":self.trans(),
+            "next":self.next(),
+            "previous":self.previous(),
+        }
+
+
+class FocInvoiceTransactions(models.Model):
+    invoice = models.ForeignKey(FocInvoiceHd, on_delete=models.CASCADE, related_name='transactions')
+    item = models.CharField(max_length=255, null=False, blank=False,unique=False)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    tax_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    net_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+
+    def obj(self):
+        return {
+            'item':self.item,
+            'quantity':self.quantity,
+            'rate':self.rate,
+            'amount':self.amount,
+        }
+
+class FocInvoiceAssets(models.Model):
+    invoice = models.ForeignKey(FocInvoiceHd, on_delete=models.CASCADE, related_name='invoice')
+    sts =  models.CharField(unique=True, max_length=255, null=False, blank=False)
+    spn = models.CharField(max_length=255, null=True, blank=True)
+    installation = models.CharField(max_length=255, null=True, blank=True)
+    phase = models.CharField(max_length=255, null=True, blank=True)
+
+    def obj(self):
+        return {
+            'sts':self.sts,
+            'spn':self.spn,
+            'installation':self.installation,
+            'phase':self.phase
+        }
+
+
+class FocComplianceType(models.Model):
+    name = models.CharField(max_length=255,unique=True,null=False,blank=False)
+    description = models.TextField()
+    is_required = models.BooleanField(default=False)
+
+
+    def obj(self):
+        return {
+            "name":self.name,
+            "description":self.description,
+            'is_required':self.is_required,
+            "pk":self.pk
+        }
+
+
+
+class FocCompliance(models.Model):
+    foc = models.ForeignKey(Contractor,models.PROTECT, null=False)
+    c_type = models.ForeignKey(FocComplianceType,models.PROTECT, null=False)
+    ref = models.CharField(max_length=255,null=False,blank=False)
+    file = models.FileField(upload_to='static/general/foc_compliance/',null=False,blank=False)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = (('foc','c_type'),)
+
+    def actual_file(self):
+        if self.file:
+            if os.path.exists(self.file.path):
+                return self.file.url
+
+        return None
+
+    def obj(self):
+        return  {
+            "foc":self.foc.company,
+            'compliance':self.c_type.name,
+            "description":self.c_type.description,
+            "pk":self.foc.pk,
+            'file':self.actual_file()
+        }

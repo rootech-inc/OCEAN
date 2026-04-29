@@ -1,0 +1,268 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4" style="font-family: 'Inter', sans-serif; background-color: #f8f9fa;">
+
+    <!-- Top Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 border-0 rounded-3">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+                                style="font-size: 0.75rem; letter-spacing: 0.05em;">Total Liquidity</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" style="color: #2c3e50;">GH₵ 125,000.00
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-university fa-2x text-primary opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 border-0 rounded-3">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1"
+                                style="font-size: 0.75rem; letter-spacing: 0.05em;">Accounts Receivable</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" style="color: #2c3e50;">GH₵ 45,200.00
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-success opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2 border-0 rounded-3">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+                                style="font-size: 0.75rem; letter-spacing: 0.05em;">Accounts Payable</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" style="color: #2c3e50;">GH₵ 18,500.00
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-area fa-2x text-danger opacity-75"
+                                style="transform: scaleY(-1);"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 border-0 rounded-3">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1"
+                                style="font-size: 0.75rem; letter-spacing: 0.05em;">Tax Liability (VAT 20%)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" style="color: #2c3e50;">GH₵ 9,800.00
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shield-alt fa-2x text-info opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow border-0 rounded-3 h-100">
+                <div
+                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white border-bottom-0">
+                    <h6 class="m-0 font-weight-bold text-dark">Revenue vs. Expenses</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area" style="height: 300px;">
+                        <canvas id="revenueExpenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow border-0 rounded-3 h-100">
+                <div
+                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white border-bottom-0">
+                    <h6 class="m-0 font-weight-bold text-dark">AR Aging</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2" style="height: 250px;">
+                        <canvas id="arAgingChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="bi bi-circle-fill text-success"></i> 0-30 Days
+                        </span>
+                        <span class="mr-2">
+                            <i class="bi bi-circle-fill text-warning"></i> 31-60 Days
+                        </span>
+                        <span class="mr-2">
+                            <i class="bi bi-circle-fill text-danger"></i> 90+ Days
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions Table Row -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow border-0 rounded-3">
+                <div class="card-header py-3 bg-white border-bottom-0">
+                    <h6 class="m-0 font-weight-bold text-dark">Recent Transactions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-borderless align-middle" width="100%" cellspacing="0">
+                            <thead class="text-muted bg-light">
+                                <tr>
+                                    <th class="fw-normal py-3 rounded-start">Date</th>
+                                    <th class="fw-normal py-3">Ledger (Parent)</th>
+                                    <th class="fw-normal py-3">Sub-Ledger</th>
+                                    <th class="fw-normal py-3">Type</th>
+                                    <th class="fw-normal py-3 text-end rounded-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody class="border-top-0">
+                                <tr>
+                                    <td>2023-10-27</td>
+                                    <td>Accounts Receivable</td>
+                                    <td>Acme Corp</td>
+                                    <td><span class="badge bg-primary text-white px-3 py-2 rounded-pill">Debit</span>
+                                    </td>
+                                    <td class="text-end fw-semibold">GH₵ 12,500.00</td>
+                                </tr>
+                                <tr>
+                                    <td>2023-10-26</td>
+                                    <td>Sales Revenue</td>
+                                    <td>Acme Corp</td>
+                                    <td><span class="badge bg-success text-white px-3 py-2 rounded-pill">Credit</span>
+                                    </td>
+                                    <td class="text-end fw-semibold">GH₵ 12,500.00</td>
+                                </tr>
+                                <tr>
+                                    <td>2023-10-25</td>
+                                    <td>Accounts Payable</td>
+                                    <td>Tech Supplies Ltd</td>
+                                    <td><span class="badge bg-success text-white px-3 py-2 rounded-pill">Credit</span>
+                                    </td>
+                                    <td class="text-end fw-semibold">GH₵ 4,200.00</td>
+                                </tr>
+                                <tr>
+                                    <td>2023-10-25</td>
+                                    <td>Office Supplies</td>
+                                    <td>Tech Supplies Ltd</td>
+                                    <td><span class="badge bg-primary text-white px-3 py-2 rounded-pill">Debit</span>
+                                    </td>
+                                    <td class="text-end fw-semibold">GH₵ 4,200.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Placeholder for Chart.js initialization
+    document.addEventListener("DOMContentLoaded", () => {
+        // Revenue vs Expenses Line Chart
+        const ctxLine = document.getElementById('revenueExpenseChart');
+        if (ctxLine) {
+            new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [12000, 19000, 15000, 25000, 22000, 30000],
+                        borderColor: '#1cc88a',
+                        backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Expenses',
+                        data: [8000, 10000, 12000, 15000, 13000, 18000],
+                        borderColor: '#e74a3b',
+                        backgroundColor: 'transparent',
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false,
+                                borderDash: [2, 2]
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // AR Aging Doughnut Chart
+        const ctxPie = document.getElementById('arAgingChart');
+        if (ctxPie) {
+            new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['0-30 Days', '31-60 Days', '90+ Days'],
+                    datasets: [{
+                        data: [55, 30, 15],
+                        backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b'],
+                        hoverBackgroundColor: ['#17a673', '#dda20a', '#be2617'],
+                        hoverBorderColor: "rgba(234, 236, 244, 1)",
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

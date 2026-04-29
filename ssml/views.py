@@ -1,5 +1,5 @@
 
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Model
 from datetime import datetime, date
 from decimal import Decimal
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
@@ -17,7 +17,8 @@ from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, Invent
     ServiceMaterials, ServiceOrder, \
     ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments, PettyCash, \
     RetiredMetersBox, InstallationType, Cardex, Phase, MaterialRequestHeader, \
-    ECGInvoiceHD, ECGInvoiceTransactions, AccountLedger
+    ECGInvoiceHD, ECGInvoiceTransactions, AccountLedger, RetiredMetersTransactions, FocInvoiceHd, JournalVoucherHd, \
+    FocComplianceType, FocCompliance
 from dolphine.models import Documents
 
 
@@ -915,109 +916,173 @@ def upload_service_order(request):
 @csrf_exempt
 @login_required
 def sync_retired_meter(request):
+    from datetime import datetime
     if request.method == 'POST':
         if 'excel_file' not in request.FILES:
             return HttpResponseBadRequest("No file uploaded.")
-        
+
         import openpyxl
+
         excel_file = request.FILES['excel_file']
-        wb = openpyxl.load_workbook(excel_file)
-        no_service_file_name = "sync_ret_meter"
-        book = openpyxl.Workbook()
-        sheet = book.active
-        
-        foc_list = {}
-        # Loop through each sheet in the workbook
-        for sheet_name in wb.sheetnames:
-            sheet = wb[sheet_name]
-            # # print(f"Sheet: {sheet_name}")
-            # Loop through each row in the sheet
-            for row in sheet.iter_rows(values_only=True):
-                box_no = row[2]
-                box_litral = box_no.split('-')[0] if box_no else 'not a valid row'
-                
-                if box_litral== 'SNE':
-                    old_meter_no = str(row[4]).split('.')[0]
-                    
-                    foc_name = row[21] or None
-                    is_service = False
-                    if old_meter_no:
-                        # check if old meter exisit in done job
-                        if ServiceOrder.objects.filter(old_meter_no=old_meter_no).exists():
-                            is_service = True
+        wb = openpyxl.load_workbook(excel_file, data_only=True)
+        sheet = wb.active  # ✅ FIXED
+
+        box_no = request.POST.get('boxx_no')
+        loc_id = request.POST.get('loc')
+
+        if not loc_id:
+            return HttpResponseBadRequest("Location is required.")
+
+        try:
+            location = Location.objects.get(loc_id=loc_id)
+        except Location.DoesNotExist:
+            return HttpResponseBadRequest("Invalid location.")
+
+        print(request.POST)
+
+        # delete existing
+        RetiredMetersBox.objects.filter(
+            box_no=box_no,
+            location=location,
+        ).delete()
+
+
+
+        # create new
+        box = RetiredMetersBox.objects.create(
+            box_no=box_no,
+            location=location,
+            created_by=request.user,
+        )
+
+        rows = list(sheet.iter_rows(values_only=True))
+
+        if not rows:
+            return HttpResponseBadRequest("Excel file is empty.")
+
+        headers = rows[0]
+
+        if not any(headers):
+            return HttpResponseBadRequest("Header row is empty.")
+
+        for row in rows[1:]:
+            if not any(row):
+                continue
+
+            obj = dict(zip(headers, row))
+            sn = obj.get('SN')
+            spn = obj.get('SERVICE POINT NUMBER')
+            old_meter_no = obj.get('OLD METER NUMBER')
+            if old_meter_no is None:
+                old_meter_no = spn
+
+            # print(old_meter_no)
+            final_reading = 0
+            rem_wattage = 0
+            rem_cedis = 0
+            make_year = 'UNKNWONM'
+            manufacturere = 'UNKNOWN'
+            phase = ''
+            rating = 0
+            raw_date = obj.get('DATE APPROVED')
+            phase = obj.get('REQUESTED METER PHASE')
+
+            # print("RAW DATE", raw_date)
+
+            date_removed = None
+
+            if raw_date:
+                try:
+                    if isinstance(raw_date, datetime):
+                        # Already a datetime → just extract date
+                        date_removed = raw_date.date()
+                    else:
+                        # It's a string → parse it
+                        date_removed = datetime.strptime(raw_date, "%d/%m/%Y %H:%M").date()
+                except Exception as e:
+                    print("Date parse error:", raw_date, e)
+
+            reason = ''
+            foc = Contractor.objects.get(code=obj.get('CONTRACTOR CODE'))
+            gps_address = obj.get('DIGITAL ADDRESS')
+
+            RetiredMetersTransactions.objects.filter(spn=spn).delete()
+
+            spn = str(int(float(spn)))
+            old_meter_no = str(int(float(old_meter_no)))
+            service_order = ServiceOrder.objects.filter(spn=spn)
+            if service_order:
+                sd = service_order.last()
+                date_removed = sd.service_date
+                print(f"{spn} service date overwrite")
+            else:
+                print(f"{spn} service date not overwrite")
+
+            RetiredMetersTransactions.objects.create(
+                box=box,
+                sn=sn,
+                spn=spn,
+                old_meter_no=old_meter_no,
+                final_readings=final_reading,
+                rem_wattage=rem_wattage,
+                rem_cedis=rem_cedis,
+                make_year=make_year,
+                manufacturere=manufacturere,
+                phase=phase,
+                rating=rating,
+                date_removed=date_removed,
+                reason=reason,
+                foc=foc,
+                gps_address=gps_address,
+            )
+
+
+            if ServiceOrder.objects.filter(spn=spn).exists():
+                ct = ServiceOrder.objects.filter(spn=spn).count()
+                date_removed = ServiceOrder.objects.filter(spn=spn).last().service_date
+                ServiceOrder.objects.filter(spn=spn).update(
+                    is_boxed=True,
+                    box_no=box_no,
+                    final_readings=final_reading
+
+                )
+
+            else:
+                from datetime import datetime, date
+
+                # ... inside your function ...
+                dm = date_removed
+
+
+                if dm:
+                    if isinstance(dm, (datetime, date)):
+                        # It's already a date/datetime object, just ensure it's a date
+                        if isinstance(dm, datetime):
+                            date_removed = dm.date()
                         else:
-                            # If old_meter_no starts with '0', remove the leading '0'
-                            if old_meter_no and str(old_meter_no).startswith('0'):
-                                old_meter_no = str(old_meter_no)[1:]
-                                if ServiceOrder.objects.filter(old_meter_no=old_meter_no).count() == 0:
-                                    old_meter_no = f"0{old_meter_no}"
-                                    if ServiceOrder.objects.filter(old_meter_no=old_meter_no).count() == 0:
-                                        # try adding 0 if no 0
-                                        
-                                        # print(old_meter_no,"HAS NO SERVICE")
-                                        pass
-                                    else:
-                                        
-                                        is_service = True
-                                else:
-                                    # # print(old_meter_no)
-                                    is_service = True
-                                    # update return
-                    
-                    
-
-
-                    if is_service:
-                        phase = row[13]
-                        service = ServiceOrder.objects.get(old_meter_no=old_meter_no)
-                        if '3' in str(service.service_type.name):
-                            return_barcode = "MT067"
-                        else:
-                            return_barcode = 'MT026'
-                        
-                        
-                        product = InventoryMaterial.objects.get(barcode=return_barcode)
-                        
-                        foc_name = service.contractor.company
-
-                        if foc_name not in foc_list:
-                            foc_list[foc_name] = {
-                                "MT067":0,
-                                "MT026":0
-                            }
-                            
-                        
-                        foc_list[foc_name][return_barcode] = foc_list[foc_name][return_barcode] + 1
-                            
-                        
-                        # if foc_name == 'KOSMEN ELECTRICAL WORKS':
-                        if True:
-                            # print(foc_name,box_no,old_meter_no,service.new_meter,phase,service.service_type.name,product.name)
-                            sheet.append([foc_name,box_no,old_meter_no,service.new_meter,phase,service.service_type.name,product.name])
-                        # add to return
+                            date_removed = dm
+                    elif isinstance(dm, str):
+                        # It's a string, so we proceed with parsing
                         try:
-                            MaterialOrderItem.objects.create(
-                                material=product,
-                                quantity=1,
-                                service_order=service,
-                                material_type='rt',
-                                rate=0,
-                                amount=0
-                            )
-                            # # print(product.name,'ADDED')
-                        except Exception as e:
-                            pass
-                            # # print(e)
-                        # # print(old_meter_no,service.new_meter,phase,service.service_type.name,product.name)
-                        
+                            date_removed = datetime.strptime(dm, '%d/%m/%Y %H:%M').date()
+                        except ValueError:
+                            try:
+                                date_removed = datetime.strptime(dm, '%m/%d/%Y').date()
+                            except ValueError:
+                                try:
+                                    date_removed = datetime.strptime(dm, '%m/%d/%Y %H:%M').date()
+                                except ValueError:
+                                    try:
+                                        date_removed = datetime.strptime(dm, '%d/%m/%Y').date()
+                                    except Exception as e:
+                                        date_removed = None
+                    else:
+                        date_removed = None
 
-        # print(foc_list)
+        box.file = excel_file
+        box.save()  # ✅ you forgot this
 
-        book.save(f'static/general/tmp/{no_service_file_name}.xlsx')
-                
-
-    return JsonResponse({"status_code":200,"message":no_service_file_name})
-
+        return JsonResponse({"status_code": 200, "message": "sync_ret_meter"})
 @csrf_exempt
 @login_required
 def add_material_rate(request):
@@ -1052,13 +1117,11 @@ def delete_type_service_rate(request,id):
 
 @login_required
 def invoice(request):
-    # InvoiceHD.objects.all().delete()
-    if InvoiceHD.objects.all().count() == 0:
-        return redirect('new-cont-inv')
+    # FocInvoiceHd.objects.all().delete()
     
-    last_entry = InvoiceHD.objects.all().last().id
+    last_entry = FocInvoiceHd.objects.all().last().entry_no if FocInvoiceHd.objects.all().count() > 0 else None
     page = {
-        'title': 'Contractor Invoice',
+        'title': 'FOC Invoice',
         'page': 'contractor_invoice',
         'page_title': 'Contractor Invoice',
         'page_description': 'Service Type',
@@ -1777,11 +1840,13 @@ def ledger(request):
     }
     context = {
         'page': page,
+        'ledgers':AccountLedger.objects.all().order_by('name')
     }
     return render(request, 'ssml/accounts/ledger.html', context=context)
 @login_required()
 
 def journal_voucher(request):
+    entry_no = JournalVoucherHd.objects.all().last().entry_no if JournalVoucherHd.objects.all().count() > 0 else ""
     page = {
         'title': 'Journal Voucher',
         'page': 'jv',
@@ -1789,6 +1854,7 @@ def journal_voucher(request):
     }
     context = {
         'page': page,
+        "entry_no": entry_no
     }
     return render(request, 'ssml/accounts/jv.html', context=context)
 @login_required()
@@ -1808,3 +1874,104 @@ def journal_voucher_add(request):
         'ledge_options': options
     }
     return render(request, 'ssml/accounts/new_jv.html', context=context)
+
+@csrf_exempt
+@login_required()
+def update_material(request):
+    if request.method == 'POST':
+        import openpyxl
+        excel_file = request.FILES['excel_file']
+        wb = openpyxl.load_workbook(excel_file)
+        sheet = wb.active
+        headers = [cell.value for cell in sheet[1]]
+
+        r_count = 1
+        r_len = sheet.max_row - 1
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+
+            row_dict = dict(zip(headers, row))
+            meter_no = row_dict['MFG Serial Number']
+
+            materials_message = ''
+            print("##" * 5 , meter_no)
+            try:
+                met_service = ServiceOrder.objects.get(new_meter=meter_no)
+
+                for material in InventoryMaterial.objects.all().order_by('name'):
+                    qty = row_dict.get(material.name, 0)
+                    # add material or update
+                    MaterialOrderItem.objects.filter(service_order=met_service, material=material).delete()
+
+                    if qty > 0:
+                        # # print("FISH",material.name,qty)
+                        materials_message += f"{material.name} | {qty}\n"
+
+                        MaterialOrderItem(
+                            service_order=met_service, material=material, quantity=qty, rate=0, amount=0
+                        ).save()
+
+                        print(materials_message)
+                        print()
+
+            except Exception as e:
+                print(e)
+
+            print('##' * 5, meter_no)
+
+
+        return JsonResponse({
+            'status_code':200,
+            'message':"Materials Usage Processed"
+        })
+
+    else:
+        return JsonResponse({'message': 'There is an error'}, status=400)
+
+
+@login_required()
+def foc_compliance(request):
+    page = {
+        'title': 'FOC Compliance',
+        'page': 'jv',
+        'nav': True
+    }
+    context = {
+        'page': page,
+    }
+    return render(request, 'ssml/foc/complance.html', context=context)
+
+
+@csrf_exempt
+def save_foc_compliance(request):
+    if request.method == 'POST':
+
+        try:
+            form = request.POST
+            foc_code = form.get('foc_code')
+            compliance = form.get('compliance')
+            cp = FocComplianceType.objects.get(pk=compliance)
+            foc = Contractor.objects.get(code=foc_code)
+            ref = form.get('ref')
+
+
+
+            FocCompliance.objects.create(
+                foc=foc,
+                c_type=cp,
+                ref=ref,
+                file=request.FILES['file']
+            )
+
+            return JsonResponse({
+                'status_code':200,
+                "message":"Compliane Updated"
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'status_code':505,
+                "message":str(e)
+            })
+
+    else:
+        return JsonResponse({'message': 'There is an error',"status_code":505}, status=400)

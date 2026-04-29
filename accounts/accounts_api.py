@@ -3,11 +3,12 @@ import sys
 from decimal import Decimal
 
 from django.contrib.auth.models import User
+from django.db.models import Model
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from accounts.models import Ledger, PaymentVoucher, VoucherTransaction
+from accounts.models import Ledger, PaymentVoucher, VoucherTransaction, AccountType
 
 
 def _gen_voucher_no():
@@ -31,19 +32,47 @@ def interface(request):
 
         # ─── CREATE / UPDATE ───────────────────────────────────────────
         if method == 'PUT':
-            if module == 'create_ledger':
-                name = data.get('name')
-                description = data.get('description', '')
-                balance = Decimal(str(data.get('balance', 0)))
 
-                ledger = Ledger(
+            if module == 'account_type':
+
+                name = data.get('name')
+                description  = data.get('description')
+                normal_balance = data.get('normal_balance',"DR")
+                created_by = User.objects.get(pk=data.get('mypk'))
+                code = "AT1" if AccountType.objects.all().count() == 0 else f"AT{AccountType.objects.all().last().pk + 1}"
+
+
+                AccountType.objects.create(
+                    code=code,
                     name=name,
                     description=description,
-                    balance=balance,
-                    owner=request.user
+                    normal_balance=normal_balance,
+                    created_by=created_by
+                )
+
+                success_response['message'] = "Account Type created"
+                response = success_response
+
+            elif module == 'ledger':
+
+                name = data.get('name')
+                description = data.get('description', '')
+                owner = User.objects.get(pk=data.get('mypk'))
+                account_type = AccountType.objects.get(code=data.get('account_type'))
+                code = "LE1" if Ledger.objects.all().count() == 0 else f"LE{Ledger.objects.all().last().pk + 1}"
+                sledge = data.get('sledge',name.replace(' ','')).lower()
+
+                ledger = Ledger(
+                    code=code,
+                    name=name,
+                    description=description,
+                    owner=owner,
+                    account_type=account_type,
+                    sledge=sledge
                 )
                 ledger.save()
                 success_response['message'] = f"Ledger '{name}' created successfully"
+                response = success_response
 
             elif module == 'create_voucher':
                 recipient = data.get('recipient')
@@ -153,21 +182,27 @@ def interface(request):
 
         # ─── VIEW ─────────────────────────────────────────────────────
         elif method == 'VIEW':
-            if module == 'get_ledgers':
-                ledgers = Ledger.objects.filter(is_active=True).order_by('-pk')
-                arr = []
-                for l in ledgers:
-                    arr.append({
-                        'pk': l.pk,
-                        'name': l.name,
-                        'description': l.description,
-                        'balance': float(l.balance),
-                        'spent': float(l.spent()),
-                        'available': float(l.available_balance()),
-                        'owner': l.owner.get_full_name() or l.owner.username,
-                        'created_date': str(l.created_date),
-                    })
-                success_response['message'] = arr
+
+            if module == 'account_type':
+                code = data.get('code','*')
+
+                success_response['message'] = [
+                    act.obj() for act in (
+                        AccountType.objects.all().order_by('name') if code == '*'
+                        else AccountType.objects.filter(code=code)
+                    )
+                ]
+
+            elif module == 'ledger':
+
+                code = data.get('code', '*')
+
+                success_response['message'] = [
+                    act.obj() for act in (
+                        Ledger.objects.all().order_by('name') if code == '*'
+                        else Ledger.objects.filter(code=code)
+                    )
+                ]
 
             elif module == 'get_vouchers':
                 vouchers = PaymentVoucher.objects.all().order_by('-pk')
@@ -241,9 +276,9 @@ def interface(request):
         error_type, error_instance, traceback = sys.exc_info()
         tb_path = traceback.tb_frame.f_code.co_filename
         line_number = traceback.tb_lineno
-        response['status_code'] = 500
-        response['message'] = (
+        success_response['status_code'] = 500
+        success_response['message'] = (
             f"Error [{error_type.__name__}] on line {line_number} in {tb_path}: {e}"
         )
 
-    return JsonResponse(response)
+    return JsonResponse(success_response)

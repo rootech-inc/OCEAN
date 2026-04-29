@@ -12,6 +12,11 @@
     <link href="{% static 'assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
     <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
     <link href="{% static 'general/css/colors.css' %}" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="{% static 'accounts/css/dashboard.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <script src="{% static 'blog/js/jquery.min.js' %}"></script>
     <script src="{% static 'blog/js/bootstrap.min.js' %}"></script>
@@ -21,9 +26,13 @@
     <script src="{% static 'general/js/classes/api.js' %}"></script>
     <script src="{% static 'general/js/classes/modal.js' %}"></script>
     <script src="{% static 'general/js/classes/anton.js' %}"></script>
+    <script src="{% static 'general/js/classes/form.js' %}"></script>
+    <script src="{% static 'general/js/classes/accounts.js' %}"></script>
 </head>
 
 <body>
+
+<input type="hidden" id="mypk" value="{{ request.user.pk }}">
 
     <!-- Generic Modal -->
     <div id="g_modal" class="modal fade">
@@ -62,22 +71,66 @@
     </header>
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="sidebar">
+    <aside id="sidebar" class="sidebar bg-dark text-light">
         <ul class="sidebar-nav" id="sidebar-nav">
 
-            <li class="nav-heading">Accounts</li>
+            <li class="nav-heading text-secondary">Accounts</li>
 
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'accounts_ledgers' %}active{% else %}collapsed{% endif %}"
-                    href="{% url 'accounts_ledgers' %}">
-                    <i class="bi bi-journal-text"></i><span>Ledgers</span>
+                <a class="nav-link text-light bg-dark"
+                    href="">
+                    <i class="fas fa-tachometer-alt text-light me-2"></i><span>Dashboard</span>
                 </a>
             </li>
 
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'accounts_vouchers' %}active{% else %}collapsed{% endif %}"
-                    href="{% url 'accounts_vouchers' %}">
-                    <i class="bi bi-receipt"></i><span>Payment Vouchers</span>
+                <a class="nav-link text-light bg-dark collapsed" data-bs-target="#charts-nav" data-bs-toggle="collapse" href="#">
+                    <i class="fas fa-book text-light me-2"></i><span>Chart of Accounts</span><i class="fas fa-chevron-down ms-auto"></i>
+                </a>
+                <ul id="charts-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav" style="list-style: none; padding-left: 35px; margin-top: 5px;">
+                    <li>
+                        <a href="{% url 'accounts_account_types' %}" class="text-light text-decoration-none d-flex align-items-center py-1">
+                            <i class="far fa-circle me-2" style="font-size: 8px;"></i><span>Account Type</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'accounts_ledgers' %}" class="text-light text-decoration-none d-flex align-items-center py-1">
+                            <i class="far fa-circle me-2" style="font-size: 8px;"></i><span>Ledgers</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'accounts_journal_voucher' %}" class="text-light text-decoration-none d-flex align-items-center py-1">
+                            <i class="far fa-circle me-2" style="font-size: 8px;"></i><span>Journal Vouchers</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link text-light bg-dark"
+                    href="">
+                    <i class="fas fa-arrow-up text-light me-2"></i><span>Accounts Receivable</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link text-light bg-dark"
+                    href="">
+                    <i class="fas fa-arrow-down text-light me-2"></i><span>Accounts Payable</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link text-light bg-dark"
+                    href="">
+                    <i class="fas fa-shield-alt text-light me-2"></i><span>VAT Reports</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link text-light bg-dark"
+                    href="">
+                    <i class="fas fa-cog text-light me-2"></i><span>Settings</span>
                 </a>
             </li>
 

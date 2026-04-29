@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from . import views
+from . import views, foc_api
 from . import ssml_api  
 from .api import contractor_api
 from . import location_import_api
@@ -92,5 +92,9 @@ urlpatterns = [
     path('meters/import-shipment-file/',views.import_shipment_file,name='import_shipment_file'),
     path('master/import-locations/', location_import_api.import_locations, name='import_locations'),
     path('ecg/reports/',views.ecg_reports,name='ecg_reports'),
+    path('update-material/',views.update_material,name='ssml_update_material'),
+    path('foc/api/',foc_api.interface,name='foc_api'),
+    path('foc/compliance/',views.foc_compliance,name='foc_compliance'),
+    path('foc/compliance/save/',views.save_foc_compliance,name='save_foc_compliance'),
 
 ]

@@ -84,111 +84,168 @@
     }
 </style>
 
-<div class="pagetitle mb-4">
-    <h1>Contractor Invoices</h1>
-    <nav>
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'ssml' %}">Home</a></li>
-            <li class="breadcrumb-item active">Invoice Viewer</li>
-        </ol>
-    </nav>
-</div>
+<div class="card w-100 h-100">
 
-<div class="glass-card mb-4">
-    <div class="premium-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex gap-2 nav-btn-group">
-                <a href="{% url 'new-cont-inv' %}" class="btn btn-premium btn-premium-info ms-2">
-                    <i class="bi bi-plus-circle"></i> NEW
-                </a>
-                <button id="prev_btn" class="btn btn-premium btn-premium-info">
-                    <i class="bi bi-chevron-left"></i>
+    <input type="hidden" id="next">
+    <input type="hidden" id="previous">
+    <div class="card-header">
+        <div class="w-100 d-flex flex-wrap justify-content-between">
+            <div class="w-30 d-flex flex-wrap">
+                <button id="new" class="btn btn-sm btn-premium-primary ms-2">
+                    <i class="fa fa-plus"></i>
                 </button>
-                <button id="next_btn" class="btn btn-premium btn-premium-info">
-                    <i class="bi bi-chevron-right"></i>
+                <button class="btn btn-sm btn-premium-warning ms-2">
+                    <i class="fa fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-premium-dark ms-2">
+                    <i class="fa fa-trash"></i>
+                </button>
+                <button id="prev_btn" class="btn btn-sm btn-premium-info ms-2">
+                    <i class="fa fa-fast-backward"></i>
+                </button>
+                <button id="next_btn" class="btn btn-sm btn-premium-info ms-2">
+                    <i class="fa fa-fast-forward"></i>
                 </button>
             </div>
-            <div class="d-flex gap-2">
-                <button id="edit_btn" class="btn btn-premium btn-premium-warning">
-                    <i class="bi bi-pencil-square"></i> EDIT
+            <div class="w-30"></div>
+            <div class="w-30 d-flex flex-wrap justify-content-end">
+                <button class="btn btn-premium-info btn-inf ms-2">
+                    <i class="fa fa-print"></i>
                 </button>
-                <button id="print" class="btn btn-premium btn-premium-dark">
-                    <i class="bi bi-printer"></i> PRINT
+                <button class="btn btn-premium-success btn-sm ms-2">
+                    <i class="fa fa-check"></i>
                 </button>
-                <button id="approve" class="btn btn-premium btn-premium-primary">
-                    <i class="bi bi-check2-circle"></i> APPROVE
-                </button>
-                <button id="post" class="btn btn-premium btn-premium-success">
-                    <i class="bi bi-send-check"></i> POST
+                <button class="btn btn-premium-warning btn-sm ms-2">
+                    <i class="fa fa-check-square"></i>
                 </button>
             </div>
         </div>
     </div>
-    <div class="card-body p-4">
-        <div class="row g-3">
-            <div class="col-md-3">
-                <div class="form-group mb-2">
-                    <label class="form-label fw-bold text-muted small text-uppercase">Entry No</label>
-                    <input type="text" disabled id="entry_no" class="form-control form-control-premium bg-light">
+
+    <div class="card-body overflow-hidden">
+        <div class="container py-2 h-100 overflow-auto">
+            <div class="row">
+
+                <!-- HEADER-->
+                <div class="col-sm-3">
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Invoice Date</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="date">
+                    </div>
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Invoice No.</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="entry_no">
+                    </div>
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Remarks</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="remarks">
+                    </div>
                 </div>
-                <input type="hidden" id="id">
-                <div class="form-group mb-2">
-                    <label class="form-label fw-bold text-muted small text-uppercase">Date</label>
-                    <input disabled type="date" id="entry_date" class="form-control form-control-premium bg-light">
+
+                <div class="col-sm-3">
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Contractor</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="foc">
+                    </div>
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Phone</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="phone">
+                    </div>
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Email Address</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="email">
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group mb-2">
-                    <label class="form-label fw-bold text-muted small text-uppercase">Contractor</label>
-                    <input type="text" disabled id="contractor" class="form-control form-control-premium bg-light">
+
+                <div class="col-sm-3">
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Gross Amt.</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="gross">
+                    </div>
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Tax Amt.</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="tax">
+                    </div>
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Net Amt.</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="net">
+                    </div>
                 </div>
-                <div class="form-group mb-2">
-                    <label class="form-label fw-bold text-muted small text-uppercase">Total Amount</label>
-                    <input disabled type="text" id="total_amount"
-                        class="form-control form-control-premium bg-light font-monospace">
+
+                <div class="col-sm-3">
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Validated</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="is_valid">
+                        <div class="input-group-append w-20">
+                            <button title="Validate Document" class="btn btn-info w-100 h-100" id="validate" style="border-radius: 0 !important">
+                                <i class="fa fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Accepted</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="is_accepted">
+                        <div class="input-group-append w-20">
+                            <button title="Document Acceptance" class="btn btn-info w-100 h-100" id="accepted" disabled style="border-radius: 0 !important">
+                                <i class="fa fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-group mb-2">
+                        <div class="input-group-append rounded-0 w-40">
+                            <span class="input-group-text rounded-0">Posted</span>
+                        </div>
+                        <input type="text" class="form-control rounded-0" readonly id="is_posted">
+                        <div class="input-group-append w-20">
+                            <button title="Post Document" class="btn btn-info w-100 h-100" id="post" style="border-radius: 0 !important">
+                                <i class="fa fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group mb-2">
-                    <label class="form-label fw-bold text-muted small text-uppercase">Remarks</label>
-                    <input disabled type="text" id="remarks" class="form-control form-control-premium bg-light">
+
+                <!-- TRANSACTIONS -->
+                <div class="col-sm-12">
+                    <div class="card">
+                        <div class="card-body p-2">
+                            <table class="table table-bordered table-hover">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>SN</th><th>ITEM</th><th>QUANTITY</th><th>RATE</th><th>AMOUNT</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice_transactions"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group mb-2">
-                    <label class="form-label fw-bold text-muted small text-uppercase">Status</label>
-                    <input disabled type="text" id="status"
-                        class="form-control form-control-premium bg-light fw-bold text-primary">
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group mb-2">
-                    <label class="form-label fw-bold text-muted small text-uppercase">Created By</label>
-                    <input disabled type="text" id="created_by" class="form-control form-control-premium bg-light">
-                </div>
-                <div class="mt-4 pt-1">
-                    <input type="hidden" id="next">
-                    <input type="hidden" id="previous">
-                </div>
+
             </div>
         </div>
     </div>
-</div>
 
-<div class="glass-card">
-    <div class="p-3" style="background: #f8f9fa; border-bottom: 1px solid #eee;">
-        <h6 class="mb-0 fw-bold"><i class="bi bi-list-task me-2"></i>LINE TRANSACTIONS</h6>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead class="bg-dark text-white">
-                <tr>
-                    <th class="ps-4">SERVICE</th>
-                    <th>METER</th>
-                    <th class="text-end pe-4">AMOUNT</th>
-                </tr>
-            </thead>
-            <tbody id="god"></tbody>
-        </table>
-    </div>
 </div>
 
 <script>
@@ -196,6 +253,10 @@
 
     $(document).ready(function () {
         ssml.viewInvoice(last_entry)
+
+        $('#new').click(function () {
+            ssml.newFocInvoiceScreen()
+        })
 
         $('#prev_btn').click(function () {
             ssml.viewInvoice($('#previous').val())
@@ -209,7 +270,7 @@
         })
 
         $('#post').click(function () {
-            ssml.postInvoice($('#id').val())
+            ssml.postInvoice()
         })
 
         $('#print').click(function () {
@@ -223,6 +284,10 @@
             } else {
                 kasa.error("No invoice selected to edit");
             }
+        })
+
+        $('#validate').click(function () {
+            ssml.validateInvoice()
         })
     })
 </script>

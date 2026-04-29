@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from iclock.models import Area, RawAttendance
 from iclock.models import AttendanceLog,Employee
@@ -697,8 +698,8 @@ def interface(request):
 
                     print(f"Processed Employee: {employee.name}")
 
-
-                file = f"static/general/tmp/month_as_of_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
+                file_name = uuid.uuid4().hex
+                file = f"static/general/tmp/{file_name}month_as_of_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
 
                 book.save(file)
 
