@@ -298,7 +298,7 @@
 
         <div class="bg-dark rounded-3 p-3 mb-4 text-light border border-secondary">
             <div class="d-flex gap-2 mb-2">
-                <span class="fw-bold">{{ video.views|default:"0" }} views</span>
+                <span class="fw-bold">{{ video.organic_counts|default:"0" }} views</span>
                 <span class="fw-bold">{{ video.uploaded_at|date:"M d, Y" }}</span>
             </div>
             <p class="mb-0 text-white-50">{{ video.descr }}</p>

@@ -53,6 +53,9 @@ class Videos(models.Model):
 
     views_count = models.IntegerField(default=0)
 
+    def organic_counts(self):
+        return Views.objects.filter(video=self).count()
+
 
 class Comments(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
