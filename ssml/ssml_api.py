@@ -199,7 +199,7 @@ def interface(request):
                         sts = service.new_meter
                         print(sts)
                         spn=service.spn
-                        phase = service.phase
+                        phase = service.meter_phase()
 
                         if not FocInvoiceAssets.objects.filter(sts=sts).exists():
                             FocInvoiceAssets.objects.create(

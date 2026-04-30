@@ -2701,7 +2701,7 @@ class FocInvoiceHd(models.Model):
         pdf.set_text_color(0, 0, 0)
         pdf.cell(95, 7, 'CONTRACTOR DETAILS (PAYABLE TO):', 0, 1, 'L')
         pdf.set_font('Arial', 'B', 11)
-        pdf.cell(95, 6, str(self.foc.company).upper(), 0, 1, 'L')
+        pdf.cell(95, 6, str(self.foc.company[:30]).upper(), 0, 1, 'L')
         pdf.set_font('Arial', '', 10)
         pdf.cell(95, 5, f"Location: {self.foc.city or 'N/A'}, {self.foc.region or ''}", 0, 1, 'L')
         pdf.cell(95, 5, f"Phone: {self.foc.phone}", 0, 1, 'L')
@@ -2823,7 +2823,43 @@ class FocInvoiceHd(models.Model):
         pdf.set_text_color(150, 150, 150)
         pdf.cell(0, 10, 'This is a computer generated invoice and does not require a physical signature.', 0, 1, 'C')
 
+        # Asset Installation Details Page
+        assets = FocInvoiceAssets.objects.filter(invoice=self)
+        if assets.exists():
+            pdf.add_page()
+            
+            # Asset Page Header
+            pdf.set_font('Arial', 'B', 14)
+            pdf.set_text_color(*primary_color)
+            pdf.cell(0, 10, 'ASSET INSTALLATION DETAILS', 0, 1, 'C')
+            pdf.set_draw_color(*primary_color)
+            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            pdf.ln(8)
+
+            # Assets Table Header
+            pdf.set_fill_color(*primary_color)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font('Arial', 'B', 9)
+            
+            # Widths: NO:10, STS:40, SPN:40, INSTALLATION:70, PHASE:30 (Total 190)
+            pdf.cell(10, 10, 'NO', 1, 0, 'C', fill=True)
+            pdf.cell(40, 10, 'STS', 1, 0, 'C', fill=True)
+            pdf.cell(40, 10, 'SPN', 1, 0, 'C', fill=True)
+            pdf.cell(70, 10, 'INSTALLATION', 1, 0, 'C', fill=True)
+            pdf.cell(30, 10, 'PHASE', 1, 1, 'C', fill=True)
+
+            pdf.set_font('Arial', '', 8)
+            pdf.set_text_color(0, 0, 0)
+            
+            for idx, asset in enumerate(assets, 1):
+                pdf.cell(10, 8, str(idx), 1, 0, 'C')
+                pdf.cell(40, 8, f" {asset.sts}", 1, 0, 'L')
+                pdf.cell(40, 8, f" {asset.spn or 'N/A'}", 1, 0, 'L')
+                pdf.cell(70, 8, f" {asset.installation or 'N/A'}", 1, 0, 'L')
+                pdf.cell(30, 8, f" {asset.phase or 'N/A'}", 1, 1, 'C')
+
         # Save file
+
         unique_name = f"{self.foc.company.replace(' ','_').lower()}invoice_{self.entry_no}_{uuid.uuid4().hex[:6]}.pdf"
         directory = os.path.join('static', 'tmp')
         if not os.path.exists(directory):
@@ -2860,6 +2896,9 @@ class FocInvoiceAssets(models.Model):
     spn = models.CharField(max_length=255, null=True, blank=True)
     installation = models.CharField(max_length=255, null=True, blank=True)
     phase = models.CharField(max_length=255, null=True, blank=True)
+
+    def update_phase(self):
+        self.phase = ServiceOrder.objects.filter(new_meter=self.sts).last().meter_phase() if ServiceOrder.objects.filter(new_meter=self.sts).exists() else "NOT SET"
 
     def obj(self):
         return {
