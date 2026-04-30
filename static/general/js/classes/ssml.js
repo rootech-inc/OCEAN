@@ -731,10 +731,10 @@ class SSML {
 
                 let ledop = ""
                 await accountant.getLedger('*').then(response => {
-                    if(anton.IsRequest(response)){
+                    if (anton.IsRequest(response)) {
                         response.message.map(op => {
                             console.table(op)
-                            if(op.account_type.normal_balance === 'DR'){
+                            if (op.account_type.normal_balance === 'DR') {
                                 ledop += `<option value="${op.pk}">${op.name}</option>`
                             }
 
@@ -744,10 +744,11 @@ class SSML {
                         console.error(response)
                         return
                     }
-                }).catch(error =>{
+                }).catch(error => {
                     kasa.error(response.message)
                     console.error(error)
-                    ;return})
+                        ; return
+                })
 
                 let form = `
                     <div class='row'>
@@ -791,7 +792,7 @@ class SSML {
 
                 $('#update_contractor').click(async function () {
                     let ids = [
-                        'owner_phone','owner_email','business_phone_number','business_email'
+                        'owner_phone', 'owner_email', 'business_phone_number', 'business_email'
                     ]
                     if (anton.validateInputs(ids)) {
                         let payload = {
@@ -2576,15 +2577,15 @@ class SSML {
         }).catch(error => { kasa.error(error); loader.hide() })
     }
 
-    async getJobs(doc, id, filter,purpose='*',inv_date='01-01-2000') {
+    async getJobs(doc, id, filter, purpose = '*', inv_date = '01-01-2000') {
         let payload = {
             module: 'service_order',
             data: {
                 document: doc,
                 contractor_id: id,
                 filter: filter,
-                purpose:purpose,
-                inv_date:inv_date
+                purpose: purpose,
+                inv_date: inv_date
             }
         }
 
@@ -3526,7 +3527,7 @@ class SSML {
                           <td>${tran.amount}</td>
                     </tr>`
 
-                    sn ++
+                    sn++
                 })
                 $('#invoice_transactions').html(tr)
 
@@ -3545,21 +3546,21 @@ class SSML {
                 }
 
                 // if not validated
-                if(data.is_accepted){
-                    $('#post').attr('disabled',false)
+                if (data.is_accepted) {
+                    $('#post').attr('disabled', false)
                 } else {
-                    $('#post').attr('disabled',true)
+                    $('#post').attr('disabled', true)
                 }
 
-                $('#validate').attr('disabled',false)
-                if(data.is_valid){
-                    $('#validate').attr('disabled',true)
+                $('#validate').attr('disabled', false)
+                if (data.is_valid) {
+                    $('#validate').attr('disabled', true)
                 }
 
-                if(data.is_posted){
-                    $('#post').attr('disabled',true)
+                if (data.is_posted) {
+                    $('#post').attr('disabled', true)
                 } else {
-                    $('#post').attr('disabled',false)
+                    $('#post').attr('disabled', false)
                 }
 
                 $('#print').click(function () {
@@ -3581,8 +3582,8 @@ class SSML {
     async approveInvoice(id) {
         if (confirm("Are You Sure")) {
             let form = '';
-            form += fom.number('foc_debt','',true)
-            form += fom.text('foc_debt_reason','Debt Reason',true)
+            form += fom.number('foc_debt', '', true)
+            form += fom.text('foc_debt_reason', 'Debt Reason', true)
             amodal.setTitleText('Approve Invoice')
             amodal.setBodyHtml(form)
             amodal.setFooterHtml(`<button class='btn btn-success' id='approve_invoice'>Approve</button>`)
@@ -3591,7 +3592,7 @@ class SSML {
             $('#approve_invoice').click(async function () {
                 loader.show()
                 let ids = ['foc_debt', 'foc_debt_reason', 'mypk']
-                if(anton.validateInputs(ids)){
+                if (anton.validateInputs(ids)) {
                     let payload = {
                         module: 'approve_invoice',
                         data: anton.Inputs(ids)
@@ -3618,7 +3619,7 @@ class SSML {
         }
     }
 
-    async postInvoice(entry_no=$('#entry_no').val()) {
+    async postInvoice(entry_no = $('#entry_no').val()) {
         if (confirm("Are You Sure")) {
             loader.show()
             await api.v2('PATCH', { module: 'post_foc_invoice', data: { entry_no: entry_no, mypk: $('#mypk').val() } }, '/ssml/api/').then(res => {
@@ -5070,7 +5071,7 @@ class SSML {
         });
 
         $('#save_new_ledger').click(async function () {
-            let ids = ['foc', 'ledger_name', 'ledger_desc', 'mypk','opening_balance']
+            let ids = ['foc', 'ledger_name', 'ledger_desc', 'mypk', 'opening_balance']
             if (anton.validateInputs(ids)) {
                 let payload = {
                     module: 'ledger',
@@ -5111,37 +5112,37 @@ class SSML {
         let loc_opts = []
 
         await locations.then(response => {
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 response.message.map(loc => {
                     loc_opts.push({
-                        val:loc.loc_id,
-                        desc:loc.name
+                        val: loc.loc_id,
+                        desc: loc.name
                     })
                 })
             } else {
                 kasa.response(response)
                 return
             }
-        }).catch(error => {error; return})
+        }).catch(error => { error; return })
 
         let opts = []
         await focs.then(response => {
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 response.message.map(foc => {
                     opts.push({
-                        val:foc.code,
-                        desc:foc.company
+                        val: foc.code,
+                        desc: foc.company
                     })
                 })
             } else {
                 kasa.response(response)
             }
-        }).catch(error => {kasa.error(error)})
+        }).catch(error => { kasa.error(error) })
 
-        let invoice_date = fom.date('new_invoice_date','Last date of the month invoiced for',true);
-        let foc = fom.selectv2('new_foc_name',opts,'Contractor Code',true);
-        let loc = fom.selectv2('new_loc_id',loc_opts,'Contractor Code',true);
-        let remarks = fom.textarea('new_remarks',2,true,'');
+        let invoice_date = fom.date('new_invoice_date', 'Last date of the month invoiced for', true);
+        let foc = fom.selectv2('new_foc_name', opts, 'Contractor Code', true);
+        let loc = fom.selectv2('new_loc_id', loc_opts, 'Contractor Code', true);
+        let remarks = fom.textarea('new_remarks', 2, true, '');
 
         let form_header = `
             <div class="container">
@@ -5190,7 +5191,7 @@ class SSML {
 
 
 
-        $('.new_line').click(function (){
+        $('.new_line').click(function () {
             $('#foc_inv_items').append(`
                 <tr>
                                 <td><input type="text" class="form-control name"></td>
@@ -5203,14 +5204,14 @@ class SSML {
 
         // Delegated — works for dynamically added rows, never stacks
         $(document).on('click', '.delete_foc_inv_line', function () {
-            if(confirm("Are you sure?")){
+            if (confirm("Are you sure?")) {
                 $(this).closest('tr').remove();
             }
         });
 
-        $('.save_foc_invoice').click(async function(){
-            let header_ids = ['mypk','new_invoice_date','new_foc_name','new_remarks','new_loc_id'];
-            if(anton.validateInputs(header_ids)){
+        $('.save_foc_invoice').click(async function () {
+            let header_ids = ['mypk', 'new_invoice_date', 'new_foc_name', 'new_remarks', 'new_loc_id'];
+            if (anton.validateInputs(header_ids)) {
 
                 // Target only data rows, not header rows
                 const $rows = $('#foc_inv_items tr');
@@ -5225,9 +5226,9 @@ class SSML {
                 $rows.each(function () {
                     const $row = $(this);
 
-                    const item     = $row.find('.name').val().trim();
+                    const item = $row.find('.name').val().trim();
                     const quantity = parseFloat($row.find('.quantity').val());
-                    const rate     = parseFloat($row.find('.rate').val());
+                    const rate = parseFloat($row.find('.rate').val());
 
                     // Row-level validation
                     if (!item || isNaN(quantity) || isNaN(rate)) {
@@ -5243,31 +5244,31 @@ class SSML {
                     });
                 });
 
-                if (!trans){
+                if (!trans) {
                     kasa.error("No Transactions")
                     return
                 } // aborted due to invalid row
 
                 let payload = {
-                    module:'save_invoice',
-                    data:{
-                        header:anton.Inputs(header_ids),
-                        transactions:trans
+                    module: 'save_invoice',
+                    data: {
+                        header: anton.Inputs(header_ids),
+                        transactions: trans
                     }
                 }
 
                 console.table(payload)
 
                 loader.show()
-                await api.v2('PUT',payload,'/ssml/api/').then(response => {
-                    if(anton.IsRequest(response)){
-                        kasa.confirm("Invoice Created",1,'here')
+                await api.v2('PUT', payload, '/ssml/api/').then(response => {
+                    if (anton.IsRequest(response)) {
+                        kasa.confirm("Invoice Created", 1, 'here')
                         loader.hide()
                     } else {
                         kasa.response(response)
                         loader.hide()
                     }
-                }).catch(error => {kasa.error(error);loader.hide()})
+                }).catch(error => { kasa.error(error); loader.hide() })
 
             }
         })
@@ -5275,20 +5276,20 @@ class SSML {
     }
 
     async validateInvoice() {
-        if(confirm("Are You Sure?")){
+        if (confirm("Are You Sure?")) {
             loader.show()
-            let ids = ['entry_no','mypk'];
-            if(anton.validateInputs(ids)){
+            let ids = ['entry_no', 'mypk'];
+            if (anton.validateInputs(ids)) {
                 let payload = {
-                    module:'validate_foc_invoice',
-                    data:anton.Inputs(ids)
+                    module: 'validate_foc_invoice',
+                    data: anton.Inputs(ids)
                 }
 
-                await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+                await api.v2('PATCH', payload, '/ssml/api/').then(response => {
                     kasa.response(response);
                     ssml.viewInvoice(payload['data']['entry_no'])
                     loader.hide()
-                }).catch(error => {kasa.error(error);loader.hide()})
+                }).catch(error => { kasa.error(error); loader.hide() })
 
             } else {
                 kasa.error("Invalid Fields")
@@ -5298,19 +5299,19 @@ class SSML {
         }
     }
 
-    async getJv(entry_no){
-        return api.call('VIEW',{
-            module:'jv',
-            data:{
-                entry_no:entry_no
+    async getJv(entry_no) {
+        return api.call('VIEW', {
+            module: 'jv',
+            data: {
+                entry_no: entry_no
             }
-        },'/ssml/api/')
+        }, '/ssml/api/')
     }
 
     async viewJv(entry_no) {
         loader.show()
         await ssml.getJv(entry_no).then(response => {
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 let data = response.message[0];
                 anton.setValues(data)
                 console.table(data)
@@ -5332,12 +5333,12 @@ class SSML {
                 kasa.error(response)
                 loader.hide()
             }
-        }).catch(error => {kasa.error(error);loader.hide()})
+        }).catch(error => { kasa.error(error); loader.hide() })
     }
 
     async loadFocComplianceType() {
         await this.getFocComplianceType().then(response => {
-            if(anton.IsRequest(response)){
+            if (anton.IsRequest(response)) {
                 let data = response.message;
                 let tr = "";
                 data.map(ct => {
@@ -5350,17 +5351,177 @@ class SSML {
             } else {
                 kasa.response(response)
             }
-        }).catch(error => {kasa.error(error)})
+        }).catch(error => { kasa.error(error) })
     }
 
     async getFocComplianceType() {
-        return api.call('VIEW',{
-            module:'foc_compliance_type',
-            data:{}
-        },'/ssml/api/')
+        return api.call('VIEW', {
+            module: 'foc_compliance_type',
+            data: {}
+        }, '/ssml/api/')
     }
 
 
+    focMonthInvoiceSummary() {
+        let form = fom.date('target_date', 'Any date in the target month and year', true)
+        amodal.setBodyHtml(form)
+        amodal.setTitleText("Retrieve Month Invoice")
+        amodal.setFooterHtml(`<button id="ret_focims" class="btn btn-success btn-sm">RETRIEVE</button>`)
+        amodal.show()
+
+        $('#ret_focims').click(async function () {
+            let ids = ['target_date']
+            await api.v2('VIEW', {
+                module: 'foc_mis',
+                data: anton.Inputs(ids)
+            }, '/ssml/api/').then(response => {
+                if (anton.IsRequest(response)) {
+                    let data = response;
+                    let gross, service_charge, taxable, taxamt, net, details, bundle
+
+                    details = data.message;
+                    gross = data.gross_amount
+                    service_charge = data.service_charge
+                    taxable = data.taxable_amount
+                    taxamt = data.tax_amount
+                    net = data.net_amount
+                    bundle = data.bundle
+
+                    let tr = ``;
+                    details.map(rec => {
+                        tr += `
+                            <tr>
+                                <td class="font-weight-bold text-dark">${rec.foc}</td>
+                                <td class="text-right">${rec.gross}</td>
+                                <td class="text-right">${rec.service_charge}</td>
+                                <td class="text-right">${rec.taxable}</td>
+                                <td class="text-right">${rec.tax}</td>
+                                <td class="text-right font-weight-bold text-primary">${rec.net}</td>
+                                <td class="text-center">
+                                    <a href="/static/tmp/${rec.invoice}" target="_blank" class="btn btn-sm btn-outline-info rounded-circle shadow-sm">
+                                        <i class="fa fa-download"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        `
+                    })
+
+                    let ht = `
+                        <style>
+                            .dash-label { font-size: 0.65rem; letter-spacing: 0.5px; opacity: 0.8; }
+                            .dash-value { font-size: 1rem; }
+                            @media (min-width: 768px) {
+                                .dash-label { font-size: 0.75rem; }
+                                .dash-value { font-size: 1.25rem; }
+                            }
+                            .invoice-card { transition: transform 0.2s; border: 1px solid #e3e6f0 !important; }
+                            .invoice-card:hover { transform: translateY(-2px); }
+                        </style>
+                        <div class="container-fluid py-2">
+                            <div class="row justify-content-center no-gutters">
+                            
+                                <div class="col-6 col-sm-4 col-md-4 col-lg mb-3 px-1">
+                                    <div class="card invoice-card shadow-sm h-100">
+                                        <div class="card-body p-2 p-md-3 text-center">
+                                            <div class="text-muted dash-label text-uppercase font-weight-bold mb-1">Gross Amount</div>
+                                            <div class="dash-value mb-0 font-weight-bold text-dark">${gross}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6 col-sm-4 col-md-4 col-lg mb-3 px-1">
+                                    <div class="card invoice-card shadow-sm h-100">
+                                        <div class="card-body p-2 p-md-3 text-center">
+                                            <div class="text-muted dash-label text-uppercase font-weight-bold mb-1">Admin Fee</div>
+                                            <div class="dash-value mb-0 font-weight-bold text-info">${service_charge}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6 col-sm-4 col-md-4 col-lg mb-3 px-1">
+                                    <div class="card invoice-card shadow-sm h-100">
+                                        <div class="card-body p-2 p-md-3 text-center">
+                                            <div class="text-muted dash-label text-uppercase font-weight-bold mb-1">Taxable Amount</div>
+                                            <div class="dash-value mb-0 font-weight-bold text-secondary">${taxable}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6 col-sm-4 col-md-4 col-lg mb-3 px-1">
+                                    <div class="card invoice-card shadow-sm h-100 border-left-danger">
+                                        <div class="card-body p-2 p-md-3 text-center">
+                                            <div class="text-muted dash-label text-uppercase font-weight-bold mb-1">Tax Amount</div>
+                                            <div class="dash-value mb-0 font-weight-bold text-danger">${taxamt}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6 col-sm-4 col-md-4 col-lg mb-3 px-1">
+                                    <div class="card invoice-card shadow-sm h-100 bg-info text-white border-info">
+                                        <div class="card-body p-2 p-md-3 text-center">
+                                            <div class="text-white-50 dash-label text-uppercase font-weight-bold mb-1">Net Amount</div>
+                                            <div class="dash-value mb-0 font-weight-bold">${net}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                
+                                <div class="col-sm-12 mt-3">
+                                    <div class="card border shadow-sm rounded-lg overflow-hidden">
+                                        <div class="card-header bg-white py-3 border-bottom-0">
+                                            <h6 class="m-0 font-weight-bold text-primary">Transaction Details</h6>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover table-striped mb-0">
+                                                    <thead class="bg-light text-muted small text-uppercase font-weight-bold">
+                                                        <tr>
+                                                            <th class="border-top-0">Contractor</th>
+                                                            <th class="border-top-0 text-right">Gross</th>
+                                                            <th class="border-top-0 text-right">Admin Fee</th>
+                                                            <th class="border-top-0 text-right">Taxable</th>
+                                                            <th class="border-top-0 text-right">Tax Amount</th>
+                                                            <th class="border-top-0 text-right">Net Amount</th>
+                                                            <th class="border-top-0 text-center">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="text-dark" style="font-size: 0.85rem;">
+                                                        ${tr}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    `
+
+
+                    let foot = `
+                        <a href="/${data.bundle}" target="_blank" id="print_sum" class="btn btn-outline-info px-4 shadow-sm font-weight-bold">
+                            <i class="fa fa-file-archive-o mr-1"></i> ZIP
+                        </a>
+                        <a href="/${data.pdf}" target="_blank" id="print_sum" class="btn btn-outline-info px-4 shadow-sm font-weight-bold">
+                            <i class="fa fa-file-archive-o mr-1"></i> PDF
+                        </a>
+                    `
+
+                    amodal.setBodyHtml(ht)
+                    amodal.setFooterHtml(foot)
+                    amodal.setTitleText("invoice Result")
+                    amodal.setSize('L')
+
+
+
+
+                } else {
+                    kasa.response(response)
+                }
+            }).catch(error => { kasa.error(error) })
+        })
+    }
 }
 
 const ssml = new SSML();

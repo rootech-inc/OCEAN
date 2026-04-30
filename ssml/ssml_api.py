@@ -1,3 +1,4 @@
+import os
 from calendar import monthrange
 
 import now
@@ -7,6 +8,7 @@ from accounts.models import Ledger, JVHeader, SubLedger, JVTransaction
 from admin_panel.anton import shorten_url
 from admin_panel.models import UserAddOns
 from crm.views import contacts
+from ocean.settings import COMPANY_DETAILS
 from ssml.helper import generate_entry_entry
 from ssml.models import ServiceOrderType, InstallationTypePhaseRate, AccountLedger, \
     JournalVoucherHd, JournalVoucherTransactions, FocInvoiceHd, FocInvoiceTransactions, FocInvoiceAssets, \
@@ -1860,6 +1862,223 @@ def interface(request):
                     else:
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
+
+                elif module == 'foc_mis':
+                    from datetime import datetime
+                    import calendar
+                    from django.db.models import Sum
+                    from fpdf import FPDF
+                    import uuid
+                    import zipfile
+                    import os
+
+                    target_date_str = data.get('target_date')
+                    target_date = datetime.strptime(target_date_str, '%Y-%m-%d').date()
+
+                    # First day of the month
+                    start_date = target_date.replace(day=1)
+
+                    # Last day of the month
+                    last_day = calendar.monthrange(target_date.year, target_date.month)[1]
+                    end_date = target_date.replace(day=last_day)
+
+                    # get all invoices range
+                    fq = FocInvoiceHd.objects.filter(invoice_date__gte=start_date, invoice_date__lte=end_date).order_by('invoice_date')
+                    
+                    gross_total = fq.aggregate(Sum('gross_amount'))['gross_amount__sum'] or 0
+                    service_total = fq.aggregate(Sum('service_charge'))['service_charge__sum'] or 0
+                    taxable_total = fq.aggregate(Sum('taxable_amount'))['taxable_amount__sum'] or 0
+                    tax_total = fq.aggregate(Sum('tax_amount'))['tax_amount__sum'] or 0
+                    net_total = fq.aggregate(Sum('net_amount'))['net_amount__sum'] or 0
+
+                    success_response['message'] = [fi.obj() for fi in fq]
+                    success_response['gross_amount'] = gross_total
+                    success_response['service_charge'] = service_total
+                    success_response['taxable_amount'] = taxable_total
+                    success_response['tax_amount'] = tax_total
+                    success_response['net_amount'] = net_total
+
+                    # 1. Generate ZIP of all individual invoices
+                    zip_file_name = f"{uuid.uuid4().hex[:6]}_invoices.zip"
+                    zip_file_path = f"static/tmp/{zip_file_name}"
+                    
+                    with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                        for finv in fq:
+                            invoice_file_name = finv.obj().get('invoice')
+                            if invoice_file_name:
+                                invoice_full_path = f"static/tmp/{invoice_file_name}"
+                                if os.path.exists(invoice_full_path):
+                                    zf.write(invoice_full_path, arcname=invoice_file_name)
+
+                    success_response['bundle'] = zip_file_path
+
+                    # 2. Generate Professional Summary PDF
+                    class MISPDF(FPDF):
+                        def header(self):
+                            logo_path = 'static/general/logo.png'
+                            if os.path.exists(logo_path):
+                                self.image(logo_path, 10, 10, 35)
+                            
+                            self.set_font('Arial', 'B', 16)
+                            self.set_text_color(44, 62, 80)
+                            self.set_xy(50, 10)
+                            self.cell(0, 10, COMPANY_DETAILS.get('name'), 0, 1, 'L')
+                            
+                            self.set_font('Arial', '', 9)
+                            self.set_text_color(100, 100, 100)
+                            self.set_x(50)
+                            self.cell(0, 4, COMPANY_DETAILS.get('address'), 0, 1, 'L')
+                            self.set_x(50)
+                            self.cell(0, 4, f"{COMPANY_DETAILS.get('email')} | {COMPANY_DETAILS.get('phone')}" , 0, 1, 'L')
+                            
+                            self.ln(10)
+                            self.set_draw_color(44, 62, 80)
+                            self.line(10, 35, 200, 35)
+                            self.ln(5)
+
+                        def footer(self):
+                            self.set_y(-15)
+                            self.set_font('Arial', 'I', 8)
+                            self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
+                    pdf = MISPDF()
+                    pdf.set_auto_page_break(auto=True, margin=15)
+                    pdf.add_page()
+
+                    # Report Title & Period
+                    pdf.set_font('Arial', 'B', 14)
+                    pdf.set_text_color(0, 0, 0)
+                    pdf.cell(0, 10, 'MONTHLY INVOICE SUMMARY REPORT', 0, 1, 'C')
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(0, 5, f"Period: {start_date.strftime('%d %b, %Y')} to {end_date.strftime('%d %b, %Y')}", 0, 1, 'C')
+                    pdf.ln(10)
+
+                    # Summary Metrics (Styled like the Dashboard Cards)
+                    pdf.set_fill_color(248, 249, 250)
+                    pdf.set_draw_color(227, 230, 240)
+                    
+                    card_w = 37
+                    gap = 1.25
+                    curr_x = 10
+                    curr_y = pdf.get_y()
+
+                    metrics = [
+                        ("Gross Amount", gross_total, (0,0,0)),
+                        ("Admin Fee", service_total, (23, 162, 184)),
+                        ("Taxable Amt", taxable_total, (108, 117, 125)),
+                        ("Tax Amount", tax_total, (220, 53, 69)),
+                        ("Net Amount", net_total, (40, 167, 69))
+                    ]
+
+                    for title, val, color in metrics:
+                        pdf.rect(curr_x, curr_y, card_w, 22, 'FD')
+                        pdf.set_xy(curr_x, curr_y + 3)
+                        pdf.set_font('Arial', 'B', 7)
+                        pdf.set_text_color(100, 100, 100)
+                        pdf.cell(card_w, 5, title.upper(), 0, 1, 'C')
+                        
+                        pdf.set_xy(curr_x, curr_y + 10)
+                        pdf.set_font('Arial', 'B', 10)
+                        pdf.set_text_color(*color)
+                        pdf.cell(card_w, 7, f"{val:,.2f}", 0, 1, 'C')
+                        curr_x += card_w + gap
+
+                    pdf.set_xy(10, curr_y + 30)
+                    pdf.set_text_color(0, 0, 0)
+
+                    # Detailed Table
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.set_fill_color(44, 62, 80)
+                    pdf.set_text_color(255, 255, 255)
+                    
+                    pdf.cell(10, 10, 'NO', 1, 0, 'C', True)
+                    pdf.cell(50, 10, ' CONTRACTOR', 1, 0, 'L', True)
+                    pdf.cell(25, 10, 'GROSS', 1, 0, 'R', True)
+                    pdf.cell(25, 10, 'ADMIN FEE', 1, 0, 'R', True)
+                    pdf.cell(25, 10, 'TAXABLE', 1, 0, 'R', True)
+                    pdf.cell(25, 10, 'TAX AMT', 1, 0, 'R', True)
+                    pdf.cell(30, 10, 'NET AMT', 1, 1, 'R', True)
+
+                    pdf.set_font('Arial', '', 8)
+                    pdf.set_text_color(0, 0, 0)
+                    
+                    for i, finv in enumerate(fq, 1):
+                        # Main Invoice Row (No Checkbox)
+                        pdf.set_font('Arial', 'B', 8)
+                        pdf.cell(10, 8, str(i), 1, 0, 'C')
+                        
+                        pdf.set_font('Arial', '', 8)
+                        pdf.cell(50, 8, f" {str(finv.foc.company)[:25]}", 1, 0, 'L')
+                        pdf.cell(25, 8, f"{finv.gross_amount:,.2f}", 1, 0, 'R')
+                        pdf.cell(25, 8, f"{finv.service_charge:,.2f}", 1, 0, 'R')
+                        pdf.cell(25, 8, f"{finv.taxable_amount:,.2f}", 1, 0, 'R')
+                        pdf.cell(25, 8, f"{finv.tax_amount:,.2f}", 1, 0, 'R')
+                        pdf.set_font('Arial', 'B', 8)
+                        pdf.cell(30, 8, f"{finv.net_amount:,.2f}", 1, 1, 'R')
+                        
+                        # Bank details row with Checkbox
+                        curr_y = pdf.get_y()
+                        pdf.set_font('Arial', 'I', 7)
+                        pdf.set_text_color(80, 80, 80)
+                        pdf.set_fill_color(252, 252, 252)
+                        bank_info = f"BANK DETAILS: {finv.foc.bank_name or 'N/A'} | A/C: {finv.foc.bank_acct_number or 'N/A'} | BRANCH: {finv.foc.bank_branch or 'N/A'}"
+                        pdf.cell(10, 6, '', 1, 0, 'C', True)
+                        pdf.rect(13, curr_y + 1, 4, 4) # Draw checkbox only on bank row
+                        pdf.cell(180, 6, f" {bank_info}", 1, 1, 'L', True)
+                        pdf.set_font('Arial', '', 8)
+                        pdf.set_text_color(0, 0, 0)
+
+                    # Total Row
+
+                    pdf.set_font('Arial', 'B', 9)
+                    pdf.set_fill_color(240, 240, 240)
+                    pdf.cell(60, 10, 'TOTALS', 1, 0, 'R', True)
+                    pdf.cell(25, 10, f"{gross_total:,.2f}", 1, 0, 'R', True)
+                    pdf.cell(25, 10, f"{service_total:,.2f}", 1, 0, 'R', True)
+                    pdf.cell(25, 10, f"{taxable_total:,.2f}", 1, 0, 'R', True)
+                    pdf.cell(25, 10, f"{tax_total:,.2f}", 1, 0, 'R', True)
+                    pdf.set_text_color(40, 167, 69)
+                    pdf.cell(30, 10, f"{net_total:,.2f}", 1, 1, 'R', True)
+
+                    # Approvals Sections
+                    pdf.ln(15)
+                    y_sign = pdf.get_y()
+                    if y_sign > 230: # Check for page break before signatures
+                        pdf.add_page()
+                        y_sign = pdf.get_y()
+
+                    def draw_sign_block(x, title):
+                        pdf.set_xy(x, y_sign)
+                        pdf.set_font('Arial', 'B', 9)
+                        pdf.set_text_color(44, 62, 80)
+                        pdf.cell(60, 7, title, 0, 1, 'L')
+                        pdf.set_draw_color(200, 200, 200)
+                        pdf.line(x, y_sign + 7, x + 55, y_sign + 7)
+                        
+                        pdf.set_font('Arial', '', 8)
+                        pdf.set_text_color(0, 0, 0)
+                        pdf.set_xy(x, y_sign + 10)
+                        pdf.cell(60, 6, "Name: __________________________", 0, 1, 'L')
+                        pdf.set_x(x)
+                        pdf.cell(60, 6, "Position: _______________________", 0, 1, 'L')
+                        pdf.set_x(x)
+                        pdf.cell(60, 6, "Date: __________________________", 0, 1, 'L')
+                        pdf.set_x(x)
+                        pdf.cell(60, 10, "Sign: __________________________", 0, 1, 'L')
+
+                    draw_sign_block(10, "PREPARED BY")
+                    draw_sign_block(75, "VERIFIED BY")
+                    draw_sign_block(140, "APPROVED BY")
+
+                    summary_pdf_name = f"mis_summary_{uuid.uuid4().hex[:6]}.pdf"
+                    summary_pdf_path = f"static/tmp/{summary_pdf_name}"
+                    pdf.output(summary_pdf_path)
+                    
+                    success_response['pdf'] = summary_pdf_path
+
+
+
+
 
                 elif module == 'foc_compliance_type':
                     success_response['message'] = [ct.obj() for ct in FocComplianceType.objects.all().order_by('name')]

@@ -7,10 +7,11 @@ from django.db.models import Sum, F, Value, DecimalField
 from django.db.models.functions import Coalesce
 
 from accounts.models import Ledger
+from admin_panel.anton import format_currency
 from admin_panel.models import BankAccounts
 from django.utils import timezone
 
-from ocean.settings import TAX_RATE, SSML_SERVICE_RATE
+from ocean.settings import TAX_RATE, SSML_SERVICE_RATE, COMPANY_DETAILS
 
 
 # locations class
@@ -2612,9 +2613,9 @@ class FocInvoiceHd(models.Model):
             'date':self.invoice_date,
             'is_posted':self.is_posted,
             'is_accepted':self.is_accepted,
-            'gross':self.gross_amount,
-            'tax':self.tax_amount,
-            'net':self.net_amount,
+            'gross':format_currency(self.gross_amount),
+            'tax':format_currency(self.tax_amount),
+            'net':format_currency(self.net_amount),
             'remarks':self.remarks,
             "phone":self.foc.phone,
             "email":self.foc.email,
@@ -2623,8 +2624,9 @@ class FocInvoiceHd(models.Model):
             "next":self.next(),
             "previous":self.previous(),
             'service_rate':SSML_SERVICE_RATE.get(f"{invoice_year}",0),
-            'taxable':self.taxable_amount,
-            'invoice':self.invoice_pdf()
+            'taxable':format_currency(self.taxable_amount),
+            'invoice':self.invoice_pdf(),
+            "service_charge":format_currency(self.service_charge)
         }
 
     def invoice_pdf(self):
@@ -2643,8 +2645,8 @@ class FocInvoiceHd(models.Model):
                 # Watermark
                 self.set_font('Arial', 'B', 50)
                 self.set_text_color(245, 245, 245)
-                self.text(35, 140, 'SNEDA SMART METERS')
-                self.text(35, 190, 'SNEDA SMART METERS')
+                self.text(35, 140, COMPANY_DETAILS.get('name'))
+                self.text(35, 190, COMPANY_DETAILS.get('name'))
                 self.set_text_color(0, 0, 0)
 
             def footer(self):
@@ -2669,16 +2671,16 @@ class FocInvoiceHd(models.Model):
         pdf.set_font('Arial', 'B', 16)
         pdf.set_text_color(*primary_color)
         pdf.set_xy(50, 10)
-        pdf.cell(100, 10, 'SNEDA SMART METERS LTD', 0, 1, 'L')
+        pdf.cell(100, 10, COMPANY_DETAILS.get('name'), 0, 1, 'L')
 
         pdf.set_font('Arial', '', 9)
         pdf.set_text_color(100, 100, 100)
         pdf.set_x(50)
-        pdf.cell(100, 4, 'Spintex Road, P.O. Box 1234, Accra, Ghana', 0, 1, 'L')
+        pdf.cell(100, 4, COMPANY_DETAILS.get('address'), 0, 1, 'L')
         pdf.set_x(50)
-        pdf.cell(100, 4, 'Phone: +233 (0) 540 125 030 | Email: info@snedaghana.com', 0, 1, 'L')
+        pdf.cell(100, 4, f"{COMPANY_DETAILS.get('email')} | {COMPANY_DETAILS.get('phone')}", 0, 1, 'L')
         pdf.set_x(50)
-        pdf.cell(100, 4, 'Website: www.snedaghana.com', 0, 1, 'L')
+        pdf.cell(100, 4, f"Website: {COMPANY_DETAILS.get('website')}", 0, 1, 'L')
 
         # Invoice Label
         pdf.set_font('Arial', 'B', 24)
@@ -2822,7 +2824,7 @@ class FocInvoiceHd(models.Model):
         pdf.cell(0, 10, 'This is a computer generated invoice and does not require a physical signature.', 0, 1, 'C')
 
         # Save file
-        unique_name = f"invoice_{self.entry_no}_{uuid.uuid4().hex[:6]}.pdf"
+        unique_name = f"{self.foc.company.replace(' ','_').lower()}invoice_{self.entry_no}_{uuid.uuid4().hex[:6]}.pdf"
         directory = os.path.join('static', 'tmp')
         if not os.path.exists(directory):
             os.makedirs(directory)

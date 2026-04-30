@@ -333,11 +333,12 @@ ACCOUNTS_EMAIL = os.environ.get('ACCOUNTS_EMAIL','accounts@snedaghana.com')
 
 # Company details for printed documents (Payment Vouchers, etc.)
 COMPANY_DETAILS = {
-    'name': os.environ.get('COMPANY_NAME', 'ROOTECH IT SOLUTIONS'),
-    'address': os.environ.get('COMPANY_ADDRESS', 'Japan Motors, Room 6'),
+    'name': os.environ.get('COMPANY_NAME', 'OCEAN ERP'),
+    'address': os.environ.get('COMPANY_ADDRESS', 'www.rootectits.com'),
     'phone': os.environ.get('COMPANY_PHONE', '+233 54 631 0011'),
-    'email': os.environ.get('COMPANY_EMAIL', 'rootech.inc@proton.me'),
+    'email': os.environ.get('COMPANY_EMAIL', 'sales@rootechits.com'),
     'logo': os.environ.get('COMPANY_LOGO', '/static/images/logo.png'),
+    'website': os.environ.get('WEBSITE', 'www.rootectits.com'),
 }
 
 CMMS_MR_CONTACT = os.environ.get('CMMS_MR_CONTACT','0546310011')
