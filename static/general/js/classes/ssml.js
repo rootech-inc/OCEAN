@@ -3562,6 +3562,10 @@ class SSML {
                     $('#post').attr('disabled',false)
                 }
 
+                $('#print').click(function () {
+                    anton.viewFile(`/static/tmp/${data.invoice}`)
+                })
+
 
 
 

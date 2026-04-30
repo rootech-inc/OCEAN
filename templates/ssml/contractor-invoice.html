@@ -109,7 +109,7 @@
             </div>
             <div class="w-30"></div>
             <div class="w-30 d-flex flex-wrap justify-content-end">
-                <button class="btn btn-premium-info btn-inf ms-2">
+                <button id="print" class="btn btn-premium-info btn-inf ms-2">
                     <i class="fa fa-print"></i>
                 </button>
                 <button class="btn btn-premium-success btn-sm ms-2">
@@ -273,9 +273,7 @@
             ssml.postInvoice()
         })
 
-        $('#print').click(function () {
-            ssml.printInvoice($('#id').val())
-        })
+
 
         $('#edit_btn').click(function () {
             let id = $('#id').val();

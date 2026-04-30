@@ -10,7 +10,7 @@ from accounts.models import Ledger
 from admin_panel.models import BankAccounts
 from django.utils import timezone
 
-from ocean.settings import TAX_RATE
+from ocean.settings import TAX_RATE, SSML_SERVICE_RATE
 
 
 # locations class
@@ -2465,7 +2465,61 @@ class JournalVoucherTransactions(models.Model):
         }
 
 
+def amount_to_words(amount):
+    """Converts a number into its word representation in Ghana Cedis."""
+    from decimal import Decimal
+    
+    units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
+    teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+    tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+    thousands = ["", "Thousand", "Million", "Billion"]
+
+    def convert_hundreds(n):
+        res = ""
+        n = int(n)
+        if n >= 100:
+            res += units[n // 100] + " Hundred "
+            n %= 100
+        if n >= 10 and n <= 19:
+            res += teens[n - 10] + " "
+        else:
+            if n >= 20:
+                res += tens[n // 10] + " "
+                n %= 10
+            if n > 0:
+                res += units[n] + " "
+        return res
+
+    if amount == 0:
+        return "Zero Ghana Cedis Only"
+
+    # Use integer arithmetic to avoid floating point issues
+    amount = Decimal(str(amount)).quantize(Decimal('0.01'))
+    total_pesewas = int(amount * 100)
+    whole_part, decimal_part = divmod(total_pesewas, 100)
+
+    res = ""
+    i = 0
+    temp_whole = whole_part
+    if temp_whole == 0:
+        res = "Zero"
+    else:
+        while temp_whole > 0:
+            if temp_whole % 1000 != 0:
+                res = convert_hundreds(temp_whole % 1000) + thousands[i] + " " + res
+            temp_whole //= 1000
+            i += 1
+
+    res = res.strip() + " Ghana Cedis"
+    if decimal_part > 0:
+        res += " and " + convert_hundreds(decimal_part).strip() + " Pesewas"
+    
+    return res.strip() + " Only"
+
+
+
 class FocInvoiceHd(models.Model):
+
     entry_no = models.CharField(max_length=10, null=False, blank=False,unique=True)
     foc = models.ForeignKey(Contractor,models.CASCADE,related_name='invoices_foc')
     remarks = models.TextField(blank=True, null=True)
@@ -2489,8 +2543,14 @@ class FocInvoiceHd(models.Model):
     posted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     gross_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    service_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    taxable_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
     tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     net_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+
 
 
 
@@ -2502,13 +2562,24 @@ class FocInvoiceHd(models.Model):
         invoice_year = self.invoice_date.year
         print(TAX_RATE)
         tax_rate = TAX_RATE.get(f"{invoice_year}", 0)
-        print(tax_rate)
-        tax_amount = Decimal((tax_rate / 100)) * Decimal(gross_amount)
-        net_amount = gross_amount - tax_amount
+        service_rate = SSML_SERVICE_RATE.get(f"{invoice_year}",0)
+        service_amount = Decimal((service_rate / 100)) * Decimal(gross_amount)
 
+        taxable_amount = gross_amount - service_amount
+        print(tax_rate)
+
+        tax_amount = Decimal((tax_rate / 100)) * Decimal(taxable_amount)
+
+
+
+
+        net_amount = taxable_amount - tax_amount
+
+        self.service_charge = service_amount
         self.net_amount = net_amount
         self.tax_amount = tax_amount
         self.gross_amount = gross_amount
+        self.taxable_amount = taxable_amount
         self.save()
 
         # update transactions
@@ -2534,6 +2605,7 @@ class FocInvoiceHd(models.Model):
 
     def obj(self):
         self.update_totals()
+        invoice_year = self.invoice_date.year
         return {
             "entry_no":self.entry_no,
             'foc':self.foc.company,
@@ -2550,7 +2622,216 @@ class FocInvoiceHd(models.Model):
             "transactions":self.trans(),
             "next":self.next(),
             "previous":self.previous(),
+            'service_rate':SSML_SERVICE_RATE.get(f"{invoice_year}",0),
+            'taxable':self.taxable_amount,
+            'invoice':self.invoice_pdf()
         }
+
+    def invoice_pdf(self):
+        from fpdf import FPDF
+        import uuid
+        import os
+
+        # Ensure totals are up to date
+        self.update_totals()
+
+        invoice_year = self.invoice_date.year
+        service_rate = SSML_SERVICE_RATE.get(f"{invoice_year}", 0)
+
+        class PDF(FPDF):
+            def header(self):
+                # Watermark
+                self.set_font('Arial', 'B', 50)
+                self.set_text_color(245, 245, 245)
+                self.text(35, 140, 'SNEDA SMART METERS')
+                self.text(35, 190, 'SNEDA SMART METERS')
+                self.set_text_color(0, 0, 0)
+
+            def footer(self):
+
+                self.set_y(-15)
+                self.set_font('Arial', 'I', 8)
+                self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
+        pdf = PDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+
+        # Colors
+        primary_color = (44, 62, 80)  # Dark Blue
+        text_color = (52, 73, 94)
+
+        # Header: Logo & Company Info
+        logo_path = 'static/general/logo.png'
+        if os.path.exists(logo_path):
+            pdf.image(logo_path, 10, 10, 35)
+
+        pdf.set_font('Arial', 'B', 16)
+        pdf.set_text_color(*primary_color)
+        pdf.set_xy(50, 10)
+        pdf.cell(100, 10, 'SNEDA SMART METERS LTD', 0, 1, 'L')
+
+        pdf.set_font('Arial', '', 9)
+        pdf.set_text_color(100, 100, 100)
+        pdf.set_x(50)
+        pdf.cell(100, 4, 'Spintex Road, P.O. Box 1234, Accra, Ghana', 0, 1, 'L')
+        pdf.set_x(50)
+        pdf.cell(100, 4, 'Phone: +233 (0) 540 125 030 | Email: info@snedaghana.com', 0, 1, 'L')
+        pdf.set_x(50)
+        pdf.cell(100, 4, 'Website: www.snedaghana.com', 0, 1, 'L')
+
+        # Invoice Label
+        pdf.set_font('Arial', 'B', 24)
+        pdf.set_text_color(*primary_color)
+        pdf.set_xy(150, 10)
+        pdf.cell(50, 20, 'INVOICE', 0, 1, 'R')
+
+        pdf.ln(10)
+        pdf.set_draw_color(*primary_color)
+        pdf.line(10, 42, 200, 42)
+        pdf.ln(5)
+
+        # Two columns: Bill To and Invoice Info
+        y_start = pdf.get_y()
+
+        # Left Column: Bill To
+        pdf.set_font('Arial', 'B', 10)
+        pdf.set_text_color(0, 0, 0)
+        pdf.cell(95, 7, 'CONTRACTOR DETAILS (PAYABLE TO):', 0, 1, 'L')
+        pdf.set_font('Arial', 'B', 11)
+        pdf.cell(95, 6, str(self.foc.company).upper(), 0, 1, 'L')
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(95, 5, f"Location: {self.foc.city or 'N/A'}, {self.foc.region or ''}", 0, 1, 'L')
+        pdf.cell(95, 5, f"Phone: {self.foc.phone}", 0, 1, 'L')
+        pdf.cell(95, 5, f"Email: {self.foc.email}", 0, 1, 'L')
+
+        # Right Column: Invoice Info
+        pdf.set_xy(110, y_start)
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(40, 7, 'Invoice Number:', 0, 0, 'L')
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(50, 7, str(self.entry_no), 0, 1, 'L')
+
+        pdf.set_x(110)
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(40, 7, 'Invoice Date:', 0, 0, 'L')
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(50, 7, self.invoice_date.strftime("%d %b, %Y") if self.invoice_date else '', 0, 1, 'L')
+
+        pdf.set_x(110)
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(40, 7, 'Location:', 0, 0, 'L')
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(50, 7, str(self.foc.city or 'N/A'), 0, 1, 'L')
+
+        pdf.ln(15)
+
+        # Summary Box for Amounts Breakdown
+        pdf.set_fill_color(245, 247, 249)
+        pdf.rect(10, pdf.get_y(), 190, 25, 'F')
+
+        pdf.set_font('Arial', 'B', 8)
+        pdf.set_text_color(*primary_color)
+        y_sum = pdf.get_y() + 2
+        pdf.set_xy(10, y_sum)
+        pdf.cell(31.6, 5, 'GROSS AMOUNT', 0, 0, 'C')
+        pdf.cell(31.6, 5, 'SERVICE RATE', 0, 0, 'C')
+        pdf.cell(31.6, 5, 'SERVICE AMT', 0, 0, 'C')
+        pdf.cell(31.6, 5, 'TAXABLE AMT', 0, 0, 'C')
+        pdf.cell(31.6, 5, 'TAX AMOUNT', 0, 0, 'C')
+        pdf.cell(31.6, 5, 'NET PAYABLE', 0, 1, 'C')
+
+        pdf.set_font('Arial', 'B', 10)
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_x(10)
+        pdf.cell(31.6, 10, f"{self.gross_amount:,.2f}", 0, 0, 'C')
+        pdf.cell(31.6, 10, f"{service_rate}%", 0, 0, 'C')
+        pdf.cell(31.6, 10, f"{self.service_charge:,.2f}", 0, 0, 'C')
+        pdf.cell(31.6, 10, f"{self.taxable_amount:,.2f}", 0, 0, 'C')
+        pdf.cell(31.6, 10, f"{self.tax_amount:,.2f}", 0, 0, 'C')
+        pdf.set_text_color(231, 76, 60)
+        pdf.cell(31.6, 10, f"{self.net_amount:,.2f}", 0, 1, 'C')
+
+        pdf.set_text_color(0, 0, 0)
+        pdf.ln(5)
+
+        # Remarks if any
+        if self.remarks:
+            pdf.set_font('Arial', 'B', 9)
+            pdf.cell(0, 5, 'REMARKS:', 0, 1, 'L')
+            pdf.set_font('Arial', '', 9)
+            pdf.multi_cell(0, 5, str(self.remarks), 0, 'L')
+            pdf.ln(5)
+
+        # Table Header
+        pdf.set_fill_color(*primary_color)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(10, 10, 'NO', 1, 0, 'C', fill=True)
+        pdf.cell(90, 10, ' ITEM DESCRIPTION', 1, 0, 'L', fill=True)
+        pdf.cell(30, 10, 'QUANTITY', 1, 0, 'C', fill=True)
+        pdf.cell(30, 10, 'RATE', 1, 0, 'C', fill=True)
+        pdf.cell(30, 10, 'AMOUNT', 1, 1, 'C', fill=True)
+
+        # Table Rows
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font('Arial', '', 9)
+        i = 1
+        for tr in self.transactions.all():
+            pdf.cell(10, 8, str(i), 1, 0, 'C')
+            pdf.cell(90, 8, f" {tr.item}", 1, 0, 'L')
+            pdf.cell(30, 8, f"{tr.quantity:,.2f}", 1, 0, 'C')
+            pdf.cell(30, 8, f"{tr.rate:,.2f}", 1, 0, 'C')
+            pdf.cell(30, 8, f"{tr.amount:,.2f}", 1, 1, 'R')
+            i += 1
+
+        # Summary Row
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(160, 10, 'TOTAL PAYABLE (GHS)', 1, 0, 'R')
+        pdf.set_text_color(231, 76, 60)
+        pdf.cell(30, 10, f"{self.net_amount:,.2f}", 1, 1, 'R')
+
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font('Arial', 'B', 9)
+        pdf.ln(2)
+        pdf.cell(0, 5, f"Amount in Words: {amount_to_words(self.net_amount)}", 0, 1, 'L')
+
+        pdf.ln(10)
+
+        # Bank Details
+        pdf.set_fill_color(245, 247, 249)
+        pdf.set_font('Arial', 'B', 11)
+        pdf.cell(0, 10, ' CONTRACTOR BANK ACCOUNT DETAILS', 0, 1, 'L', fill=True)
+        pdf.ln(2)
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(40, 6, 'Bank Name:', 0, 0, 'L')
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(0, 6, str(self.foc.bank_name or 'N/A'), 0, 1, 'L')
+
+        pdf.cell(40, 6, 'Account Number:', 0, 0, 'L')
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(0, 6, str(self.foc.bank_acct_number or 'N/A'), 0, 1, 'L')
+
+        pdf.cell(40, 6, 'Branch:', 0, 0, 'L')
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(0, 6, str(self.foc.bank_branch or 'N/A'), 0, 1, 'L')
+
+        pdf.ln(10)
+        pdf.set_font('Arial', 'I', 9)
+        pdf.set_text_color(150, 150, 150)
+        pdf.cell(0, 10, 'This is a computer generated invoice and does not require a physical signature.', 0, 1, 'C')
+
+        # Save file
+        unique_name = f"invoice_{self.entry_no}_{uuid.uuid4().hex[:6]}.pdf"
+        directory = os.path.join('static', 'tmp')
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        file_path = os.path.join(directory, unique_name)
+        pdf.output(file_path)
+
+        return unique_name
+
 
 
 class FocInvoiceTransactions(models.Model):

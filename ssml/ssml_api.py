@@ -5159,7 +5159,7 @@ def interface(request):
                 """
 
                 # SMS template
-                sms_template = f"SSML: Dear {foc.owner}, your profile is now verified! Please check your email ({foc.email}) for your FOC NODE app download and login instructions."
+                sms_template = f"Dear {foc.owner}, your profile is now verified! Please check your email ({foc.email}) for your FOC NODE app download and login instructions."
 
                 # Send notifications
                 if contractor.email:
