@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from admin_panel.models import Emails, Locations, BusinessEntityTypes, MailSenders, MailQueues, MailAttachments, Sms, \
     SmsApi
 from admin_panel.anton import make_md5_hash
+from amc.models import ComplianceType
 from crm.views import contacts
 
 from ssml.form import ContractorErrorForm
@@ -17,7 +18,7 @@ from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, Invent
     ServiceMaterials, ServiceOrder, \
     ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments, PettyCash, \
     RetiredMetersBox, InstallationType, Cardex, Phase, MaterialRequestHeader, \
-    ECGInvoiceHD, ECGInvoiceTransactions, AccountLedger, RetiredMetersTransactions, FocInvoiceHd, JournalVoucherHd, \
+    AccountLedger, RetiredMetersTransactions, FocInvoiceHd, JournalVoucherHd, \
     FocComplianceType, FocCompliance
 from dolphine.models import Documents
 
@@ -1603,7 +1604,7 @@ def import_expensis(request):
     else:
         return JsonResponse({'status_code': '400', 'message': 'No file uploaded or wrong method.'})
 
-
+@login_required()
 def phase_master(request):
     page = {
         'title':"Phase Master",
@@ -1761,10 +1762,12 @@ def ecg_reports(request):
 
 @login_required
 def ecg_invoice(request):
-    if ECGInvoiceHD.objects.all().count() == 0:
-        return redirect('new-ecg-inv')
+
     
-    last_entry = ECGInvoiceHD.objects.all().last().id
+    last_entry = False
+    if EcgInvoiceHd.objects.all().count() > 0:
+        last_entry = EcgInvoiceHd.objects.all().last().entry_no
+
     page = {
         'title': 'ECG Invoice',
         'page': 'ecg_invoice',
@@ -1975,3 +1978,25 @@ def save_foc_compliance(request):
 
     else:
         return JsonResponse({'message': 'There is an error',"status_code":505}, status=400)
+
+@login_required()
+def foc_comp_list(request,code):
+    foc = Contractor.objects.get(code=code)
+    comps = FocCompliance.objects.filter(foc=foc)
+    page = {
+        'title':f"Foc Compliance"
+    }
+
+    comp_types = f"<option disabled selected value=''>Select Compliance</option>"
+    for ct in FocComplianceType.objects.all():
+        comp_types += f"<option value='{ct.pk}'>{ct.name}"
+
+    context = {
+        "page": page,
+        "nav":True,
+        'comps':comps,
+        'foc':foc,
+        'comp_types':comp_types
+    }
+
+    return render(request,'ssml/foc/my-compliance.html',context=context)

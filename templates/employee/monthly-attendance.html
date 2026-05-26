@@ -149,6 +149,7 @@
 
         $('#load_attendance').click(async function () {
             // Clear and reload
+            console.log("Loading Attendance...");
             loader.show()
             $('#att_bd').html(`
                 <tr>
@@ -158,6 +159,7 @@
                     </td>
                 </tr>
             `);
+            // show changes here
             let start_date = $('#start_date').val();
             let end_date = $('#end_date').val();
             await staff.loadMonthlyAttendance(start_date, end_date).then(response => {

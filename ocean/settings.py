@@ -344,11 +344,17 @@ COMPANY_DETAILS = {
 CMMS_MR_CONTACT = os.environ.get('CMMS_MR_CONTACT','0546310011')
 
 TAX_RATE = {
-    '2025':20.9,
+    '2025':21.9,
     '2026':20
 }
 
-SSML_SERVICE_RATE = {
+WHT_RATE = {
     '2025':5,
-    "2026":5
+    '2026':5
+}
+
+
+SSML_SERVICE_RATE = {
+    '2025':0,
+    "2026":0
 }

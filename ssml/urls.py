@@ -96,5 +96,6 @@ urlpatterns = [
     path('foc/api/',foc_api.interface,name='foc_api'),
     path('foc/compliance/',views.foc_compliance,name='foc_compliance'),
     path('foc/compliance/save/',views.save_foc_compliance,name='save_foc_compliance'),
+    path('foc-compliance/<code>/',views.foc_comp_list,name='foc_comp_list'),
 
 ]

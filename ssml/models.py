@@ -11,7 +11,7 @@ from admin_panel.anton import format_currency
 from admin_panel.models import BankAccounts
 from django.utils import timezone
 
-from ocean.settings import TAX_RATE, SSML_SERVICE_RATE, COMPANY_DETAILS
+from ocean.settings import TAX_RATE, SSML_SERVICE_RATE, COMPANY_DETAILS, WHT_RATE
 
 
 # locations class
@@ -562,7 +562,8 @@ class Contractor(models.Model):
             'business_phone_number':self.business_phone_number,
             'bank_name':self.bank_name,
             'bank_acct_number':self.bank_acct_number,
-            'bank_branch':self.bank_branch
+            'bank_branch':self.bank_branch,
+            'pending_compliance':self.pending_compliance()
             
         }
 
@@ -697,6 +698,11 @@ class Contractor(models.Model):
             "message":"Profile Up to date"
         }
 
+    def pending_compliance(self):
+        total_require_compliance = FocComplianceType.objects.filter(is_required=True).count()
+        total_complied = FocCompliance.objects.filter(foc=self,c_type__is_required=True).count()
+
+        return f"{total_complied} / {total_require_compliance}"
 
 class ContractorDocuments(models.Model):
     contractor = models.ForeignKey(Contractor,on_delete=models.CASCADE)
@@ -1190,8 +1196,20 @@ class ServiceOrder(models.Model):
     inv_date = models.DateField(null=True,blank=True)
 
     ecg_date = models.DateField(null=True,blank=True)
+    linked_phase = models.ForeignKey('Phase',on_delete=models.SET_NULL,null=True,blank=True)
 
-    
+
+    def custom_update(self):
+        # updat phase
+        sts_no = self.new_meter
+        # get meter phase
+        meter = Meter.objects.filter(meter_no=sts_no).first()
+        lk_phase = meter.linked_phase if meter.linked_phase else None
+        print(f"STS {sts_no} set to {lk_phase.description if lk_phase else 'Not Set'}")
+
+        self.linked_phase = meter.linked_phase if meter.linked_phase else None
+
+        self.save()
 
     def items(self):
         obj = []
@@ -1308,12 +1326,21 @@ class Phase(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
+    material = models.ForeignKey(InventoryMaterial,on_delete=models.SET_NULL,null=True)
+
     def __str__(self):
         return f"Phase {self.number}: {self.description}"
 
     def total_meters(self):
     # INSERT_YOUR_CODE
         return Meter.objects.filter(linked_phase=self).count()
+
+    def stock(self,as_of='*',loc_id='*'):
+        if self.material:
+            mt = self.material.stock(as_of,loc_id)
+            return mt
+        else:
+            return 0
 
     def obj(self):
         return {
@@ -1324,6 +1351,9 @@ class Phase(models.Model):
             'updated_at': self.updated_at,
             'created_by': self.created_by.username if self.created_by else None
         }
+
+    def total_installed(self,date='*'):
+        return ServiceOrder.objects.filter(linked_phase=self).count() if date == '*' else ServiceOrder.objects.filter(service_date=date,linked_phase=self).count()
 
 
 class Meter(models.Model):
@@ -1347,9 +1377,10 @@ class Meter(models.Model):
 
     ecg_invoice_no = models.CharField(max_length=255, null=True, blank=True)
 
-    
 
-    
+
+
+
 
     location = models.ForeignKey(Location,on_delete=models.CASCADE,null=False)
     ip_address = models.CharField(max_length=255, default='0.0.0.0')
@@ -1802,52 +1833,6 @@ class InvoiceHD(models.Model):
             'stage':self.stage()
         }
 
-class ECGInvoiceHD(models.Model):
-    entry_no = models.CharField(max_length=255, null=False, blank=False, unique=True)
-    entry_date = models.DateField(null=False)
-    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True)
-    remarks = models.TextField()
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    date_created = models.DateField(auto_now_add=True)
-    time_created = models.TimeField(auto_now_add=True)
-
-    is_approved = models.BooleanField(default=False)
-    is_posted = models.BooleanField(default=False)
-
-    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='ecg_invapproved_by')
-    posted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='ecg_invposted_by')
-
-    def status(self):
-        if not self.is_approved:
-            return 'pending approval'
-        elif not self.is_posted:
-            return 'pending posting'
-        else:
-            return 'posted'
-
-    def transactions(self):
-        return [tran.obj() for tran in ECGInvoiceTransactions.objects.filter(entry=self)]
-
-    def obj(self):
-        return {
-            'id': self.id,
-            'entry_no': self.entry_no,
-            'entry_date': self.entry_date,
-            'remarks': self.remarks,
-            'total_amount': self.total_amount,
-            'created_by': self.created_by.get_full_name() if self.created_by else "System",
-            'date_created': self.date_created,
-            'time_created': self.time_created,
-            'is_approved': self.is_approved,
-            'is_posted': self.is_posted,
-            'status': self.status(),
-            'transactions': self.transactions(),
-            'location': self.location.obj() if self.location else None,
-            'items': [item.obj() for item in ECGInvoiceItem.objects.filter(entry=self)],
-            'materials': [item.obj() for item in ECGInvoiceMaterial.objects.filter(entry=self)]
-        }
 
 class ECGJobRate(models.Model):
     service_type = models.ForeignKey(ServiceType, on_delete=models.CASCADE)
@@ -1877,52 +1862,7 @@ class ECGMeterRate(models.Model):
             'rate': self.rate,
         }
 
-class ECGInvoiceItem(models.Model):
-    entry = models.ForeignKey(ECGInvoiceHD, on_delete=models.CASCADE)
-    meter_no = models.CharField(max_length=255)
-    phase = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    is_found = models.BooleanField(default=False)
 
-    def obj(self):
-        return {
-            'id': self.id,
-            'meter_no': self.meter_no,
-            'phase': self.phase,
-            'amount': self.amount,
-            'is_found': self.is_found,
-        }
-
-class ECGInvoiceTransactions(models.Model):
-    entry = models.ForeignKey(ECGInvoiceHD, on_delete=models.CASCADE)
-    service_order = models.ForeignKey(ServiceOrder, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    
-    def obj(self):
-        return {
-            'id': self.id,
-            'service_order': self.service_order.obj(),
-            'amount': self.amount
-        }
-
-
-class ECGInvoiceMaterial(models.Model):
-    entry = models.ForeignKey(ECGInvoiceHD, on_delete=models.CASCADE)
-    material = models.ForeignKey(InventoryMaterial, on_delete=models.CASCADE)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2)
-    rate = models.DecimalField(max_digits=10, decimal_places=2)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-    def obj(self):
-        return {
-            'id': self.id,
-            'material': self.material.obj(),
-            'quantity': self.quantity,
-            'rate': self.rate,
-            'amount': self.amount,
-        }
-
-    
 
 class InvoiceTransactions(models.Model):
     entry = models.ForeignKey(InvoiceHD,on_delete=models.CASCADE)
@@ -2526,6 +2466,8 @@ class FocInvoiceHd(models.Model):
     remarks = models.TextField(blank=True, null=True)
     invoice_date = models.DateField(null=False, blank=False)
 
+    location = models.ForeignKey(Location,on_delete=models.PROTECT,null=True)
+
     is_valid = models.BooleanField(default=False)
     validated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,related_name='invoices_validator')
     date_validated = models.DateField(null=True, blank=True)
@@ -2551,46 +2493,40 @@ class FocInvoiceHd(models.Model):
     tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     net_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
-
-
-
+    wht_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     def update_totals(self):
+        # 1. Sum up all items (Gross Amount - Tax Exclusive)
         gross_amount = FocInvoiceTransactions.objects.filter(invoice=self).aggregate(
             total=Coalesce(models.Sum('amount'), models.Value(0, output_field=models.DecimalField()))
         )['total']
 
-        invoice_year = self.invoice_date.year
-        print(TAX_RATE)
-        tax_rate = TAX_RATE.get(f"{invoice_year}", 0)
-        service_rate = SSML_SERVICE_RATE.get(f"{invoice_year}",0)
-        service_amount = Decimal((service_rate / 100)) * Decimal(gross_amount)
+        # 2. Calculate Admin Fee (Service Charge)
+        invoice_year = str(self.invoice_date.year)
+        service_rate = SSML_SERVICE_RATE.get(invoice_year, 0)
+        service_amount = (Decimal(service_rate) / 100) * gross_amount
 
-        taxable_amount = gross_amount - service_amount
-        print(tax_rate)
+        # 3. Calculate Withholding Tax (WHT) at 5%
+        wht_rate = Decimal('0.05')
+        total_wht_amount = gross_amount * wht_rate
 
-        tax_amount = Decimal((tax_rate / 100)) * Decimal(taxable_amount)
+        # 4. Calculate Final Net Payable
+        total_net_payable = gross_amount - total_wht_amount
 
-
-
-
-        net_amount = taxable_amount - tax_amount
-
-        self.service_charge = service_amount
-        self.net_amount = net_amount
-        self.tax_amount = tax_amount
+        # 5. Update Header Fields
         self.gross_amount = gross_amount
-        self.taxable_amount = taxable_amount
+        self.service_charge = service_amount
+        self.taxable_amount = gross_amount
+        self.tax_amount = 0
+        self.wht_amount = total_wht_amount
+        self.net_amount = total_net_payable
         self.save()
 
-        # update transactions
+        # 6. Update individual lines
         for tr in FocInvoiceTransactions.objects.filter(invoice=self):
-            amount = tr.amount
-            tax_amount = Decimal((tax_rate / 100)) * Decimal(amount)
-            net_amount = amount - tax_amount
-
-            tr.net_amount = net_amount
-            tr.tax_amount = tax_amount
+            tr.wht_amount = tr.amount * wht_rate
+            tr.net_amount = tr.amount - tr.wht_amount
+            tr.tax_amount = 0
             tr.save()
 
     def trans(self):
@@ -2607,6 +2543,7 @@ class FocInvoiceHd(models.Model):
     def obj(self):
         self.update_totals()
         invoice_year = self.invoice_date.year
+        self.update_assets()
         return {
             "entry_no":self.entry_no,
             'foc':self.foc.company,
@@ -2626,7 +2563,8 @@ class FocInvoiceHd(models.Model):
             'service_rate':SSML_SERVICE_RATE.get(f"{invoice_year}",0),
             'taxable':format_currency(self.taxable_amount),
             'invoice':self.invoice_pdf(),
-            "service_charge":format_currency(self.service_charge)
+            "service_charge":format_currency(self.service_charge),
+            'wht_amount':format_currency(self.wht_amount)
         }
 
     def invoice_pdf(self):
@@ -2732,27 +2670,25 @@ class FocInvoiceHd(models.Model):
         pdf.set_fill_color(245, 247, 249)
         pdf.rect(10, pdf.get_y(), 190, 25, 'F')
 
-        pdf.set_font('Arial', 'B', 8)
+        pdf.set_font('Arial', 'B', 9)
         pdf.set_text_color(*primary_color)
         y_sum = pdf.get_y() + 2
         pdf.set_xy(10, y_sum)
-        pdf.cell(31.6, 5, 'GROSS AMOUNT', 0, 0, 'C')
-        pdf.cell(31.6, 5, 'SERVICE RATE', 0, 0, 'C')
-        pdf.cell(31.6, 5, 'SERVICE AMT', 0, 0, 'C')
-        pdf.cell(31.6, 5, 'TAXABLE AMT', 0, 0, 'C')
-        pdf.cell(31.6, 5, 'TAX AMOUNT', 0, 0, 'C')
-        pdf.cell(31.6, 5, 'NET PAYABLE', 0, 1, 'C')
+        
+        col_w = 47.5
+        pdf.cell(col_w, 5, 'GROSS AMOUNT', 0, 0, 'C')
+        pdf.cell(col_w, 5, 'ADMIN FEE', 0, 0, 'C')
+        pdf.cell(col_w, 5, 'WHT (5%)', 0, 0, 'C')
+        pdf.cell(col_w, 5, 'NET PAYABLE', 0, 1, 'C')
 
-        pdf.set_font('Arial', 'B', 10)
+        pdf.set_font('Arial', 'B', 11)
         pdf.set_text_color(0, 0, 0)
         pdf.set_x(10)
-        pdf.cell(31.6, 10, f"{self.gross_amount:,.2f}", 0, 0, 'C')
-        pdf.cell(31.6, 10, f"{service_rate}%", 0, 0, 'C')
-        pdf.cell(31.6, 10, f"{self.service_charge:,.2f}", 0, 0, 'C')
-        pdf.cell(31.6, 10, f"{self.taxable_amount:,.2f}", 0, 0, 'C')
-        pdf.cell(31.6, 10, f"{self.tax_amount:,.2f}", 0, 0, 'C')
+        pdf.cell(col_w, 10, f"{self.gross_amount:,.2f}", 0, 0, 'C')
+        pdf.cell(col_w, 10, f"{self.service_charge:,.2f}", 0, 0, 'C')
+        pdf.cell(col_w, 10, f"{self.wht_amount:,.2f}", 0, 0, 'C')
         pdf.set_text_color(231, 76, 60)
-        pdf.cell(31.6, 10, f"{self.net_amount:,.2f}", 0, 1, 'C')
+        pdf.cell(col_w, 10, f"{self.net_amount:,.2f}", 0, 1, 'C')
 
         pdf.set_text_color(0, 0, 0)
         pdf.ln(5)
@@ -2768,30 +2704,36 @@ class FocInvoiceHd(models.Model):
         # Table Header
         pdf.set_fill_color(*primary_color)
         pdf.set_text_color(255, 255, 255)
-        pdf.set_font('Arial', 'B', 10)
+        pdf.set_font('Arial', 'B', 9)
         pdf.cell(10, 10, 'NO', 1, 0, 'C', fill=True)
-        pdf.cell(90, 10, ' ITEM DESCRIPTION', 1, 0, 'L', fill=True)
-        pdf.cell(30, 10, 'QUANTITY', 1, 0, 'C', fill=True)
-        pdf.cell(30, 10, 'RATE', 1, 0, 'C', fill=True)
-        pdf.cell(30, 10, 'AMOUNT', 1, 1, 'C', fill=True)
+        pdf.cell(55, 10, ' ITEM DESCRIPTION', 1, 0, 'L', fill=True)
+        pdf.cell(15, 10, 'QTY', 1, 0, 'C', fill=True)
+        pdf.cell(25, 10, 'RATE', 1, 0, 'C', fill=True)
+        pdf.cell(25, 10, 'GROSS', 1, 0, 'C', fill=True)
+        pdf.cell(25, 10, 'WHT (5%)', 1, 0, 'C', fill=True)
+        pdf.cell(35, 10, 'NET AMT', 1, 1, 'C', fill=True)
 
         # Table Rows
         pdf.set_text_color(0, 0, 0)
-        pdf.set_font('Arial', '', 9)
+        pdf.set_font('Arial', '', 8)
         i = 1
         for tr in self.transactions.all():
             pdf.cell(10, 8, str(i), 1, 0, 'C')
-            pdf.cell(90, 8, f" {tr.item}", 1, 0, 'L')
-            pdf.cell(30, 8, f"{tr.quantity:,.2f}", 1, 0, 'C')
-            pdf.cell(30, 8, f"{tr.rate:,.2f}", 1, 0, 'C')
-            pdf.cell(30, 8, f"{tr.amount:,.2f}", 1, 1, 'R')
+            pdf.cell(55, 8, f" {tr.item}", 1, 0, 'L')
+            pdf.cell(15, 8, f"{tr.quantity:,.0f}", 1, 0, 'C')
+            pdf.cell(25, 8, f"{tr.rate:,.2f}", 1, 0, 'R')
+            pdf.cell(25, 8, f"{tr.amount:,.2f}", 1, 0, 'R')
+            pdf.cell(25, 8, f"{tr.wht_amount:,.2f}", 1, 0, 'R')
+            pdf.set_font('Arial', 'B', 8)
+            pdf.cell(35, 8, f"{tr.net_amount:,.2f}", 1, 1, 'R')
+            pdf.set_font('Arial', '', 8)
             i += 1
 
         # Summary Row
         pdf.set_font('Arial', 'B', 10)
-        pdf.cell(160, 10, 'TOTAL PAYABLE (GHS)', 1, 0, 'R')
+        pdf.cell(155, 10, 'TOTAL PAYABLE (GHS)', 1, 0, 'R')
         pdf.set_text_color(231, 76, 60)
-        pdf.cell(30, 10, f"{self.net_amount:,.2f}", 1, 1, 'R')
+        pdf.cell(35, 10, f"{self.net_amount:,.2f}", 1, 1, 'R')
 
         pdf.set_text_color(0, 0, 0)
         pdf.set_font('Arial', 'B', 9)
@@ -2852,11 +2794,14 @@ class FocInvoiceHd(models.Model):
             pdf.set_text_color(0, 0, 0)
             
             for idx, asset in enumerate(assets, 1):
+                asset.update_phase()
                 pdf.cell(10, 8, str(idx), 1, 0, 'C')
                 pdf.cell(40, 8, f" {asset.sts}", 1, 0, 'L')
                 pdf.cell(40, 8, f" {asset.spn or 'N/A'}", 1, 0, 'L')
-                pdf.cell(70, 8, f" {asset.installation or 'N/A'}", 1, 0, 'L')
+                pdf.cell(70, 8, f" {'N/A'}", 1, 0, 'L')
+                # pdf.cell(70, 8, f" {asset.installation or 'N/A'}", 1, 0, 'L')
                 pdf.cell(30, 8, f" {asset.phase or 'N/A'}", 1, 1, 'C')
+
 
         # Save file
 
@@ -2870,6 +2815,30 @@ class FocInvoiceHd(models.Model):
 
         return unique_name
 
+    def update_assets(self):
+        from datetime import date, datetime
+        from calendar import monthrange
+
+        d = datetime.strptime(str(self.invoice_date), '%Y-%m-%d').date()
+
+        first_day = date(d.year, d.month, 1)
+        last_day = date(d.year, d.month, monthrange(d.year, d.month)[1])
+
+
+        services = ServiceOrder.objects.filter(
+            contractor=self.foc,
+            service_date__gte=first_day, service_date__lte=last_day,
+            flag_for_invoice=True,
+        )
+
+        for sv in services:
+            if FocInvoiceAssets.objects.filter(sts=sv.new_meter).count() == 0:
+                FocInvoiceAssets.objects.create(
+                    invoice=self,
+                    sts=sv.new_meter,
+                    spn=sv.spn,
+                    phase=sv.meter_phase()
+                )
 
 
 class FocInvoiceTransactions(models.Model):
@@ -2880,6 +2849,9 @@ class FocInvoiceTransactions(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     tax_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     net_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    wht_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+
 
 
     def obj(self):
@@ -2899,6 +2871,7 @@ class FocInvoiceAssets(models.Model):
 
     def update_phase(self):
         self.phase = ServiceOrder.objects.filter(new_meter=self.sts).last().meter_phase() if ServiceOrder.objects.filter(new_meter=self.sts).exists() else "NOT SET"
+        self.save()
 
     def obj(self):
         return {
@@ -2933,6 +2906,7 @@ class FocCompliance(models.Model):
 
     date_created = models.DateTimeField(auto_now_add=True)
 
+
     class Meta:
         unique_together = (('foc','c_type'),)
 
@@ -2951,3 +2925,67 @@ class FocCompliance(models.Model):
             "pk":self.foc.pk,
             'file':self.actual_file()
         }
+
+
+class EcgInvoiceHd(models.Model):
+
+    entry_no = models.CharField(max_length=10, null=False, blank=False,unique=True)
+    remarks = models.TextField(blank=True, null=True)
+    invoice_date = models.DateField(null=False, blank=False)
+
+    location = models.ForeignKey(Location,on_delete=models.PROTECT,null=True)
+
+    is_valid = models.BooleanField(default=False)
+    validated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,related_name='invoicesecg_validator')
+    date_validated = models.DateField(null=True, blank=True)
+
+    is_accepted = models.BooleanField(default=False)
+    date_accepted = models.DateField(null=True, blank=True)
+    accept_remark = models.TextField(blank=True, null=True)
+
+    is_posted = models.BooleanField(default=False)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    date_posted = models.DateField(null=True, blank=True)
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,related_name='invoicesecg_creator')
+    posted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    gross_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    service_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    taxable_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    net_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    wht_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+
+    def update_totals(self):
+        pass
+
+class EcgInvoiceTransactions(models.Model):
+    invoice = models.ForeignKey(EcgInvoiceHd, on_delete=models.CASCADE, related_name='traecgnsactions')
+    service = models.CharField(max_length=255, null=False, blank=False,unique=False)
+
+    service_type = models.CharField(max_length=255, null=False, blank=False,unique=False)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    tax_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    net_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    wht_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+
+class EcgInvoiceAssets(models.Model):
+    invoice = models.ForeignKey(EcgInvoiceHd, on_delete=models.CASCADE, related_name='invecgoice')
+    sts =  models.CharField(unique=True, max_length=255, null=False, blank=False)
+    spn = models.CharField(max_length=255, null=True, blank=True)
+    installation = models.CharField(max_length=255, null=True, blank=True)
+    phase = models.CharField(max_length=255, null=True, blank=True)
+
+
+
+

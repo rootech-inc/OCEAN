@@ -38,7 +38,7 @@ class Clerk(models.Model):
 
 
 class BoltGroups(models.Model):
-    name = models.CharField(unique=True, max_length=266)
+    name = models.CharField(unique=True, max_length=255)
     sold = models.DecimalField(max_digits=10, decimal_places=3,default=0.000)
     created_on = models.DateTimeField(auto_now_add=True)
     edited_on = models.DateTimeField(auto_now=True)
@@ -89,7 +89,7 @@ class BoltItems(models.Model):
     is_sync = models.BooleanField(default=False)
     group_changed = models.BooleanField(default=False)
 
-    exp_date = models.DateField(null=True, blank=True,default=timezone.now().date())
+    exp_date = models.DateField(null=True, blank=True)
     is_expired = models.BooleanField(default=False)
     exp_flag = models.BooleanField(default=False)
 
@@ -365,7 +365,7 @@ class ProductMoves(models.Model):
     ]
     move_type = models.CharField(max_length=3, choices=move_type_choices,null=False,blank=False)
     quantity = models.DecimalField(decimal_places=3, max_digits=60)
-    date = models.DateField(null=False, blank=False,default=timezone.now().date())
+    date = models.DateField(null=False, blank=False)
     time = models.TimeField(null=False, blank=False,auto_now=True)
     remark = models.TextField(null=True, blank=True)
 

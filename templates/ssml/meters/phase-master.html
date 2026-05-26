@@ -17,6 +17,7 @@
                             <th>Meter Number</th>
                             <th>Location</th>
                             <th>Phase</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -26,6 +27,17 @@
                             <td>{{ meter.meter_no }}</td>
                             <td>{{ meter.location.loc_name }}</td>
                             <td>{{ meter.phase }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item material-link" href="#">Material</a></li>
+                                    </ul>
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -82,6 +94,7 @@
                                         onclick="editPhase(this)">Edit</a></li>
                                 <li><a class="dropdown-item" href="#" data-phase-id="{{ phase.id }}"
                                         onclick="deletePhase(this)">Delete</a></li>
+                                <li><a data-pk="{{ phase.pk }}" class="dropdown-item material-link" href="#">Material</a></li>
                             </ul>
                         </div>
                     </td>
@@ -178,6 +191,46 @@
                 loader.hide()
             }).catch(error => { kasa.error(error); loader.hide() })
         })
+
+        $(document).on('click', '.material-link', function (e) {
+            e.preventDefault();
+            let pk = $(this).data('pk');
+            var formHtml = `
+                <div class="mb-3">
+                    <label for="barcode" class="form-label">Barcode</label>
+                    <input type="text" class="form-control" id="barcode" name="barcode" required>
+                </div>
+            `;
+            amodal.setTitleText('Material');
+            amodal.setBodyHtml(formHtml);
+            amodal.setFooterHtml(`
+                <a href="#" class="btn btn-primary" id="materialSubmitBtn">Submit</a>
+            `);
+            amodal.show();
+
+            $('#materialSubmitBtn').off('click').on('click', async function () {
+                let ids = ['barcode', 'mypk'];
+                if (anton.validateInputs(ids)) {
+                    let payload = {
+                        module: 'link_phase_to_material',
+                        data: anton.Inputs(ids)
+                    }
+
+                    payload['data']['phase'] = pk
+
+                    loader.show()
+                    await api.v2('PUT', payload, '/ssml/api/').then(response => {
+                        if (anton.IsRequest(response, true)) {
+                            kasa.confirm(response.message, 1, 'here')
+                            loader.hide()
+                        } else {
+                            kasa.error(response.message, 1, 'here')
+                            loader.hide()
+                        }
+                    }).catch(error => { kasa.error(error);loader.hide() })
+                }
+            })
+        });
     })
 </script>
 {%endblock%}

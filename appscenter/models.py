@@ -94,3 +94,16 @@ class AppContainer(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ErrorLogs(models.Model):
+    app = models.ForeignKey('App', on_delete=models.CASCADE)
+    title = models.CharField(max_length=255,null=False,unique=False,blank=False)
+    message = models.TextField()
+
+    created_date = models.DateField(auto_now_add=True)
+    created_time = models.TimeField(auto_now=True)
+
+    is_assigned = models.BooleanField(default=False)
+    assigned_to = models.ForeignKey(User,on_delete=models.CASCADE)
+

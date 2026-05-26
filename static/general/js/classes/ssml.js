@@ -3504,6 +3504,13 @@ class SSML {
 
     async getInvoice(entry_no = '*') {
         return await api.call('VIEW', {
+            module: 'ecg_invoice',
+            data: { entry_no }
+        }, '/ssml/api/');
+    }
+
+    async getEcgInvoice(entry_no = '*') {
+        return await api.call('VIEW', {
             module: 'foc_invoice',
             data: { entry_no }
         }, '/ssml/api/');
@@ -3578,6 +3585,77 @@ class SSML {
             console.error('Error viewing invoice:', error);
         }
     }
+
+    async viewEcgInvoice(entry_no) {
+        try {
+            const response = await ssml.getEcgInvoice(entry_no);
+            if (anton.IsRequest(response)) {
+                let data = response.message[0];
+                console.table(data)
+                anton.setValues(data)
+                let tr = ``;
+                let sn = 1;
+                data.transactions.map(tran => {
+                    tr += `<tr>
+                        <td>${sn}</td>
+                        <td>${tran.item}</td>
+                         <td>${tran.quantity}</td>
+                          <td>${tran.rate}</td>
+                          <td>${tran.amount}</td>
+                    </tr>`
+
+                    sn++
+                })
+                $('#invoice_transactions').html(tr)
+
+
+
+                if (data.previous) {
+                    $('#prev_btn').attr('disabled', false)
+                } else {
+                    $('#prev_btn').attr('disabled', true)
+                }
+
+                if (data.next) {
+                    $('#next_btn').attr('disabled', false)
+                } else {
+                    $('#next_btn').attr('disabled', true)
+                }
+
+                // if not validated
+                if (data.is_accepted) {
+                    $('#post').attr('disabled', false)
+                } else {
+                    $('#post').attr('disabled', true)
+                }
+
+                $('#validate').attr('disabled', false)
+                if (data.is_valid) {
+                    $('#validate').attr('disabled', true)
+                }
+
+                if (data.is_posted) {
+                    $('#post').attr('disabled', true)
+                } else {
+                    $('#post').attr('disabled', false)
+                }
+
+                $('#print').click(function () {
+                    anton.viewFile(`/static/tmp/${data.invoice}`)
+                })
+
+
+
+
+            } else {
+                kasa.response(response)
+            }
+        } catch (error) {
+            // handle error here if needed
+            console.error('Error viewing invoice:', error);
+        }
+    }
+
 
     async approveInvoice(id) {
         if (confirm("Are You Sure")) {
@@ -5376,6 +5454,7 @@ class SSML {
                 data: anton.Inputs(ids)
             }, '/ssml/api/').then(response => {
                 if (anton.IsRequest(response)) {
+                    console.table(response)
                     let data = response;
                     let gross, service_charge, taxable, taxamt, net, details, bundle
 
@@ -5383,7 +5462,7 @@ class SSML {
                     gross = data.gross_amount
                     service_charge = data.service_charge
                     taxable = data.taxable_amount
-                    taxamt = data.tax_amount
+                    taxamt = data.wht_amount
                     net = data.net_amount
                     bundle = data.bundle
 
@@ -5395,7 +5474,7 @@ class SSML {
                                 <td class="text-right">${rec.gross}</td>
                                 <td class="text-right">${rec.service_charge}</td>
                                 <td class="text-right">${rec.taxable}</td>
-                                <td class="text-right">${rec.tax}</td>
+                                <td class="text-right">${rec.wht_amount}</td>
                                 <td class="text-right font-weight-bold text-primary">${rec.net}</td>
                                 <td class="text-center">
                                     <a href="/static/tmp/${rec.invoice}" target="_blank" class="btn btn-sm btn-outline-info rounded-circle shadow-sm">
@@ -5522,6 +5601,214 @@ class SSML {
             }).catch(error => { kasa.error(error) })
         })
     }
+
+    async newEcgInvoiceScreen() {
+        loader.show()
+        let focs = ssml.getContractor('*');
+        let locations = ssml.getLocations('*');
+        let loc_opts = []
+
+        await locations.then(response => {
+            if (anton.IsRequest(response)) {
+                response.message.map(loc => {
+                    loc_opts.push({
+                        val: loc.loc_id,
+                        desc: loc.name
+                    })
+                })
+            } else {
+                kasa.response(response)
+                return
+            }
+        }).catch(error => { error; return })
+
+        let opts = []
+        await focs.then(response => {
+            if (anton.IsRequest(response)) {
+                response.message.map(foc => {
+                    opts.push({
+                        val: foc.code,
+                        desc: foc.company
+                    })
+                })
+            } else {
+                kasa.response(response)
+            }
+        }).catch(error => { kasa.error(error) })
+
+        let invoice_date = fom.date('new_invoice_date', 'Last date of the month invoiced for', true);
+        let loc = fom.selectv2('new_loc_id', loc_opts, 'Contractor Code', true);
+        let remarks = fom.textarea('new_remarks', 2, true, '');
+
+        let form_header = `
+            <div class="container">
+            
+                <div class="row">
+                    <div class="col-sm-6">${invoice_date}</div>
+                    
+                    <div class="col-sm-6">${loc}</div>
+                    <div class="com-sm-12">${remarks}</div>
+                </div>
+            
+            </div>
+            <hr>
+        `
+
+        let items_table = `
+            <div class="card">
+                <div class="card-header">
+                    <div class="w-100 d-flex flex-wrap justify-content-between">
+                        <div class="w-50"><strong class="card-title">Supplied Meters</strong></div>
+                        <div class="w-50 d-flex flex-wrap justify-content-end"><button class="btn btn-sm btn-info new_line"><i class="fa fa-plus"></i> LINE</button></div>
+                    </div>
+                    
+                </div>
+                <div class="card-body p-2">
+                    <table class="table table-bordered table-hover">
+                        <thead><tr><th>ITEM</th><th>Type</th><th style="width: 100px">QUANTITY</th><th style="width: 100px">RATE</th><th>ACT</th></tr></thead>
+                        <tbody id="foc_inv_items">
+                            <tr>
+                                <td>
+                                    
+                                    <textarea class="form-control name" rows="1">Supply 1 Phase Meter</textarea>
+                                </td>
+                                <td><input type="text" style="width: 100px" class="form-control type" readonly value="asset"></td>
+                                <td><input type="text" style="width: 100px" class="form-control quantity"></td>
+                                
+                                <td><input type="text" style="width: 100px" class="form-control rate"></td>
+                                <td><button class="btn btn-danger delete_foc_inv_line"><i class="fa fa-trash"></i></button></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    
+                                    <textarea class="form-control name" rows="1">Supply 3 Phase Meter</textarea>
+                                </td>
+                                <td><input type="text" style="width: 100px" class="form-control type" readonly value="asset"></td>
+                                <td><input type="text" style="width: 100px" class="form-control quantity"></td>
+                                
+                                <td><input type="text" style="width: 100px" class="form-control rate"></td>
+                                <td><button class="btn btn-danger delete_foc_inv_line"><i class="fa fa-trash"></i></button></td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td>
+                                    
+                                    <textarea class="form-control name" rows="1">Installations Services</textarea>
+                                </td>
+                                <td><input type="text" style="width: 100px" class="form-control type" readonly value="service"></td>
+                                <td><input type="text" style="width: 100px" class="form-control quantity"></td>
+                                
+                                <td><input type="text" style="width: 100px" class="form-control rate"></td>
+                                <td><button class="btn btn-danger delete_foc_inv_line"><i class="fa fa-trash"></i></button></td>
+                            </tr>
+                          
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `
+
+        form_header += items_table
+
+        amodal.setTitleText("Create ECG Invoice")
+        amodal.setBodyHtml(form_header)
+        amodal.setFooterHtml(`<button class="btn btn-success save_foc_invoice">Save</button>`)
+        amodal.setSize('L')
+        amodal.show()
+
+        loader.hide()
+
+
+
+        $('.new_line').click(function () {
+            // $('#foc_inv_items').append(`
+            //     <tr>
+            //                     <td><input type="text" class="form-control name"></td>
+            //                     <td><input type="text" style="width: 100px" class="form-control quantity"></td>
+            //                     <td><input type="text" style="width: 100px" class="form-control rate"></td>
+            //                     <td><button class="btn btn-danger delete_foc_inv_line"><i class="fa fa-trash"></i></button></td>
+            //                 </tr>
+            // `)
+        })
+
+        // Delegated — works for dynamically added rows, never stacks
+        $(document).on('click', '.delete_foc_inv_line', function () {
+            if (confirm("Are you sure?")) {
+                $(this).closest('tr').remove();
+            }
+        });
+
+        $('.save_foc_invoice').click(async function () {
+            let header_ids = ['mypk', 'new_invoice_date', 'new_remarks', 'new_loc_id'];
+            if (anton.validateInputs(header_ids)) {
+
+                // Target only data rows, not header rows
+                const $rows = $('#foc_inv_items tr');
+
+                if ($rows.length < 1) {
+                    kasa.error("Invalid Transactions List");
+                    return;
+                }
+
+                let trans = [];
+
+                $rows.each(function () {
+                    const $row = $(this);
+
+                    const service = $row.find('.name').val().trim();
+                    const quantity = parseFloat($row.find('.quantity').val());
+                    const rate = parseFloat($row.find('.rate').val());
+                    const s_type = $row.find('.type').val().trim();
+
+                    // Row-level validation
+                    if (!service || isNaN(quantity) || isNaN(rate) || !s_type) {
+                        kasa.error(`Invalid data in row: "${service || 'unnamed'}"`);
+                        trans = null; // signal failure
+                        return false; // break out of .each()
+                    }
+
+                    trans.push({
+                        service,
+                        quantity,
+                        rate,
+                        s_type,
+                    });
+                });
+
+                if (!trans) {
+                    kasa.error("No Transactions")
+                    return
+                } // aborted due to invalid row
+
+                let payload = {
+                    module: 'save_ecg_invoice',
+                    data: {
+                        header: anton.Inputs(header_ids),
+                        transactions: trans
+                    }
+                }
+
+                console.table(payload)
+
+
+                loader.show()
+                await api.v2('PUT', payload, '/ssml/api/').then(response => {
+                    if (anton.IsRequest(response)) {
+                        kasa.confirm("Invoice Created", 1, 'here')
+                        loader.hide()
+                    } else {
+                        kasa.response(response)
+                        loader.hide()
+                    }
+                }).catch(error => { kasa.error(error); loader.hide() })
+
+            }
+        })
+
+    }
+
 }
 
 const ssml = new SSML();

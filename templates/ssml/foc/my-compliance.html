@@ -1,0 +1,80 @@
+{% extends 'ssml/ssmlbase.html' %}
+
+{% load static %}
+
+{% block body %}
+
+    <div class="card h-100">
+        <div class="card-header">
+            <div class="w-100 d-flex">
+                <div class="w-50 d-flex flex-wrap">
+                    <strong class="text-title">{{ foc.company }}</strong>
+                </div>
+                <div class="w-50 d-flex flex-wrap justify-content-end">
+                    <button id="new_compliance" class="btn btn-info btn-sm"><i class="fa fa-plus"></i> Compliance</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Compliance</th>
+                        <th>Reference</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for comp in comps %}
+                        <tr>
+                            <td>{{ comp.c_type.name }}</td>
+                            <td>{{ comp.ref }}</td>
+                            <td>
+                                <a href="javascript:void(0)" onclick="anton.viewFile(`/{{ comp.actual_file }}`)" ><i class="fa fa-eye"></i></a>
+                            </td>
+                        </tr>
+                    {% endfor  %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+
+    <script>
+        let comp_opts = `{{ comp_types | safe}}`;
+        console.log(comp_opts)
+        $(document).ready(function () {
+
+
+            $('#new_compliance').click(function () {
+                let form = `
+                    <form method="post" id='cp_form' action='/ssml/foc/compliance/save/' enctype="multipart/form-data">
+                        <input required type="hidden" name="foc_code" value="{{ foc.code }}">
+                        <label for='compliance'>Compliance</label>
+                        <select name='compliance' class='form-control mb-2' id='compliance'></select>
+
+                        <label for='ref'>Reference</label>
+                        <input type='text' name='ref' id='ref' class='form-control mb-2' >
+
+                        <input type='file' name='file' id='file' class='form-control mb-2' >
+                    </form>
+                `;
+
+                amodal.setBodyHtml(form)
+                amodal.setFooterHtml(`<button id='save_foc_comp_btn' class='btn btn-success'>SAVE</button>`)
+                amodal.setTitleText("Register Compliance")
+                amodal.show()
+
+                $('#compliance').html(comp_opts)
+
+                $('#save_foc_comp_btn').click(function(){
+                    $('#cp_form').submit()
+                })
+            })
+        })
+    </script>
+    
+{% endblock %}

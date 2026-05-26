@@ -39,6 +39,16 @@ def interface(request):
                 AppProviders(name=name, email=email, phone=phone, description=description, country=country, city=city,
                              owner=owner).save()
 
+            elif module == 'app_error':
+                app = data.get('app')
+                title = data.get('title')
+                message = data.get('message')
+
+
+
+            else:
+                raise Exception("No valid module")
+
         elif method == 'VIEW':
             if module == 'provider':
                 providers = AppProviders.objects.all()

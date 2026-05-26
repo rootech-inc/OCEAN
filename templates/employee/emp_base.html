@@ -723,6 +723,16 @@
     </div>
   </div>
 
+  <div class="modal" id="loader">
+    <div class="w-100 h-100 d-flex flex-wrap align-content-center justify-content-center">
+      <img src="{% static 'general/img/icons/2.gif' %}" alt="" class="img-fluid">
+      <div class="w-100 text-center">
+        <br>
+        <small class="text-info" id="error_msg"></small>
+      </div>
+    </div>
+  </div>
+
   <!-- HIDDEN INPUTS -->
   <input type="hidden" id="autos_url" value="{% url 'autos' 'ajax' %}">
   <input type="hidden" id="search_url" value="{% url 'search' %}">

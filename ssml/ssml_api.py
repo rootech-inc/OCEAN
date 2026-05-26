@@ -12,7 +12,7 @@ from ocean.settings import COMPANY_DETAILS
 from ssml.helper import generate_entry_entry
 from ssml.models import ServiceOrderType, InstallationTypePhaseRate, AccountLedger, \
     JournalVoucherHd, JournalVoucherTransactions, FocInvoiceHd, FocInvoiceTransactions, FocInvoiceAssets, \
-    FocComplianceType
+    FocComplianceType, EcgInvoiceAssets, EcgInvoiceTransactions, EcgInvoiceHd
 
 
 def safe_add_image_to_pdf(pdf, image_path, x, y, w, h=None):
@@ -72,7 +72,7 @@ def interface(request):
         InventoryGroup, InventoryMaterial, Issue, IssueTransaction, MaterialOrderItem, Meter, PaySlipHD, Plot, \
         RedeemTransactions, Reedem, Service, ServiceMaterials, ServiceOrder, ServiceOrderItem, ServiceOrderReturns, \
         ServiceType, Supplier, Grn, GrnTransaction, ContractorError, TransferHd, TransferTr,InstallationType,PettyCash,RetiredMetersBox,RetiredMetersTransactions,Phase, \
-        ECGInvoiceHD, ECGInvoiceTransactions, ECGJobRate, ECGMeterRate, ECGInvoiceItem, ECGInvoiceMaterial
+        ECGJobRate, ECGMeterRate
     from admin_panel.models import Emails, Locations, BusinessEntityTypes, MailSenders, MailQueues, MailAttachments, \
         Sms, SmsApi
     from admin_panel.anton import make_md5_hash
@@ -117,6 +117,15 @@ def interface(request):
 
                 success_response['message'] = "Contractor Created Successfully"
 
+            elif module == 'link_phase_to_material':
+                phase = Phase.objects.get(pk=data.get('phase'))
+                material = InventoryMaterial.objects.get(barcode=data.get('barcode'))
+
+                phase.material = material
+                phase.save()
+                phase = Phase.objects.get(pk=data.get('phase'))
+
+
             elif module == 'foc_compliance_type':
                 mypk = data.get('mypk')
                 name = data.get('name')
@@ -142,6 +151,9 @@ def interface(request):
                 user = User.objects.get(pk=header.get('mypk'))
                 transactions = data.get('transactions')
                 foc = Contractor.objects.get(code=header.get('new_foc_name'))
+                if not foc.is_complied().get('status'):
+                    pass
+                    # raise Exception("FOC is not complied")
 
                 invoice_date = header.get('new_invoice_date')
                 loc_id = header.get('new_loc_id')
@@ -172,7 +184,8 @@ def interface(request):
                         foc=foc,
                         remarks=header.get('new_remarks'),
                         invoice_date=header.get('new_invoice_date'),
-                        created_by=user
+                        created_by=user,
+                        location=location
                     )
 
                     invoice = FocInvoiceHd.objects.get(entry_no=entry_no)
@@ -224,6 +237,98 @@ def interface(request):
 
                 else:
                     raise Exception("Cannot Save Empty Invoice")
+
+            elif module == 'save_ecg_invoice':
+
+                print(data)
+                header = data.get('header')
+                user = User.objects.get(pk=header.get('mypk'))
+                transactions = data.get('transactions')
+
+
+                invoice_date = header.get('new_invoice_date')
+                loc_id = header.get('new_loc_id')
+                location = Location.objects.get(loc_id=loc_id)
+                # log meters of invoices that pass
+                from datetime import date, datetime
+
+                d = datetime.strptime(invoice_date, '%Y-%m-%d').date()
+
+
+                first_day = date(d.year, d.month, 1)
+                last_day = date(d.year, d.month, monthrange(d.year, d.month)[1])
+                services = ServiceOrder.objects.filter(
+
+                    service_date__gte=first_day,service_date__lte=last_day,
+                    flag_for_invoice=True,
+                    location=location
+                )
+
+                if services.count() < 0:
+                    raise Exception("Cannot save invoice becuase no related services for location and month")
+
+
+                if len(transactions) > 0:
+                    entry_no = f"ECG-INV-{EcgInvoiceHd.objects.all().last().pk + 1 if EcgInvoiceHd.objects.all().count() > 0 else 1}"
+                    EcgInvoiceHd.objects.create(
+                        entry_no=entry_no,
+                        remarks=header.get('new_remarks'),
+                        invoice_date=header.get('new_invoice_date'),
+                        created_by=user,
+                        location=location
+                    )
+
+                    invoice = EcgInvoiceHd.objects.get(entry_no=entry_no)
+                    for tran in transactions:
+                        quantity = Decimal( tran.get('quantity'))
+                        rate = Decimal(tran.get('rate'))
+                        amount = quantity * rate
+
+                        EcgInvoiceTransactions.objects.create(
+                            invoice=invoice,
+                            service=tran.get('service'),
+                            rate=rate,
+                            amount=amount,
+                            quantity=quantity,
+                            service_type=tran.get('s_type')
+
+                        )
+
+                    invoice.update_totals()
+
+                    # add invoice assets
+                    for service in services:
+
+                        installation_type = service.installation_type
+                        sts = service.new_meter
+                        print(sts)
+                        spn=service.spn
+                        phase = service.meter_phase()
+
+                        if not EcgInvoiceAssets.objects.filter(sts=sts).exists():
+                            EcgInvoiceAssets.objects.create(
+                                invoice=invoice,
+                                sts=sts,
+                                spn=spn,
+                                installation=installation_type.name,
+                                phase=phase
+                            )
+
+                    invoice.update_totals()
+
+
+
+
+
+
+
+
+
+                    success_response['message'] = f"Invoice created with entry {entry_no}"
+
+                else:
+                    raise Exception("Cannot Save Empty Invoice")
+
 
             elif module == 'jv_entry':
                 entry_date = data.get('entry_date')
@@ -1859,6 +1964,10 @@ def interface(request):
                     if id == '*':
                         contractors = Contractor.objects.all().order_by('company')
                         success_response['message'] = [contractor.obj() for contractor in contractors]
+
+
+                        # success_response['message'] = [foc.obj() for foc in contractors if
+                        #                                foc.is_complied().get('status')]
                     else:
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
@@ -1884,19 +1993,20 @@ def interface(request):
 
                     # get all invoices range
                     fq = FocInvoiceHd.objects.filter(invoice_date__gte=start_date, invoice_date__lte=end_date).order_by('invoice_date')
-                    
                     gross_total = fq.aggregate(Sum('gross_amount'))['gross_amount__sum'] or 0
-                    service_total = fq.aggregate(Sum('service_charge'))['service_charge__sum'] or 0
                     taxable_total = fq.aggregate(Sum('taxable_amount'))['taxable_amount__sum'] or 0
                     tax_total = fq.aggregate(Sum('tax_amount'))['tax_amount__sum'] or 0
+                    wht_total = fq.aggregate(Sum('wht_amount'))['wht_amount__sum'] or 0
                     net_total = fq.aggregate(Sum('net_amount'))['net_amount__sum'] or 0
+                    service_total = fq.aggregate(Sum('service_charge'))['service_charge__sum'] or 0
 
                     success_response['message'] = [fi.obj() for fi in fq]
                     success_response['gross_amount'] = gross_total
-                    success_response['service_charge'] = service_total
                     success_response['taxable_amount'] = taxable_total
                     success_response['tax_amount'] = tax_total
+                    success_response['wht_amount'] = wht_total
                     success_response['net_amount'] = net_total
+                    success_response['service_charge'] = service_total
 
                     # 1. Generate ZIP of all individual invoices
                     zip_file_name = f"{uuid.uuid4().hex[:6]}_invoices.zip"
@@ -1957,30 +2067,29 @@ def interface(request):
                     pdf.set_fill_color(248, 249, 250)
                     pdf.set_draw_color(227, 230, 240)
                     
-                    card_w = 37
-                    gap = 1.25
+                    card_w = 45
+                    gap = 2.5
                     curr_x = 10
                     curr_y = pdf.get_y()
 
                     metrics = [
                         ("Gross Amount", gross_total, (0,0,0)),
                         ("Admin Fee", service_total, (23, 162, 184)),
-                        ("Taxable Amt", taxable_total, (108, 117, 125)),
-                        ("Tax Amount", tax_total, (220, 53, 69)),
+                        ("WHT (5%)", wht_total, (220, 53, 69)),
                         ("Net Amount", net_total, (40, 167, 69))
                     ]
 
                     for title, val, color in metrics:
                         pdf.rect(curr_x, curr_y, card_w, 22, 'FD')
                         pdf.set_xy(curr_x, curr_y + 3)
-                        pdf.set_font('Arial', 'B', 7)
+                        pdf.set_font('Arial', 'B', 8)
                         pdf.set_text_color(100, 100, 100)
                         pdf.cell(card_w, 5, title.upper(), 0, 1, 'C')
                         
                         pdf.set_xy(curr_x, curr_y + 10)
-                        pdf.set_font('Arial', 'B', 10)
+                        pdf.set_font('Arial', 'B', 12)
                         pdf.set_text_color(*color)
-                        pdf.cell(card_w, 7, f"{val:,.2f}", 0, 1, 'C')
+                        pdf.cell(card_w, 10, f"{val:,.2f}", 0, 1, 'C')
                         curr_x += card_w + gap
 
                     pdf.set_xy(10, curr_y + 30)
@@ -1992,53 +2101,52 @@ def interface(request):
                     pdf.set_text_color(255, 255, 255)
                     
                     pdf.cell(10, 10, 'NO', 1, 0, 'C', True)
-                    pdf.cell(50, 10, ' CONTRACTOR', 1, 0, 'L', True)
-                    pdf.cell(25, 10, 'GROSS', 1, 0, 'R', True)
-                    pdf.cell(25, 10, 'ADMIN FEE', 1, 0, 'R', True)
-                    pdf.cell(25, 10, 'TAXABLE', 1, 0, 'R', True)
-                    pdf.cell(25, 10, 'TAX AMT', 1, 0, 'R', True)
-                    pdf.cell(30, 10, 'NET AMT', 1, 1, 'R', True)
+                    pdf.cell(55, 10, ' CONTRACTOR', 1, 0, 'L', True)
+                    pdf.cell(30, 10, 'GROSS AMT', 1, 0, 'R', True)
+                    pdf.cell(30, 10, 'ADMIN FEE', 1, 0, 'R', True)
+                    pdf.cell(30, 10, 'WHT (5%)', 1, 0, 'R', True)
+                    pdf.cell(35, 10, 'NET AMT', 1, 1, 'R', True)
 
                     pdf.set_font('Arial', '', 8)
                     pdf.set_text_color(0, 0, 0)
                     
                     for i, finv in enumerate(fq, 1):
-                        # Main Invoice Row (No Checkbox)
+                        # Main Invoice Row
                         pdf.set_font('Arial', 'B', 8)
                         pdf.cell(10, 8, str(i), 1, 0, 'C')
                         
                         pdf.set_font('Arial', '', 8)
-                        pdf.cell(50, 8, f" {str(finv.foc.company)[:25]}", 1, 0, 'L')
-                        pdf.cell(25, 8, f"{finv.gross_amount:,.2f}", 1, 0, 'R')
-                        pdf.cell(25, 8, f"{finv.service_charge:,.2f}", 1, 0, 'R')
-                        pdf.cell(25, 8, f"{finv.taxable_amount:,.2f}", 1, 0, 'R')
-                        pdf.cell(25, 8, f"{finv.tax_amount:,.2f}", 1, 0, 'R')
+                        pdf.cell(55, 8, f" {str(finv.foc.company)[:25]}", 1, 0, 'L')
+                        pdf.cell(30, 8, f"{finv.gross_amount:,.2f}", 1, 0, 'R')
+                        pdf.cell(30, 8, f"{finv.service_charge:,.2f}", 1, 0, 'R')
+                        pdf.cell(30, 8, f"{finv.wht_amount:,.2f}", 1, 0, 'R')
                         pdf.set_font('Arial', 'B', 8)
-                        pdf.cell(30, 8, f"{finv.net_amount:,.2f}", 1, 1, 'R')
+                        pdf.cell(35, 8, f"{finv.net_amount:,.2f}", 1, 1, 'R')
                         
-                        # Bank details row with Checkbox
+                        # Bank details row
                         curr_y = pdf.get_y()
                         pdf.set_font('Arial', 'I', 7)
                         pdf.set_text_color(80, 80, 80)
                         pdf.set_fill_color(252, 252, 252)
                         bank_info = f"BANK DETAILS: {finv.foc.bank_name or 'N/A'} | A/C: {finv.foc.bank_acct_number or 'N/A'} | BRANCH: {finv.foc.bank_branch or 'N/A'}"
                         pdf.cell(10, 6, '', 1, 0, 'C', True)
-                        pdf.rect(13, curr_y + 1, 4, 4) # Draw checkbox only on bank row
+                        pdf.rect(13, curr_y + 1, 4, 4)
                         pdf.cell(180, 6, f" {bank_info}", 1, 1, 'L', True)
                         pdf.set_font('Arial', '', 8)
                         pdf.set_text_color(0, 0, 0)
 
                     # Total Row
-
                     pdf.set_font('Arial', 'B', 9)
                     pdf.set_fill_color(240, 240, 240)
-                    pdf.cell(60, 10, 'TOTALS', 1, 0, 'R', True)
-                    pdf.cell(25, 10, f"{gross_total:,.2f}", 1, 0, 'R', True)
-                    pdf.cell(25, 10, f"{service_total:,.2f}", 1, 0, 'R', True)
-                    pdf.cell(25, 10, f"{taxable_total:,.2f}", 1, 0, 'R', True)
-                    pdf.cell(25, 10, f"{tax_total:,.2f}", 1, 0, 'R', True)
+                    pdf.cell(65, 10, 'TOTALS', 1, 0, 'R', True)
+                    pdf.cell(30, 10, f"{gross_total:,.2f}", 1, 0, 'R', True)
+                    pdf.cell(30, 10, f"{service_total:,.2f}", 1, 0, 'R', True)
+                    pdf.cell(30, 10, f"{wht_total:,.2f}", 1, 0, 'R', True)
                     pdf.set_text_color(40, 167, 69)
-                    pdf.cell(30, 10, f"{net_total:,.2f}", 1, 1, 'R', True)
+                    pdf.cell(35, 10, f"{net_total:,.2f}", 1, 1, 'R', True)
+
+
+
 
                     # Approvals Sections
                     pdf.ln(15)
@@ -3862,13 +3970,67 @@ def interface(request):
                     pdf.set_auto_page_break(auto=True, margin=15)
                     pdf.add_page()
 
+                    for srv in ServiceOrder.objects.filter(service_date=day_date):
+
+                        srv.custom_update()
+
                     # 0. add remarks in a modern card
                     pdf.set_font("Arial", "B", 12)
                     pdf.set_text_color(44, 62, 80)
                     pdf.cell(0, 10, "Remarks", ln=True)
                     pdf.set_font("Arial", "", 10)
                     pdf.multi_cell(0, 6, remarks)
-                    pdf.ln(10)  
+                    pdf.ln(10)
+
+                    # 0. Phase Type
+                    pdf.set_font("Arial", "B", 12)
+                    pdf.set_text_color(44, 62, 80)
+                    pdf.cell(0, 10, "Summary by Phase Type", ln=True)
+
+                    widths = [47.5, 47.5, 47.5,47.5]
+                    headers = ["Phase Type", "Today Jobs", "Total Jobs","Stock *"]
+                    pdf.styled_table_header(headers, widths)
+                    fill = False
+                    for phase in Phase.objects.all():
+                        today_installed = phase.total_installed(day_date)
+                        total_installed = phase.total_installed('*')
+                        current_stock = phase.stock(day_date,'*')
+
+                        pdf.set_fill_color(244, 247, 246) if fill else pdf.set_fill_color(255, 255, 255)
+                        pdf.cell(widths[0], 7, f" {phase.description}", border=1, fill=True)
+                        pdf.cell(widths[1], 7, f"{today_installed}", border=1, align="C", fill=True)
+                        pdf.cell(widths[2], 7, f"{today_installed}", border=1, align="C", fill=True)
+                        pdf.cell(widths[3], 7, f"{current_stock}", border=1, align="C", fill=True)
+                        pdf.ln()
+                        fill = not fill
+
+                    pdf.ln(10)
+
+                    # 0.1 Location Wise Report
+                    pdf.set_font("Arial", "B", 12)
+                    pdf.set_text_color(44, 62, 80)
+                    pdf.cell(0, 10, "Location Wise Stock Report", ln=True)
+
+                    widths = [95, 47.5, 47.5]
+                    headers = ["Location", "Phase", "Stock *"]
+                    pdf.styled_table_header(headers, widths)
+                    fill = False
+                    for loc in Location.objects.all():
+                        for phase in Phase.objects.all():
+                            today_installed = phase.total_installed(day_date)
+
+                            current_stock = phase.stock(day_date, loc.loc_id)
+
+                            pdf.set_fill_color(244, 247, 246) if fill else pdf.set_fill_color(255, 255, 255)
+                            pdf.cell(widths[0], 7, f" {loc.loc_name}", border=1, fill=True)
+                            pdf.cell(widths[1], 7, f"{phase.description}", border=1, align="C", fill=True)
+                            pdf.cell(widths[2], 7, f"{current_stock}", border=1, align="C", fill=True)
+                            pdf.ln()
+                            fill = not fill
+
+                    pdf.ln(10)
+
+
                     
                     # 1. SUMMARY BY SERVICE TYPE
                     pdf.set_font("Arial", "B", 12)
@@ -3878,6 +4040,7 @@ def interface(request):
                     widths = [100, 45, 45]
                     headers = ["Service Type", "Today Jobs", "Total Jobs"]
                     pdf.styled_table_header(headers, widths)
+
 
                     total_today_jobs = 0
                     total_total_jobs = 0
@@ -4396,7 +4559,7 @@ def interface(request):
                 MailQueues.objects.create(
                     sender=MailSenders.objects.get(is_default=True),
                     recipient=foc.email,
-                    cc='mohan@snedaghana.com,ajay@snedaghana.com,bharat@snedaghana.com',
+                    cc='',
                     body=html_body,
                     mail_key=make_md5_hash(invoice.remarks),
                     subject=f"SNEDA - {invoice.remarks}",
