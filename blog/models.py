@@ -63,7 +63,7 @@ class articles(models.Model):
             'author': self.author.username,
             'status': self.status,
             'article': self.article,
-            'title': self.title,
+            'title': f"{self.author.get_full_name() if self.author else 'anonymous'} - {self.title}",
             'tag': self.tag,
             'intro': self.intro,
             'meta': self.meta,
