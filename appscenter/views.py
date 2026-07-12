@@ -1,14 +1,19 @@
+from decimal import Decimal
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, HttpResponse
 
 from django.shortcuts import render, redirect
+from django.utils.formats import number_format
 from django.views.decorators.csrf import csrf_exempt
 
+from admin_panel.anton import shorten_url
 from admin_panel.models import Sms, SmsApi, MailQueues, MailSenders
 from appconfig.form import NewApp, NewVersion
 from appscenter.models import AppsGroup, App, AppAssign, AppProviders, Subscribers
 from blog.anton import make_md5
+from ocean import settings
 from ocean.settings import BASE_URL
 
 
@@ -64,7 +69,7 @@ def app(request, uni):
     context = {
         'nav': True,
         'app': this_app,
-        'next_version': this_app.version + 0.1,
+        'next_version': number_format(this_app.version + Decimal(0.2),1),
         'assigns': assign,
         'versions': versions,
         'subscribers': subscribers
@@ -91,6 +96,12 @@ def save_app_update(request):
             appx.save()
             msg = (f"Software Update \n\nThere is a new update for {app_name}, Please apply update or contact provider. If "
                    f"issue persists after the update, please inform IT Department 054 631 00 11")
+
+            CUST_URL = settings.BASE_URL
+            if CUST_URL.endswith('/'):
+                CUST_URL = CUST_URL[:-1]
+
+            CUST_URL = shorten_url(CUST_URL)
             email_template = f"""
             <!DOCTYPE html>
             <html>
@@ -173,7 +184,7 @@ def save_app_update(request):
                     {description}
                   </div>
                   <p>Please apply the update as soon as possible. If the issue persists after updating, contact the IT Department at <strong>054 631 00 11</strong>.</p>
-                  <a href="{BASE_URL}{lastest_url}" class="btn">Download Update</a>
+                  <a href="{CUST_URL}{lastest_url}" class="btn">Download Update</a>
                 </div>
                 <div class="footer">
                   &copy; {app_name}. All rights reserved.

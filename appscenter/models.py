@@ -45,7 +45,7 @@ class App(models.Model):
     created_date = models.DateField(auto_now_add=True)
     created_time = models.TimeField(auto_now=True)
     status = models.IntegerField(default=1)
-    version = models.IntegerField(default=0)
+    version = models.DecimalField(default=0.0, decimal_places=1, max_digits=5)
 
     def latest_version(self):
         return VersionControl.objects.filter(app=self).order_by('-pk')[:1]
@@ -112,7 +112,7 @@ class App(models.Model):
 class VersionControl(models.Model):
     app = models.ForeignKey('App', on_delete=models.CASCADE)
     description = models.TextField()
-    version_no = models.IntegerField()
+    version_no = models.DecimalField(max_digits=5, decimal_places=1, default=0.0)
     files = models.FileField(upload_to=f"static/uploads/appversion")
 
     created_date = models.DateField(auto_now_add=True)
