@@ -12,7 +12,7 @@ from ocean.settings import COMPANY_DETAILS
 from ssml.helper import generate_entry_entry
 from ssml.models import ServiceOrderType, InstallationTypePhaseRate, AccountLedger, \
     JournalVoucherHd, JournalVoucherTransactions, FocInvoiceHd, FocInvoiceTransactions, FocInvoiceAssets, \
-    FocComplianceType, EcgInvoiceAssets, EcgInvoiceTransactions, EcgInvoiceHd
+    FocComplianceType, EcgInvoiceAssets, EcgInvoiceTransactions, EcgInvoiceHd, FocCompliance
 
 
 def safe_add_image_to_pdf(pdf, image_path, x, y, w, h=None):
@@ -896,7 +896,7 @@ def interface(request):
                     
                     # Sequential invoice number: ECG-INV-{LOCATION_ID}-{YEAR}-{SEQ}
                     year = datetime.now().year
-                    seq = ECGInvoiceHD.objects.filter(location=location, entry_date__year=year).count() + 1
+                    seq = EcgInvoiceHd.objects.filter(location=location, entry_date__year=year).count() + 1
                     entry_no = f"ECG-INV-{location.loc_id}-{year}-{seq:04d}"
                     
                     entry_date = data.get('entry_date')
@@ -906,7 +906,7 @@ def interface(request):
                     material_transactions = data.get('material_transactions', [])
                     created_by = User.objects.get(pk=data.get('mypk'))
 
-                    ecg_hd = ECGInvoiceHD(
+                    ecg_hd = EcgInvoiceHd(
                         entry_no=entry_no,
                         entry_date=entry_date,
                         location=location,
@@ -1029,6 +1029,8 @@ def interface(request):
                     invoice.approved_by = User.objects.get(pk=data.get('mypk'))
                     invoice.save()
 
+
+
             elif module == 'post_invoice':
                 from django.utils import timezone
                 id = data.get('id')
@@ -1048,222 +1050,11 @@ def interface(request):
 
                     ## make FOC
 
-                    EMAIL_INVOICE_RAISED = """
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                      <meta charset="UTF-8" />
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-                      <title>Invoice Notification</title>
-                      <style>
-                        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
-
-                        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-
-                        body {{
-                          background-color: #f4f4f0;
-                          font-family: 'DM Sans', sans-serif;
-                          color: #1a1a1a;
-                          padding: 40px 16px;
-                        }}
-
-                        .wrapper {{ max-width: 560px; margin: 0 auto; }}
-
-                        .card {{
-                          background: #ffffff;
-                          border-radius: 6px;
-                          overflow: hidden;
-                        }}
-
-                        .header {{
-                          background: #1a1a1a;
-                          padding: 36px 40px;
-                        }}
-
-                        .header .brand {{
-                          font-size: 11px;
-                          font-weight: 500;
-                          letter-spacing: 0.12em;
-                          text-transform: uppercase;
-                          color: rgba(255,255,255,0.45);
-                        }}
-
-                        .header .title {{
-                          margin-top: 12px;
-                          font-size: 26px;
-                          font-weight: 300;
-                          color: #ffffff;
-                          line-height: 1.3;
-                        }}
-
-                        .header .title span {{ color: #F5C400; }}
-
-                        .accent-bar {{ height: 4px; background: #F5C400; }}
-
-                        .body {{ padding: 36px 40px; }}
-
-                        .greeting {{
-                          font-size: 15px;
-                          font-weight: 500;
-                          margin-bottom: 12px;
-                          color: #1a1a1a;
-                        }}
-
-                        .message {{
-                          font-size: 14px;
-                          line-height: 1.8;
-                          color: #555;
-                        }}
-
-                        .invoice-box {{
-                          margin: 28px 0;
-                          border: 1px solid #e8e8e8;
-                          border-radius: 4px;
-                          overflow: hidden;
-                        }}
-
-                        .invoice-box .inv-header {{
-                          background: #F5C400;
-                          padding: 12px 20px;
-                          font-size: 11px;
-                          letter-spacing: 0.1em;
-                          text-transform: uppercase;
-                          color: #1a1a1a;
-                          font-weight: 500;
-                        }}
-
-                        .invoice-row {{
-                          display: flex;
-                          justify-content: space-between;
-                          padding: 13px 20px;
-                          border-top: 1px solid #f0f0f0;
-                          font-size: 13px;
-                        }}
-
-                        .invoice-row .label {{ color: #888; }}
-
-                        .invoice-row .value {{
-                          font-family: 'DM Mono', monospace;
-                          font-weight: 500;
-                          color: #1a1a1a;
-                        }}
-
-                        .invoice-row.total {{ background: #fafafa; }}
-
-                        .invoice-row.total .value {{ font-size: 15px; }}
-
-                        .cta {{ margin-top: 28px; }}
-
-                        .cta a {{
-                          display: inline-block;
-                          background: #F5C400;
-                          color: #1a1a1a;
-                          text-decoration: none;
-                          font-size: 13px;
-                          font-weight: 500;
-                          letter-spacing: 0.06em;
-                          padding: 13px 26px;
-                          border-radius: 4px;
-                        }}
-
-                        .note {{
-                          margin-top: 24px;
-                          font-size: 13px;
-                          color: #aaa;
-                          line-height: 1.7;
-                        }}
-
-                        .note a {{ color: #1a1a1a; }}
-
-                        .footer {{
-                          padding: 20px 40px;
-                          border-top: 1px solid #f0f0f0;
-                          font-size: 12px;
-                          color: #bbb;
-                          line-height: 1.7;
-                        }}
-                      </style>
-                    </head>
-                    <body>
-                      <div class="wrapper">
-                        <div class="card">
-
-                          <div class="header">
-                            <div class="brand">{company_name}</div>
-                            <div class="title">
-                              Invoice <span>#{invoice_number}</span><br/>has been raised.
-                            </div>
-                          </div>
-
-                          <div class="accent-bar"></div>
-
-                          <div class="body">
-                            <p class="greeting">Hi {contractor_name},</p>
-                            <p class="message">
-                              An invoice has been generated for your services rendered during the period of
-                              <strong>{period_start}</strong> to <strong>{period_end}</strong>.
-                              Please review the details below.
-                            </p>
-
-                            <div class="invoice-box">
-                              <div class="inv-header">Invoice Summary</div>
-                              <div class="invoice-row">
-                                <span class="label">Invoice No.</span>
-                                <span class="value">#{invoice_number}</span>
-                              </div>
-                              <div class="invoice-row">
-                                <span class="label">Issue Date</span>
-                                <span class="value">{invoice_date}</span>
-                              </div>
-                              <div class="invoice-row">
-                                <span class="label">Due Date</span>
-                                <span class="value">{due_date}</span>
-                              </div>
-                              <div class="invoice-row total">
-                                <span class="label">Amount Due</span>
-                                <span class="value">{currency} {amount}</span>
-                              </div>
-                            </div>
-
-                            <div class="cta">
-                              <a href="{invoice_url}">View Invoice &rarr;</a>
-                            </div>
-
-                            <p class="note">
-                              Questions? Reach out to
-                              <a href="mailto:{support_email}">{support_email}</a>.
-                            </p>
-                          </div>
-
-                          <div class="footer">
-                            &copy; {year} {company_name} &mdash; This is an automated notification, please do not reply directly to this email.
-                          </div>
-
-                        </div>
-                      </div>
-                    </body>
-                    </html>
-                    """
-
-                    html_body = EMAIL_INVOICE_RAISED.format(
-                        company_name="Sneda Smart Meters Limited.",
-                        contractor_name=invoice.contractor.company,
-                        invoice_number=invoice.entry_no,
-                        period_start=invoice.entry_date.strftime("%b %d, %Y"),
-                        period_end=invoice.entry_date.strftime("%b %d, %Y"),
-                        invoice_date=invoice.invoice_date.strftime("%b %d, %Y"),
-                        due_date="Not Applicable",
-                        currency='GHS',
-                        amount=f"{invoice.total_amount:.2f}",
-                        invoice_url=f"Visit your FOC Portal",
-                        support_email="solomon@snedaghana.com",
-                        year=timezone.now().year,
-                    )
 
 
 
-                    invoice.is_posted = True
-                    invoice.save()
+
+
 
                 except Exception as e:
                     InvoiceHD.objects.filter(id=id).update(is_posted=False)
@@ -1958,9 +1749,9 @@ def interface(request):
 
 
         elif method == 'VIEW':
-                
+
                 if module == 'contractor':
-                    id = data.get('id','*') 
+                    id = data.get('id','*')
                     if id == '*':
                         contractors = Contractor.objects.all().order_by('company')
                         success_response['message'] = [contractor.obj() for contractor in contractors]
@@ -1971,6 +1762,28 @@ def interface(request):
                     else:
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
+
+                elif module == 'foc_compliance':
+                    success_response['message'] = [x.obj() for x in FocCompliance.objects.all()]
+                    success_response['statuc_code'] = 200
+
+                elif module == 'export_meters':
+                    import openpyxl
+                    book = openpyxl.Workbook()
+                    sheet = book.active
+                    hd = ['STS','PHASE','DATE ADDED']
+                    sheet.append(hd)
+                    for meter in Meter.objects.all():
+                        sheet.append([
+                            meter.meter_no,
+                            meter.linked_phase.description if meter.linked_phase else "Not Set",
+                            str(meter.created_at)
+                        ])
+
+                    import uuid
+                    file_name = f"static/tmp/{uuid.uuid4().hex}.xlsx"
+                    book.save(file_name)
+                    success_response['message'] = file_name
 
                 elif module == 'foc_mis':
                     from datetime import datetime
@@ -2011,7 +1824,7 @@ def interface(request):
                     # 1. Generate ZIP of all individual invoices
                     zip_file_name = f"{uuid.uuid4().hex[:6]}_invoices.zip"
                     zip_file_path = f"static/tmp/{zip_file_name}"
-                    
+
                     with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zf:
                         for finv in fq:
                             invoice_file_name = finv.obj().get('invoice')
@@ -2028,19 +1841,19 @@ def interface(request):
                             logo_path = 'static/general/logo.png'
                             if os.path.exists(logo_path):
                                 self.image(logo_path, 10, 10, 35)
-                            
+
                             self.set_font('Arial', 'B', 16)
                             self.set_text_color(44, 62, 80)
                             self.set_xy(50, 10)
                             self.cell(0, 10, COMPANY_DETAILS.get('name'), 0, 1, 'L')
-                            
+
                             self.set_font('Arial', '', 9)
                             self.set_text_color(100, 100, 100)
                             self.set_x(50)
                             self.cell(0, 4, COMPANY_DETAILS.get('address'), 0, 1, 'L')
                             self.set_x(50)
                             self.cell(0, 4, f"{COMPANY_DETAILS.get('email')} | {COMPANY_DETAILS.get('phone')}" , 0, 1, 'L')
-                            
+
                             self.ln(10)
                             self.set_draw_color(44, 62, 80)
                             self.line(10, 35, 200, 35)
@@ -2066,7 +1879,7 @@ def interface(request):
                     # Summary Metrics (Styled like the Dashboard Cards)
                     pdf.set_fill_color(248, 249, 250)
                     pdf.set_draw_color(227, 230, 240)
-                    
+
                     card_w = 45
                     gap = 2.5
                     curr_x = 10
@@ -2085,7 +1898,7 @@ def interface(request):
                         pdf.set_font('Arial', 'B', 8)
                         pdf.set_text_color(100, 100, 100)
                         pdf.cell(card_w, 5, title.upper(), 0, 1, 'C')
-                        
+
                         pdf.set_xy(curr_x, curr_y + 10)
                         pdf.set_font('Arial', 'B', 12)
                         pdf.set_text_color(*color)
@@ -2099,7 +1912,7 @@ def interface(request):
                     pdf.set_font('Arial', 'B', 10)
                     pdf.set_fill_color(44, 62, 80)
                     pdf.set_text_color(255, 255, 255)
-                    
+
                     pdf.cell(10, 10, 'NO', 1, 0, 'C', True)
                     pdf.cell(55, 10, ' CONTRACTOR', 1, 0, 'L', True)
                     pdf.cell(30, 10, 'GROSS AMT', 1, 0, 'R', True)
@@ -2109,12 +1922,12 @@ def interface(request):
 
                     pdf.set_font('Arial', '', 8)
                     pdf.set_text_color(0, 0, 0)
-                    
+
                     for i, finv in enumerate(fq, 1):
                         # Main Invoice Row
                         pdf.set_font('Arial', 'B', 8)
                         pdf.cell(10, 8, str(i), 1, 0, 'C')
-                        
+
                         pdf.set_font('Arial', '', 8)
                         pdf.cell(55, 8, f" {str(finv.foc.company)[:25]}", 1, 0, 'L')
                         pdf.cell(30, 8, f"{finv.gross_amount:,.2f}", 1, 0, 'R')
@@ -2122,7 +1935,7 @@ def interface(request):
                         pdf.cell(30, 8, f"{finv.wht_amount:,.2f}", 1, 0, 'R')
                         pdf.set_font('Arial', 'B', 8)
                         pdf.cell(35, 8, f"{finv.net_amount:,.2f}", 1, 1, 'R')
-                        
+
                         # Bank details row
                         curr_y = pdf.get_y()
                         pdf.set_font('Arial', 'I', 7)
@@ -2162,7 +1975,7 @@ def interface(request):
                         pdf.cell(60, 7, title, 0, 1, 'L')
                         pdf.set_draw_color(200, 200, 200)
                         pdf.line(x, y_sign + 7, x + 55, y_sign + 7)
-                        
+
                         pdf.set_font('Arial', '', 8)
                         pdf.set_text_color(0, 0, 0)
                         pdf.set_xy(x, y_sign + 10)
@@ -2181,7 +1994,7 @@ def interface(request):
                     summary_pdf_name = f"mis_summary_{uuid.uuid4().hex[:6]}.pdf"
                     summary_pdf_path = f"static/tmp/{summary_pdf_name}"
                     pdf.output(summary_pdf_path)
-                    
+
                     success_response['pdf'] = summary_pdf_path
 
 
@@ -2294,7 +2107,7 @@ def interface(request):
 
                     success_response['message'] = file_name
 
-                    
+
                 elif module == 'export_petty_cash':
                     entry_no = data.get('entry_no')
                     import openpyxl
@@ -2311,24 +2124,24 @@ def interface(request):
                         x_file = ""
                         if len(evidence) > 0:
                             lx = evidence.split(',')
-                            
+
                             for lu in lx:
                                 file = lu.split('|')[-1].lstrip('/')
                                 file_url = f"{BASE_URL}{file}"
                                 short_link = shorten_url(file_url)
                                 x_file += f"{short_link},"
 
-                            x_file = x_file.rstrip(',')    
+                            x_file = x_file.rstrip(',')
                             print(x_file)
                         li = [transaction.direction,transaction.category,transaction.transaction_type,transaction.date,transaction.reference,transaction.description,transaction.amount,x_file]
                         sheet.append(li)
-                        
+
                     import uuid
                     unique_id = uuid.uuid4()
                     filename = f"static/general/tmp/petty_cash_{unique_id}.xlsx"
                     book.save(filename)
                     success_response['message'] = filename
-                        
+
 
                 elif module == 'retired_meters':
                     pk = data.get('pk','*')
@@ -2358,7 +2171,7 @@ def interface(request):
                             service.old_meter_no
                             ]
                         sheet.append(li)
-                    
+
                     import uuid
                     unique_id = uuid.uuid4()
                     filename = f"static/general/tmp/installations_{unique_id}_{start_date}_to_{end_date}.xlsx"
@@ -2396,7 +2209,7 @@ def interface(request):
                         rr += 1
 
                     if for_invoice == 'YES':
-                    
+
                         from datetime import datetime
 
                         days_count = 1
@@ -2409,7 +2222,7 @@ def interface(request):
                             except Exception:
                                 days_count = 1
 
-                        
+
 
                         foc_summ = book.active
                         foc_summ.title = "1.2 Summary FOC"
@@ -2422,20 +2235,20 @@ def interface(request):
                         print("FOC SUMMARY....")
                         for foc in Contractor.objects.filter(is_installer=True).order_by('company'):
                             total_jobs = ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,contractor=foc,flag_for_invoice=True).count()
-                            
+
                             if total_jobs > 0:
                                 li = [fosn,foc.company,total_jobs]
                                 for so in InstallationType.objects.all().order_by('name'):
 
                                     this_total = ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,contractor=foc,installation_type=so,flag_for_invoice=True).count()
-                                        
+
                                     print(foc.company,so.name,this_total)
                                     print("--------------------------------")
                                     li.append(this_total)
-                                
+
                                 foc_summ.append(li)
                                 fosn += 1
-                        
+
 
 
                         sheet = book.create_sheet(title = "Installations")
@@ -2446,14 +2259,14 @@ def interface(request):
                             sheet.append([service.ecg_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
                             # print(service.service_type.name)
                             # if service.service_type.name in ['Replacement', 'Regularization']:
-                                
+
                             #     if service.is_boxed:
                             #         print(f"BOXING EXPECTED FOR {service.service_type.name} and FOUND")
                             #         sheet.append([service.ecg_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
                             #     else:
                             #         print(f"BOXING EXPECTED FOR {service.service_type.name} and NOT FOUND")
                             # else:
-                                
+
                             #     print(f"BOXING NOT EXPECTED FOR {service.service_type.name}")
                             #     sheet.append([service.ecg_date,service.new_meter,service.old_meter_no,service.spn,service.service_type.name,service.contractor.company])
 
@@ -2466,24 +2279,24 @@ def interface(request):
                         mcs.append(["ITEM NAME","UNIT","CONCUMNED","WASTAGE","WASTAGE QTY","TOTAL CONSUMPTION","AVG CONSUMPTION"])
                         for mat in InventoryMaterial.objects.all():
                             from django.db.models import Sum
-                            
 
-                            
+
+
                             consumned = MaterialOrderItem.objects.filter(
                                 service_order__ecg_date__gte=start_date,
                                 service_order__ecg_date__lte=end_date,
                                 material=mat,
                                 service_order__flag_for_invoice=True
                             ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-                            
+
                             if consumned > 0:
-                                
+
                                 mcs.append(
                                     [mat.name,"",consumned,"","",consumned,Decimal(consumned)/Decimal(days_count)]
                                 )
 
                         ## create material consumption
-                        
+
                         ms = book.create_sheet(title="3.2 Material Consumption")
                         print("Materials Consumption")
                         hd = ["SN","DISTRICT","FOC","SPN","INSTALL DATE","METER TYPE","GPS","INSTALLATION TYPE"]
@@ -2499,9 +2312,9 @@ def interface(request):
                         for service in ServiceOrder.objects.filter(ecg_date__gte=start_date,ecg_date__lte=end_date,flag_for_invoice=True):
 
                             # check if old meter is boxed
-                        
+
                             if True:
-                            
+
                                 phase = Meter.objects.get(meter_no=service.new_meter).phase if Meter.objects.filter(meter_no=service.new_meter).exists() else "Unknown"
                                 line = [
                                     sn,
@@ -2521,7 +2334,7 @@ def interface(request):
                                 line.append("YES")
                                 line.append(service.new_meter)
                                 line.append("YES")
-                                
+
                                 line.append("BLUE")
                                 ms.append(line)
                                 sn += 1
@@ -2542,7 +2355,7 @@ def interface(request):
                         print("Inventory Reciept")
                         from datetime import date, timedelta
                         mirhd = ["No","Material Description","Unit of Measurement","Total Request"]
-                        
+
                         months_data = []
                         from datetime import datetime, date
 
@@ -2598,7 +2411,7 @@ def interface(request):
                                 total_recieved = mirmat.in_by_date_range(mt.get('start'),mt.get('end'))
                                 li.append(total_recieved)
                                 legend_recieved += total_recieved
-                            
+
                             li.append(legend_recieved)
                             li.append(total_request-legend_recieved)
                             mir.append(li)
@@ -2631,7 +2444,7 @@ def interface(request):
                                 total_used = mirmat.used_by_date_range(mt.get('start'),mt.get('end'),False)
                                 li.append(total_used)
                                 legend_usage += total_used
-                            
+
                             li.append(legend_usage)
                             li.append(total_recieved-legend_usage)
                             itr.append(li)
@@ -2643,21 +2456,21 @@ def interface(request):
                         srm_hd = ["No","Disctict","Energy Meter","Meter Enclosure","MCB/ MCCB/ FUSE","Cables etc","Burnt Meters","Stolen Meters"]
                         srm_sheet.append(srm_hd)
 
-                        
+
                         risn = 1
                         end_date = data.get('end_date')
                         start_date = data.get('start_date')
 
                         for loc in Location.objects.all():
-                            
+
                             total_removed_meters = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date,box__location=loc).count()
                             print(start_date,"to",end_date)
                             if total_removed_meters > 0:
                                 ri = [risn,loc.loc_name,total_removed_meters]
-                            
+
                                 srm_sheet.append(ri)
                                 risn += 1
-                        
+
 
                         # 4.2 Retiring Material
                         rm_sheet = book.create_sheet("4.2 Retiring Material")
@@ -2691,7 +2504,7 @@ def interface(request):
                         omr_sheet.append(omr_hd)
                         omrline = 1
                         for loc in Location.objects.all():
-                            
+
                             removed = RetiredMetersTransactions.objects.filter(date_removed__gte=start_date,date_removed__lte=end_date,box__location=loc)
                             if removed.count() > 0:
                                 for rem in removed:
@@ -2723,7 +2536,7 @@ def interface(request):
                                     li = [mx,name,service.contractor.company,service.spn,service.ecg_date,service.meter_phase(),service.gps_code,is_x,service.spn,"NO",rr,service.new_meter,"YES","BLUE","YES"]
                                     mx += 1
                                     this_sheet.append(li)
-                    
+
                     else:
                         sheet = book.active
                         sheet.title = "Meters Installed"
@@ -2735,7 +2548,7 @@ def interface(request):
                                 ,service.new_meter,service.spn,service.old_meter_no,service.meter_phase(),service.contractor.company,service.box_no,service.is_routing]
                             sheet.append(li)
                             sn += 1
-                    
+
                     import uuid
                     unique_id = uuid.uuid4()
                     filename = f"static/general/tmp/{for_invoice}_{unique_id}_{start_date}_to_{end_date}.xlsx"
@@ -2743,7 +2556,7 @@ def interface(request):
 
                     success_response['message'] = filename
                     response = success_response
-                    
+
                 elif module == 'not_returned_installations':
                     import openpyxl
                     book = openpyxl.Workbook()
@@ -2884,7 +2697,7 @@ def interface(request):
                             transfer = TransferHd.objects.filter(entry_no=id)
 
                         success_response['message'] = [t.obj() for t in transfer]
-                        
+
 
                 elif module == 'job_material_details':
                     contractor_code = data.get('code','*')
@@ -2907,7 +2720,7 @@ def interface(request):
                         mats = MaterialOrderItem.objects.filter(service_order=job,material_type='is')
                         print(mats)
                         for material in mats:
-                            
+
                             sheet.append([material.material.name,material.quantity])
                         sheet.append(['#############################'])
                         sheet.append([''])
@@ -2915,14 +2728,14 @@ def interface(request):
                     file_name = f'static/general/tmp/{contractor.company}.xlsx'
                     book.save(file_name)
 
-                        
+
 
                     success_response['message'] = file_name
 
                     response = success_response
 
                 elif module == 'month_walk':
-                    
+
                     from datetime import datetime
                     location = '*'
                     if data.get('location'):
@@ -2936,7 +2749,7 @@ def interface(request):
                     ws = wb.active
                     header = ['MONTH',"STOCK",'INSTALLED','%']
                     ws.append(header)
-                    
+
                     for month in range(1, current_month + 1):
                         import calendar
                         month_name = calendar.month_name[month]
@@ -2950,7 +2763,7 @@ def interface(request):
                         else:
                             last_day = datetime(year, month + 1, 1)
                         # Aggregate sum of material quantity in cardex for this month
-                        
+
                         if location == '*':
                             stock_sum = Cardex.objects.filter(
                                 created_at__lte=last_day,
@@ -2958,7 +2771,7 @@ def interface(request):
                                 ).aggregate(total=Sum('qty'))['total'] or 0
                         else:
                             stock_sum = Cardex.objects.filter(
-                                
+
                                 created_at__lte=last_day,
                                 material__item_type='pri',
                                 location=location
@@ -2984,7 +2797,7 @@ def interface(request):
                         else:
                             percent = 0
                         ws.append([month_name,stock_sum,total_service_orders,percent])
-                    
+
                     file = fr"static/general/tmp/status.xlsx"
                     wb.save(file)
                     success_response['message'] = months
@@ -3022,7 +2835,7 @@ def interface(request):
                             success_response['message'] = [loc.obj() for loc in Location.objects.all().order_by('loc_name')]
                         else:
                             success_response['message'] = [loc.obj() for loc in Location.objects.filter(id=id)]
-                    
+
 
                 elif module == 'expense':
                     from django.db.models import Sum
@@ -3045,10 +2858,10 @@ def interface(request):
                             expenses = Expense.objects.filter(is_rejected=True).order_by('date')
                         else:
                             expenses = Expense.objects.flter(is_rejected=False,is_approved=True).order_by('date')
-                        
+
                         if doc == 'json':
                             arr  = [expense.obj() for expense in expenses]
-                        
+
                         if doc == 'excel':
                             import openpyxl
                             wb = openpyxl.Workbook()
@@ -3057,7 +2870,7 @@ def interface(request):
                                 "ID","DIRECTION","CATEGORY","TYPE","DATE","REFERENCE","DESCRIPTION","AMOUNT","EVIDENCE"
                             ]
                             ws.append(header)
-                            
+
 
                             for expense in expenses:
                                 transaction = expense
@@ -3066,14 +2879,14 @@ def interface(request):
                                 x_file = ""
                                 if len(evidence) > 0:
                                     lx = evidence.split(',')
-                                    
+
                                     for lu in lx:
                                         file = lu.split('|')[-1].lstrip('/')
                                         file_url = f"{BASE_URL}{file}"
                                         short_link = shorten_url(file_url)
                                         x_file += f"{short_link},"
 
-                                    x_file = x_file.rstrip(',')    
+                                    x_file = x_file.rstrip(',')
                                     print(x_file)
 
                                 li = [transaction.direction,transaction.category,transaction.transaction_type,transaction.date,transaction.reference,transaction.description,transaction.amount,x_file]
@@ -3135,13 +2948,13 @@ def interface(request):
                     eligible_jobs = ServiceOrder.objects.filter(status='completed', is_ecg_invoiced=False)
                     if location_id != '*':
                         eligible_jobs = eligible_jobs.filter(location_id=location_id)
-                    
+
                     res = []
                     for job in eligible_jobs:
                         # Get job rate if exists
                         rate_obj = ECGJobRate.objects.filter(service_type=job.service_type).first()
                         rate = float(rate_obj.rate) if rate_obj else float(job.total_amount) if job.total_amount else 0.0
-                        
+
                         res.append({
                             'id': job.id,
                             'date': str(job.ecg_date),
@@ -3167,19 +2980,19 @@ def interface(request):
                 elif module == 'ecg_invoice':
                     id = data.get('id', '*')
                     if id == '*':
-                         success_response['message'] = [inv.obj() for inv in ECGInvoiceHD.objects.all().order_by('-entry_date')]
+                         success_response['message'] = [inv.obj() for inv in EcgInvoiceHd.objects.all().order_by('-entry_date')]
                     else:
-                         invoice = ECGInvoiceHD.objects.get(id=id)
+                         invoice = EcgInvoiceHd.objects.get(id=id)
                          res = invoice.obj()
-                         prev_inv = ECGInvoiceHD.objects.filter(id__lt=id).order_by('-id').first()
-                         next_inv = ECGInvoiceHD.objects.filter(id__gt=id).order_by('id').first()
+                         prev_inv = EcgInvoiceHd.objects.filter(id__lt=id).order_by('-id').first()
+                         next_inv = EcgInvoiceHd.objects.filter(id__gt=id).order_by('id').first()
                          res['previous'] = prev_inv.id if prev_inv else None
                          res['next'] = next_inv.id if next_inv else None
-                         
+
                          # Supplied Meters Tab
-                         supplied_meters = [item.obj() for item in ECGInvoiceItem.objects.filter(entry=invoice)]
+                         supplied_meters = [item.obj() for item in EcgInvoiceHd.objects.filter(entry=invoice)]
                          res['supplied_meters'] = supplied_meters
-                         
+
                          # Jobs Done Tab
                          jobs_done = []
                          for t in ECGInvoiceTransactions.objects.filter(entry=invoice):
@@ -3194,7 +3007,7 @@ def interface(request):
                                  'amount': float(t.amount)
                              })
                          res['jobs_done'] = jobs_done
-                         
+
                          # Meters Invoiced For Tab (Combined/Aggregated)
                          # Simply return the same as supplied_meters or a filtered list
                          res['meters_invoiced_for'] = supplied_meters
@@ -3207,8 +3020,8 @@ def interface(request):
 
                     from fpdf import FPDF
                     pdf = FPDF()
-                    pdf.add_page()  
-                    
+                    pdf.add_page()
+
                     pdf.set_font("Arial","",10)
                     pdf.cell(190, 5, txt="Sneda Smart Meters Limited", ln=True, border=0, align="C")
                     pdf.cell(190, 5, txt="P.O. Box 1024, Accra, Ghana", ln=True, border=0, align="C")
@@ -3222,8 +3035,8 @@ def interface(request):
 
                     pdf.set_font("Arial","B", size=12)
                     pdf.cell(95, 5, txt=invoice.contractor.company, ln=False, align="L",border=0)
-                    
-                    
+
+
                     pdf.set_font("Arial", "B", size=12)
                     pdf.cell(95, 5, txt=str(f"GHS {invoice.total_amount:,.2f}"), ln=True, align="R",border=0)
 
@@ -3272,12 +3085,12 @@ def interface(request):
 
                 elif module == 'print_tr':
                     entry_no = data.get('entry_no')
-                    
+
                     entry = TransferHd.objects.get(entry_no=entry_no)
 
                     from fpdf import FPDF
                     pdf = FPDF()
-                    pdf.add_page() 
+                    pdf.add_page()
 
                 # INSERT_YOUR_CODE
                     pdf = FPDF(orientation='L', unit='mm', format='A4')
@@ -3327,7 +3140,7 @@ def interface(request):
                             self.set_y(50)
                         def footer(self):
                             # Move 40mm from bottom
-                            
+
                             self.set_y(-40)
                             self.set_font("Arial", 'i', 8)
                             page_width = self.w - self.l_margin - self.r_margin
@@ -3339,13 +3152,13 @@ def interface(request):
                             self.cell(col_footer_width, 8, "Delivered By", border="LTR", align="C")
                             self.cell(col_footer_width, 8, "Received By", border="LTR", align="C")
                             self.ln(8)
-                            
+
                             self.set_font("Arial", '', 11)
                             self.cell(col_footer_width, 8, f"{entry.obj().get('sent_by')}", border="LR", align="C")
                             self.cell(col_footer_width, 8, f"{entry.obj().get('transporter')}", border="LR", align="C")
                             self.cell(col_footer_width, 8, "", border="LR", align="C")
                             self.ln(1)
-                            
+
                             self.set_font("Arial", '', 11)
                             self.cell(col_footer_width, 12, "_________________________", border="LRB", align="C")
                             self.cell(col_footer_width, 12, "_________________________", border="LRB", align="C")
@@ -3359,7 +3172,7 @@ def interface(request):
 
                     # Dummy data rows
                     pdf.set_font("Arial", '', 11)
-                    
+
                     dummy_data = [
                         # [1, "SM-1001", "Single Phase Smart Meter", 10, "10", ""],
                     ]
@@ -3384,7 +3197,7 @@ def interface(request):
                         pdf.ln()
 
                     # Footer lines
-                    
+
 
                     # Footer fields
                     # Footer with three columns: Sender, Delivered By, Received By, on every page
@@ -3393,8 +3206,8 @@ def interface(request):
                             y = self.get_y()
                             draw_waybill_header(self)
                             self.set_y(50)
-                        
-                    
+
+
 
                     file_name = f"{entry_no}.pdf"
                     file = f"static/general/tmp/{file_name}"
@@ -3410,7 +3223,7 @@ def interface(request):
                     else:
                         issueds = Issue.objects.filter(contractor_id=cont_pk).order_by('issue_date')
 
-                    
+
 
                     if data.get('type') == 'ISS':
                         issueds = issueds.filter(issue_type='ISS')
@@ -3429,7 +3242,7 @@ def interface(request):
                     else:
                         st = ServiceType.objects.get(id=service_type)
                         installations = ServiceOrder.objects.filter(service_type=st)
-                    
+
                     doc = data.get('doc','JSON')
                     if doc == 'JSON':
                         success_response['message'] = [installation.obj() for installation in installations]
@@ -3453,7 +3266,7 @@ def interface(request):
                         file_name = 'all_locations'
                     else:
                         file_name = Location.objects.get(id=loc_id).loc_name
-                    
+
                     cd = item.cardex(loc_id)
 
                     # make excel
@@ -3469,7 +3282,7 @@ def interface(request):
                     name = hashlib.md5(item.name.encode()).hexdigest()
                     file_name = f"static/general/tmp/{file_name}-Cardex-{name}.xlsx"
                     book.save(file_name)
-                   
+
 
                     arr = {
                         'json':cd,
@@ -3502,12 +3315,12 @@ def interface(request):
                                     if filta == 'is_return':
                                         material = material.filter(is_return=True)
                             if material.exists():
-                                
+
                                 success_response['message'] = [m.obj() for m in material]
                             else:
                                 success_response['status_code'] = 404
                                 success_response['message'] = f"No material with barcode or name matching {id} with filter {filta}"
-                       
+
 
                 elif module == 'meter':
                     meter_no=data.get('meter_no')
@@ -3563,123 +3376,268 @@ def interface(request):
                         success_response['message'] = [service.obj() for service in services]
                     else:
                         service = Service.objects.get(id=id)
-                        success_response['message'] = service.obj() 
+                        success_response['message'] = service.obj()
                 elif module == 'print_grn':
                     grn = Grn.objects.get(id=data.get('id'))
 
                     from fpdf import FPDF
-                    pdf = FPDF()
-                    pdf.add_page()
 
-                    pdf.set_font("Arial","B", size=20)
-                    pdf.cell(190, 5, txt="GOODS RECIEVED NOTE", ln=True, border=0, align="C")
-                    pdf.ln(10)
+                    class ModernPDF(FPDF):
+                        def footer(self):
+                            self.set_y(-15)
+                            self.set_font("Helvetica", "I", 8)
+                            self.set_text_color(150, 150, 150)
+                            self.cell(0, 10, f"Page {self.page_no()}/{{nb}}", 0, 0, "C")
 
-                    pdf.set_font("Arial","B", size=12)
-                    pdf.cell(20, 5, txt=f"Entry No: ", ln=False, align="L",border=0)
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(75, 5, txt=f"{grn.grn_no}", ln=False, align="L",border=0)
-                    
-                    pdf.set_font("Arial", "B", size=10)
-                    pdf.cell(75, 5, txt="Supplier Code:", ln=False, align="R",border=0)
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(20, 5, txt=f"{grn.supplier.id}", ln=True, align="R",border=0)
-
-                    pdf.set_font("Arial", "B", size=10)
-                    pdf.cell(20, 5, txt=f"GRN Date: ", ln=False, align="L",border=0)
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(75, 5, txt=f"{grn.grn_date}", ln=False, align="L",border=0)
-                    
-                    pdf.set_font("Arial", "B", size=10)
-                    pdf.cell(75, 5, txt="", ln=False, align="R",border=0)
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(20, 5, txt=f"{grn.supplier.supplier_name}", ln=True, align="R",border=0)
-
-                    pdf.set_font("Arial", "B", size=10)
-                    pdf.cell(20, 5, txt=f"Remarks: ", ln=False, align="L",border=0)
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(75, 5, txt=f"{grn.remarks}", ln=False, align="L",border=0)
-
-                    pdf.set_font("Arial", "B", size=10)
-                    pdf.cell(75, 5, txt=f"", ln=False, align="R",border=0)
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(20, 5, txt=f"{grn.supplier.supplier_phone}", ln=True, align="R",border=0)
-
-                    pdf.ln(10)
-                    
-
-                   
-
-                    pdf.set_font("Arial", "B", size=10)
-                    pdf.cell(10, 5, txt="LN", ln=False, border=1, align="L")
-                    pdf.cell(25, 5, txt="Barcode", ln=False, border=1, align="L")
-                    pdf.cell(50, 5, txt="Name", ln=False, border=1, align="L")
-                    pdf.cell(18, 5, txt="UOM", ln=False, border=1, align="C")
-                    pdf.cell(18, 5, txt="Pak. Qty", ln=False, border=1, align="C")
-                    pdf.cell(18, 5, txt="Qty", ln=False, border=1, align="C")
-                    pdf.cell(18, 5, txt="Tot. Qty", ln=False, border=1, align="C")
-                    pdf.cell(18, 5, txt="Rate", ln=False, border=1, align="C")
-                    pdf.cell(18, 5, txt="Tot. Amt", ln=True, border=1, align="C")
-                    line = 1
-                    total_qty = 0
-                    total_amount = 0
-                    pdf.set_font("Arial", size=10)
-                    for transaction in GrnTransaction.objects.filter(grn=grn):
-                        pdf.cell(10, 5, txt=str(line), ln=False, border=1, align="L")
-                        pdf.cell(25, 5, txt=transaction.barcode, ln=False, border=1, align="L")
-                        replacements = {
+                    def clean_str(s):
+                        if not s:
+                            return ""
+                        s = str(s)
+                        for orig, repl in {
                             '\u2018': "'",
                             '\u2019': "'",
                             '\u201C': '"',
                             '\u201D': '"',
                             '\u2014': '-',
-                        }
+                        }.items():
+                            s = s.replace(orig, repl)
+                        return s.encode('latin-1', 'ignore').decode('latin-1')
 
+                    import os
+                    logo_path = None
+                    for path in [
+                        f"{COMPANY_DETAILS.get('COMPANY_LOGO')}",
+                        'static/general/logo.png',
+                        'static/assets/img/logo.png',
+                        'static/general/ssml.png',
+                    ]:
+                        if os.path.exists(path):
+                            logo_path = path
+                            break
 
-                        for orig, repl in replacements.items():
-                            transaction.name = transaction.name.replace(orig, repl)
+                    pdf = ModernPDF()
+                    pdf.alias_nb_pages()
+                    pdf.set_margins(15, 15, 15)
+                    pdf.add_page()
 
-                        pdf.cell(50, 5, txt=transaction.name[:20], ln=False, border=1, align="L")
-                        pdf.cell(18, 5, txt=transaction.uom, ln=False, border=1, align="C")
-                        pdf.cell(18, 5, txt=str(transaction.pack_qty), ln=False, border=1, align="C")
-                        pdf.cell(18, 5, txt=str(transaction.qty), ln=False, border=1, align="C")
-                        pdf.cell(18, 5, txt=str(transaction.total_qty), ln=False, border=1, align="C")
-                        pdf.cell(18, 5, txt=str(transaction.rate), ln=False, border=1, align="C")
-                        pdf.cell(18, 5, txt=str(transaction.amount), ln=True, border=1, align="C")
+                    # Header Section with Company details
+                    start_y = 15
+                    if logo_path:
+                        pdf.image(logo_path, x=15, y=start_y, h=15)
+                        pdf.set_y(start_y)
+                        pdf.set_x(105)
+                        pdf.set_font("Helvetica", "B", 10)
+                        pdf.set_text_color(44, 62, 80)
+                        pdf.cell(90, 4, txt=f"{COMPANY_DETAILS.get('name')}", ln=True, align="R")
+
+                        pdf.set_x(105)
+                        pdf.set_font("Helvetica", "", 8)
+                        pdf.set_text_color(100, 100, 100)
+                        pdf.cell(90, 3.5, txt=f"{COMPANY_DETAILS.get('postal_address')}", ln=True, align="R")
+
+                        pdf.set_x(105)
+                        pdf.cell(90, 3.5, txt=f"Tel: {COMPANY_DETAILS.get('phone')}", ln=True, align="R")
+
+                        pdf.set_x(105)
+                        pdf.cell(90, 3.5, txt=f"Email: {COMPANY_DETAILS.get('email')}", ln=True, align="R")
+                    else:
+                        pdf.set_y(start_y)
+                        pdf.set_font("Helvetica", "B", 11)
+                        pdf.set_text_color(44, 62, 80)
+                        pdf.cell(180, 4.5, txt=f"{COMPANY_DETAILS.get('name')}", ln=True, align="L")
+
+                        pdf.set_font("Helvetica", "", 8.5)
+                        pdf.set_text_color(100, 100, 100)
+                        pdf.cell(180, 4, txt=f"{COMPANY_DETAILS.get('postal_address')}", ln=True, align="L")
+                        pdf.cell(180, 4, txt=f"Tel: {COMPANY_DETAILS.get('phone')}", ln=True, align="L")
+                        pdf.cell(180, 4, txt=f"Email: {COMPANY_DETAILS.get('email')}", ln=True, align="L")
+
+                    pdf.set_y(34)
+                    pdf.set_font("Helvetica", "B", 14)
+                    pdf.set_text_color(44, 62, 80)
+                    pdf.cell(180, 6, txt="GOODS RECEIVED NOTE", ln=True, border=0, align="L")
+
+                    pdf.set_draw_color(44, 62, 80)
+                    pdf.set_line_width(0.6)
+                    current_y = pdf.get_y()
+                    pdf.line(15, current_y + 1, 195, current_y + 1)
+
+                    # Gap before metadata layout
+                    pdf.set_y(current_y + 5)
+
+                    # Metadata Fields Sanitization
+                    grn_no = clean_str(grn.grn_no)
+                    supplier_id = clean_str(grn.supplier.id if grn.supplier else "")
+                    grn_date = clean_str(grn.grn_date)
+                    supplier_name = clean_str(grn.supplier.supplier_name if grn.supplier else "")
+                    remarks = clean_str(grn.remarks)
+                    supplier_phone = clean_str(grn.supplier.supplier_phone if (grn.supplier and grn.supplier.supplier_phone) else "")
+
+                    # Metadata Layout (2 Columns)
+                    # Row 1
+                    pdf.set_font("Helvetica", "B", 8)
+                    pdf.set_text_color(120, 120, 120)
+                    pdf.cell(25, 6, "ENTRY NO:", ln=False)
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(51, 51, 51)
+                    pdf.cell(65, 6, grn_no, ln=False)
+
+                    pdf.set_font("Helvetica", "B", 8)
+                    pdf.set_text_color(120, 120, 120)
+                    pdf.cell(30, 6, "SUPPLIER CODE:", ln=False)
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(51, 51, 51)
+                    pdf.cell(60, 6, supplier_id, ln=True)
+
+                    # Row 2
+                    pdf.set_font("Helvetica", "B", 8)
+                    pdf.set_text_color(120, 120, 120)
+                    pdf.cell(25, 6, "GRN DATE:", ln=False)
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(51, 51, 51)
+                    pdf.cell(65, 6, grn_date, ln=False)
+
+                    pdf.set_font("Helvetica", "B", 8)
+                    pdf.set_text_color(120, 120, 120)
+                    pdf.cell(30, 6, "SUPPLIER NAME:", ln=False)
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(51, 51, 51)
+                    pdf.cell(60, 6, supplier_name, ln=True)
+
+                    # Row 3
+                    pdf.set_font("Helvetica", "B", 8)
+                    pdf.set_text_color(120, 120, 120)
+                    pdf.cell(25, 6, "REMARKS:", ln=False)
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(51, 51, 51)
+                    pdf.cell(65, 6, remarks, ln=False)
+
+                    pdf.set_font("Helvetica", "B", 8)
+                    pdf.set_text_color(120, 120, 120)
+                    pdf.cell(30, 6, "SUPPLIER PHONE:", ln=False)
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(51, 51, 51)
+                    pdf.cell(60, 6, supplier_phone, ln=True)
+
+                    pdf.ln(8)
+
+                    # Table Header Styling
+                    pdf.set_draw_color(220, 224, 230)
+                    pdf.set_line_width(0.1)
+                    pdf.set_fill_color(240, 244, 248)
+                    pdf.set_text_color(44, 62, 80)
+                    pdf.set_font("Helvetica", "B", 8)
+
+                    # Columns widths: 8, 22, 50, 15, 17, 17, 17, 17, 18 -> Total: 180
+                    pdf.cell(8, 8, txt="LN", ln=False, border=1, align="L", fill=True)
+                    pdf.cell(22, 8, txt="Barcode", ln=False, border=1, align="L", fill=True)
+                    pdf.cell(50, 8, txt="Name", ln=False, border=1, align="L", fill=True)
+                    pdf.cell(15, 8, txt="UOM", ln=False, border=1, align="C", fill=True)
+                    pdf.cell(17, 8, txt="Pak. Qty", ln=False, border=1, align="R", fill=True)
+                    pdf.cell(17, 8, txt="Qty", ln=False, border=1, align="R", fill=True)
+                    pdf.cell(17, 8, txt="Tot. Qty", ln=False, border=1, align="R", fill=True)
+                    pdf.cell(17, 8, txt="Rate", ln=False, border=1, align="R", fill=True)
+                    pdf.cell(18, 8, txt="Tot. Amt", ln=True, border=1, align="R", fill=True)
+
+                    line = 1
+                    total_qty = 0
+                    total_amount = 0
+
+                    pdf.set_font("Helvetica", "", 8)
+                    pdf.set_text_color(51, 51, 51)
+
+                    for transaction in GrnTransaction.objects.filter(grn=grn):
+                        t_name = clean_str(transaction.name)[:25]
+                        t_barcode = clean_str(transaction.barcode)
+                        t_uom = clean_str(transaction.uom)
+
+                        pdf.cell(8, 7, txt=str(line), ln=False, border=1, align="L")
+                        pdf.cell(22, 7, txt=t_barcode, ln=False, border=1, align="L")
+                        pdf.cell(50, 7, txt=t_name, ln=False, border=1, align="L")
+                        pdf.cell(15, 7, txt=t_uom, ln=False, border=1, align="C")
+                        pdf.cell(17, 7, txt=str(transaction.pack_qty), ln=False, border=1, align="R")
+                        pdf.cell(17, 7, txt=str(transaction.qty), ln=False, border=1, align="R")
+                        pdf.cell(17, 7, txt=str(transaction.total_qty), ln=False, border=1, align="R")
+
+                        try:
+                            rate_val = f"{float(transaction.rate):,.2f}"
+                        except (ValueError, TypeError):
+                            rate_val = str(transaction.rate)
+
+                        try:
+                            amount_val = f"{float(transaction.amount):,.2f}"
+                        except (ValueError, TypeError):
+                            amount_val = str(transaction.amount)
+
+                        pdf.cell(17, 7, txt=rate_val, ln=False, border=1, align="R")
+                        pdf.cell(18, 7, txt=amount_val, ln=True, border=1, align="R")
+
                         line += 1
-                        total_qty += transaction.total_qty
-                        total_amount += transaction.amount
+                        total_qty += transaction.total_qty if transaction.total_qty else 0
+                        total_amount += transaction.amount if transaction.amount else 0
 
-                    
-                    pdf.ln(10)
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(170, 5, txt="Total Amount: ", ln=False, align="R",border=0)
-                    pdf.cell(20, 5, txt=str(total_amount), ln=True, align="R",border=0)
+                    # Table Footer divider line
+                    pdf.set_draw_color(180, 180, 180)
+                    pdf.set_line_width(0.2)
+                    pdf.cell(180, 2, txt="", ln=True, border="T")
 
-                    
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(170, 5, txt="Total Qty: ", ln=False, align="R",border=0)
-                    pdf.cell(20, 5, txt=str(total_qty), ln=True, align="R",border=0)
+                    # Totals
+                    try:
+                        tot_amt_str = f"{float(total_amount):,.2f}"
+                    except (ValueError, TypeError):
+                        tot_amt_str = str(total_amount)
 
-                    pdf.ln(10)
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(190 / 6, 10, txt=f"{grn.created_by.first_name} {grn.created_by.last_name}", ln=False, align="C",border=1)
-                    pdf.cell(190 / 6, 10, txt="", ln=False, align="R",border=0)
-                    pdf.cell(190 / 12, 10, txt="", ln=False, align="R",border=0)
-                    pdf.cell(190 / 6, 10, txt=f"{grn.obj().get('posted_by')}", ln=False, align="R",border=1)
-                    pdf.cell(190 / 12, 10, txt="", ln=False, align="R",border=0)
-                    pdf.cell(190 / 6, 10, txt="", ln=False, align="R",border=0)
-                    pdf.cell(190 / 6, 10, txt="", ln=True, align="R",border=1)
-                    
-                    pdf.cell(190 / 6, 10, txt="Created By", ln=False, align="C",border=0)
-                    pdf.cell(190 / 6, 10, txt="", ln=False, align="R",border=0)
-                    pdf.cell(190 / 12, 10, txt="", ln=False, align="R",border=0)
-                    pdf.cell(190 / 6, 10, txt="Posted By", ln=False, align="C",border=0)
-                    pdf.cell(190 / 12, 10, txt="", ln=False, align="R",border=0)
-                    pdf.cell(190 / 6, 10, txt="", ln=False, align="R",border=0)
-                    pdf.cell(190 / 6, 10, txt="Confirmed By", ln=True, align="C",border=0)
+                    try:
+                        tot_qty_str = f"{int(total_qty):,}"
+                    except (ValueError, TypeError):
+                        tot_qty_str = str(total_qty)
 
-                        
+                    pdf.set_font("Helvetica", "B", 9)
+                    pdf.set_text_color(44, 62, 80)
+                    pdf.cell(145, 6, txt="Total Qty: ", ln=False, align="R", border=0)
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(51, 51, 51)
+                    pdf.cell(35, 6, txt=tot_qty_str, ln=True, align="R", border=0)
+
+                    pdf.set_font("Helvetica", "B", 9)
+                    pdf.set_text_color(44, 62, 80)
+                    pdf.cell(145, 6, txt="Total Amount: ", ln=False, align="R", border=0)
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(51, 51, 51)
+                    pdf.cell(35, 6, txt=tot_amt_str, ln=True, align="R", border=0)
+
+                    # Signatures Section
+                    pdf.ln(12)
+                    pdf.set_draw_color(180, 180, 180)
+                    pdf.set_line_width(0.2)
+
+                    created_by_name = clean_str(f"{grn.created_by.first_name} {grn.created_by.last_name}")
+                    posted_by_name = clean_str(grn.obj().get('posted_by'))
+                    if posted_by_name == 'None' or not posted_by_name:
+                        posted_by_name = ""
+
+                    sig_h = 10
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(51, 51, 51)
+
+                    # Draw signature lines
+                    pdf.cell(45, sig_h, txt=created_by_name, ln=False, align="C", border="B")
+                    pdf.cell(22.5, sig_h, txt="", ln=False, border=0)
+                    pdf.cell(45, sig_h, txt=posted_by_name, ln=False, align="C", border="B")
+                    pdf.cell(22.5, sig_h, txt="", ln=False, border=0)
+                    pdf.cell(45, sig_h, txt="", ln=True, align="C", border="B")
+
+                    # Draw signature labels
+                    pdf.ln(2)
+                    pdf.set_font("Helvetica", "B", 8)
+                    pdf.set_text_color(120, 120, 120)
+
+                    pdf.cell(45, 5, txt="CREATED BY", ln=False, align="C", border=0)
+                    pdf.cell(22.5, 5, txt="", ln=False, border=0)
+                    pdf.cell(45, 5, txt="POSTED BY", ln=False, align="C", border=0)
+                    pdf.cell(22.5, 5, txt="", ln=False, border=0)
+                    pdf.cell(45, 5, txt="CONFIRMED BY", ln=True, align="C", border=0)
+
                     file_name = f"GRN-{grn.grn_no}.pdf"
                     file = f"static/general/tmp/{file_name}"
                     pdf.output(file)
@@ -3690,8 +3648,8 @@ def interface(request):
 
                     from fpdf import FPDF
                     pdf = FPDF()
-                    pdf.add_page()  
-                    
+                    pdf.add_page()
+
                     pdf.set_font("Arial","",10)
                     pdf.cell(190, 5, txt="Sneda Smart Meters Limited", ln=True, border=0, align="C")
                     pdf.cell(190, 5, txt="P.O. Box 1024, Accra, Ghana", ln=True, border=0, align="C")
@@ -3705,8 +3663,8 @@ def interface(request):
 
                     pdf.set_font("Arial","B", size=12)
                     pdf.cell(90, 5, txt=f"Document", ln=False, align="L",border=0)
-                    
-                    
+
+
                     pdf.set_font("Arial", "B", size=12)
                     pdf.cell(100, 5, txt="Contactor", ln=True, align="R",border=0)
 
@@ -3755,8 +3713,8 @@ def interface(request):
                     pdf.set_font("Arial",'', size=10)
                     pdf.cell(75, 5, txt=f"", ln=False, align="L",border=0)
 
-                   
-                    
+
+
                     pdf.ln(10)
 
                     pdf.set_font("Arial", "B", size=8)
@@ -3787,7 +3745,7 @@ def interface(request):
                     if Meter.objects.filter(issue=issue).exists():
                         pdf.multi_cell(190, 10, txt="Meters: [" + ', '.join([meter.meter_no for meter in Meter.objects.filter(issue=issue)]) + "]",border=True, align="L")
                     pdf.ln(10)
-                    
+
                     pdf.set_font("Arial", size=10)
                     pdf.cell(170, 5, txt="Total Amount: ", ln=False, align="R",border=0)
                     pdf.cell(20, 5, txt=str(issue.obj().get('total_amount')), ln=True, align="R",border=0)
@@ -3805,7 +3763,7 @@ def interface(request):
                     pdf.cell(190 / 12, 10, txt="", ln=False, align="R",border=0)
                     pdf.cell(190 / 6, 10, txt="", ln=False, align="R",border=0)
                     pdf.cell(190 / 6, 10, txt="", ln=True, align="R",border=1)
-                    
+
                     pdf.cell(190 / 6, 10, txt="Created By", ln=False, align="C",border=0)
                     pdf.cell(190 / 6, 10, txt="", ln=False, align="R",border=0)
                     pdf.cell(190 / 12, 10, txt="", ln=False, align="R",border=0)
@@ -3813,7 +3771,7 @@ def interface(request):
                     pdf.cell(190 / 12, 10, txt="", ln=False, align="R",border=0)
                     pdf.cell(190 / 6, 10, txt="", ln=False, align="R",border=0)
                     pdf.cell(190 / 6, 10, txt="Confirmed By", ln=True, align="C",border=0)
-                    
+
                     file_name = f"ISSUE-{issue.issue_no}.pdf"
                     file = f"static/general/tmp/{file_name}"
                     pdf.output(file)
@@ -3823,18 +3781,18 @@ def interface(request):
                     from fpdf import FPDF
                     pdf = FPDF()
                     pdf.add_page()
-                    
+
                     pdf.set_font("Arial","B", size=12)
                     pdf.cell(190, 5, txt="Services", ln=True, border=0, align="C")
                     pdf.ln(10)
-                    
-                    
+
+
                     pdf.cell(20, 5, txt="Code", ln=False, align="L",border=0)
                     pdf.cell(50, 5, txt="Name", ln=False, align="L",border=0)
                     pdf.cell(50, 5, txt="Description", ln=False, align="L",border=0)
                     pdf.cell(20, 5, txt="Rate", ln=True, align="L",border=0)
                     pdf.ln(10)
-                    
+
                     services = Service.objects.all()
                     for service in services:
                         pdf.set_font("Arial","B", size=10)
@@ -3848,8 +3806,8 @@ def interface(request):
                     file = f"static/general/tmp/{file_name}"
                     pdf.output(file)
                     success_response['message'] = file
-                    
-                    
+
+
 
                 elif module == 'issue':
                     id = data.get('id','*')
@@ -3881,19 +3839,19 @@ def interface(request):
                             limit = data.get('filter',1000)
                             service_orders = ServiceOrder.objects.filter(contractor=data.get('contractor'),status=status)
                             status = data.get('status')
-                            
+
                         elif filter == 'plot':
                             service_orders = ServiceOrder.objects.filter(plot=data.get('plot'))[:10]
                         elif filter == 'service_type':
                             service_orders = ServiceOrder.objects.filter(service_type=data.get('service_type'))[:10]
-                            
+
                         success_response['message'] = [service_order.obj() for service_order in service_orders]
                     else:
                         service_order = ServiceOrder.objects.filter(Q(id=id) | Q(new_meter=id)).first()
                         success_response['message'] = [service_order.obj()]
 
-                    
-                
+
+
                 elif module == 'service_order_item':
                     print(data)
                     service_order_id = data.get('service_order_id')
@@ -3903,7 +3861,7 @@ def interface(request):
                     else:
                         service_order_item = ServiceOrderItem.objects.get(id=service_order_id)
                         success_response['message'] = service_order_item.obj()
-                
+
                 elif module == 'service_order_return':
                     id = data.get('id')
                     if id == '*':
@@ -3912,7 +3870,7 @@ def interface(request):
                     else:
                         return_item = ServiceOrderReturns.objects.get(id=id)
                         success_response['message'] = return_item.obj()
-                
+
                 elif module == 'reedem':
                     pk = data.get('pk')
                     entry = Reedem.objects.get(pk=pk)
@@ -3928,10 +3886,10 @@ def interface(request):
                     from django.utils import timezone
                     from datetime import datetime
                     from .models import ServiceOrder
-                    
+
                     day_date = data.get('date', datetime.now().date())
                     remarks = data.get('remarks', '')
-                    
+
                     from fpdf import FPDF
 
                     class MyPDF(FPDF):
@@ -3939,12 +3897,12 @@ def interface(request):
                             # Header background
                             self.set_fill_color(44, 62, 80) # Dark Blue
                             self.rect(0, 0, 210, 40, 'F')
-                            
+
                             # Company Name
                             self.set_text_color(255, 255, 255)
                             self.set_font("Arial", "B", 16)
                             self.cell(0, 10, "SNEDA SMART METERS LTD", ln=True, align="C")
-                            
+
                             # Report Title
                             self.set_font("Arial", "", 12)
                             self.cell(0, 10, f"Daily Operational Report - {day_date}", ln=True, align="C")
@@ -4031,12 +3989,12 @@ def interface(request):
                     pdf.ln(10)
 
 
-                    
+
                     # 1. SUMMARY BY SERVICE TYPE
                     pdf.set_font("Arial", "B", 12)
                     pdf.set_text_color(44, 62, 80)
                     pdf.cell(0, 10, "Summary by Service Type", ln=True)
-                    
+
                     widths = [100, 45, 45]
                     headers = ["Service Type", "Today Jobs", "Total Jobs"]
                     pdf.styled_table_header(headers, widths)
@@ -4045,17 +4003,17 @@ def interface(request):
                     total_today_jobs = 0
                     total_total_jobs = 0
                     fill = False
-                    
+
                     for st in ServiceType.objects.all():
                         today_jobs = st.today_jobs(day_date)
                         total_jobs = st.total_installations(day_date)
-                        
+
                         pdf.set_fill_color(244, 247, 246) if fill else pdf.set_fill_color(255, 255, 255)
                         pdf.cell(widths[0], 7, f" {st.name}", border=1, fill=True)
                         pdf.cell(widths[1], 7, f"{today_jobs}", border=1, align="C", fill=True)
                         pdf.cell(widths[2], 7, f"{total_jobs}", border=1, align="C", fill=True)
                         pdf.ln()
-                        
+
                         total_today_jobs += today_jobs
                         total_total_jobs += total_jobs
                         fill = not fill
@@ -4072,7 +4030,7 @@ def interface(request):
                     pdf.set_font("Arial", "B", 12)
                     pdf.set_text_color(44, 62, 80)
                     pdf.cell(0, 10, "Contractors On Site", ln=True)
-                    
+
                     widths = [100, 45, 45]
                     headers = ["Contractor", "Today Jobs", "Total Jobs"]
                     pdf.styled_table_header(headers, widths)
@@ -4080,7 +4038,7 @@ def interface(request):
                     c_total_today_jobs = 0
                     c_total_total_jobs = 0
                     fill = False
-                    
+
                     for contractor in Contractor.objects.filter(is_installer=True).order_by('company'):
                         today_jobs = ServiceOrder.objects.filter(contractor=contractor, service_date=day_date).count()
                         total_jobs = ServiceOrder.objects.filter(contractor=contractor, service_date__lte=day_date).count()
@@ -4091,7 +4049,7 @@ def interface(request):
                             pdf.cell(widths[1], 7, f"{today_jobs}", border=1, align="C", fill=True)
                             pdf.cell(widths[2], 7, f"{total_jobs}", border=1, align="C", fill=True)
                             pdf.ln()
-                            
+
                             c_total_today_jobs += today_jobs
                             c_total_total_jobs += total_jobs
                             fill = not fill
@@ -4108,7 +4066,7 @@ def interface(request):
                     pdf.set_font("Arial", "B", 12)
                     pdf.set_text_color(44, 62, 80)
                     pdf.cell(0, 10, "Contractors Not On Site", ln=True)
-                    
+
                     widths = [100, 90]
                     headers = ["Contractor", "Phone Number"]
                     pdf.styled_table_header(headers, widths)
@@ -4128,7 +4086,7 @@ def interface(request):
                     pdf.set_font("Arial", "B", 12)
                     pdf.set_text_color(44, 62, 80)
                     pdf.cell(0, 10, "Contractor Quality Control (Errors)", ln=True)
-                    
+
                     widths = [100, 45, 45]
                     headers = ["Contractor", "Errors", "Weekly Margin"]
                     pdf.styled_table_header(headers, widths)
@@ -4160,7 +4118,7 @@ def interface(request):
                     pdf.set_font("Arial", "B", 12)
                     pdf.set_text_color(44, 62, 80)
                     pdf.cell(0, 10, "Issued Materials Today", ln=True)
-                    
+
                     widths = [80, 30, 40, 40]
                     headers = ["Material", "Qty", "Est. Value", "Total Amt"]
                     pdf.styled_table_header(headers, widths)
@@ -4168,23 +4126,23 @@ def interface(request):
                     total_amt = 0
                     total_qty = 0
                     fill = False
-                    
+
                     materials_data = IssueTransaction.objects.filter(issue__issue_date=day_date, issue__issue_type='ISS')
                     from django.db.models import Sum
-                    
+
                     # Group by material
                     unique_materials = InventoryMaterial.objects.filter(barcode__in=materials_data.values_list('barcode', flat=True))
                     for material in unique_materials:
                         qty = materials_data.filter(material=material).aggregate(t_qty=Sum('total_qty'))['t_qty'] or 0
                         amount = qty * material.value
-                        
+
                         pdf.set_fill_color(244, 247, 246) if fill else pdf.set_fill_color(255, 255, 255)
                         pdf.cell(widths[0], 7, f" {material.name[:35]}", border=1, fill=True)
                         pdf.cell(widths[1], 7, f"{qty}", border=1, align="C", fill=True)
                         pdf.cell(widths[2], 7, f"{'{:,.2f}'.format(material.value)}", border=1, align="R", fill=True)
                         pdf.cell(widths[3], 7, f"{'{:,.2f}'.format(amount)} ", border=1, align="R", fill=True)
                         pdf.ln()
-                        
+
                         total_amt += amount
                         total_qty += qty
                         fill = not fill
@@ -4203,7 +4161,7 @@ def interface(request):
                     pdf.set_font("Arial", "B", 12)
                     pdf.set_text_color(44, 62, 80)
                     pdf.cell(0, 10, "Detailed Meter Installations Today", ln=True)
-                    
+
                     widths = [10, 25, 55, 30, 70]
                     headers = ["#", "Meter No", "Customer", "Mobile", "Contractor"]
                     pdf.styled_table_header(headers, widths)
@@ -4225,11 +4183,11 @@ def interface(request):
                     file_path = f"static/general/tmp/{file_name}"
                     pdf.output(file_path)
                     success_response['message'] = file_path
-                        
-                        
+
+
                 elif module == 'item_availability':
                     from django.utils import timezone
-                    
+
                     as_of = data.get('as_of_field   ',timezone.now().date())
                     loc_id = data.get('location','*')
                     stock_only = data.get('stock_only','no')
@@ -4327,7 +4285,7 @@ def interface(request):
                                 'total_amount':total_amount,
                                 'in_out':in_and_out
                             })
-                        
+
                     xfile = f"static/general/tmp/{as_of}.xlsx"
                     book.save(xfile)
                     file_name = f"Item Availability As Of {as_of}.pdf"
@@ -4337,15 +4295,15 @@ def interface(request):
                         'file':xfile,
                         'data':arr
                     }
-                        
-                
+
+
 
                 elif module == 'contractor_wise':
                     from django.utils import timezone
-                    from datetime import timedelta  
+                    from datetime import timedelta
                     arr = []
                     pass
-                        
+
                     success_response['message'] = arr
 
 
@@ -4362,6 +4320,31 @@ def interface(request):
                 service = Service.objects.get(id=id)
                 service.delete()
                 success_response['message'] = "Service Deleted Successfully"
+
+            elif module == 'compliance':
+                print(data)
+                pk = data.get('pk')
+                remarks = data.get('remarks')
+
+                cp = FocCompliance.objects.get(pk=pk)
+                email = cp.foc.email
+                phone = cp.foc.phone
+
+                name = cp.c_type.name
+
+                sms = f"Your compliance ({name}) has been rejected with remarks:\n\n{remarks}\nPlease Re-upload again"
+                cp.delete()
+                # send sms
+                Sms.objects.create(
+                    api=SmsApi.objects.get(is_default=True),
+                    to=phone,
+                    message=sms
+                )
+                success_response['message'] = "Compliance Deleted Successfully"
+
+            elif module == 'foc_invoice':
+                FocInvoiceHd.objects.get(entry_no=data.get('entry_no')).delete()
+                success_response['message'] = "Invoice Deleted Successfully"
 
             elif module == "service_type":
                 print(data)
@@ -4579,6 +4562,50 @@ def interface(request):
                 invoice.save()
 
                 success_response['message'] = "Invoice Validated Successfully"
+
+
+
+            elif module == 'prop_patch':
+                # update service materials
+                barcodes = {
+                    '1': ['MT022', 'MT020', 'MT019', 'MT018'],  # User card, CIU, Enclosure, Meter
+                    '3': ['MT063', 'MT062', 'MAT-38', 'MT061'],  # User card, CIU, Enclosure, Meter
+                }
+                for service in ServiceOrder.objects.all():
+                    sts = service.new_meter
+                    #MaterialOrderItem
+                    phase = service.linked_phase
+                    phase_no = 0
+                    if phase:
+                        phase_no = phase.number
+                    if phase_no != 0:
+                        print(sts,phase_no)
+                        materials = barcodes.get(phase_no)
+                        if materials is not None:
+                            for barcode in materials:
+                                mt = InventoryMaterial.objects.get(barcode=barcode)
+                                try:
+                                    MaterialOrderItem.objects.create(
+                                        service_order=service,
+                                        material=mt,
+                                        quantity=1,
+                                        rate=0,
+                                        amount=0,
+                                        material_type='is'
+
+                                    )
+                                    print(mt.name,"Added to",sts)
+                                except Exception as e:
+                                    print(str(e))
+                        else:
+                            print(phase_no, "has no materials")
+
+                    else:
+                        print(f"No Phase {sts}")
+
+
+
+                    # service.custom_update()
 
             elif module == 'post_foc_invoice':
 
@@ -5718,7 +5745,7 @@ def interface(request):
             elif module == 'approve_ecg_invoice':
                 try:
                     invoice_id = data.get('id')
-                    invoice = ECGInvoiceHD.objects.get(id=invoice_id)
+                    invoice = EcgInvoiceHd.objects.get(id=invoice_id)
                     invoice.is_approved = True
                     invoice.approved_by = User.objects.get(pk=data.get('mypk'))
                     invoice.save()
@@ -5730,7 +5757,7 @@ def interface(request):
             elif module == 'post_ecg_invoice':
                 try:
                     invoice_id = data.get('id')
-                    invoice = ECGInvoiceHD.objects.get(id=invoice_id)
+                    invoice = EcgInvoiceHd.objects.get(id=invoice_id)
                     if not invoice.is_approved:
                         raise Exception("Invoice must be approved before posting")
                     invoice.is_posted = True

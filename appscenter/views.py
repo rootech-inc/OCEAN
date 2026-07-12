@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from admin_panel.models import Sms, SmsApi
 from appconfig.form import NewApp, NewVersion
-from appscenter.models import AppsGroup, App, AppAssign, AppProviders
+from appscenter.models import AppsGroup, App, AppAssign, AppProviders, Subscribers
 from blog.anton import make_md5
 
 
@@ -54,15 +54,19 @@ def save_new_app(request):
 
 
 @login_required()
-def app(request, pk):
-    this_app = App.objects.get(pk=pk)
+def app(request, uni):
+    this_app = App.objects.get(uni=uni)
     assign = AppAssign.objects.filter(app=this_app)
+    versions = this_app.versioncontrol_set.all().order_by('-version_no')
+    subscribers = Subscribers.objects.filter(app=this_app)
 
     context = {
         'nav': True,
         'app': this_app,
         'next_version': this_app.version + 1,
-        'assigns': assign
+        'assigns': assign,
+        'versions': versions,
+        'subscribers': subscribers
     }
     return render(request, 'appcenter/app.html', context=context)
 

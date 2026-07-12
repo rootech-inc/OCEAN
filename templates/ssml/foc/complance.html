@@ -48,7 +48,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body" style="height: 60vh; overflow: auto;">
                                 <table class="table table-sm">
                                     <thead class="thead-dark">
                                         <tr>
@@ -58,7 +58,7 @@
                                             <th>FILE</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="c">
+                                    <tbody id="comps">
                                         <tr>
                                             <td colspan="4">Loading...</td>
                                         </tr>
@@ -108,6 +108,7 @@
             })
 
             ssml.loadFocComplianceType()
+            ssml.loadFocComplance()
 
             $('#new_compliance').click(function () {
                 ssml.newFocCompliance()

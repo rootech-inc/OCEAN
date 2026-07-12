@@ -222,6 +222,13 @@
             
         })
 
+
+        $('#searchQuery').keypress(function(e) {
+            if (e.key === 'Enter') {
+                let entry_no = $(this).val();
+                location.href = `/ssml/inventory/trenasfer/?entry=${entry_no}`;
+            }
+        });
         
     })
 </script>

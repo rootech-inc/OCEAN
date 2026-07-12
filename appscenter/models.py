@@ -3,6 +3,7 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
 
+from admin_panel.anton import generate_text
 from inventory.models import Computer, ComputerGroup
 from ocean import settings
 
@@ -62,6 +63,51 @@ class App(models.Model):
         else:
             return True
 
+    def changelog(self):
+        version_list = {}
+        for version in VersionControl.objects.filter(app=self).order_by('-pk'):
+            version_list[version.version_no] = {
+                "description": version.description,
+                "date": version.created_date,
+                "time": version.created_time,
+            }
+
+        agent_comment = f"""You are a technical writer generating a changelog for internal/customer use.
+
+        Below is the raw version data (JSON):
+        {version_list}
+    
+        Instructions:
+        - Output ONLY the changelog in Markdown format. No preamble, no explanation, no "next steps" section, no meta-commentary.
+        - Use this exact structure for each version, ordered from newest to oldest:
+    
+        ## [version_no] - date
+        _time_
+    
+        - description (rewritten as a clear, user-facing bullet point if it reads like a raw commit note; otherwise use as-is)
+    
+        - Do NOT invent, assume, or pad any feature details that aren't present in the description field.
+        - Do NOT use placeholders like "xx" — if a description is empty or unclear, just omit that entry or list it verbatim, don't ask me to fill it in.
+        - Do NOT include a "How to interpret this changelog" section or any instructional text aimed at me.
+        - If there are multiple versions, group them under a single "# Changelog" heading at the top, each version as its own subsection.
+    
+        Return raw Markdown text only."""
+
+        return generate_text(agent_comment)
+
+    def obj(self):
+        app = self
+        return {
+            'name': app.name,
+            'pk': app.pk,
+            'uni': app.uni,
+            'description': app.description,
+            'version': app.version,
+            'latest': app.lastest_url(),
+            'changelog':self.changelog(),
+            'subscribers':[sub.obj() for sub in Subscribers.objects.filter(app=self)]
+        }
+
 
 class VersionControl(models.Model):
     app = models.ForeignKey('App', on_delete=models.CASCADE)
@@ -107,3 +153,18 @@ class ErrorLogs(models.Model):
     is_assigned = models.BooleanField(default=False)
     assigned_to = models.ForeignKey(User,on_delete=models.CASCADE)
 
+class Subscribers(models.Model):
+    name = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=255)
+    app = models.ForeignKey('App', on_delete=models.CASCADE)
+
+    def obj(self):
+        return {
+            'name': self.name,
+            'email': self.email,
+            'phone': self.phone,
+        }
+
+    class Meta:
+        unique_together = (('app', 'email'),('app', 'phone'),)

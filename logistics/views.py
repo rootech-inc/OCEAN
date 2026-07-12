@@ -168,7 +168,6 @@ def mydelivery(request):
     }
     return render(request,'logistics/my-deliveries.html',context=context)
 
-@login_required()
 @csrf_exempt
 def fuel_reciept(request):
             if request.method == 'POST' and request.FILES.get('receipt'):

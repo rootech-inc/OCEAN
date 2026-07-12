@@ -348,7 +348,11 @@ class Contractor(models.Model):
         return self.company
 
     def can_work(self):
-        if ContractorError.objects.filter(contractor=self,is_cleared=False).exists():
+        pending_issues = ContractorError.objects.filter(contractor=self,is_cleared=False).exists()
+        is_complied = self.is_complied().get('status')
+        if pending_issues:
+            return False
+        elif not is_complied:
             return False
         else:
             return True
@@ -1332,7 +1336,7 @@ class Phase(models.Model):
         return f"Phase {self.number}: {self.description}"
 
     def total_meters(self):
-    # INSERT_YOUR_CODE
+        # INSERT_YOUR_CODE
         return Meter.objects.filter(linked_phase=self).count()
 
     def stock(self,as_of='*',loc_id='*'):
@@ -1777,8 +1781,10 @@ class InvoiceHD(models.Model):
     is_paid = models.BooleanField(default=False)
     payment_reciept = models.CharField(max_length=255,null=True,blank=True)
 
-    foc_debt = models.DecimalField(max_digits=10,max_length=10,decimal_places=2,default=0.00)
+    foc_debt = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     foc_debt_reason = models.TextField(null=True,blank=True)
+
+    cheque = models.FileField(upload_to='static/uploads/files/ssml_docs/', null=True, blank=True)
 
     class Meta:
         unique_together = (('entry_date','contractor'),)
@@ -2508,15 +2514,18 @@ class FocInvoiceHd(models.Model):
 
         # 3. Calculate Withholding Tax (WHT) at 5%
         wht_rate = Decimal('0.05')
-        total_wht_amount = gross_amount * wht_rate
+        taxable_amount = gross_amount - service_amount
+        total_wht_amount = taxable_amount * wht_rate
+
+        total_deduct = service_amount + total_wht_amount
 
         # 4. Calculate Final Net Payable
-        total_net_payable = gross_amount - total_wht_amount
+        total_net_payable = gross_amount - total_deduct
 
         # 5. Update Header Fields
         self.gross_amount = gross_amount
         self.service_charge = service_amount
-        self.taxable_amount = gross_amount
+        self.taxable_amount = taxable_amount
         self.tax_amount = 0
         self.wht_amount = total_wht_amount
         self.net_amount = total_net_payable
@@ -2524,9 +2533,9 @@ class FocInvoiceHd(models.Model):
 
         # 6. Update individual lines
         for tr in FocInvoiceTransactions.objects.filter(invoice=self):
-            tr.wht_amount = tr.amount * wht_rate
+            tr.wht_amount = tr.amount * wht_rate if wht_rate > 0 else 0
             tr.net_amount = tr.amount - tr.wht_amount
-            tr.tax_amount = 0
+            tr.service_charge = tr.amount * service_rate if service_rate > 0 else 0
             tr.save()
 
     def trans(self):
@@ -2579,14 +2588,6 @@ class FocInvoiceHd(models.Model):
         service_rate = SSML_SERVICE_RATE.get(f"{invoice_year}", 0)
 
         class PDF(FPDF):
-            def header(self):
-                # Watermark
-                self.set_font('Arial', 'B', 50)
-                self.set_text_color(245, 245, 245)
-                self.text(35, 140, COMPANY_DETAILS.get('name'))
-                self.text(35, 190, COMPANY_DETAILS.get('name'))
-                self.set_text_color(0, 0, 0)
-
             def footer(self):
 
                 self.set_y(-15)
@@ -2601,24 +2602,23 @@ class FocInvoiceHd(models.Model):
         primary_color = (44, 62, 80)  # Dark Blue
         text_color = (52, 73, 94)
 
-        # Header: Logo & Company Info
-        logo_path = 'static/general/logo.png'
-        if os.path.exists(logo_path):
-            pdf.image(logo_path, 10, 10, 35)
+        # Header: FOC Details (No Logo)
+        foc_company = str(self.foc.company).upper()
+        foc_address = self.foc.business_address or f"{self.foc.city or 'N/A'}, {self.foc.region or ''}"
+        foc_phone = self.foc.phone or 'N/A'
+        foc_email = self.foc.email or 'N/A'
 
         pdf.set_font('Arial', 'B', 16)
         pdf.set_text_color(*primary_color)
-        pdf.set_xy(50, 10)
-        pdf.cell(100, 10, COMPANY_DETAILS.get('name'), 0, 1, 'L')
+        pdf.set_xy(10, 10)
+        pdf.cell(100, 10, foc_company, 0, 1, 'L')
 
         pdf.set_font('Arial', '', 9)
         pdf.set_text_color(100, 100, 100)
-        pdf.set_x(50)
-        pdf.cell(100, 4, COMPANY_DETAILS.get('address'), 0, 1, 'L')
-        pdf.set_x(50)
-        pdf.cell(100, 4, f"{COMPANY_DETAILS.get('email')} | {COMPANY_DETAILS.get('phone')}", 0, 1, 'L')
-        pdf.set_x(50)
-        pdf.cell(100, 4, f"Website: {COMPANY_DETAILS.get('website')}", 0, 1, 'L')
+        pdf.set_x(10)
+        pdf.cell(100, 4, foc_address, 0, 1, 'L')
+        pdf.set_x(10)
+        pdf.cell(100, 4, f"{foc_email} | {foc_phone}", 0, 1, 'L')
 
         # Invoice Label
         pdf.set_font('Arial', 'B', 24)
@@ -2637,13 +2637,13 @@ class FocInvoiceHd(models.Model):
         # Left Column: Bill To
         pdf.set_font('Arial', 'B', 10)
         pdf.set_text_color(0, 0, 0)
-        pdf.cell(95, 7, 'CONTRACTOR DETAILS (PAYABLE TO):', 0, 1, 'L')
+        pdf.cell(95, 7, 'BILLED TO:', 0, 1, 'L')
         pdf.set_font('Arial', 'B', 11)
-        pdf.cell(95, 6, str(self.foc.company[:30]).upper(), 0, 1, 'L')
+        pdf.cell(95, 6, str(COMPANY_DETAILS.get('name') or '').upper(), 0, 1, 'L')
         pdf.set_font('Arial', '', 10)
-        pdf.cell(95, 5, f"Location: {self.foc.city or 'N/A'}, {self.foc.region or ''}", 0, 1, 'L')
-        pdf.cell(95, 5, f"Phone: {self.foc.phone}", 0, 1, 'L')
-        pdf.cell(95, 5, f"Email: {self.foc.email}", 0, 1, 'L')
+        pdf.cell(95, 5, f"Address: {COMPANY_DETAILS.get('address') or COMPANY_DETAILS.get('postal_address') or 'N/A'}", 0, 1, 'L')
+        pdf.cell(95, 5, f"Phone: {COMPANY_DETAILS.get('phone') or 'N/A'}", 0, 1, 'L')
+        pdf.cell(95, 5, f"Email: {COMPANY_DETAILS.get('email') or 'N/A'}", 0, 1, 'L')
 
         # Right Column: Invoice Info
         pdf.set_xy(110, y_start)
@@ -2667,12 +2667,13 @@ class FocInvoiceHd(models.Model):
         pdf.ln(15)
 
         # Summary Box for Amounts Breakdown
+        y_start_box = pdf.get_y()
         pdf.set_fill_color(245, 247, 249)
-        pdf.rect(10, pdf.get_y(), 190, 25, 'F')
+        pdf.rect(10, y_start_box, 190, 25, 'F')
 
         pdf.set_font('Arial', 'B', 9)
         pdf.set_text_color(*primary_color)
-        y_sum = pdf.get_y() + 2
+        y_sum = y_start_box + 2
         pdf.set_xy(10, y_sum)
         
         col_w = 47.5
@@ -2687,14 +2688,21 @@ class FocInvoiceHd(models.Model):
         pdf.cell(col_w, 10, f"{self.gross_amount:,.2f}", 0, 0, 'C')
         pdf.cell(col_w, 10, f"{self.service_charge:,.2f}", 0, 0, 'C')
         pdf.cell(col_w, 10, f"{self.wht_amount:,.2f}", 0, 0, 'C')
-        pdf.set_text_color(231, 76, 60)
+        pdf.set_text_color(39, 174, 96)
         pdf.cell(col_w, 10, f"{self.net_amount:,.2f}", 0, 1, 'C')
+
+        pdf.set_y(y_start_box + 25)
+        pdf.ln(3)
+        pdf.set_text_color(39, 174, 96)
+        pdf.set_font('Arial', 'I', 9)
+        pdf.cell(0, 5, f"Amount in Words: {amount_to_words(self.net_amount)}", 0, 1, 'L')
 
         pdf.set_text_color(0, 0, 0)
         pdf.ln(5)
 
         # Remarks if any
         if self.remarks:
+            pdf.ln(5)
             pdf.set_font('Arial', 'B', 9)
             pdf.cell(0, 5, 'REMARKS:', 0, 1, 'L')
             pdf.set_font('Arial', '', 9)
@@ -2706,12 +2714,10 @@ class FocInvoiceHd(models.Model):
         pdf.set_text_color(255, 255, 255)
         pdf.set_font('Arial', 'B', 9)
         pdf.cell(10, 10, 'NO', 1, 0, 'C', fill=True)
-        pdf.cell(55, 10, ' ITEM DESCRIPTION', 1, 0, 'L', fill=True)
+        pdf.cell(120, 10, ' ITEM DESCRIPTION', 1, 0, 'L', fill=True)
         pdf.cell(15, 10, 'QTY', 1, 0, 'C', fill=True)
-        pdf.cell(25, 10, 'RATE', 1, 0, 'C', fill=True)
-        pdf.cell(25, 10, 'GROSS', 1, 0, 'C', fill=True)
-        pdf.cell(25, 10, 'WHT (5%)', 1, 0, 'C', fill=True)
-        pdf.cell(35, 10, 'NET AMT', 1, 1, 'C', fill=True)
+        pdf.cell(20, 10, 'RATE', 1, 0, 'C', fill=True)
+        pdf.cell(25, 10, 'GROSS', 1, 1, 'C', fill=True)
 
         # Table Rows
         pdf.set_text_color(0, 0, 0)
@@ -2719,26 +2725,23 @@ class FocInvoiceHd(models.Model):
         i = 1
         for tr in self.transactions.all():
             pdf.cell(10, 8, str(i), 1, 0, 'C')
-            pdf.cell(55, 8, f" {tr.item}", 1, 0, 'L')
+            pdf.cell(120, 8, f" {tr.item[:70]}", 1, 0, 'L')
             pdf.cell(15, 8, f"{tr.quantity:,.0f}", 1, 0, 'C')
-            pdf.cell(25, 8, f"{tr.rate:,.2f}", 1, 0, 'R')
-            pdf.cell(25, 8, f"{tr.amount:,.2f}", 1, 0, 'R')
-            pdf.cell(25, 8, f"{tr.wht_amount:,.2f}", 1, 0, 'R')
-            pdf.set_font('Arial', 'B', 8)
-            pdf.cell(35, 8, f"{tr.net_amount:,.2f}", 1, 1, 'R')
-            pdf.set_font('Arial', '', 8)
+            pdf.cell(20, 8, f"{tr.rate:,.2f}", 1, 0, 'R')
+            pdf.cell(25, 8, f"{tr.amount:,.2f}", 1, 1, 'R')
             i += 1
 
-        # Summary Row
-        pdf.set_font('Arial', 'B', 10)
-        pdf.cell(155, 10, 'TOTAL PAYABLE (GHS)', 1, 0, 'R')
-        pdf.set_text_color(231, 76, 60)
-        pdf.cell(35, 10, f"{self.net_amount:,.2f}", 1, 1, 'R')
+        # Summary Row (Totals for Qty, Rate, Gross)
+        total_qty = sum(tr.quantity for tr in self.transactions.all())
+        total_rate = sum(tr.rate for tr in self.transactions.all())
+        total_gross = sum(tr.amount for tr in self.transactions.all())
 
+        pdf.set_font('Arial', 'B', 8)
         pdf.set_text_color(0, 0, 0)
-        pdf.set_font('Arial', 'B', 9)
-        pdf.ln(2)
-        pdf.cell(0, 5, f"Amount in Words: {amount_to_words(self.net_amount)}", 0, 1, 'L')
+        pdf.cell(130, 8, 'TOTAL', 1, 0, 'R')
+        pdf.cell(15, 8, f"{total_qty:,.0f}", 1, 0, 'C')
+        pdf.cell(20, 8, f"{total_rate:,.2f}", 1, 0, 'R')
+        pdf.cell(25, 8, f"{total_gross:,.2f}", 1, 1, 'R')
 
         pdf.ln(10)
 
@@ -2847,7 +2850,7 @@ class FocInvoiceTransactions(models.Model):
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    tax_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    service_charge =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     net_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     wht_amount =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
@@ -2903,6 +2906,7 @@ class FocCompliance(models.Model):
     c_type = models.ForeignKey(FocComplianceType,models.PROTECT, null=False)
     ref = models.CharField(max_length=255,null=False,blank=False)
     file = models.FileField(upload_to='static/general/foc_compliance/',null=False,blank=False)
+    is_approved = models.BooleanField(default=False)
 
     date_created = models.DateTimeField(auto_now_add=True)
 
@@ -2922,8 +2926,9 @@ class FocCompliance(models.Model):
             "foc":self.foc.company,
             'compliance':self.c_type.name,
             "description":self.c_type.description,
-            "pk":self.foc.pk,
-            'file':self.actual_file()
+            "pk":self.pk,
+            'file':self.actual_file(),
+            'is_approved':self.is_approved
         }
 
 

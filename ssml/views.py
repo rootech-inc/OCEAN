@@ -328,16 +328,16 @@ def service_orders(request):
 @login_required
 def services(request):
     page = {
-        'title': 'Services',
+        'title': 'Services Rates',
         'page': 'services',
-        'page_title': 'Services',
+        'page_title': 'Service Rates',
         'page_description': 'Services',
         'nav':True
     }
     context = {
         'page': page
     }
-    return render(request, 'ssml/services.html', context)
+    return render(request, 'ssml/services_rates.html', context)
 
 @login_required
 def contractors(request):
@@ -444,7 +444,7 @@ def meters(request):
 
     context = {
          'page':page,
-         'meters':Meter.objects.all()
+         'meters':Meter.objects.all()[:20]
      }
     
     return render(request, 'ssml/meters.html', context)
@@ -1193,9 +1193,17 @@ def transfer(request):
         'nav':True,
         
     }
+
+    if request.GET.get('entry'):
+        if TransferHd.objects.filter(entry_no=request.GET.get('entry')).count() > 0:
+            last_entry = TransferHd.objects.filter(entry_no=request.GET.get('entry')).last().id
+        else:
+            last_entry = TransferHd.objects.all().last().id
+    else:
+        last_entry = TransferHd.objects.all().last().id
     context = {
         'page': page,
-        'last_entry':TransferHd.objects.all().last().id,
+        'last_entry':last_entry,
         'nav':True
     }
 
@@ -1682,6 +1690,7 @@ def import_shipment_file(request):
         excel_files = request.FILES.getlist('shipment_file')
         files_count = len(excel_files)
         fk = 1
+        total_meters = 0
         for excel_file in excel_files:
         
             file_name = excel_file.name
@@ -1693,8 +1702,8 @@ def import_shipment_file(request):
             wb = openpyxl.load_workbook(excel_file)
             sheet = wb.active
             headers = [cell.value for cell in sheet[1]]
-            all_rows_len = sheet.max_row - 1
-            ct = 1
+            all_rows_len = sheet.max_rorw - 1
+            cans = 1
             for row in sheet.iter_rows(min_row=2,values_only=True):
                 
                 row_dict = dict(zip(headers, row))
@@ -1726,6 +1735,7 @@ def import_shipment_file(request):
                     print("FILE: ",fk,'/',files_count,' ROW: ',ct,'/',all_rows_len,meter_no,phase.description,str(e))
 
                 ct += 1
+                total_meters += 1
 
             fk += 1
 
@@ -1736,9 +1746,12 @@ def import_shipment_file(request):
             #     file=excel_file,
             #     description=f'{phase.description} SHIPMENT FILE',
             # )
-
+            
+        print({
+            'status_code':'202','message':f"{total_meters} meters from {fk} files "}
+        )
         return JsonResponse({
-            'status_code':'202','message':'Done'
+            'status_code':'202','message':f"{total_meters} meters from {fk} files "
         })
             
             
@@ -2000,3 +2013,265 @@ def foc_comp_list(request,code):
     }
 
     return render(request,'ssml/foc/my-compliance.html',context=context)
+
+@login_required()
+@csrf_exempt
+def post_foc_invoice(request):
+    if request.method == 'POST':
+        entry_no = request.POST['entry_no']
+        print(request.POST)
+        print(entry_no)
+        inv = FocInvoiceHd.objects.get(entry_no=entry_no)
+
+
+        cheque = request.FILES['cheque']
+        inv.cheque = cheque
+        inv.posted_by = request.user
+
+        EMAIL_INVOICE_RAISED = """
+                            <!DOCTYPE html>
+                            <html lang="en">
+                            <head>
+                              <meta charset="UTF-8" />
+                              <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                              <title>Invoice Notification</title>
+                              <style>
+                                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+                                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+
+                                body {{
+                                  background-color: #f4f4f0;
+                                  font-family: 'DM Sans', sans-serif;
+                                  color: #1a1a1a;
+                                  padding: 40px 16px;
+                                }}
+
+                                .wrapper {{ max-width: 560px; margin: 0 auto; }}
+
+                                .card {{
+                                  background: #ffffff;
+                                  border-radius: 6px;
+                                  overflow: hidden;
+                                }}
+
+                                .header {{
+                                  background: #1a1a1a;
+                                  padding: 36px 40px;
+                                }}
+
+                                .header .brand {{
+                                  font-size: 11px;
+                                  font-weight: 500;
+                                  letter-spacing: 0.12em;
+                                  text-transform: uppercase;
+                                  color: rgba(255,255,255,0.45);
+                                }}
+
+                                .header .title {{
+                                  margin-top: 12px;
+                                  font-size: 26px;
+                                  font-weight: 300;
+                                  color: #ffffff;
+                                  line-height: 1.3;
+                                }}
+
+                                .header .title span {{ color: #F5C400; }}
+
+                                .accent-bar {{ height: 4px; background: #F5C400; }}
+
+                                .body {{ padding: 36px 40px; }}
+
+                                .greeting {{
+                                  font-size: 15px;
+                                  font-weight: 500;
+                                  margin-bottom: 12px;
+                                  color: #1a1a1a;
+                                }}
+
+                                .message {{
+                                  font-size: 14px;
+                                  line-height: 1.8;
+                                  color: #555;
+                                }}
+
+                                .invoice-box {{
+                                  margin: 28px 0;
+                                  border: 1px solid #e8e8e8;
+                                  border-radius: 4px;
+                                  overflow: hidden;
+                                }}
+
+                                .invoice-box .inv-header {{
+                                  background: #F5C400;
+                                  padding: 12px 20px;
+                                  font-size: 11px;
+                                  letter-spacing: 0.1em;
+                                  text-transform: uppercase;
+                                  color: #1a1a1a;
+                                  font-weight: 500;
+                                }}
+
+                                .invoice-row {{
+                                  display: flex;
+                                  justify-content: space-between;
+                                  padding: 13px 20px;
+                                  border-top: 1px solid #f0f0f0;
+                                  font-size: 13px;
+                                }}
+
+                                .invoice-row .label {{ color: #888; }}
+
+                                .invoice-row .value {{
+                                  font-family: 'DM Mono', monospace;
+                                  font-weight: 500;
+                                  color: #1a1a1a;
+                                }}
+
+                                .invoice-row.total {{ background: #fafafa; }}
+
+                                .invoice-row.total .value {{ font-size: 15px; }}
+
+                                .cta {{ margin-top: 28px; }}
+
+                                .cta a {{
+                                  display: inline-block;
+                                  background: #F5C400;
+                                  color: #1a1a1a;
+                                  text-decoration: none;
+                                  font-size: 13px;
+                                  font-weight: 500;
+                                  letter-spacing: 0.06em;
+                                  padding: 13px 26px;
+                                  border-radius: 4px;
+                                }}
+
+                                .note {{
+                                  margin-top: 24px;
+                                  font-size: 13px;
+                                  color: #aaa;
+                                  line-height: 1.7;
+                                }}
+
+                                .note a {{ color: #1a1a1a; }}
+
+                                .footer {{
+                                  padding: 20px 40px;
+                                  border-top: 1px solid #f0f0f0;
+                                  font-size: 12px;
+                                  color: #bbb;
+                                  line-height: 1.7;
+                                }}
+                              </style>
+                            </head>
+                            <body>
+                              <div class="wrapper">
+                                <div class="card">
+
+                                  <div class="header">
+                                    <div class="brand">{company_name}</div>
+                                    <div class="title">
+                                      Invoice <span>#{invoice_number}</span><br/>has been raised.
+                                    </div>
+                                  </div>
+
+                                  <div class="accent-bar"></div>
+
+                                  <div class="body">
+                                    <p class="greeting">Hi {contractor_name},</p>
+                                    <p class="message">
+                                      An invoice has been generated for your services rendered during the period of
+                                      <strong>{period_start}</strong> to <strong>{period_end}</strong>.
+                                      Please review the details below.
+                                    </p>
+
+                                    <div class="invoice-box">
+                                      <div class="inv-header">Invoice Summary</div>
+                                      <div class="invoice-row">
+                                        <span class="label">Invoice No.</span>
+                                        <span class="value">#{invoice_number}</span>
+                                      </div>
+                                      <div class="invoice-row">
+                                        <span class="label">Issue Date</span>
+                                        <span class="value">{invoice_date}</span>
+                                      </div>
+                                      <div class="invoice-row">
+                                        <span class="label">Due Date</span>
+                                        <span class="value">{due_date}</span>
+                                      </div>
+                                      <div class="invoice-row total">
+                                        <span class="label">Amount Due</span>
+                                        <span class="value">{currency} {amount}</span>
+                                      </div>
+                                    </div>
+
+                                    <div class="cta">
+                                      <a href="{invoice_url}">View Invoice &rarr;</a>
+                                    </div>
+
+                                    <p class="note">
+                                      Questions? Reach out to
+                                      <a href="mailto:{support_email}">{support_email}</a>.
+                                    </p>
+                                  </div>
+
+                                  <div class="footer">
+                                    &copy; {year} {company_name} &mdash; This is an automated notification, please do not reply directly to this email.
+                                  </div>
+
+                                </div>
+                              </div>
+                            </body>
+                            </html>
+                            """
+        invoice_date = inv.invoice_date
+        from datetime import date
+        import calendar
+
+        d = invoice_date
+
+        start = d.replace(day=1)
+        end = d.replace(day=calendar.monthrange(d.year, d.month)[1])
+        html_body = EMAIL_INVOICE_RAISED.format(
+            company_name="Sneda Smart Meters Limited.",
+            contractor_name=inv.foc.company,
+            invoice_number=inv.entry_no,
+            period_start=start,
+            period_end=end,
+            invoice_date=inv.invoice_date.strftime("%b %d, %Y"),
+            due_date="Not Applicable",
+            currency='GHS',
+            amount=f"{inv.net_amount:.2f}",
+            invoice_url=f"Visit your FOC Portal",
+            support_email="solomon@snedaghana.com",
+            year=timezone.now().year,
+        )
+
+        mail_q = MailQueues.objects.create(
+            recipient=inv.foc.email,
+            subject=f"Payment : {inv.remarks}",
+            body=EMAIL_INVOICE_RAISED,
+            sender=MailSenders.objects.get(address='solomon@snedaghana.com') if MailSenders.objects.filter(
+                address='solomon@snedaghana.com') else MailSenders.objects.get(is_default=True),
+            mail_key=make_md5_hash(f"{inv.foc_id}-{EMAIL_INVOICE_RAISED}{EMAIL_INVOICE_RAISED}")
+        )
+
+        MailAttachments.objects.create(
+            mail=mail_q,
+            attachment=cheque
+        )
+
+        Sms(
+            api=SmsApi.objects.get(is_default=True),
+            to=inv.foc.phone,
+            message=f"Payment ready for: {inv.remarks}",
+        ).save()
+
+        inv.is_posted = True
+        inv.save()
+
+
+        return JsonResponse({'status': 'success'})
+
+    else:
+        return JsonResponse({'message': 'There is an error'}, status=400)

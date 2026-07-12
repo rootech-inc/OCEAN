@@ -1,0 +1,10 @@
+# ========================
+# AI
+# ========================
+GEMINI_API_KEY=AIzaSyBzRCzBy0Cgup-UmhJMfwjOrws3OdomIsw
+GEMINI_MODEL=gemini-2.5-flash-lite
+
+COMPANY_NAME='SNEDA SMART METERS'
+COMPANY_ADDRESS='GHANA, ACCRA, OSU'
+COMPANY_PHONE='+233 54 631 0011'
+COMPANY_EMAIL=solomon@snedaghana.com

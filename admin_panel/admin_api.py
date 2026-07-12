@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from admin_panel.anton import md5only, remove_html_tags, generate_random_password, make_md5_hash
+from admin_panel.anton import md5only, remove_html_tags, generate_random_password, make_md5_hash, generate_api_key
 from admin_panel.cron_exe import execute_script
 from admin_panel.models import BankAccounts, DocApprovals, GeoCity, GeoCitySub, Reminder, SmsApi, UserAddOns, EvatCredentials, \
     Locations, \
@@ -44,7 +44,7 @@ def index(request):
         body = json.loads(request.body)
         module = body.get('module')
         data = body.get('data')
-
+        from django.contrib.auth.models import User
         if method == 'PUT':  # write
             if module == 'geo':  # geographical condition
                 part = data.get('part')
@@ -62,7 +62,7 @@ def index(request):
 
                     GeoCitySub(name=name, owner=User.objects.get(pk=us_pk), city=GeoCity.objects.get(pk=city)).save()
                     response = success_response
-            
+
             elif module == 'company':
                 company = Company.objects.create(
                     name= data.get('companyName', ''),
@@ -477,8 +477,8 @@ def index(request):
                 users = UserAddOns.objects.all()
                 message = data.get('body')
                 subject = data.get('subject')
-                for user in users:
-                    us = user.user
+                for u in users:
+                    us = u.user
                     email = us.email
                     body = message.replace('%name%', f"{us.get_full_name()}")
                     MailQueues(sender=sender, recipient=email, subject=subject, body=body, cc='').save()
@@ -493,20 +493,72 @@ def index(request):
 
                 company = Company.objects.get(pk=company_pk)
                 exists = company.entites.filter(entity_type_name__iexact=entity_type_name).exists()
-            
+
                 if exists:
                     response['message'] = "Entity already exists for this company"
                     return JsonResponse(response)
-                
+
                 BusinessEntityTypes.objects.create(
                     entity_type_name = entity_type_name,
                     entity_type_descr = entity_type_descr,
-                    company = Company.objects.get(pk=company_pk) 
+                    company = Company.objects.get(pk=company_pk)
                 )
 
                 success_response['message'] = "Entity Type Created"
                 response = success_response
 
+            elif module == 'update_profile_pic':
+                import base64 as _base64
+                from django.core.files.base import ContentFile as _ContentFile
+                pk = data.get('mypk')
+                file_base64 = data.get('file_base64')
+                file_name = data.get('file_name', 'profile.jpg')
+                try:
+                    addon = UserAddOns.objects.get(user__pk=pk)
+                    fmt, imgstr = file_base64.split(';base64,') if ';base64,' in file_base64 else (None, file_base64)
+                    decoded = _base64.b64decode(imgstr)
+                    content_file = _ContentFile(decoded, name=file_name)
+                    addon.profile_pic.save(file_name, content_file, save=True)
+                    success_response['message'] = addon.profile_pic.url
+                    response = success_response
+                except Exception as e:
+                    response['status_code'] = 500
+                    response['message'] = str(e)
+
+            elif module == 'upload_compliance':
+                import base64
+                from django.core.files.base import ContentFile
+                from employee.models import EmployeeDocuments, Documents
+
+                pk = data.get('mypk')
+                compliance_type_id = data.get('compliance_type')
+                remarks = data.get('remarks', '')
+                file_base64 = data.get('file_base64')
+                file_name = data.get('file_name', 'document.jpg')
+
+                try:
+                    user_obj = User.objects.get(pk=pk)
+                    document_type = Documents.objects.get(pk=compliance_type_id)
+
+                    format, imgstr = file_base64.split(';base64,') if ';base64,' in file_base64 else (None, file_base64)
+                    decoded_file = base64.b64decode(imgstr)
+                    content_file = ContentFile(decoded_file, name=file_name)
+
+                    emp_doc, created = EmployeeDocuments.objects.update_or_create(
+                        user=user_obj,
+                        document=document_type,
+                        defaults={
+                            'remark': remarks,
+                            'status': 'pending',
+                            'file': content_file
+                        }
+                    )
+
+                    success_response['message'] = "Compliance document uploaded successfully"
+                    response = success_response
+                except Exception as e:
+                    response['status_code'] = 500
+                    response['message'] = str(e)
 
             else:
                 response['status_code'] = 503
@@ -556,7 +608,7 @@ def index(request):
                             'descr': et.entity_type_descr,
                             'bolt_menu':et.bolt_menu(),
                             'company_name' : et.company.name ,
-                            'company_pk' : et.company.pk 
+                            'company_pk' : et.company.pk
                         })
 
                     success_response['message'] = arr
@@ -572,11 +624,11 @@ def index(request):
                             'descr': entity.entity_type_descr,
                             'bolt_menu':entity.bolt_menu(),
                             'company_name' : entity.company.name ,
-                            'company_pk' : entity.company.pk 
+                            'company_pk' : entity.company.pk
                     })
                     success_response['message'] = arr
                     response = success_response
-                    
+
             elif module == "company":
                 if not data:
                     companies = Company.objects.all()
@@ -782,13 +834,235 @@ def index(request):
                             MailAttachments(mail=save_mail,attachment=file).save()
                         ##DepartmentReportMailQue(department=department, files=files).save()
 
+            elif module == 'dashboard_reports':
+                from datetime import datetime, date, timedelta
+                from django.db.models import Count, Sum
+                from django.contrib.auth.models import User
+
+                # 1. SSML Landing Report
+                try:
+                    from ssml.models import ServiceOrder, InventoryMaterial
+                    total_installs = ServiceOrder.objects.count()
+                    today_installs = ServiceOrder.objects.filter(service_date=date.today()).count()
+
+                    reorder_count = 0
+                    for mat in InventoryMaterial.objects.filter(is_active=True, reorder_qty__gt=0):
+                        if mat.stock() <= mat.reorder_qty:
+                            reorder_count += 1
+
+                    first_order = ServiceOrder.objects.order_by('service_date').first()
+                    avg_per_day = 0.0
+                    avg_per_month = 0.0
+                    if first_order and total_installs > 0:
+                        days_diff = (date.today() - first_order.service_date).days or 1
+                        months_diff = (date.today().year - first_order.service_date.year) * 12 + (date.today().month - first_order.service_date.month) or 1
+                        avg_per_day = round(total_installs / days_diff, 1)
+                        avg_per_month = round(total_installs / months_diff, 1)
+
+                    best_contractor = "N/A"
+                    top_c = ServiceOrder.objects.values('contractor__company').annotate(tot=Count('id')).order_by('-tot').first()
+                    if top_c:
+                        best_contractor = top_c['contractor__company'] or "N/A"
+
+                    total_billable = 0
+                    for m in InventoryMaterial.objects.filter(is_billable=True, is_active=True):
+                        total_billable += m.stock()
+                    stock_est_days = round(total_billable / avg_per_day) if avg_per_day > 0 else 0
+
+                    ssml_report = {
+                        'total_installs': total_installs,
+                        'today_installs': today_installs,
+                        'reorder_count': reorder_count,
+                        'avg_per_day': avg_per_day,
+                        'avg_per_month': avg_per_month,
+                        'best_contractor': best_contractor,
+                        'stock_estimate_days': stock_est_days,
+                    }
+                except Exception as e:
+                    ssml_report = {'error': str(e)}
+
+                # 2. Logistics
+                try:
+                    from logistics.models import DeliveryRequest, VehicleFuelTopUp
+                    today_dt = datetime.now()
+                    week_start = today_dt.date() - timedelta(days=today_dt.weekday())
+                    week_end = week_start + timedelta(days=6)
+
+                    logistics_total = DeliveryRequest.objects.filter(request_date__date__range=[week_start, week_end]).count()
+                    logistics_completed = DeliveryRequest.objects.filter(status='delivered', arrival_time__date__range=[week_start, week_end]).count()
+                    logistics_pending = DeliveryRequest.objects.filter(status='pending').count()
+                    logistics_in_transit = DeliveryRequest.objects.filter(status='in_transit').count()
+                    logistics_fuel_amount = VehicleFuelTopUp.objects.filter(date__range=[week_start, week_end]).aggregate(total=Sum('amount'))['total'] or 0
+                    logistics_fuel_litres = VehicleFuelTopUp.objects.filter(date__range=[week_start, week_end]).aggregate(total=Sum('litres'))['total'] or 0
+
+                    logistics_report = {
+                        'total_requests': logistics_total,
+                        'completed': logistics_completed,
+                        'pending': logistics_pending,
+                        'in_transit': logistics_in_transit,
+                        'fuel_amount': float(logistics_fuel_amount),
+                        'fuel_litres': float(logistics_fuel_litres),
+                    }
+                except Exception as e:
+                    logistics_report = {'error': str(e)}
+
+                # 3. CRM LOGS
+                try:
+                    from crm.models import Logs
+                    from datetime import date
+                    today_date = date.today()
+
+                    recent_crm = []
+                    for l in Logs.objects.filter(created_date=today_date).order_by('-id'):
+                        recent_crm.append({
+                            'customer': l.customer,
+                            'company': l.company,
+                            'subject': l.subject,
+                            'description': l.description,
+                            'success': l.success,
+                            'created_date': str(l.created_date)
+                        })
+
+                    crm_report = {
+                        'recent': recent_crm,
+                    }
+                except Exception as e:
+                    crm_report = {'error': str(e)}
+
+                # 4. ATTENDANCE Summary in HRM (Biometric)
+                try:
+                    from iclock.models import Employee, RawAttendance
+                    today_date = date.today()
+
+                    active_employees = Employee.objects.filter(is_resigned=False)
+                    raw_today = RawAttendance.objects.filter(day=today_date, employee__is_resigned=False).select_related('employee', 'employee__area')
+
+                    late_count = 0
+                    on_time_count = 0
+                    for raw in raw_today:
+                        is_late = False
+                        if raw.employee and raw.employee.area and raw.employee.area.work_start_time:
+                            if raw.first_punch > raw.employee.area.work_start_time:
+                                is_late = True
+                        if is_late:
+                            late_count += 1
+                        else:
+                            on_time_count += 1
+
+                    present_emp_ids = set(raw_today.values_list('employee_id', flat=True))
+                    absent_count = active_employees.exclude(id__in=present_emp_ids).count()
+
+                    hrm_report = {
+                        'on_time': on_time_count,
+                        'late': late_count,
+                        'absent': absent_count,
+                    }
+                except Exception as e:
+                    hrm_report = {'error': str(e)}
+
+                # 5. CMMS
+                try:
+                    from cmms.models import StockCountHD, JobCard, ServiceFollowup
+                    cmms_active_stock = StockCountHD.objects.filter(status=1).exists()
+                    cmms_active_stock_name = StockCountHD.objects.filter(status=1).first().name if cmms_active_stock else "None"
+                    cmms_pending_jobs = JobCard.objects.filter(is_ended=False).count()
+                    cmms_followups = ServiceFollowup.objects.filter(is_completed=False).count()
+
+                    cmms_report = {
+                        'active_stock_count': cmms_active_stock,
+                        'active_stock_name': cmms_active_stock_name,
+                        'pending_jobs': cmms_pending_jobs,
+                        'service_followups': cmms_followups,
+                    }
+                except Exception as e:
+                    cmms_report = {'error': str(e)}
+
+                # 6. Servicing Material Requests
+                try:
+                    from servicing.models import MR_Hd, MR_Trans
+                    servicing_pending_materials = MR_Hd.objects.filter(is_approved=False).count()
+                    servicing_materials = []
+                    for trans in MR_Trans.objects.all().order_by('-id')[:5]:
+                        mr = trans.mr_hd
+                        servicing_materials.append({
+                            'part': trans.name,
+                            'quantity': float(trans.quantity) if trans.quantity else 0.0,
+                            'car_no': mr.service_card.cardno if mr and mr.service_card else 'N/A',
+                            'reason': mr.remarks or 'N/A',
+                            'owner': mr.owner.username if mr and mr.owner else 'Public'
+                        })
+
+                    servicing_report = {
+                        'pending_requests': servicing_pending_materials,
+                        'recent_requests': servicing_materials,
+                    }
+                except Exception as e:
+                    servicing_report = {'error': str(e)}
+
+                success_response['message'] = {
+                    'ssml': ssml_report,
+                    'logistics': logistics_report,
+                    'crm': crm_report,
+                    'hrm': hrm_report,
+                    'cmms': cmms_report,
+                    'servicing_mr': servicing_report,
+                }
                 response = success_response
-   
+
+            elif module == 'profile':
+                pk = data.get('mypk')
+                try:
+                    user_obj = User.objects.get(pk=pk)
+                    addon = UserAddOns.objects.filter(user=user_obj).first()
+
+                    from employee.models import Documents, EmployeeDocuments
+
+                    compliance_types = Documents.objects.all()
+                    compliance_items = EmployeeDocuments.objects.filter(user=user_obj)
+
+                    items_map = {item.document.pk: item for item in compliance_items}
+
+                    compliance_list = []
+                    for ct in compliance_types:
+                        item = items_map.get(ct.pk)
+                        compliance_list.append({
+                            'pk': ct.pk,
+                            'title': ct.title,
+                            'description': ct.description,
+                            'required': ct.required,
+                            'uploaded': item is not None,
+                            'status': item.status if item else 'Not Uploaded',
+                            'remark': item.remark if item else '',
+                            'file_url': item.file.url if (item and item.file) else '',
+                            'created_at': str(item.created_at) if item else '',
+                        })
+
+                    profile_data = {
+                        'pk': user_obj.pk,
+                        'username': user_obj.username,
+                        'first_name': user_obj.first_name,
+                        'last_name': user_obj.last_name,
+                        'fullname': f"{user_obj.first_name} {user_obj.last_name}",
+                        'email': user_obj.email,
+                        'phone': addon.phone if addon else '',
+                        'company': addon.company if addon else '',
+                        'bio_id': addon.bio_id if addon else '',
+                        'profile_pic': addon.profile_pic.url if (addon and addon.profile_pic and hasattr(addon.profile_pic, 'url')) else (addon.profile_pic if addon else 'static/assets/img/users/default.png'),
+                        'public_link': f"/u/{user_obj.username}/",
+                        'compliance': compliance_list
+                    }
+
+                    success_response['message'] = profile_data
+                    response = success_response
+                except Exception as e:
+                    response['status_code'] = 500
+                    response['message'] = str(e)
+
             elif module == 'auth':
                 username = data.get('username')
                 password = data.get('password') or data.get('key') # Support both
                 next_url = data.get('next') or '/stream/' # Default to stream if no next
-
+                source = data.get('source','app')
                 # check if user exist
                 user = authenticate(request, username=username, password=password)
 
@@ -797,11 +1071,23 @@ def index(request):
                     if user is not None and hasattr(user, 'is_active') and user.is_active:
                         auth_login(request, user)
                         # Redirect to a success page.
+                        new_token = generate_api_key()
+                        user_detail = UserAddOns.objects.get(user=user)
+                        logistics_permission = user_detail.is_logistic_admin()
+                        if user_detail.api_token is None:
+                            user_detail.api_token = new_token
+                            user_detail.save()
+                            api_token = new_token
+                        else:
+                            api_token = user_detail.api_token
+
                         msg = {
                             'auth': 'yes',
                             'pk': user.pk,
                             'username': user.username,
-                            'redirect': next_url
+                            'redirect': next_url,
+                            'api_token':api_token,
+                            'logistics_permission':logistics_permission
                         }
                     else:
                         msg = {
@@ -818,13 +1104,14 @@ def index(request):
                 response = success_response
 
             elif module == 'users':
+
                 all_users = User.objects.all()
                 us = []
-                for user in all_users:
+                for u in all_users:
                     obj = {
-                        'pk': user.pk,
-                        'username': user.username,
-                        'fullname': f"{user.first_name} {user.last_name}"
+                        'pk': u.pk,
+                        'username': u.username,
+                        'fullname': f"{u.first_name} {u.last_name}"
                     }
                     us.append(obj)
 
@@ -905,9 +1192,9 @@ def index(request):
                     response['message'] = [acct.obj() for acct in BankAccounts.objects.all().order_by('acct_name')]
                 else:
                     response['message'] = [acct.obj() for acct in BankAccounts.objects.get(pk=pk)]
-                
+
                 response['status_code'] = 200
-            
+
             else:
                 response['status_code'] = 503
                 response['message'] = f"UNKNOWN MODULE ( METHOD : {method}, MODULE : {module} )"
@@ -1022,14 +1309,14 @@ def index(request):
                 if not UserAddOns.objects.filter(user=user).exists():
                     UserAddOns.objects.create(
                         user=user,
-                        
+
                     )
                 addon = UserAddOns.objects.get(user=user)
                 # generate new password
                 new_password = generate_random_password()
                 user.set_password(new_password)
 
-                
+
 
                 domain = request.get_host()
                 email_template = f"""
@@ -1079,13 +1366,13 @@ def index(request):
                 mail_enc = make_md5_hash(email_template)
                 MailQueues(sender=mail_api, recipient=user.email, cc='solomon@snedaghana.com',
                            subject="PASSWORD RESET FOR OCEAN", body=email_template,mail_key=mail_enc).save()
-                           
+
                 Sms(api=SmsApi.objects.get(is_default=1), to=addon.phone, message=sms_message).save()
 
             elif module == 'all_password_reset':
                 users = UserAddOns.objects.all()
-                for user in users:
-                    us = user.user
+                for u in users:
+                    us = u.user
                     # generate new password
                     new_password = generate_random_password()
                     us.set_password(new_password)
@@ -1135,7 +1422,7 @@ def index(request):
                     response['message'] = "Object not found"
                     response['status_code'] = 404
                     return JsonResponse(response)
-                
+
                 entity.entity_type_name = entity_name
                 entity.entity_type_descr = entity_descr
                 if company_pk:
@@ -1202,9 +1489,9 @@ def index(request):
             else:
                 response['status_code'] = 503
                 response['message'] = f"UNKNOWN MODULE ( METHOD : {method}, MODULE : {module} )"
-       
-       
-       
+
+
+
         elif method == 'DELETE':  # delete
 
             if module == 'location':
@@ -1221,7 +1508,7 @@ def index(request):
                     response['status_code'] = 404
                     response['message'] = "ENTITY TYPE NOT FOUND"
                     return JsonResponse(response)
-                
+
                 BusinessEntityTypes.objects.get(pk=pk).delete()
 
                 success_response['message'] = "ENTITY TYPE DELETED"

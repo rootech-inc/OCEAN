@@ -1,5 +1,6 @@
 import hashlib
 import os
+import secrets
 import uuid
 from urllib.parse import urlencode
 
@@ -128,8 +129,8 @@ def shorten_url(url):
 
     api_url = "https://is.gd/create.php"
 
-    if not url.startswith('http'):
-        url = BASE_URL + (url[1:] if url.startswith('/') else url)
+    # if not url.startswith('http'):
+    #     url = BASE_URL + (url[1:] if url.startswith('/') else url)
 
     params = {
         "format": "simple",  # "simple" returns just the short URL as text
@@ -201,6 +202,18 @@ def generate_random_password(length=8):
     characters = string.ascii_letters + string.digits  # Use letters and digits
     random_password = ''.join(secrets.choice(characters) for i in range(length))
     return random_password
+
+
+def generate_api_key(prefix: str = "vh", length: int = 32) -> str:
+
+    # secrets.token_urlsafe converts random bytes into an elegant, URL-safe
+    # string using Base64 encoding (characters a-z, A-Z, 0-9, -, and _).
+    random_string = secrets.token_urlsafe(length)
+
+    if prefix:
+        return f"{prefix}_{random_string}"
+
+    return random_string
 
 
 def current_date():

@@ -1,0 +1,161 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4" style="font-family: 'Inter', sans-serif;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0">Create Journal Voucher</h4>
+            <p class="text-muted small mb-0">Enter details to create a new journal entry</p>
+        </div>
+    </div>
+
+    <!-- Toolbar Buttons -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 8px; background-color: #f8f9fa;">
+        <div class="card-body p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <a href="{% url 'accounts_journal_voucher' %}" class="btn btn-outline-secondary px-3 py-1 me-2" style="font-weight: 500;">
+                    <i class="fas fa-arrow-left me-1"></i> Back to View
+                </a>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary px-3 py-1 me-2" style="font-weight: 500;">
+                    <i class="fas fa-save me-1"></i> Save as Draft
+                </button>
+                <button class="btn btn-primary px-3 py-1 me-2" style="font-weight: 500;">
+                    <i class="fas fa-paper-plane me-1"></i> Post
+                </button>
+                <a href="{% url 'accounts_journal_voucher' %}" class="btn btn-danger px-3 py-1" style="font-weight: 500;">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- JV Header Section -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 8px;">
+        <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
+            <h6 class="fw-bold mb-0 text-dark">Voucher Header</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted fw-semibold">Voucher No <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" placeholder="Auto-generated or enter manually">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted fw-semibold">Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" value="2026-04-28">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted fw-semibold">Reference (Ref) <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" placeholder="e.g., Inv #10452">
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label small text-muted fw-semibold">Prepared By</label>
+                    <input type="text" class="form-control bg-light" value="Admin User" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted fw-semibold">Status</label>
+                    <select class="form-select">
+                        <option value="draft" selected>Draft</option>
+                        <option value="posted">Posted</option>
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label small text-muted fw-semibold">Narration <span class="text-danger">*</span></label>
+                    <textarea class="form-control" rows="2" placeholder="General description of the whole event"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JV Transactions Section -->
+    <div class="card shadow-sm border-0" style="border-radius: 8px;">
+        <div class="card-header bg-white border-bottom-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold mb-0 text-dark">Transactions</h6>
+            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i> Add Line</button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-4 py-3 text-muted fw-semibold" style="font-size: 0.85rem; width: 25%;">Ledger</th>
+                            <th class="px-4 py-3 text-muted fw-semibold" style="font-size: 0.85rem; width: 20%;">Sub-Ledger</th>
+                            <th class="px-4 py-3 text-muted fw-semibold" style="font-size: 0.85rem;">Description</th>
+                            <th class="px-4 py-3 text-muted fw-semibold text-end" style="font-size: 0.85rem; width: 12%;">Debit</th>
+                            <th class="px-4 py-3 text-muted fw-semibold text-end" style="font-size: 0.85rem; width: 12%;">Credit</th>
+                            <th class="px-4 py-3 text-muted fw-semibold text-center" style="font-size: 0.85rem; width: 5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        <tr>
+                            <td class="px-4 py-3">
+                                <select class="form-select form-select-sm">
+                                    <option value="" disabled selected>Select Ledger</option>
+                                    <option>Office Equipment</option>
+                                    <option>Main Bank Account</option>
+                                </select>
+                            </td>
+                            <td class="px-4 py-3">
+                                <select class="form-select form-select-sm">
+                                    <option>-- None --</option>
+                                </select>
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="text" class="form-control form-control-sm" placeholder="Line description">
+                            </td>
+                            <td class="px-4 py-3 text-end">
+                                <input type="number" class="form-control form-control-sm text-end text-primary fw-bold" value="0.00" step="0.01">
+                            </td>
+                            <td class="px-4 py-3 text-end">
+                                <input type="number" class="form-control form-control-sm text-end text-success fw-bold" value="0.00" step="0.01">
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="btn btn-link text-danger p-0"><i class="fas fa-times"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3">
+                                <select class="form-select form-select-sm">
+                                    <option value="" disabled selected>Select Ledger</option>
+                                    <option>Main Bank Account</option>
+                                    <option>Office Equipment</option>
+                                </select>
+                            </td>
+                            <td class="px-4 py-3">
+                                <select class="form-select form-select-sm">
+                                    <option>-- None --</option>
+                                </select>
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="text" class="form-control form-control-sm" placeholder="Line description">
+                            </td>
+                            <td class="px-4 py-3 text-end">
+                                <input type="number" class="form-control form-control-sm text-end text-primary fw-bold" value="0.00" step="0.01">
+                            </td>
+                            <td class="px-4 py-3 text-end">
+                                <input type="number" class="form-control form-control-sm text-end text-success fw-bold" value="0.00" step="0.01">
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="btn btn-link text-danger p-0"><i class="fas fa-times"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="bg-light border-top">
+                        <tr>
+                            <td colspan="3" class="px-4 py-3 text-end fw-bold text-dark">Totals:</td>
+                            <td class="px-4 py-3 text-end fw-bold text-primary">0.00</td>
+                            <td class="px-4 py-3 text-end fw-bold text-success">0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

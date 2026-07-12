@@ -1,0 +1,864 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<!-- Modern App Detail Styles -->
+<style>
+    :root {
+        --color-primary: #4154f1;
+        --color-primary-hover: #717ff5;
+        --color-secondary: #012970;
+        --color-text: #444444;
+        --color-bg-light: #f6f9ff;
+        --color-border: #ebeef4;
+        --card-shadow: 0 4px 16px rgba(1, 41, 112, 0.08);
+        --font-sans: "Open Sans", sans-serif;
+        --font-heading: "Nunito", sans-serif;
+    }
+
+    .app-detail-container {
+        font-family: var(--font-sans);
+        background-color: var(--color-bg-light);
+        min-height: calc(100vh - 60px);
+        padding-bottom: 2rem;
+    }
+
+    .app-detail-body {
+        padding-bottom: 2rem;
+    }
+
+    /* Header styling */
+    .app-center-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--color-border);
+        background: #fff;
+        margin-bottom: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .app-center-header h2 {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        color: var(--color-secondary);
+        font-size: 1.5rem;
+        margin: 0;
+    }
+
+    .breadcrumb-modern {
+        font-size: 0.85rem;
+        color: #888;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .breadcrumb-modern a {
+        color: var(--color-primary);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .breadcrumb-modern a:hover {
+        color: var(--color-primary-hover);
+    }
+
+    /* Hero Card */
+    .app-hero-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid var(--color-border);
+        box-shadow: var(--card-shadow);
+        padding: 1.5rem;
+        margin-bottom: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .app-hero-content {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+
+    @media (max-width: 991px) {
+        .app-hero-content {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .app-hero-actions {
+            width: 100%;
+            margin-top: 1rem;
+        }
+    }
+
+    .app-hero-logo {
+        width: 80px;
+        height: 80px;
+        border-radius: 14px;
+        overflow: hidden;
+        background-color: var(--color-bg-light);
+        border: 1px solid var(--color-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .app-hero-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .app-hero-info {
+        flex-grow: 1;
+    }
+
+    .app-hero-title {
+        font-family: var(--font-heading);
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: var(--color-secondary);
+        margin: 0 0 0.4rem 0;
+    }
+
+    .app-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 0.75rem;
+    }
+
+    .app-hero-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .app-hero-meta i {
+        color: var(--color-primary);
+        font-size: 0.95rem;
+    }
+
+    .app-hero-desc {
+        color: var(--color-text);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .app-hero-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-width: 220px;
+    }
+
+    /* Buttons */
+    .btn-modern {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        transition: all 0.2s ease-in-out;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-modern-primary {
+        background-color: var(--color-primary);
+        color: #fff !important;
+    }
+
+    .btn-modern-primary:hover {
+        background-color: var(--color-primary-hover);
+        box-shadow: 0 4px 12px rgba(65, 84, 241, 0.25);
+    }
+
+    .btn-modern-outline {
+        background-color: transparent;
+        border: 1.5px solid var(--color-primary);
+        color: var(--color-primary) !important;
+    }
+
+    .btn-modern-outline:hover {
+        background-color: var(--color-primary);
+        color: #fff !important;
+    }
+
+    .btn-modern-secondary {
+        background-color: #eef2ff;
+        color: var(--color-primary) !important;
+    }
+
+    .btn-modern-secondary:hover {
+        background-color: #e0e7ff;
+    }
+
+    .btn-modern-dark {
+        background-color: #fff;
+        border: 1px solid var(--color-border);
+        color: var(--color-secondary) !important;
+    }
+
+    .btn-modern-dark:hover {
+        background-color: var(--color-bg-light);
+        border-color: #ccc;
+    }
+
+    /* Stats Dashboard Row */
+    .stats-row {
+        margin-bottom: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .stat-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid var(--color-border);
+        box-shadow: var(--card-shadow);
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        height: 100%;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background-color: #eef2ff;
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-val {
+        font-family: var(--font-heading);
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--color-secondary);
+        line-height: 1.2;
+    }
+
+    .stat-lbl {
+        font-size: 0.7rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    /* Panels & Cards */
+    .panel-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid var(--color-border);
+        box-shadow: var(--card-shadow);
+        padding: 1.25rem;
+        height: 100%;
+    }
+
+    .panel-title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--color-secondary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 0.5rem;
+    }
+
+    /* Subscribed Devices Table */
+    .subscribers-table {
+        margin: 0;
+    }
+
+    .subscribers-table th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #888;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        border-bottom: 1.5px solid var(--color-border);
+        padding: 0.75rem 0.5rem;
+    }
+
+    .subscribers-table td {
+        font-size: 0.875rem;
+        color: var(--color-text);
+        padding: 0.75rem 0.5rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .subscribers-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Timeline Version History */
+    .version-timeline {
+        position: relative;
+        padding-left: 2rem;
+        margin-left: 0.5rem;
+        border-left: 2px solid var(--color-border);
+    }
+
+    .version-node {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .version-node:last-child {
+        margin-bottom: 0;
+    }
+
+    .version-marker {
+        position: absolute;
+        left: calc(-2rem - 6px);
+        top: 4px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--color-primary);
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 3px rgba(65, 84, 241, 0.15);
+        z-index: 1;
+    }
+
+    .version-node:first-child .version-marker {
+        background-color: #2eca6a;
+        box-shadow: 0 0 0 3px rgba(46, 202, 106, 0.15);
+    }
+
+    .version-card {
+        background-color: var(--color-bg-light);
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid var(--color-border);
+        transition: all 0.2s;
+    }
+
+    .version-card:hover {
+        border-color: #cbd5e1;
+        background-color: #f1f5f9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+
+    .version-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .version-number {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: var(--color-secondary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .version-badge-latest {
+        background-color: #2eca6a;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .version-date {
+        font-size: 0.78rem;
+        color: #888;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .version-desc {
+        font-size: 0.85rem;
+        color: var(--color-text);
+        line-height: 1.5;
+        margin-bottom: 0.85rem;
+        white-space: pre-wrap;
+    }
+
+    /* Modal Redesign */
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .modal-header {
+        background-color: var(--color-secondary);
+        color: #fff;
+        border-bottom: none;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .modal-header .modal-title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.15rem;
+    }
+
+    .modal-header .btn-close-white {
+        background: none;
+        border: none;
+        color: #fff;
+        opacity: 0.8;
+        font-size: 1.25rem;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .modal-header .btn-close-white:hover {
+        opacity: 1;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        background-color: #fff;
+    }
+
+    .modal-body label {
+        font-weight: 600;
+        color: var(--color-secondary);
+        margin-bottom: 0.4rem;
+        font-size: 0.85rem;
+    }
+
+    .modal-footer {
+        border-top: none;
+        padding: 1rem 1.5rem;
+        background-color: var(--color-bg-light);
+    }
+
+    /* Desktop layout settings */
+    @media (min-width: 992px) {
+        .app-detail-container {
+            min-height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .app-detail-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 1rem;
+        }
+
+        .main-content-row {
+            min-height: 0;
+        }
+
+        .panel-card {
+            display: flex;
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 991px) {
+        .panel-scroll-content {
+            max-height: none;
+        }
+    }
+
+    .panel-scroll-content::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .panel-scroll-content::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .panel-scroll-content::-webkit-scrollbar-thumb {
+        background: #ccd4e0;
+        border-radius: 4px;
+    }
+
+    .panel-scroll-content::-webkit-scrollbar-thumb:hover {
+        background: #b0bac9;
+    }
+</style>
+
+<!-- Update App Modal -->
+<div class="modal fade" id="update" tabindex="-1" aria-hidden="true">
+    <form method="post" action="{% url 'save_app_update' %}" enctype="multipart/form-data"
+        class="modal-dialog modal-dialog-centered">
+        {% csrf_token %}
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-up-circle me-1"></i> Update {{ app.name }}</h5>
+                <button type="button" class="btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" name="app" value="{{ app.pk }}">
+                <input type="hidden" name="version_no" value="{{ next_version }}">
+                
+                <div class="mb-3">
+                    <label for="next_version_display" class="form-label">Next Version Number</label>
+                    <input type="text" class="form-control form-control-solid bg-light" id="next_version_display"
+                        value="v{{ next_version }}" readonly>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="files" class="form-label">Upload Application Package (ZIP)</label>
+                    <input required type="file" name="files" class="form-control" id="files" accept="application/zip">
+                    <div class="form-text text-muted" style="font-size: 0.75rem;">Choose a ZIP archive containing the
+                        updated installation files.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Release Notes & Changelog Description</label>
+                    <textarea required name="description" class="form-control" id="description" cols="30" rows="6"
+                        placeholder="Describe the fixes, improvements, and features in this release..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer d-flex w-100">
+                <button type="button" class="btn-modern btn-modern-dark" data-bs-dismiss="modal"
+                    style="flex: 1;">Cancel</button>
+                <button type="submit" class="btn-modern btn-modern-primary" style="flex: 2;">Release Update</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Add Subscriber Modal -->
+<div class="modal fade" id="add_subscriber_modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus-fill me-1"></i> Add App Subscriber</h5>
+                <button type="button" class="btn-close-white" data-bs-dismiss="modal" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="sub_name" class="form-label">Subscriber Name</label>
+                    <input required type="text" class="form-control" id="sub_name" placeholder="Enter subscriber's name">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="sub_email" class="form-label">Email Address</label>
+                    <input required type="email" class="form-control" id="sub_email" placeholder="email@example.com">
+                </div>
+
+                <div class="mb-3">
+                    <label for="sub_phone" class="form-label">Phone Number</label>
+                    <input required type="text" class="form-control" id="sub_phone" placeholder="Enter phone number">
+                </div>
+            </div>
+
+            <div class="modal-footer d-flex w-100">
+                <button type="button" class="btn-modern btn-modern-dark" data-bs-dismiss="modal" style="flex: 1;">Cancel</button>
+                <button type="button" onclick="saveSubscriber()" class="btn-modern btn-modern-primary" style="flex: 2;">Add Subscriber</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main UI Wrapper -->
+<div class="app-detail-container">
+    <!-- Header with breadcrumbs -->
+    <div class="app-center-header">
+        <div>
+            <div class="breadcrumb-modern">
+                <a href="{% url 'apps-center' %}">App Center</a>
+                <i class="bi bi-chevron-right text-muted small"></i>
+                <span class="text-muted">{{ app.name }}</span>
+            </div>
+            <h2>App Information</h2>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn-modern btn-modern-secondary" data-bs-target="#update" data-bs-toggle="modal">
+                <i class="bi bi-arrow-up-circle"></i> Update Software
+            </button>
+            <a href="{% url 'apps-center' %}" class="btn-modern btn-modern-dark">
+                <i class="bi bi-arrow-left"></i> Back to Center
+            </a>
+        </div>
+    </div>
+
+    <div class="app-detail-body container-fluid px-4">
+        <!-- App Branding Hero Card -->
+        <div class="app-hero-card">
+            <div class="app-hero-content">
+                <div class="app-hero-logo">
+                    {% if app.logo %}
+                    <img src="{{ app.logo.url }}" alt="{{ app.name }} logo">
+                    {% else %}
+                    <i class="bi bi-app fs-1 text-secondary"></i>
+                    {% endif %}
+                </div>
+                <div class="app-hero-info">
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                        <h3 class="app-hero-title mb-0">{{ app.name }}</h3>
+                        <span class="badge bg-primary px-2.5 py-1 text-white"
+                            style="font-size: 0.75rem; border-radius: 6px;">v{{ app.version }}</span>
+                    </div>
+                    <div class="app-hero-meta">
+                        <span><i class="bi bi-person-badge"></i> Publisher: <strong>{{ app.provider.name }}</strong></span>
+                        <span><i class="bi bi-people"></i> Subscribers: <strong>{{ subscribers.count }}</strong></span>
+                        <span><i class="bi bi-calendar3"></i> Created: <strong>{{ app.created_date }}</strong></span>
+                    </div>
+                    <p class="app-hero-desc text-secondary">{{ app.description }}</p>
+                </div>
+                <div class="app-hero-actions">
+                    {% if app.latest_version.exists %}
+                    <a href="javascript:void(0)" onclick="location.href='{{ app.lastest_url }}'"
+                        class="btn-modern btn-modern-primary w-100">
+                        <i class="bi bi-download"></i> Download Latest
+                    </a>
+                    {% else %}
+                    <a href="javascript:void(0)" onclick="location.href='{{ app.file.url }}'"
+                        class="btn-modern btn-modern-primary w-100">
+                        <i class="bi bi-download"></i> Download Base
+                    </a>
+                    {% endif %}
+                    <button class="btn-modern btn-modern-outline w-100" data-bs-target="#update" data-bs-toggle="modal">
+                        <i class="bi bi-arrow-up-circle"></i> Upload Version
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Dashboard Row -->
+        <div class="row stats-row g-3">
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-people"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val">{{ subscribers.count }}</span>
+                        <span class="stat-lbl">Active Subscribers</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-git"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val">{{ versions.count }}</span>
+                        <span class="stat-lbl">Total Versions</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-geo-alt"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" style="font-size: 1.1rem; font-weight: 700;">{{ app.provider.city }}</span>
+                        <span class="stat-lbl">{{ app.provider.country }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" style="font-size: 1.15rem; font-weight: 700;">{{ app.created_date }}</span>
+                        <span class="stat-lbl">First Release</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Two Column Detailed Layout -->
+        <div class="row main-content-row g-4">
+            
+            <!-- Left Panel: Version History & Changelog -->
+            <div class="col-lg-7 d-flex flex-column" style="min-height: 0;">
+                <div class="panel-card">
+                    <h3 class="panel-title">
+                        <i class="bi bi-clock-history text-primary"></i> Version History & Changelog
+                    </h3>
+                    
+                    <div class="panel-scroll-content">
+                        <div class="version-timeline mt-2">
+                            <!-- Latest / Base version fallback if list is empty -->
+                            {% for version in versions %}
+                            <div class="version-node">
+                                <div class="version-marker"></div>
+                                <div class="version-card">
+                                    <div class="version-card-header">
+                                        <div class="version-number">
+                                            Version {{ version.version_no }}
+                                            {% if forloop.first %}
+                                            <span class="version-badge-latest">Latest</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="version-date">
+                                            <i class="bi bi-calendar3"></i> {{ version.created_date }} &bull; <i
+                                                class="bi bi-clock"></i> {{ version.created_time }}
+                                        </div>
+                                    </div>
+                                    <div class="version-desc">{{ version.description }}</div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <a href="javascript:void(0)" onclick="location.href='{{ version.files.url }}'"
+                                            class="btn-modern btn-modern-secondary py-1 px-3"
+                                            style="font-size: 0.75rem;">
+                                            <i class="bi bi-download"></i> Download Package
+                                        </a>
+                                        <span class="text-muted small">ID: #{{ version.pk }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <!-- If there's no version update created, list the base file as version 0 -->
+                            <div class="version-node">
+                                <div class="version-marker" style="background-color: #2eca6a;"></div>
+                                <div class="version-card">
+                                    <div class="version-card-header">
+                                        <div class="version-number">
+                                            Base Version
+                                            <span class="version-badge-latest">Active</span>
+                                        </div>
+                                        <div class="version-date">
+                                            <i class="bi bi-calendar3"></i> {{ app.created_date }}
+                                        </div>
+                                    </div>
+                                    <div class="version-desc">Initial upload of the application package.</div>
+                                    <div>
+                                        <a href="javascript:void(0)" onclick="location.href='{{ app.file.url }}'"
+                                            class="btn-modern btn-modern-secondary py-1 px-3"
+                                            style="font-size: 0.75rem;">
+                                            <i class="bi bi-download"></i> Download Package
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Subscribers (App Subscribers) -->
+            <div class="col-lg-5 d-flex flex-column" style="min-height: 0;">
+                <div class="panel-card">
+                    <div class="panel-title d-flex justify-content-between align-items-center">
+                        <span class="d-flex align-items-center gap-2">
+                            <i class="bi bi-people text-primary"></i> App Subscribers ({{ subscribers.count }})
+                        </span>
+                        <button class="btn-modern btn-modern-primary btn-sm py-1 px-2.5"
+                                data-bs-target="#add_subscriber_modal"
+                                data-bs-toggle="modal"
+                                title="Add Subscriber">
+                            <i class="bi bi-plus-lg"></i> Add
+                        </button>
+                    </div>
+                    
+                    <div class="panel-scroll-content">
+                        <div class="table-responsive">
+                            <table class="table subscribers-table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for subscriber in subscribers %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-secondary" style="font-size: 0.9rem;">{{ subscriber.name }}</div>
+                                        </td>
+                                        <td>
+                                            <a href="mailto:{{ subscriber.email }}" class="text-decoration-none text-primary" style="font-size: 0.85rem;">
+                                                {{ subscriber.email }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.75rem;">
+                                                {{ subscriber.phone }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-5 text-muted">
+                                            <i class="bi bi-people fs-2"></i>
+                                            <p class="mt-2 mb-0 small">No active subscribers</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function saveSubscriber() {
+        let ids = ['sub_name', 'sub_email', 'sub_phone'];
+        if (anton.validateInputs(ids)) {
+            let inputs = anton.Inputs(ids);
+            let payload = {
+                'module': 'subscriber',
+                data: {
+                    name: inputs['sub_name'],
+                    email: inputs['sub_email'],
+                    phone: inputs['sub_phone'],
+                    app_uni: '{{ app.uni }}'
+                }
+            };
+            
+            // Call the existing API helper
+            let response = api.call('PUT', payload, '/appscenter/api/');
+            if (response && (response.status_code === 200 || response.message === "Subscriber Saved" || response.message === "Record Saved")) {
+                kasa.confirm("Subscriber registered successfully", 1, 'here');
+            } else {
+                kasa.error(response.message || "Failed to register subscriber.");
+            }
+        } else {
+            kasa.error("Please fill all fields.");
+        }
+    }
+</script>
+{% endblock %}

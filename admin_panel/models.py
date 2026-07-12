@@ -7,14 +7,14 @@ import datetime
 import requests
 from attr.validators import max_len
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.db import models, transaction
 from django.utils import timezone
 
-
+from amc.models import Groups
 from community.models import questions, QuestionTags
 from blog.models import Providers
-from django.db.models import Sum
+from django.db.models import Sum, Model
 from appconfig.models import *
 from datetime import datetime
 
@@ -726,6 +726,7 @@ class UserAddOns(models.Model):
     bio_id = models.CharField(max_length=3,null=True)
     bio_password = models.TextField(null=True)
 
+
     department = models.ForeignKey(Departments, on_delete=models.SET_NULL, null=True, blank=True)
 
     def dp_url(self):
@@ -740,6 +741,10 @@ class UserAddOns(models.Model):
 
     def settings(self):
         return UserSettings.objects.get(user=self.user)
+
+    def is_logistic_admin(self):
+        group, _ = Group.objects.get_or_create(name='logistic_admin')
+        return self.user.groups.filter(name='logistic_admin').exists()
 
     def dept(self):
         return self.department.name if self.department.name else "NOT ASSIGNED"

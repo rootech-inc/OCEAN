@@ -37,6 +37,7 @@ def interface(request):
         data = body.get('data')
 
 
+
         if method == "PUT":
             if module == 'vehicle':
                 plate_number = data.get('plate_number')
@@ -214,158 +215,264 @@ def interface(request):
                     success_response['message'] = [v.obj() for v in Vehicle.objects.all()]
                 else:
                     success_response['message'] = [v.obj() for v in Vehicle.objects.filter(pk=pk)]
-                    
+
+            elif module == 'auth':
+                pass
+
             elif module == 'weekly_report':
-                import fpdf
                 from datetime import datetime, timedelta
-                import os
-
-                class ModernReport(fpdf.FPDF):
-                    def header(self):
-                        # Logo
-                        logo_path = os.path.join('static', 'general', 'img', 'logo.png')
-                        if os.path.exists(logo_path):
-                            self.image(logo_path, 10, 8, 33)
-                        
-                        self.set_font('Arial', 'B', 20)
-                        self.set_text_color(44, 62, 80) # Dark Blue
-                        self.cell(0, 10, 'WEEKLY LOGISTICS REPORT', 0, 1, 'R')
-                        
-                        self.set_font('Arial', 'I', 10)
-                        self.set_text_color(127, 140, 141) # Grey
-                        today = datetime.now().strftime('%B %d, %Y')
-                        self.cell(0, 5, f'Generated on: {today}', 0, 1, 'R')
-                        self.ln(15)
-
-                    def footer(self):
-                        self.set_y(-15)
-                        self.set_font('Arial', 'I', 8)
-                        self.set_text_color(149, 165, 166)
-                        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
-
-                    def styled_table_header(self, headers, widths):
-                        self.set_fill_color(52, 152, 219) # Primary Blue
-                        self.set_text_color(255, 255, 255)
-                        self.set_font('Arial', 'B', 10)
-                        for i, header in enumerate(headers):
-                            self.cell(widths[i], 10, header, 1, 0, 'C', 1)
-                        self.ln()
 
                 today = datetime.now()
-                start_date = (today - timedelta(days=today.weekday() + 1)).strftime('%Y-%m-%d')
-                end_date = (today + timedelta(days=(5 - today.weekday()))).strftime('%Y-%m-%d')
+                # Default: current ISO week (Monday to Sunday)
+                week_start = today - timedelta(days=today.weekday())
+                week_end = week_start + timedelta(days=6)
 
-                pdf = ModernReport()
-                pdf.add_page()
-                
-                # Period Section
-                pdf.set_font('Arial', 'B', 12)
-                pdf.set_text_color(44, 62, 80)
-                pdf.cell(0, 10, f'Reporting Period: {start_date} to {end_date}', 0, 1, 'L')
-                pdf.ln(5)
+                start_date = data.get('start_date', week_start.strftime('%Y-%m-%d'))
+                end_date = data.get('end_date', week_end.strftime('%Y-%m-%d'))
 
-                # SUMMARY HIGHLIGHTS (KPIs)
-                pdf.set_fill_color(248, 249, 250)
-                pdf.rect(10, pdf.get_y(), 190, 30, 'F')
-                
-                total_trips = DeliveryRequest.objects.filter(request_date__range=[start_date, end_date]).count()
-                completed = DeliveryRequest.objects.filter(status='delivered', arrival_time__range=[start_date, end_date]).count()
-                total_fuel = VehicleFuelTopUp.objects.filter(date__range=[start_date, end_date]).aggregate(total=Sum('amount'))['total'] or 0
-                
-                pdf.set_font('Arial', 'B', 10)
-                pdf.set_text_color(127, 140, 141)
-                pdf.cell(63, 10, 'TOTAL REQUESTS', 0, 0, 'C')
-                pdf.cell(63, 10, 'COMPLETED', 0, 0, 'C')
-                pdf.cell(63, 10, 'FUEL EXPENDITURE', 0, 1, 'C')
-                
-                pdf.set_font('Arial', 'B', 16)
-                pdf.set_text_color(52, 152, 219)
-                pdf.cell(63, 10, str(total_trips), 0, 0, 'C')
-                pdf.cell(63, 10, str(completed), 0, 0, 'C')
-                pdf.cell(63, 10, f"GHS {total_fuel:,.2f}", 0, 1, 'C')
-                pdf.ln(15)
+                # KPI Summary
+                total_requests = DeliveryRequest.objects.filter(request_date__date__range=[start_date, end_date]).count()
+                total_completed = DeliveryRequest.objects.filter(status='delivered', arrival_time__date__range=[start_date, end_date]).count()
+                total_pending = DeliveryRequest.objects.filter(status='pending', request_date__date__range=[start_date, end_date]).count()
+                total_in_transit = DeliveryRequest.objects.filter(status='in_transit').count()
+                total_cancelled = DeliveryRequest.objects.filter(status='cancelled', request_date__date__range=[start_date, end_date]).count()
+                total_fuel_amount = VehicleFuelTopUp.objects.filter(date__range=[start_date, end_date]).aggregate(total=Sum('amount'))['total'] or 0
+                total_fuel_litres = VehicleFuelTopUp.objects.filter(date__range=[start_date, end_date]).aggregate(total=Sum('litres'))['total'] or 0
 
-                # VEHICLE PERFORMANCE
-                pdf.set_font('Arial', 'B', 12)
-                pdf.set_text_color(44, 62, 80)
-                pdf.cell(0, 10, 'Vehicle Performance Summary', 0, 1, 'L')
-                
-                headers = ['Plate Number', 'Model', 'Trips', 'Fuel (L)', 'Amount (GHS)']
-                widths = [40, 50, 25, 35, 40]
-                pdf.styled_table_header(headers, widths)
-                
-                pdf.set_font('Arial', '', 10)
-                pdf.set_text_color(0, 0, 0)
-                fill = False
+                # Vehicle performance
+                vehicle_performance = []
                 for vehicle in Vehicle.objects.all():
-                    litres = VehicleFuelTopUp.objects.filter(vehicle=vehicle, date__range=[start_date, end_date]).aggregate(sum=Sum('litres'))['sum'] or 0
-                    amount = VehicleFuelTopUp.objects.filter(vehicle=vehicle, date__range=[start_date, end_date]).aggregate(sum=Sum('amount'))['sum'] or 0
-                    trips = vehicle.deliveryrequest_set.filter(status='delivered', arrival_time__range=[start_date, end_date]).count()
-                    
-                    pdf.set_fill_color(245, 245, 245)
-                    pdf.cell(widths[0], 8, vehicle.plate_number, 1, 0, 'L', fill)
-                    pdf.cell(widths[1], 8, vehicle.model[:20], 1, 0, 'L', fill)
-                    pdf.cell(widths[2], 8, str(trips), 1, 0, 'C', fill)
-                    pdf.cell(widths[3], 8, f"{litres:.2f}", 1, 0, 'R', fill)
-                    pdf.cell(widths[4], 8, f"{amount:,.2f}", 1, 1, 'R', fill)
-                    fill = not fill
+                    v_fuel_litres = VehicleFuelTopUp.objects.filter(vehicle=vehicle, date__range=[start_date, end_date]).aggregate(s=Sum('litres'))['s'] or 0
+                    v_fuel_amount = VehicleFuelTopUp.objects.filter(vehicle=vehicle, date__range=[start_date, end_date]).aggregate(s=Sum('amount'))['s'] or 0
+                    v_trips = DeliveryRequest.objects.filter(vehicle=vehicle, status='delivered', arrival_time__date__range=[start_date, end_date]).count()
+                    vehicle_performance.append({
+                        'pk': vehicle.pk,
+                        'plate_number': vehicle.plate_number,
+                        'model': vehicle.model,
+                        'manufacturer': vehicle.manufacturer,
+                        'trips_completed': v_trips,
+                        'fuel_litres': float(v_fuel_litres),
+                        'fuel_amount': float(v_fuel_amount),
+                    })
 
-                pdf.ln(10)
-
-                # DRIVER ACTIVITY
-                pdf.set_font('Arial', 'B', 12)
-                pdf.set_text_color(44, 62, 80)
-                pdf.cell(0, 10, 'Driver Performance', 0, 1, 'L')
-                
-                headers = ['Driver Name', 'Assigned', 'Delivered', 'In Transit', 'Pending']
-                widths = [60, 30, 35, 35, 30]
-                pdf.styled_table_header(headers, widths)
-                
-                pdf.set_font('Arial', '', 10)
-                fill = False
+                # Driver performance
+                driver_performance = []
                 for driver in Driver.objects.all():
-                    assigned = driver.deliveryrequest_set.filter(request_date__range=[start_date, end_date]).count()
-                    delivered = driver.deliveryrequest_set.filter(status='delivered', arrival_time__range=[start_date, end_date]).count()
-                    transit = driver.deliveryrequest_set.filter(status='in_transit').count()
-                    pending = driver.deliveryrequest_set.filter(status='schedule').count()
+                    d_assigned = DeliveryRequest.objects.filter(driver=driver, request_date__date__range=[start_date, end_date]).count()
+                    d_delivered = DeliveryRequest.objects.filter(driver=driver, status='delivered', arrival_time__date__range=[start_date, end_date]).count()
+                    d_transit = DeliveryRequest.objects.filter(driver=driver, status='in_transit').count()
+                    d_pending = DeliveryRequest.objects.filter(driver=driver, status='schedule').count()
+                    driver_performance.append({
+                        'pk': driver.pk,
+                        'name': driver.name,
+                        'phone_number': driver.phone_number,
+                        'assigned': d_assigned,
+                        'delivered': d_delivered,
+                        'in_transit': d_transit,
+                        'pending': d_pending,
+                    })
+
+                # Detailed delivery log
+                deliveries = DeliveryRequest.objects.filter(
+                    request_date__date__range=[start_date, end_date]
+                ).order_by('-request_date')
+                delivery_log = [
+                    {
+                        'enc': req.enc,
+                        'request_date': req.request_date.strftime('%Y-%m-%d %H:%M'),
+                        'requested_by': req.requested_by.get_full_name() if req.requested_by else 'N/A',
+                        'source': req.source,
+                        'destination': req.destination,
+                        'delivery_type': req.delivery_type,
+                        'status': req.status,
+                        'vehicle': req.vehicle.plate_number if req.vehicle else 'N/A',
+                        'driver': req.driver.name if req.driver else 'N/A',
+                        'departure_time': req.departure_time.strftime('%Y-%m-%d %H:%M') if req.departure_time else None,
+                        'arrival_time': req.arrival_time.strftime('%Y-%m-%d %H:%M') if req.arrival_time else None,
+                        'duration': req.duration(),
+                    }
+                    for req in deliveries
+                ]
+
+                if data.get('export') == 'pdf':
+                    from fpdf import FPDF
+                    import os
+                    pdf = FPDF()
+                    pdf.add_page('P')
+                    pdf.set_margins(10, 10, 10)
                     
-                    pdf.set_fill_color(245, 245, 245)
-                    pdf.cell(widths[0], 8, driver.name[:30], 1, 0, 'L', fill)
-                    pdf.cell(widths[1], 8, str(assigned), 1, 0, 'C', fill)
-                    pdf.cell(widths[2], 8, str(delivered), 1, 0, 'C', fill)
-                    pdf.cell(widths[3], 8, str(transit), 1, 0, 'C', fill)
-                    pdf.cell(widths[4], 8, str(pending), 1, 1, 'C', fill)
-                    fill = not fill
+                    # Header
+                    pdf.set_font('Arial', 'B', 14)
+                    pdf.cell(190, 8, 'FLEET WAVE LOGISTICS WEEKLY REPORT', 0, 1, 'C')
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(190, 5, f"Period: {start_date} to {end_date}", 0, 1, 'C')
+                    pdf.ln(5)
+                    
+                    # Summary Stats Table
+                    pdf.set_font('Arial', 'B', 11)
+                    pdf.cell(190, 6, 'SUMMARY STATISTICS', 0, 1, 'L')
+                    pdf.set_font('Arial', 'B', 9)
+                    pdf.cell(30, 6, 'TOTAL REQUESTS', 1, 0, 'C')
+                    pdf.cell(30, 6, 'COMPLETED', 1, 0, 'C')
+                    pdf.cell(30, 6, 'PENDING', 1, 0, 'C')
+                    pdf.cell(30, 6, 'IN TRANSIT', 1, 0, 'C')
+                    pdf.cell(35, 6, 'TOTAL FUEL (L)', 1, 0, 'C')
+                    pdf.cell(35, 6, 'FUEL AMOUNT', 1, 1, 'C')
+                    
+                    pdf.set_font('Arial', '', 9)
+                    pdf.cell(30, 6, str(total_requests), 1, 0, 'C')
+                    pdf.cell(30, 6, str(total_completed), 1, 0, 'C')
+                    pdf.cell(30, 6, str(total_pending), 1, 0, 'C')
+                    pdf.cell(30, 6, str(total_in_transit), 1, 0, 'C')
+                    pdf.cell(35, 6, f"{total_fuel_litres:.1f} L", 1, 0, 'C')
+                    pdf.cell(35, 6, f"GHS {total_fuel_amount:.2f}", 1, 1, 'C')
+                    pdf.ln(8)
+                    
+                    # Vehicle Performance Table
+                    pdf.set_font('Arial', 'B', 11)
+                    pdf.cell(190, 6, 'VEHICLE PERFORMANCE', 0, 1, 'L')
+                    pdf.set_font('Arial', 'B', 9)
+                    pdf.cell(45, 6, 'PLATE NUMBER', 1, 0, 'C')
+                    pdf.cell(45, 6, 'MODEL', 1, 0, 'C')
+                    pdf.cell(35, 6, 'TRIPS COMPLETED', 1, 0, 'C')
+                    pdf.cell(30, 6, 'FUEL LITRES', 1, 0, 'C')
+                    pdf.cell(35, 6, 'FUEL AMOUNT', 1, 1, 'C')
+                    
+                    pdf.set_font('Arial', '', 9)
+                    for vp in vehicle_performance:
+                        pdf.cell(45, 6, vp['plate_number'], 1, 0, 'C')
+                        pdf.cell(45, 6, f"{vp['manufacturer'].upper()} {vp['model']}", 1, 0, 'C')
+                        pdf.cell(35, 6, str(vp['trips_completed']), 1, 0, 'C')
+                        pdf.cell(30, 6, f"{vp['fuel_litres']:.1f} L", 1, 0, 'C')
+                        pdf.cell(35, 6, f"GHS {vp['fuel_amount']:.2f}", 1, 1, 'C')
+                    pdf.ln(8)
+                    
+                    # Driver Performance Table
+                    pdf.set_font('Arial', 'B', 11)
+                    pdf.cell(190, 6, 'DRIVER PERFORMANCE', 0, 1, 'L')
+                    pdf.set_font('Arial', 'B', 9)
+                    pdf.cell(50, 6, 'DRIVER NAME', 1, 0, 'C')
+                    pdf.cell(35, 6, 'PHONE NUMBER', 1, 0, 'C')
+                    pdf.cell(25, 6, 'ASSIGNED', 1, 0, 'C')
+                    pdf.cell(25, 6, 'DELIVERED', 1, 0, 'C')
+                    pdf.cell(25, 6, 'IN TRANSIT', 1, 0, 'C')
+                    pdf.cell(30, 6, 'PENDING', 1, 1, 'C')
+                    
+                    pdf.set_font('Arial', '', 9)
+                    for dp in driver_performance:
+                        pdf.cell(50, 6, dp['name'], 1, 0, 'C')
+                        pdf.cell(35, 6, dp['phone_number'], 1, 0, 'C')
+                        pdf.cell(25, 6, str(dp['assigned']), 1, 0, 'C')
+                        pdf.cell(25, 6, str(dp['delivered']), 1, 0, 'C')
+                        pdf.cell(25, 6, str(dp['in_transit']), 1, 0, 'C')
+                        pdf.cell(30, 6, str(dp['pending']), 1, 1, 'C')
+                    
+                    # Output PDF
+                    file_name = f"static/general/tmp/weekly_report_{start_date}_{end_date}.pdf"
+                    os.makedirs(os.path.dirname(file_name), exist_ok=True)
+                    pdf.output(file_name)
+                    
+                    success_response['message'] = {
+                        'pdf_url': file_name
+                    }
+                else:
+                    success_response['message'] = {
+                        'period': {'start_date': start_date, 'end_date': end_date},
+                        'summary': {
+                            'total_requests': total_requests,
+                            'completed': total_completed,
+                            'pending': total_pending,
+                            'in_transit': total_in_transit,
+                            'cancelled': total_cancelled,
+                            'fuel_amount': float(total_fuel_amount),
+                            'fuel_litres': float(total_fuel_litres),
+                        },
+                        'vehicle_performance': vehicle_performance,
+                        'driver_performance': driver_performance,
+                        'delivery_log': delivery_log,
+                    }
 
-                # DETAILED LOG
-                pdf.add_page()
-                pdf.set_font('Arial', 'B', 12)
-                pdf.set_text_color(44, 62, 80)
-                pdf.cell(0, 10, 'Detailed Delivery Log', 0, 1, 'L')
-                
-                headers = ['Date', 'Requested By', 'From', 'To', 'Duration']
-                widths = [30, 40, 50, 50, 20]
-                pdf.styled_table_header(headers, widths)
-                
-                pdf.set_font('Arial', '', 9)
-                fill = False
-                for req in DeliveryRequest.objects.filter(request_date__range=[start_date, end_date]).order_by('-request_date'):
-                    pdf.set_fill_color(245, 245, 245)
-                    pdf.cell(widths[0], 7, str(req.request_date).split(' ')[0], 1, 0, 'L', fill)
-                    pdf.cell(widths[1], 7, req.requested_by.get_full_name()[:20], 1, 0, 'L', fill)
-                    pdf.cell(widths[2], 7, req.source[:25], 1, 0, 'L', fill)
-                    pdf.cell(widths[3], 7, req.destination[:25], 1, 0, 'L', fill)
-                    pdf.cell(widths[4], 7, str(req.duration())[:10], 1, 1, 'C', fill)
-                    fill = not fill
-
-                file_name = f"static/general/tmp/weekly_report_{start_date}_{end_date}.pdf"
-                pdf.output(file_name, 'F')
-                success_response['message'] = file_name
-                success_response['message'] = file_name
 
 
+            elif module == 'dashboard':
+                from datetime import datetime, timedelta
 
+                today = datetime.now()
+                # Default: current ISO week (Monday to Sunday)
+                week_start = today - timedelta(days=today.weekday())
+                week_end = week_start + timedelta(days=6)
 
+                start_date = data.get('start_date', week_start.strftime('%Y-%m-%d'))
+                end_date = data.get('end_date', week_end.strftime('%Y-%m-%d'))
+
+                # Overall KPIs
+                total_requests = DeliveryRequest.objects.filter(request_date__date__range=[start_date, end_date]).count()
+                total_completed = DeliveryRequest.objects.filter(status='delivered', arrival_time__date__range=[start_date, end_date]).count()
+                total_pending = DeliveryRequest.objects.filter(status='pending').count()
+                total_in_transit = DeliveryRequest.objects.filter(status='in_transit').count()
+                total_scheduled = DeliveryRequest.objects.filter(status='schedule').count()
+                total_cancelled = DeliveryRequest.objects.filter(status='cancelled', request_date__date__range=[start_date, end_date]).count()
+                total_fuel_amount = VehicleFuelTopUp.objects.filter(date__range=[start_date, end_date]).aggregate(total=Sum('amount'))['total'] or 0
+                total_fuel_litres = VehicleFuelTopUp.objects.filter(date__range=[start_date, end_date]).aggregate(total=Sum('litres'))['total'] or 0
+
+                # Fleet status
+                fleet_summary = {
+                    'total': Vehicle.objects.count(),
+                    'available': Vehicle.objects.filter(status='available').count(),
+                    'in_use': Vehicle.objects.filter(status='in_use').count(),
+                    'maintenance': Vehicle.objects.filter(status='maintenance').count(),
+                    'inactive': Vehicle.objects.filter(status='inactive').count(),
+                }
+
+                # Driver status
+                driver_summary = {
+                    'total': Driver.objects.count(),
+                    'available': Driver.objects.filter(status='available').count(),
+                    'on_trip': Driver.objects.filter(status='on_trip').count(),
+                    'inactive': Driver.objects.filter(status='inactive').count(),
+                }
+
+                # Deliveries by type (in period)
+                by_type = {}
+                for choice_key, _ in DeliveryRequest.type_choices:
+                    by_type[choice_key] = DeliveryRequest.objects.filter(
+                        delivery_type=choice_key,
+                        request_date__date__range=[start_date, end_date]
+                    ).count()
+
+                # Recent 10 deliveries (all time)
+                recent_deliveries = [
+                    {
+                        'enc': req.enc,
+                        'request_date': req.request_date.strftime('%Y-%m-%d %H:%M'),
+                        'requested_by': req.requested_by.get_full_name() if req.requested_by else 'N/A',
+                        'source': req.source,
+                        'destination': req.destination,
+                        'delivery_type': req.delivery_type,
+                        'status': req.status,
+                        'vehicle': req.vehicle.plate_number if req.vehicle else 'N/A',
+                        'driver': req.driver.name if req.driver else 'N/A',
+                    }
+                    for req in DeliveryRequest.objects.order_by('-request_date')[:10]
+                ]
+
+                success_response['message'] = {
+                    'period': {'start_date': start_date, 'end_date': end_date},
+                    'kpis': {
+                        'total_requests': total_requests,
+                        'completed': total_completed,
+                        'pending': total_pending,
+                        'in_transit': total_in_transit,
+                        'scheduled': total_scheduled,
+                        'cancelled': total_cancelled,
+                        'fuel_amount': float(total_fuel_amount),
+                        'fuel_litres': float(total_fuel_litres),
+                    },
+                    'fleet': fleet_summary,
+                    'drivers': driver_summary,
+                    'by_delivery_type': by_type,
+                    'recent_deliveries': recent_deliveries,
+                }
 
 
             elif module == 'driver':

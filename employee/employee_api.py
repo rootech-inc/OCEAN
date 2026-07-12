@@ -423,8 +423,39 @@ def interface(request):
                 print("CREATED")
                 response = success_response
 
+            elif module == 'manual_punch':
+                import base64
+                from django.core.files.base import ContentFile
+                from django.contrib.auth.models import User
+                from .models import ManualPunc
 
+                pk = data.get('mypk')
+                state = data.get('state')  # 'IN' or 'OUT'
+                remarks = data.get('remarks', '')
+                selfie_base64 = data.get('selfie_base64')
+                file_name = data.get('file_name', 'selfie.jpg')
 
+                try:
+                    user_obj = User.objects.get(pk=pk)
+                    
+                    content_file = None
+                    if selfie_base64:
+                        fmt, imgstr = selfie_base64.split(';base64,') if ';base64,' in selfie_base64 else (None, selfie_base64)
+                        decoded_file = base64.b64decode(imgstr)
+                        content_file = ContentFile(decoded_file, name=file_name)
+
+                    emp_punch = ManualPunc.objects.create(
+                        employee=user_obj,
+                        state=state,
+                        remarks=remarks,
+                        selfie=content_file
+                    )
+
+                    success_response['message'] = "Manual punch recorded successfully"
+                    response = success_response
+                except Exception as e:
+                    response['status_code'] = 500
+                    response['message'] = f"Failed to record manual punch: {e}"
 
         elif method == 'VIEW':
             if module == 'area':
@@ -591,7 +622,7 @@ def interface(request):
                 sheet.append(h1)
                 sheet.append(headers)
 
-                employees = Employee.objects.filter(is_resigned=False).select_related("department")
+                employees = Employee.objects.filter(is_resigned=False).order_by('department__dept_name')
 
                 for employee in employees:
 
@@ -608,7 +639,9 @@ def interface(request):
                     absent = employee.month_abscent(start_date, end_date)
 
                     # create safe excel sheet name
-                    safe_name = employee.name.replace("/", "_").replace("\\", "_")[:30]
+                    ik  = employee.name.replace("/", "_").replace("\\", "_")[:30]
+                    safe_name = f"{employee.user_id} - {ik}"
+
 
                     new_sheet = book.create_sheet(title=safe_name)
                     new_sheet.append(["DATE", "CHECK IN", "CHECK OUT", "STATUS", "IS LATE"])

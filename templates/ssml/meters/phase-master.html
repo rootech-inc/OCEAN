@@ -94,7 +94,8 @@
                                         onclick="editPhase(this)">Edit</a></li>
                                 <li><a class="dropdown-item" href="#" data-phase-id="{{ phase.id }}"
                                         onclick="deletePhase(this)">Delete</a></li>
-                                <li><a data-pk="{{ phase.pk }}" class="dropdown-item material-link" href="#">Material</a></li>
+                                <li><a data-pk="{{ phase.pk }}" class="dropdown-item material-link"
+                                        href="#">Material</a></li>
                             </ul>
                         </div>
                     </td>
@@ -227,7 +228,7 @@
                             kasa.error(response.message, 1, 'here')
                             loader.hide()
                         }
-                    }).catch(error => { kasa.error(error);loader.hide() })
+                    }).catch(error => { kasa.error(error); loader.hide() })
                 }
             })
         });

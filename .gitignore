@@ -40,3 +40,9 @@ static/uploads/
 /static/general/snedaghana-drive.json
 */migrations/*
 !*/migrations/__init__.py
+/static/qr_codes/
+/static/tmp/
+/static/general/upload/
+/static/general/foc_compliance/
+/static/general/img/
+/static/attachments/

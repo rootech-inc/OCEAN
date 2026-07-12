@@ -1,0 +1,69 @@
+Traceback (most recent call last):
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\manage.py", line 22, in <module>
+    main()
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\manage.py", line 18, in main
+    execute_from_command_line(sys.argv)
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\core\management\__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\core\management\__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\core\management\base.py", line 413, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\core\management\base.py", line 454, in execute
+    self.check()
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\core\management\base.py", line 486, in check
+    all_issues = checks.run_checks(
+                 ^^^^^^^^^^^^^^^^^^
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\core\checks\registry.py", line 88, in run_checks
+    new_errors = check(app_configs=app_configs, databases=databases)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\core\checks\urls.py", line 16, in check_url_config
+    return check_resolver(resolver)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\core\checks\urls.py", line 26, in check_resolver
+    return check_method()
+           ^^^^^^^^^^^^^^
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\urls\resolvers.py", line 531, in check
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 994, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\ocean\urls.py", line 48, in <module>
+    path('iclock/', include('iclock.urls')),
+                    ^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\venv\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 994, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\iclock\urls.py", line 2, in <module>
+    from . import views, iclock_api
+  File "D:\DEVELOPMENT\ROOTECH\ocean_live\iclock\iclock_api.py", line 7, in <module>
+    from zk import ZK
+ModuleNotFoundError: No module named 'zk'

@@ -97,7 +97,7 @@
                 <button class="btn btn-sm btn-premium-warning ms-2">
                     <i class="fa fa-edit"></i>
                 </button>
-                <button class="btn btn-sm btn-premium-dark ms-2">
+                <button id="delete" class="btn btn-sm btn-premium-dark ms-2">
                     <i class="fa fa-trash"></i>
                 </button>
                 <button id="prev_btn" class="btn btn-sm btn-premium-info ms-2">
@@ -197,7 +197,8 @@
                         </div>
                         <input type="text" class="form-control rounded-0" readonly id="is_valid">
                         <div class="input-group-append w-20">
-                            <button title="Validate Document" class="btn btn-info w-100 h-100" id="validate" style="border-radius: 0 !important">
+                            <button title="Validate Document" class="btn btn-info w-100 h-100" id="validate"
+                                style="border-radius: 0 !important">
                                 <i class="fa fa-info-circle"></i>
                             </button>
                         </div>
@@ -208,7 +209,8 @@
                         </div>
                         <input type="text" class="form-control rounded-0" readonly id="is_accepted">
                         <div class="input-group-append w-20">
-                            <button title="Document Acceptance" class="btn btn-info w-100 h-100" id="accepted" disabled style="border-radius: 0 !important">
+                            <button title="Document Acceptance" class="btn btn-info w-100 h-100" id="accepted" disabled
+                                style="border-radius: 0 !important">
                                 <i class="fa fa-info-circle"></i>
                             </button>
                         </div>
@@ -219,7 +221,8 @@
                         </div>
                         <input type="text" class="form-control rounded-0" readonly id="is_posted">
                         <div class="input-group-append w-20">
-                            <button title="Post Document" class="btn btn-info w-100 h-100" id="post" style="border-radius: 0 !important">
+                            <button title="Post Document" class="btn btn-info w-100 h-100" id="post"
+                                style="border-radius: 0 !important">
                                 <i class="fa fa-info-circle"></i>
                             </button>
                         </div>
@@ -233,7 +236,11 @@
                             <table class="table table-bordered table-hover">
                                 <thead class="thead-dark">
                                     <tr>
-                                        <th>SN</th><th>ITEM</th><th>QUANTITY</th><th>RATE</th><th>AMOUNT</th>
+                                        <th>SN</th>
+                                        <th>ITEM</th>
+                                        <th>QUANTITY</th>
+                                        <th>RATE</th>
+                                        <th>AMOUNT</th>
                                     </tr>
                                 </thead>
                                 <tbody id="invoice_transactions"></tbody>
@@ -271,6 +278,14 @@
 
         $('#post').click(function () {
             ssml.postInvoice()
+        })
+
+        $('#delete').click(function () {
+            let entry_no = $('#entry_no').val()
+            if(confirm('Are you sure you want to delete?')) {
+                ssml.deletFocInvoice(entry_no)
+            }
+
         })
 
 

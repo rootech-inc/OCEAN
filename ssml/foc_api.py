@@ -69,7 +69,7 @@ def interface(request):
                 MailQueues.objects.create(
                     sender=MailSenders.objects.get(is_default=True),
                     recipient="accounts4@snedamotors.com",
-                    cc='mohan@snedaghana.com,ajay@snedaghana.com,bharat@snedaghana.com',
+                    cc='',
                     body=for_management,
                     mail_key=make_md5_hash(invoice.remarks),
                     subject=f"SNEDA - {invoice_no} - {ms}",

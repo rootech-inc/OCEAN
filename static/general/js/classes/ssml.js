@@ -3504,14 +3504,14 @@ class SSML {
 
     async getInvoice(entry_no = '*') {
         return await api.call('VIEW', {
-            module: 'ecg_invoice',
+            module: 'foc_invoice',
             data: { entry_no }
         }, '/ssml/api/');
     }
 
     async getEcgInvoice(entry_no = '*') {
         return await api.call('VIEW', {
-            module: 'foc_invoice',
+            module: 'ecg_invoice',
             data: { entry_no }
         }, '/ssml/api/');
     }
@@ -3658,19 +3658,20 @@ class SSML {
 
 
     async approveInvoice(id) {
-        if (confirm("Are You Sure")) {
+        if (confirm("Are You Sure you want to process invoice?")) {
             let form = '';
             form += fom.number('foc_debt', '', true)
             form += fom.text('foc_debt_reason', 'Debt Reason', true)
             amodal.setTitleText('Approve Invoice')
             amodal.setBodyHtml(form)
-            amodal.setFooterHtml(`<button class='btn btn-success' id='approve_invoice'>Approve</button>`)
+            amodal.setFooterHtml(`<button class='btn btn-success' id='btn_approved'>Approve</button>`)
             amodal.show()
 
-            $('#approve_invoice').click(async function () {
+            $('#btn_approved').click(async function () {
                 loader.show()
                 let ids = ['foc_debt', 'foc_debt_reason', 'mypk']
                 if (anton.validateInputs(ids)) {
+
                     let payload = {
                         module: 'approve_invoice',
                         data: anton.Inputs(ids)
@@ -3697,17 +3698,44 @@ class SSML {
         }
     }
 
+    async deletFocInvoice(entry_no){
+        loader.show()
+        await api.v2('DELETE',{module:'foc_invoice',data:{entry_no:entry_no}},'/ssml/api/').then(res => {
+            loader.hide();
+            kasa.response(res);
+        }).catch(error => {kasa.error(error);loader.hide()})
+    }
+
     async postInvoice(entry_no = $('#entry_no').val()) {
-        if (confirm("Are You Sure")) {
-            loader.show()
-            await api.v2('PATCH', { module: 'post_foc_invoice', data: { entry_no: entry_no, mypk: $('#mypk').val() } }, '/ssml/api/').then(res => {
-                kasa.response(res);
-                ssml.viewInvoice(entry_no)
-                loader.hide()
-            }).catch(error => {
-                kasa.error(error)
-                loader.hide()
+        if (confirm("Are You Sure POST::")) {
+            let form = `<form id="receipt" action="/ssml/post_foc_invoice/" method="post" enctype="multipart/form-data"><label for="cheque">Upload Cheque</label><input type="file" class="form-control" accept="application/pdf" id="cheque" name="cheque"><input value="${entry_no}" type="hidden" id="entry_no" name="entry_no"></form>`
+
+            amodal.setBodyHtml(form)
+            amodal.show()
+            amodal.setTitleText('Post Invoice')
+            amodal.setFooterHtml(`<button class='btn btn-success' id='post_inv'>Approve</button>`)
+
+            $('#post_inv').click(async function () {
+                if(anton.validateInputs(['cheque','entry_no']))
+                await api.v2('PATCH', {
+                    module: 'post_foc_invoice',
+                    data: {entry_no: entry_no, mypk: $('#mypk').val()}
+                }, '/ssml/api/').then(res => {
+
+                    kasa.response(res);
+                    ssml.viewInvoice(entry_no)
+                    if(anton.IsRequest(res)){
+                        $('#receipt').submit()
+                    }
+
+                    loader.hide()
+                }).catch(error => {
+                    kasa.error(error)
+                    loader.hide()
+                })
             })
+
+
         } else {
             kasa.info("Operation Cancelled")
         }
@@ -5245,12 +5273,7 @@ class SSML {
                     <table class="table table-bordered table-hover">
                         <thead><tr><th>ITEM</th><th style="width: 100px">QUANTITY</th><th style="width: 100px">RATE</th><th></th></tr></thead>
                         <tbody id="foc_inv_items">
-                            <tr>
-                                <td><input type="text" class="form-control name"></td>
-                                <td><input type="text" style="width: 100px" class="form-control quantity"></td>
-                                <td><input type="text" style="width: 100px" class="form-control rate"></td>
-                                <td><button class="btn btn-danger delete_foc_inv_line"><i class="fa fa-trash"></i></button></td>
-                            </tr>
+                            
                         </tbody>
                     </table>
                 </div>
@@ -5265,7 +5288,32 @@ class SSML {
         amodal.setSize('L')
         amodal.show()
 
-        loader.hide()
+        // load service rates
+        await ssml.getServiceRates().then(response => {
+            if (anton.IsRequest(response)) {
+                let message = response.message;
+                let tr = "";
+                message.map(sr => {
+                    console.table(sr)
+                    tr += `
+                        <tr>
+                               <td><input type="text"  disabled  value ="${sr.name}" class="form-control name"></td>
+                                <td><input type="text" style="width: 100px" class="form-control quantity"></td>
+                                <td><input type="text" style="width: 100px" disabled  value ="${sr.rate}" class="form-control rate"></td>
+                                <td style="width: 50px !important"><button  class="btn btn-danger delete_foc_inv_line"><i class="fa fa-trash"></i></button></td>
+                            </tr>
+                    `
+
+                })
+                $('#foc_inv_items').html(tr)
+                loader.hide()
+            } else {
+                kasa.response(response);
+                loader.hide()
+            }
+        }).catch(error => { kasa.error(error); loader.hide() })
+
+
 
 
 
@@ -5809,6 +5857,99 @@ class SSML {
 
     }
 
+    async getServiceRates() {
+        let payload = {
+            module: 'service',
+            data: {
+                id: '*'
+            }
+        }
+
+        return api.call('VIEW', payload, '/ssml/api/')
+    }
+
+    async propPatch() {
+        let payload = {
+            "module": "prop_patch",
+            "data": {}
+        }
+
+        loader.show()
+        await api.v2('PATCH', payload, '/ssml/api/').then(response => {
+            kasa.response(response)
+            loader.hide()
+        }).catch(error => {
+            kasa.error(error);
+            loader.hide()
+        })
+    }
+
+    async ExportMeters() {
+        let payload = {
+            module: 'export_meters',
+            data: {}
+        }
+
+        loader.show()
+        await api.v2('VIEW', payload, '/ssml/api/').then(response => {
+            if(anton.IsRequest(response)){
+                let file = response.message;
+                anton.viewFile(`/${file}`)
+                loader.hide()
+            } else {
+                kasa.response(response)
+                loader.hide()
+            }
+        }).catch(error => {
+            kasa.error(error)
+            loader.hide()
+        })
+    }
+
+    async loadFocComplance(status=true) {
+        let payload = {
+            'module':"foc_compliance",
+            data:{
+                approved:status
+            }
+        }
+
+        await api.v2('VIEW',payload,'/ssml/api/').then(response => {
+            if(anton.IsRequest(response)){
+                let data = response.message;
+                let tr = "";
+                data.map(dt=>{
+                    console.table(dt)
+                    tr += `<tr><td>${dt.foc}</td><td>${dt.compliance}</td><td><button data-pk="${dt.pk}" class="btn btn-danger de_compl">DELETE</button></td><td><button data-src="${dt.file}" class="btn btn-sm btn-danger view_comp"><i class="fa fa-eye"></i></button></td></tr>`
+                })
+                $('#comps').html(tr)
+                $('.view_comp').click(function(){
+                    let src = $(this).data('src')
+                    anton.viewFile(src)
+                })
+
+                $('.de_compl').click(function (message){
+                    let pk = $(this).data('pk');
+                    if(confirm(`Are you sure you want to delete ${pk}`)){
+                        let remarks = prompt("Remarks")
+                        let payload = {
+                            'module':'compliance',
+                            data:{
+                                pk:pk,
+                                remarks:remarks
+                            }
+                        }
+
+                        kasa.confirm(
+                            api.call('DELETE',payload,'/ssml/api/').message,1,'here'
+                        )
+                    }
+                })
+            } else {
+                kasa.response(response)
+            }
+        }).catch(error => {kasa.error(error)})
+    }
 }
 
 const ssml = new SSML();

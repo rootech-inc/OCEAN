@@ -339,6 +339,8 @@ COMPANY_DETAILS = {
     'email': os.environ.get('COMPANY_EMAIL', 'sales@rootechits.com'),
     'logo': os.environ.get('COMPANY_LOGO', '/static/images/logo.png'),
     'website': os.environ.get('WEBSITE', 'www.rootectits.com'),
+    'postal_address':os.environ.get('POSTAL_ADDRESS','P.O. Box 1024, Accra, Ghana'),
+    
 }
 
 CMMS_MR_CONTACT = os.environ.get('CMMS_MR_CONTACT','0546310011')
@@ -355,6 +357,6 @@ WHT_RATE = {
 
 
 SSML_SERVICE_RATE = {
-    '2025':0,
-    "2026":0
+    '2025':10,
+    "2026":10
 }
