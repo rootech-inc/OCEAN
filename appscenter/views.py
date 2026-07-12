@@ -5,10 +5,11 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
-from admin_panel.models import Sms, SmsApi
+from admin_panel.models import Sms, SmsApi, MailQueues, MailSenders
 from appconfig.form import NewApp, NewVersion
 from appscenter.models import AppsGroup, App, AppAssign, AppProviders, Subscribers
 from blog.anton import make_md5
+from ocean.settings import BASE_URL
 
 
 @login_required()
@@ -63,7 +64,7 @@ def app(request, uni):
     context = {
         'nav': True,
         'app': this_app,
-        'next_version': this_app.version + 1,
+        'next_version': this_app.version + 0.1,
         'assigns': assign,
         'versions': versions,
         'subscribers': subscribers
@@ -83,20 +84,117 @@ def save_app_update(request):
             description = form.cleaned_data['description']
             
             appx = App.objects.get(pk=form.cleaned_data['app'].pk)
+            lastest_url = appx.lastest_url()
             app_name = appx.name
             ap = appx
             appx.version = version
             appx.save()
-            msg = (f"Software Update \n\nSoftware: {app_name}\n\nUpdate Detail: {description}. \n\nNote: Updates are automated. If "
+            msg = (f"Software Update \n\nThere is a new update for {app_name}, Please apply update or contact provider. If "
                    f"issue persists after the update, please inform IT Department 054 631 00 11")
+            email_template = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body {{
+                  font-family: 'Segoe UI', Arial, sans-serif;
+                  background-color: #f4f4f4;
+                  margin: 0;
+                  padding: 0;
+                }}
+                .container {{
+                  max-width: 600px;
+                  margin: 20px auto;
+                  background: #ffffff;
+                  border-radius: 8px;
+                  overflow: hidden;
+                  border: 1px solid #e0e0e0;
+                }}
+                .header {{
+                  background-color: #1A6B3C;
+                  color: #ffffff;
+                  padding: 20px 30px;
+                  text-align: center;
+                }}
+                .header h2 {{
+                  margin: 0;
+                  font-weight: 500;
+                }}
+                .body {{
+                  padding: 30px;
+                  color: #333333;
+                  line-height: 1.6;
+                  font-size: 15px;
+                }}
+                .changelog {{
+                  background-color: #f9f9f9;
+                  border-left: 4px solid #E8521A;
+                  padding: 15px 20px;
+                  margin-top: 15px;
+                  border-radius: 4px;
+                }}
+                .changelog h3, .changelog h4 {{
+                  margin-top: 0;
+                  color: #1A6B3C;
+                }}
+                .changelog ul {{
+                  padding-left: 20px;
+                  margin: 8px 0;
+                }}
+                .footer {{
+                  padding: 15px 30px;
+                  font-size: 12px;
+                  color: #999999;
+                  text-align: center;
+                  border-top: 1px solid #eeeeee;
+                }}
+                .btn {{
+                  display: inline-block;
+                  margin-top: 20px;
+                  padding: 10px 20px;
+                  background-color: #E8521A;
+                  color: #ffffff !important;
+                  text-decoration: none;
+                  border-radius: 5px;
+                  font-weight: 500;
+                }}
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h2>Software Update</h2>
+                </div>
+                <div class="body">
+                  <p>There is a new update available for <strong>{app_name}</strong>.</p>
+                  <div class="changelog">
+                    {description}
+                  </div>
+                  <p>Please apply the update as soon as possible. If the issue persists after updating, contact the IT Department at <strong>054 631 00 11</strong>.</p>
+                  <a href="{BASE_URL}{lastest_url}" class="btn">Download Update</a>
+                </div>
+                <div class="footer">
+                  &copy; {app_name}. All rights reserved.
+                </div>
+              </div>
+            </body>
+            </html>
+            """
+
             # get all users with this app
-            app_assign = AppAssign.objects.filter(app=ap)
-            for app_ass in app_assign:
-                device = app_ass.mach
-                dev_owner = device.assign_to()
-                if dev_owner['phone'] != 'unknown':
-                    recipient = dev_owner['phone']
-                    Sms(api=SmsApi.objects.get(is_default=True),to = recipient,message = msg).save()
+            app_assign = Subscribers.objects.filter(app=ap)
+            for sub in app_assign:
+                Sms(api=SmsApi.objects.get(is_default=True),to = sub.phone,message = msg).save()
+                MailQueues.objects.create(
+                    sender=MailSenders.objects.get(is_default=True),
+                    recipient=sub.email,
+                    subject=f"Update for {app_name}",
+                    body=f"{email_template}",
+                    mail_key=make_md5(email_template),
+                )
+
             # return HttpResponse("DONE")
             # alert users
             messages.success(request, "VERSION SAVED")
