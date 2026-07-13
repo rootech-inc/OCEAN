@@ -203,7 +203,7 @@ def save_app_update(request):
                     recipient=sub.email,
                     subject=f"Update for {app_name}",
                     body=f"{email_template}",
-                    mail_key=make_md5_hash(make_md5(email_template)),
+                    mail_key=make_md5_hash(make_md5_hash(email_template)),
                 )
 
             # return HttpResponse("DONE")
