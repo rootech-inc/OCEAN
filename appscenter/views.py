@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect
 from django.utils.formats import number_format
 from django.views.decorators.csrf import csrf_exempt
 
-from admin_panel.anton import shorten_url
+from admin_panel.anton import shorten_url, make_md5_hash
 from admin_panel.models import Sms, SmsApi, MailQueues, MailSenders
 from appconfig.form import NewApp, NewVersion
 from appscenter.models import AppsGroup, App, AppAssign, AppProviders, Subscribers
@@ -203,7 +203,7 @@ def save_app_update(request):
                     recipient=sub.email,
                     subject=f"Update for {app_name}",
                     body=f"{email_template}",
-                    mail_key=make_md5(email_template),
+                    mail_key=make_md5_hash(make_md5(email_template)),
                 )
 
             # return HttpResponse("DONE")
