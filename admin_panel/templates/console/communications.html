@@ -694,8 +694,8 @@
                                         <td>
                                             <span
                                                 class="badge-soft {% if sess.is_default %}badge-soft-success{% else %}badge-soft-info{% endif %}">
-                                                <i class="bi bi-check-circle"></i> {% if sess.is_default %}Default{%
-                                                else %}Active{% endif %}
+                                                <i class="bi bi-check-circle"></i>
+                                                {% if sess.is_default %}Default{% else %}Active{% endif %}
                                             </span>
                                         </td>
                                         <td>
@@ -741,8 +741,9 @@
                                     <tr>
                                         <td>{{ msg.sender.name }}</td>
                                         <td><code>{{ msg.recipient }}</code></td>
-                                        <td title="{{ msg.message }}">{{ msg.message|slice:":40" }}{% if
-                                            msg.message|length > 40 %}...{% endif %}</td>
+                                        <td title="{{ msg.message }}">
+                                            {{ msg.message|slice:":40" }}
+                                            {% if msg.message|length > 40 %}...{% endif %}</td>
                                         <td>{{ msg.created_time|date:"Y-m-d H:i" }}</td>
                                         <td>
                                             <span
@@ -1407,10 +1408,7 @@
                 return;
             }
 
-            if (!to.startsWith('+') || to.length < 8) {
-                kasa.error("Recipient number must start with '+' and include country code (e.g. +233201234567).");
-                return;
-            }
+
 
             let payload = {
                 module: 'que_whatsapp_message',
