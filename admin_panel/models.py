@@ -834,6 +834,82 @@ class SmsApi(models.Model):
     is_default = models.IntegerField(default=0)
     balance = models.IntegerField(default=0)
 
+class OpenwaSession(models.Model):
+    name = models.CharField(max_length=60, unique=True)
+    key = models.CharField(max_length=66, unique=True)
+    endpoint = models.URLField(max_length=66, unique=False)
+    port = models.IntegerField(default=80)
+    is_default = models.BooleanField(default=False)
+    phone = models.CharField(max_length=66, unique=False)
+    api_key = models.CharField(null=False, blank=False,unique=True,max_length=255)
+
+class WhatsappQue(models.Model):
+    sender = models.ForeignKey(OpenwaSession, on_delete=models.CASCADE)
+    recipient = models.CharField(max_length=66, unique=False)
+    message = models.TextField()
+    is_sent = models.BooleanField(default=False)
+    created_time = models.DateTimeField(auto_now_add=True)
+    last_tried = models.DateTimeField(null=True, blank=True)
+
+    def send(self):
+        import requests
+        import json
+
+        url = f"{self.sender.endpoint}:{self.sender.port}/api/sessions/{self.sender.key}/messages/send-text"
+        print(url)
+
+        payload = json.dumps({
+            "chatId": f"{self.recipient}@c.us",
+            "text": f"{self.message}",
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'X-API-Key': f"{self.sender.api_key}",
+        }
+
+        try:
+            # Send the request
+            response = requests.request("POST", url, headers=headers, data=payload)
+
+            # 1. Check if HTTP Status Code is successful (typically 200 or 201)
+            if response.status_code in [200, 201]:
+                # 2. Try parsing the response body as JSON
+                response_data = response.json()
+                self.last_tried = timezone.now()
+
+                # 3. Confirm that the required keys exist
+                if "messageId" in response_data and "timestamp" in response_data:
+                                        # Optional: You can also verify data types if needed
+                    is_valid_id = isinstance(response_data['messageId'], str)
+                    is_valid_time = isinstance(response_data['timestamp'], (int, float))
+                    self.is_sent = True
+                    st = True
+
+                else:
+
+                    # print("❌ Failed: Response parsed as JSON, but was missing 'messageId' or 'timestamp'.")
+                    # print("Actual Keys Received:", list(response_data.keys()))
+                    # print("Response:", response_data)
+                    st = False
+
+            else:
+
+                # # This will catch your 500 Internal Server Errors, 401 Unauthorizes, etc.
+                # print(f"❌ Failed: Server returned status code {response.status_code}")
+                # print("Response Text:", response.text)
+                st = False
+
+            self.last_tried = timezone.now()
+            self.is_sent = st
+
+        except requests.exceptions.JSONDecodeError:
+            # This catches cases where the server returns non-JSON data (like an HTML error page)
+            print("❌ Failed: Server response is not in JSON format.")
+            print("Response Text:", response.text)
+        except requests.exceptions.RequestException as e:
+            # This catches network, connection, or timeout errors
+            print(f"❌ Failed: A network error occurred: {e}")
+
 
 # sms queued
 class Sms(models.Model):
@@ -910,6 +986,13 @@ class Sms(models.Model):
             return False
 
     def save(self, *args, **kwargs):
+
+        # que whatsapp
+        WhatsappQue.objects.create(
+            recipient=f"233{self.to[1:]}", message=self.message,
+            sender=OpenwaSession.objects.get(is_default=True)
+        )
+
         is_new = self.pk is None
         super().save(*args, **kwargs)
 

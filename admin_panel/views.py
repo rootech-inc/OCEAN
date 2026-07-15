@@ -1023,10 +1023,10 @@ def add_notification_mem(request):
         try:
             NotificationGroups(full_name=full_name, email_addr=email, mobile_number=phone, group=email_group).save()
             messages.error(request, f"{email} Added to {email_group.group_name}")
-            return redirect('emails')
+            return redirect(request.META.get('HTTP_REFERER', 'emails'))
         except Exception as e:
             messages.error(request, f"There is an error adding email {e}")
-            return redirect('emails')
+            return redirect(request.META.get('HTTP_REFERER', 'emails'))
 
 
 def send_mail(request, task_id):
@@ -1165,10 +1165,10 @@ def save_email_group(request):
                 created_by=request.user.pk
             ).save()
             messages.error(request, f"Group Saved")
-            return redirect('emails')
+            return redirect(request.META.get('HTTP_REFERER', 'emails'))
         except Exception as e:
             messages.error(request, f"Could Not Save Group {e}")
-            return redirect('emails')
+            return redirect(request.META.get('HTTP_REFERER', 'emails'))
 
 
 def inventory_tools(request):
@@ -2378,7 +2378,7 @@ def new_sms_api(request):
     else:
         return HttpResponse("INVALID METHOD")
 
-    return redirect('sms')
+    return redirect(request.META.get('HTTP_REFERER', 'sms'))
 
 
 @login_required()
@@ -2435,7 +2435,7 @@ def bulk_sms(request):
                                 print(row)
                     m = f"Total : {total}, Success : {success}, Failed : {failed} "
                     messages.success(request, m)
-                    return redirect('sms')
+                    return redirect(request.META.get('HTTP_REFERER', 'sms'))
                 except Exception as e:
                     return HttpResponse(e)
             else:
@@ -2443,7 +2443,7 @@ def bulk_sms(request):
         else:
             return HttpResponse("INVALID METHOD")
 
-        return redirect('sms')
+        return redirect(request.META.get('HTTP_REFERER', 'sms'))
 
 
 def resetpasswordview(request, token):
@@ -2757,3 +2757,19 @@ def toggle_leaderboard(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+@login_required()
+def communications(request):
+    page['title'] = "Communications"
+    context = {
+        'nav': True,
+        'page': page,
+        'comm_tags': tags.objects.all(),
+        'email_groups': EmailGroup.objects.all(),
+        'emails': MailQueues.objects.filter(is_sent=False).order_by('-id'),
+        'senders': MailSenders.objects.all(),
+        'apis': SmsApi.objects.filter(status=1),
+        'wa_sessions': OpenwaSession.objects.all(),
+        'wa_pending_messages': WhatsappQue.objects.filter(is_sent=False).order_by('-id')
+    }
+    return render(request, 'console/communications.html', context=context)

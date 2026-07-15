@@ -220,6 +220,7 @@ def amc_interface(request):
                 Sms(api=smsapi, to='0546310011',
                             message=f"There is an issue with title 'Service Request for {asset.name}' reported by {owner.username}").save()
 
+
                 success_response['message'] = "Service Request Reported"
                 response = success_response
 

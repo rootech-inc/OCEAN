@@ -23,6 +23,7 @@ from . import views,  admin_api
 
 urlpatterns = [
     path('', views.organization, name='organization'),
+    path('communications/',views.communications,name='communications'),
 
 
 

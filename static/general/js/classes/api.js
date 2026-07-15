@@ -77,6 +77,28 @@ class Api {
         }
     }
 
+    async use_fetch(method, data, link = '/apiv2/') {
+        try {
+            const response = await fetch(link, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8'
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error in use_fetch:', error);
+            return {
+                'status_code': 500,
+                'message': error.message || error
+            };
+        }
+    }
+
     view(data){
         return this.call('VIEW',data)
     }

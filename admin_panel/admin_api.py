@@ -5,15 +5,18 @@ import requests
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout, get_user_model
 from django.contrib.auth.models import User, Permission
+from django.db.models import Model
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from admin_panel.anton import md5only, remove_html_tags, generate_random_password, make_md5_hash, generate_api_key
 from admin_panel.cron_exe import execute_script
-from admin_panel.models import BankAccounts, DocApprovals, GeoCity, GeoCitySub, Reminder, SmsApi, UserAddOns, EvatCredentials, \
+from admin_panel.models import BankAccounts, DocApprovals, GeoCity, GeoCitySub, Reminder, SmsApi, UserAddOns, \
+    EvatCredentials, \
     Locations, \
-    Departments, TicketTrans, Sms, TicketHd, MailSenders, MailQueues, MailAttachments, BusinessEntityTypes
+    Departments, TicketTrans, Sms, TicketHd, MailSenders, MailQueues, MailAttachments, BusinessEntityTypes, \
+    OpenwaSession, WhatsappQue
 from blog.anton import make_md5
 from ocean.settings import RET_DB_HOST, RET_DB_USER, RET_DB_PASS, RET_DB_NAME, REST_DB_NAME
 from reports.models import DepartmentReportMailQue
@@ -62,6 +65,71 @@ def index(request):
 
                     GeoCitySub(name=name, owner=User.objects.get(pk=us_pk), city=GeoCity.objects.get(pk=city)).save()
                     response = success_response
+
+            elif module == 'whatsapp_session':
+                name = data.get('name')
+                key = data.get('key')
+                endpoint = data.get('endpoint')
+                port = data.get('port')
+                is_default = data.get('is_default','NO')
+                phone = data.get('phone')
+                api_key = data.get('api_key')
+                if is_default == 'YES':
+                    is_default = True
+                else:
+                    is_default = False
+
+                OpenwaSession.objects.create(
+                    name=name,
+                    key=key,
+                    endpoint=endpoint,
+                    port=port,
+                    is_default=is_default,
+                    phone=phone,
+                    api_key=api_key
+                )
+
+                #send test message
+                WhatsappQue.objects.create(
+                    sender = OpenwaSession.objects.get(key=key),
+                    recipient = phone,
+                    message = f"Number has been added to automated WhatsApp via ocean"
+                )
+
+
+                success_response['message'] = "Session Added"
+                response = success_response
+
+            elif module == 'que_whatsapp_message':
+                key = data.get('session')
+                if not key:
+                    sender = OpenwaSession.objects.get(is_default=True)
+                else:
+                    sender = OpenwaSession.objects.get(key=key)
+
+                recipient = data.get('recipient')
+                message = data.get('message')
+                WhatsappQue.objects.create(
+                    sender=sender,
+                    recipient=recipient,
+                    message=message
+                )
+
+                success_response['message'] = "Message WhatsApp Added"
+                response = success_response
+
+            elif module == 'sync_whatsapp':
+                sent = 0
+                faild = 0
+                for message in WhatsappQue.objects.filter(is_sent=False):
+                    if message.send():
+                        sent += 1
+                    else:
+                        faild += 1
+
+                success_response['message'] = f"{sent} Send and {faild} Failed"
+                response = success_response
+
 
             elif module == 'company':
                 company = Company.objects.create(
@@ -567,7 +635,20 @@ def index(request):
 
         elif method == 'VIEW':  # read
 
-            if module == 'geo':  # geographical condition
+            if module == 'pending_whatsapp':
+                arr = []
+                for msg in WhatsappQue.objects.filter(is_sent=False).order_by('-id'):
+                    arr.append({
+                        'pk': msg.pk,
+                        'sender_name': msg.sender.name if msg.sender else "Unknown",
+                        'recipient': msg.recipient,
+                        'message': msg.message,
+                        'created_time': msg.created_time.strftime("%Y-%m-%d %H:%M") if msg.created_time else ""
+                    })
+                success_response['message'] = arr
+                response = success_response
+
+            elif module == 'geo':  # geographical condition
                 part = data.get('part')
 
                 if part == 'city' or part == 'region':  # add city

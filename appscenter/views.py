@@ -102,7 +102,7 @@ def save_app_update(request):
             if CUST_URL.endswith('/'):
                 CUST_URL = CUST_URL[:-1]
 
-            CUST_URL = shorten_url(CUST_URL)
+
             email_template = f"""
             <!DOCTYPE html>
             <html>
