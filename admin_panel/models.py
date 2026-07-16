@@ -834,6 +834,13 @@ class SmsApi(models.Model):
     is_default = models.IntegerField(default=0)
     balance = models.IntegerField(default=0)
 
+class ErrorLog(models.Model):
+    domain = models.TextField()
+    title = models.TextField()
+    description = models.TextField()
+    created_date = models.DateField(auto_now_add=True)
+    created_time = models.TimeField(auto_now=True)
+
 class OpenwaSession(models.Model):
     name = models.CharField(max_length=60, unique=True)
     key = models.CharField(max_length=66, unique=True)
@@ -890,6 +897,11 @@ class WhatsappQue(models.Model):
                     # print("❌ Failed: Response parsed as JSON, but was missing 'messageId' or 'timestamp'.")
                     # print("Actual Keys Received:", list(response_data.keys()))
                     # print("Response:", response_data)
+                    ErrorLog.objects.create(
+                        domain='WhatsappQue',
+                        title='WhatsappQue',
+                        description=f"Failed: Response parsed as JSON, but was missing 'messageId' or 'timestamp'.",
+                    )
                     st = False
 
             else:
@@ -897,6 +909,11 @@ class WhatsappQue(models.Model):
                 # # This will catch your 500 Internal Server Errors, 401 Unauthorizes, etc.
                 # print(f"❌ Failed: Server returned status code {response.status_code}")
                 # print("Response Text:", response.text)
+                ErrorLog.objects.create(
+                    domain='WhatsappQue',
+                    title='WhatsappQue',
+                    description=f"Failed: Server returned status code {response.status_code}",
+                )
                 st = False
 
             self.last_tried = timezone.now()
@@ -905,10 +922,20 @@ class WhatsappQue(models.Model):
         except requests.exceptions.JSONDecodeError:
             # This catches cases where the server returns non-JSON data (like an HTML error page)
             print("❌ Failed: Server response is not in JSON format.")
-            print("Response Text:", response.text)
+
+            ErrorLog.objects.create(
+                domain='WhatsappQue',
+                title='WhatsappQue',
+                description=f"Response Text: {response.text}",
+            )
         except requests.exceptions.RequestException as e:
             # This catches network, connection, or timeout errors
             print(f"❌ Failed: A network error occurred: {e}")
+            ErrorLog.objects.create(
+                domain='WhatsappQue',
+                title='WhatsappQue',
+                description=f"Failed: A network error occurred: {e}",
+            )
 
 
 # sms queued
