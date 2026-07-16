@@ -1032,10 +1032,17 @@ class Sms(models.Model):
     def save(self, *args, **kwargs):
 
         # que whatsapp
-        WhatsappQue.objects.create(
-            recipient=f"233{self.to[1:]}", message=self.message,
-            sender=OpenwaSession.objects.get(is_default=True)
-        )
+        try:
+            WhatsappQue.objects.create(
+                recipient=f"233{self.to[1:]}", message=self.message,
+                sender=OpenwaSession.objects.get(is_default=True)
+            )
+        except Exception as e:
+            ErrorLog.objects.create(
+                domain='WhatsappQue',
+                title='WhatsappQue',
+                description=str(e)
+            )
 
         is_new = self.pk is None
         super().save(*args, **kwargs)
