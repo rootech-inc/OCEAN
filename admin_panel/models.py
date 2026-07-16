@@ -858,6 +858,12 @@ class WhatsappQue(models.Model):
     created_time = models.DateTimeField(auto_now_add=True)
     last_tried = models.DateTimeField(null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding  # True only before the first save
+        super().save(*args, **kwargs)
+        if is_new:
+            self.send()
+
     def send(self):
         import requests
         import json
