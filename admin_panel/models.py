@@ -855,7 +855,7 @@ class WhatsappQue(models.Model):
         import requests
         import json
 
-        url = f"{self.sender.endpoint}:{self.sender.port}/api/sessions/{self.sender.key}/messages/send-text"
+        url = f"{self.sender.endpoint}:{self.sender.port}/api/sessions/{self.sender.key}/messages/send-text" if self.sender.port != 80 else f"{self.sender.endpoint}/api/sessions/{self.sender.key}/messages/send-text"
         print(url)
 
         payload = json.dumps({
