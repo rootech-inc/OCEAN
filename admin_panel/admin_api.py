@@ -1297,6 +1297,40 @@ def index(request):
                         user.user_permissions.remove(permission)
                         success_response['message'] = f"{codename} removed from {user.username}"
                     response = success_response
+ 
+            elif module == 'whatsapp_session':
+                pk = data.get('pk')
+                name = data.get('name')
+                key = data.get('key')
+                endpoint = data.get('endpoint')
+                port = data.get('port')
+                is_default = data.get('is_default', 'NO')
+                phone = data.get('phone')
+                api_key = data.get('api_key')
+
+                try:
+                    session = OpenwaSession.objects.get(pk=pk)
+                except OpenwaSession.DoesNotExist:
+                    response['status_code'] = 404
+                    response['message'] = "WhatsApp session not found"
+                    return JsonResponse(response)
+
+                if is_default == 'YES':
+                    OpenwaSession.objects.all().update(is_default=False)
+                    session.is_default = True
+                else:
+                    session.is_default = False
+
+                session.name = name
+                session.key = key
+                session.endpoint = endpoint
+                session.port = port
+                session.phone = phone
+                session.api_key = api_key
+                session.save()
+
+                success_response['message'] = "Session Updated Successfully"
+                response = success_response
 
             elif module == 'reminder':
                 date = data.get('date')

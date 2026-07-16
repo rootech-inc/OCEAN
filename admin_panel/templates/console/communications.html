@@ -699,6 +699,16 @@
                                             </span>
                                         </td>
                                         <td>
+                                            <button class="btn btn-sm btn-outline-primary py-1 px-2 me-1"
+                                                data-pk="{{ sess.pk }}"
+                                                data-name="{{ sess.name }}"
+                                                data-key="{{ sess.key }}"
+                                                data-phone="{{ sess.phone }}"
+                                                data-endpoint="{{ sess.endpoint }}"
+                                                data-port="{{ sess.port }}"
+                                                data-is-default="{% if sess.is_default %}YES{% else %}NO{% endif %}"
+                                                data-api-key="{{ sess.api_key }}"
+                                                onclick="whatsapp.openEditSessionModal(this)">Edit</button>
                                             <button class="btn btn-sm btn-outline-danger py-1 px-2"
                                                 onclick="whatsapp.disconnectSession('{{ sess.key }}', '{{ sess.name }}')">Disconnect</button>
                                         </td>
@@ -982,6 +992,64 @@
                     data-bs-dismiss="modal">Cancel</button>
                 <button onclick="whatsapp.submitSession()" class="btn-modern btn-modern-primary btn"><i
                         class="bi bi-plus-circle"></i> Create Session</button>
+            </div>
+        </div>
+    </div>
+</div>
+ 
+<!-- Edit WhatsApp Session Modal -->
+<div class="modal fade" id="editWaSession" tabindex="-1" aria-labelledby="editWaSessionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editWaSessionLabel"><i class="bi bi-pencil-square me-2"></i>Edit WhatsApp Session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit_wa_session_pk">
+                <div class="mb-3 d-flex flex-column">
+                    <label for="edit_wa_session_name" class="form-label-modern">Name</label>
+                    <input type="text" id="edit_wa_session_name" class="form-control-modern form-control"
+                        placeholder="e.g. Main Support" required>
+                </div>
+                <div class="mb-3 d-flex flex-column">
+                    <label for="edit_wa_session_key" class="form-label-modern">Session Key (Unique Identifier)</label>
+                    <input type="text" id="edit_wa_session_key" class="form-control-modern form-control"
+                        placeholder="e.g. main_support" required>
+                </div>
+                <div class="mb-3 d-flex flex-column">
+                    <label for="edit_wa_api_key" class="form-label-modern">API Key Token (X-API-Key)</label>
+                    <input type="text" id="edit_wa_api_key" class="form-control-modern form-control"
+                        placeholder="X-API-Key token value" required>
+                </div>
+                <div class="mb-3 d-flex flex-column">
+                    <label for="edit_wa_phone_number" class="form-label-modern">Phone Number</label>
+                    <input type="tel" id="edit_wa_phone_number" class="form-control-modern form-control"
+                        placeholder="e.g. +233201234567" required>
+                </div>
+                <div class="mb-3 d-flex flex-column">
+                    <label for="edit_wa_endpoint" class="form-label-modern">Endpoint URL</label>
+                    <input type="url" id="edit_wa_endpoint" class="form-control-modern form-control"
+                        placeholder="e.g. http://api.openwa.live" required>
+                </div>
+                <div class="mb-3 d-flex flex-column">
+                    <label for="edit_wa_port" class="form-label-modern">Port</label>
+                    <input type="number" id="edit_wa_port" class="form-control-modern form-control" placeholder="e.g. 8083"
+                        min="1" max="65535" required>
+                </div>
+                <div class="mb-2 d-flex flex-column">
+                    <label for="edit_wa_is_default" class="form-label-modern">Set as Default Gateway</label>
+                    <select id="edit_wa_is_default" class="form-control-modern form-control">
+                        <option value="NO">No, save as backup</option>
+                        <option value="YES">Yes, dispatch via this gateway</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modern btn-modern-secondary btn" type="button"
+                    data-bs-dismiss="modal">Cancel</button>
+                <button onclick="whatsapp.submitEditSession()" class="btn-modern btn-modern-primary btn"><i
+                        class="bi bi-save2"></i> Save Changes</button>
             </div>
         </div>
     </div>
@@ -1352,8 +1420,8 @@
                 return;
             }
 
-            if (!phoneNumber.startsWith('+') || phoneNumber.length < 8) {
-                kasa.error("Phone Number must start with '+' and include country code.");
+            if (phoneNumber.length < 8) {
+                kasa.error("Phone Number must include country code and be at least 8 digits.");
                 return;
             }
 
@@ -1445,6 +1513,85 @@
                 kasa.confirm(response['message'], 1, 'here');
             } else {
                 kasa.error(response ? response['message'] : "Failed to dispatch WhatsApp messages.");
+            }
+        }
+
+        openEditSessionModal(element) {
+            let pk = $(element).attr('data-pk');
+            let name = $(element).attr('data-name');
+            let key = $(element).attr('data-key');
+            let phone = $(element).attr('data-phone');
+            let endpoint = $(element).attr('data-endpoint');
+            let port = $(element).attr('data-port');
+            let isDefault = $(element).attr('data-is-default');
+            let apiKey = $(element).attr('data-api-key');
+
+            $('#edit_wa_session_pk').val(pk);
+            $('#edit_wa_session_name').val(name);
+            $('#edit_wa_session_key').val(key);
+            $('#edit_wa_api_key').val(apiKey);
+            $('#edit_wa_phone_number').val(phone);
+            $('#edit_wa_endpoint').val(endpoint);
+            $('#edit_wa_port').val(port);
+            $('#edit_wa_is_default').val(isDefault);
+
+            $('#editWaSession').modal('show');
+        }
+
+        submitEditSession() {
+            let pk = $('#edit_wa_session_pk').val();
+            let sessionName = $('#edit_wa_session_name').val().trim();
+            let sessionKey = $('#edit_wa_session_key').val().trim();
+            let apiKey = $('#edit_wa_api_key').val().trim();
+            let phoneNumber = $('#edit_wa_phone_number').val().trim();
+            let endpoint = $('#edit_wa_endpoint').val().trim();
+            let port = $('#edit_wa_port').val().trim();
+            let isDefault = $('#edit_wa_is_default').val();
+
+            if (sessionName.length < 1 || sessionKey.length < 1 || apiKey.length < 1 || phoneNumber.length < 1 || endpoint.length < 1 || port.length < 1) {
+                kasa.error("All session configuration parameters (Name, Key, Token, Phone, Endpoint, Port) are required.");
+                return;
+            }
+
+            if (phoneNumber.length < 8) {
+                kasa.error("Phone Number must include country code and be at least 8 digits.");
+                return;
+            }
+
+            if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+                kasa.error("Endpoint URL must start with http:// or https://");
+                return;
+            }
+
+            let portNum = parseInt(port);
+            if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+                kasa.error("Port must be a valid number between 1 and 65535.");
+                return;
+            }
+
+            let payload = {
+                module: 'whatsapp_session',
+                data: {
+                    pk: pk,
+                    name: sessionName,
+                    key: sessionKey,
+                    api_key: apiKey,
+                    phone: phoneNumber,
+                    endpoint: endpoint,
+                    port: portNum,
+                    is_default: isDefault
+                }
+            };
+
+            loader.show();
+            let response = api.call('PATCH', payload, '/adapi/');
+            loader.hide();
+
+            if (response && response['status_code'] === 200) {
+                $('#editWaSession').modal('hide');
+                kasa.confirm(response['message'], 1, 'here');
+            } else {
+                kasa.error(response ? response['message'] : "Failed to update WhatsApp session.");
             }
         }
 
