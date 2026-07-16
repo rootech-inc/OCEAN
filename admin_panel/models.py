@@ -936,8 +936,16 @@ class WhatsappQue(models.Model):
                 description=f"Failed: A network error occurred: {e}",
             )
 
+        except Exception as e:
+            ErrorLog.objects.create(
+                domain='WhatsappQue',
+                title='WhatsappQue',
+                description=str(e),
+            )
+            st = False
         self.last_tried = timezone.now()
         self.is_sent = st
+        self.save()
         return st
 
 
