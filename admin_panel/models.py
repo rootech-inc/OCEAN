@@ -873,7 +873,7 @@ class WhatsappQue(models.Model):
             'Content-Type': 'application/json',
             'X-API-Key': f"{self.sender.api_key}",
         }
-
+        st = True
         try:
             # Send the request
             response = requests.request("POST", url, headers=headers, data=payload)
@@ -916,8 +916,7 @@ class WhatsappQue(models.Model):
                 )
                 st = False
 
-            self.last_tried = timezone.now()
-            self.is_sent = st
+
 
         except requests.exceptions.JSONDecodeError:
             # This catches cases where the server returns non-JSON data (like an HTML error page)
@@ -936,6 +935,10 @@ class WhatsappQue(models.Model):
                 title='WhatsappQue',
                 description=f"Failed: A network error occurred: {e}",
             )
+
+        self.last_tried = timezone.now()
+        self.is_sent = st
+        return st
 
 
 # sms queued
