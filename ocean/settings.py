@@ -89,6 +89,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'anton.apps.AntonConfig',
     'iclock.apps.IclockConfig',
+    'webhooks.apps.WebhooksConfig',
     'corsheaders'
 ]
 

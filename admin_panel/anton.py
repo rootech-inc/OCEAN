@@ -394,8 +394,9 @@ def month_by_name():
     month_abbr = datetime.now().strftime("%b")
     return month_abbr
 
-from google import genai
-from google.genai import types
+
+import google.generativeai as genai
+
 from django.conf import settings
 
 def generate_text(prompt: str) -> str:
