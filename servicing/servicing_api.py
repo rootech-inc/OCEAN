@@ -787,7 +787,7 @@ def interface(request):
                 import uuid
                 from datetime import datetime, timedelta
                 import openpyxl
-                from openpyxl.chart import PieChart, Reference
+
 
                 # Calculate the start of the current week (Monday)
                 today = timezone.now().date()

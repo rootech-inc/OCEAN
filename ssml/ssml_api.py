@@ -125,6 +125,153 @@ def interface(request):
                 phase.save()
                 phase = Phase.objects.get(pk=data.get('phase'))
 
+            elif module == 'sync_retired_meters_v2':
+                # get google sync
+                import gspread
+                from oauth2client.service_account import ServiceAccountCredentials
+                import os
+                import io
+                import openpyxl
+                import httplib2
+                from googleapiclient.discovery import build
+                from googleapiclient.http import MediaIoBaseDownload
+                from admin_panel.models import GoogleSyncConfig
+                credentials = GoogleSyncConfig.objects.get(tag='Meters')
+                scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                
+                # Check for key file fallback
+                cred_path = credentials.json_file.path
+                if not os.path.exists(cred_path):
+                    proj_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    fallback_path = os.path.join(proj_dir, "static", "general", "snedaghana-drive.json")
+                    if os.path.exists(fallback_path):
+                        cred_path = fallback_path
+
+                creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
+                client = gspread.authorize(creds)
+                
+                # Setup Drive API client
+                http_auth = creds.authorize(httplib2.Http())
+                drive_service = build('drive', 'v3', http=http_auth)
+                
+                folder_id = '1f3AfuLC8Sywj0ctzGo3CDLbQQLIIg0bS'
+                query = f"'{folder_id}' in parents and trashed = false"
+                
+                results = drive_service.files().list(
+                    q=query,
+                    supportsAllDrives=True,
+                    includeItemsFromAllDrives=True,
+                    fields="nextPageToken, files(id, name, mimeType)"
+                ).execute()
+                print("Results",results)
+                files = results.get('files', [])
+                
+                target_columns = [
+                    'RETIREMENT CODE', 'METER CODE', 'SERVICE POINT CODE', 
+                    'CUSTOMER NAME', 'REPLACEMENT ORDER CODE', 'METER PHASE', 
+                    'METER BRAND', 'METER MODEL', 'IS STOLEN METER?'
+                ]
+                
+                print(f"Syncing retired meters: Found {len(files)} files in Google Drive folder")
+                
+                for f in files:
+                    # Parse only Excel files
+                    if f['name'].endswith('.xlsx') or f['mimeType'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                        print(f"Reading file: {f['name']} (ID: {f['id']})")
+                        request = drive_service.files().get_media(fileId=f['id'], supportsAllDrives=True)
+                        file_io = io.BytesIO()
+                        downloader = MediaIoBaseDownload(file_io, request)
+                        done = False
+                        while not done:
+                            status, done = downloader.next_chunk()
+                        
+                        file_io.seek(0)
+                        wb = openpyxl.load_workbook(file_io, data_only=True)
+                        sheet = wb.active
+                        
+                        # Find the header row (scanning first 10 rows for matches)
+                        header_row_idx = 1
+                        max_matches = 0
+                        for r_idx in range(1, min(11, sheet.max_row + 1)):
+                            matches = 0
+                            for col_idx in range(1, sheet.max_column + 1):
+                                val = sheet.cell(row=r_idx, column=col_idx).value
+                                if val and str(val).strip().upper() in target_columns:
+                                    matches += 1
+                            if matches > max_matches:
+                                max_matches = matches
+                                header_row_idx = r_idx
+                        
+                        # Map headers to indices
+                        header_map = {}
+                        for col_idx in range(1, sheet.max_column + 1):
+                            cell_value = sheet.cell(row=header_row_idx, column=col_idx).value
+                            if cell_value:
+                                header_map[str(cell_value).strip().upper()] = col_idx
+                        
+                        col_indices = {target: header_map.get(target) for target in target_columns}
+                        
+                        # Loop through rows below the header row
+                        for row_idx in range(header_row_idx + 1, sheet.max_row + 1):
+                            retirement_code = sheet.cell(row=row_idx, column=col_indices['RETIREMENT CODE']).value if col_indices['RETIREMENT CODE'] else None
+                            meter_code = sheet.cell(row=row_idx, column=col_indices['METER CODE']).value if col_indices['METER CODE'] else None
+                            service_point_code = sheet.cell(row=row_idx, column=col_indices['SERVICE POINT CODE']).value if col_indices['SERVICE POINT CODE'] else None
+                            customer_name = sheet.cell(row=row_idx, column=col_indices['CUSTOMER NAME']).value if col_indices['CUSTOMER NAME'] else None
+                            replacement_order_code = sheet.cell(row=row_idx, column=col_indices['REPLACEMENT ORDER CODE']).value if col_indices['REPLACEMENT ORDER CODE'] else None
+                            meter_phase = sheet.cell(row=row_idx, column=col_indices['METER PHASE']).value if col_indices['METER PHASE'] else None
+                            meter_brand = sheet.cell(row=row_idx, column=col_indices['METER BRAND']).value if col_indices['METER BRAND'] else None
+                            meter_model = sheet.cell(row=row_idx, column=col_indices['METER MODEL']).value if col_indices['METER MODEL'] else None
+                            is_stolen_meter = sheet.cell(row=row_idx, column=col_indices['IS STOLEN METER?']).value if col_indices['IS STOLEN METER?'] else None
+                            
+                            # Skip if the entire row values are None
+                            if not any([retirement_code, meter_code, service_point_code, customer_name, replacement_order_code, meter_phase, meter_brand, meter_model, is_stolen_meter]):
+                                continue
+                            
+                            # Print the values
+                            print(
+                                f"Row {row_idx}: \n"
+                                f"RETIREMENT CODE={retirement_code}, \n"
+                                f"METER CODE={meter_code}, \n"
+                                f"SERVICE POINT CODE={service_point_code}, \n"
+                                f"CUSTOMER NAME={customer_name}, \n"
+                                f"REPLACEMENT ORDER CODE={replacement_order_code}, \n"
+                                f"METER PHASE={meter_phase}, \n"
+                                f"METER BRAND={meter_brand}, \n"
+                                f"METER MODEL={meter_model}, \n"
+                                f"IS STOLEN METER?={is_stolen_meter}\n"
+                            )
+
+                            
+
+                            # get service
+                            try:
+                                installation = ServiceOrder.objects.get(spn=service_point_code)
+                                box, created = RetiredMetersBox.objects.get_or_create(
+                                    box_no=retirement_code,
+                                    location=installation.location
+                                )
+
+                                RetiredMetersTransactions.objects.create(
+                                    box = box,
+                                    sn=row_idx,
+                                    spn=service_point_code,
+                                    old_meter_no=meter_code,
+                                    manufacturere=meter_brand,
+                                    installation_type=installation.installation_type.name,
+                                    foc=installation.contractor
+                                )
+
+
+
+                            except Exception as e:
+                                print(str(e))
+                            print("------------------------------------------------")
+                
+                success_response['message'] = "Sync completed successfully"
+
+                
+
+
 
             elif module == 'foc_compliance_type':
                 mypk = data.get('mypk')

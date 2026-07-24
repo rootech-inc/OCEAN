@@ -396,25 +396,20 @@ def month_by_name():
 
 
 import google.generativeai as genai
-
 from django.conf import settings
 
 def generate_text(prompt: str) -> str:
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    genai.configure(api_key=settings.GEMINI_API_KEY)
 
     # List available models (optional, for debugging)
-    for m in client.models.list():
-        if "generateContent" in (m.supported_actions or []):
+    for m in genai.list_models():
+        if "generateContent" in m.supported_generation_methods:
             print(m.name)
 
-    print("MODEL NAME")
-    print(settings.GEMINI_MODEL)
-    print("MODEL NAME")
+    print("MODEL NAME:", settings.GEMINI_MODEL)
 
-    response = client.models.generate_content(
-        model=settings.GEMINI_MODEL,
-        contents=prompt[:5000],
-    )
+    model = genai.GenerativeModel(settings.GEMINI_MODEL)
+    response = model.generate_content(prompt[:5000])
     return response.text
 
 from PIL import Image
