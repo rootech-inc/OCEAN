@@ -19,7 +19,7 @@ from ssml.models import Contractor, ContractorError, Grn, GrnTransaction, Invent
     ServiceOrderItem, ServiceType, ServiceTypeServices, Supplier, TransferHd, Documents, ContractorDocuments, PettyCash, \
     RetiredMetersBox, InstallationType, Cardex, Phase, MaterialRequestHeader, \
     AccountLedger, RetiredMetersTransactions, FocInvoiceHd, JournalVoucherHd, \
-    FocComplianceType, FocCompliance
+    FocComplianceType, FocCompliance, Agents, Retiring
 from dolphine.models import Documents
 
 
@@ -618,7 +618,7 @@ def upload_service_order(request):
             print("#" * 20)
             cts += 1
             row_dict = dict(zip(headers, row))
-            # print(row_dict)
+            print(row_dict)
             customer = row_dict['CUSTOMER NAME']
             customer_phone = row_dict['CUSTOMER PHONE']
             contractor_code = row_dict['CONTRACTOR CODE']
@@ -748,23 +748,23 @@ def upload_service_order(request):
                 
 
                 if ServiceOrder.objects.filter(old_meter_no=old_meter).exists():
-                    # send sms
-                    Sms.objects.create(
-                        api=SmsApi.objects.get(is_default=True),
-                        to=contractor.phone,
-                        message=f"There is a duplicate old meter {meter_no}:{old_meter}"
-                    )
-                    # send message to soomon
-                    Sms.objects.create(
-                        api=SmsApi.objects.get(is_default=True),
-                        to="0546310011",
-                        message=f"There is a duplicate old meter {meter_no}:{old_meter}"
-                    )
-                    Sms.objects.create(
-                        api=SmsApi.objects.get(is_default=True),
-                        to='0543700095',
-                        message=f"There is a duplicate old meter {meter_no}:{old_meter}"
-                    )
+                    # # send sms
+                    # Sms.objects.create(
+                    #     api=SmsApi.objects.get(is_default=True),
+                    #     to=contractor.phone,
+                    #     message=f"There is a duplicate old meter {meter_no}:{old_meter}"
+                    # )
+                    # # send message to soomon
+                    # Sms.objects.create(
+                    #     api=SmsApi.objects.get(is_default=True),
+                    #     to="0546310011",
+                    #     message=f"There is a duplicate old meter {meter_no}:{old_meter}"
+                    # )
+                    # Sms.objects.create(
+                    #     api=SmsApi.objects.get(is_default=True),
+                    #     to='0543700095',
+                    #     message=f"There is a duplicate old meter {meter_no}:{old_meter}"
+                    # )
                     
                     old_meter = f"dup_{old_meter}{make_md5_hash(meter_no)}"
                                   
@@ -2275,3 +2275,143 @@ def post_foc_invoice(request):
 
     else:
         return JsonResponse({'message': 'There is an error'}, status=400)
+
+@login_required()
+def agents(request):
+    context = {
+        'page': {
+            'nav':True,
+            'title':'Agents'
+        },
+        'agents':Agents.objects.all()
+
+    }
+    return render(request, 'ssml/foc/agents.html', context=context)
+
+@login_required()
+def retire_request(request,agen_code):
+    if Agents.objects.filter(code=agen_code).exists():
+        agent = Agents.objects.get(code=agen_code)
+        context = {
+            'page': {
+                'nav': True,
+                'title': 'Retirement Request'
+            },
+            'pending': Retiring.objects.filter(agent=agent,is_verified=False)
+
+        }
+        return render(request, 'ssml/meters/retirement-request.html', context=context)
+    else:
+        return HttpResponse("Agent Does Not Exist")
+
+@csrf_exempt
+def approve_retirement(request):
+    if request.method == 'POST':
+        print(request.POST)
+        print(request.FILES)
+        try:
+            pk = request.POST.get('pk')
+            foc_code = request.POST.get('agent_code')
+            image = request.FILES.get('image')
+
+            # todo:: validate meters belongs to foc
+
+
+            agent  = Agents.objects.get(code=foc_code)
+            meter = Retiring.objects.get(pk=pk,agent=agent)
+            if ServiceOrder.objects.filter(new_meter=meter.new_meter).exists():
+                service = ServiceOrder.objects.get(new_meter=meter.new_meter)
+                service_foc = service.contractor
+                agent_foc = agent.foc
+
+                if service_foc != agent_foc:
+                    # raise issue
+                    ContractorError.objects.create(
+                        contractor=agent_foc,
+                        error_date=timezone.now(),
+                        error_type='DAM',
+                        description=f"{agent.first_name} {agent.last_name} tried to retire a meter installed by {service_foc.company}",
+                        meter=Meter.objects.get(meter_no=meter.new_meter),
+
+                    )
+                    meter.delete()
+                    raise Exception(f"Meter was installed by {service_foc.company} not {agent_foc.company}. Record deleted")
+
+            else:
+                raise Exception("New Meters does not exist / synced")
+
+
+            meter.is_verified = True
+            meter.image = image
+            meter.save()
+
+            return JsonResponse({'status_code':200, 'message':"Approved" })
+        except Exception as e:
+            return JsonResponse({'status_code': 505, 'message': str(e)})
+
+    else:
+        return JsonResponse({'status_code':505, 'message':"Invalid Form" })
+
+@login_required()
+def import_agents(request):
+    import pandas as pd
+
+    excel_file = request.FILES['agent_file']
+
+    df = pd.read_excel(excel_file)  # first row = headers by default
+
+    # Loop through rows
+
+
+    for index, row in df.iterrows():
+
+
+        foc_code = row['CONTRACTOR CODE']
+        first_name = row['OTHER NAMES']
+        last_name = row['LASTNAME']
+        email = row['EMAIL ADDRESS']
+        phone = str(row['PHONE NUMBER'])
+        phone = f"0{phone.replace('+','')[3:]}"
+        ghana_card = row['GHANA CARD NUMBER']
+        agent_code = row['AGENT CODE']
+        li = [foc_code, agent_code, first_name, last_name, phone, email, ghana_card]
+        foc = Contractor.objects.get(code=foc_code)
+
+        print(li)
+        # confirm with agent created
+        if Agents.objects.filter(code=agent_code).exists():
+            print(f"{first_name} {last_name} Exists")
+        else:
+            try:
+                Agents.objects.create(
+                            first_name=first_name,
+                            last_name=last_name,
+                            phone=phone,
+                            email=email,
+                            foc=foc,
+                            ghana_card=ghana_card,
+                            code=agent_code,
+                            is_approved=True
+                        )
+
+                foc_sms = (
+                            f"Dear {first_name} {last_name}, your data has been submitted by {foc.company} to add as agent, review your information below\n"
+                            f"Name: {first_name} {last_name}\nEmail:{email}\nGhana Card: {ghana_card}")
+
+                Sms.objects.create(
+                            api=SmsApi.objects.get(is_default=True),
+                            to=phone,
+                            message=foc_sms
+                        )
+            except Exception as e:
+                print(e)
+            print(f"{first_name} {last_name} Does Not Exists")
+
+
+        print()
+
+
+
+
+    # return HttpResponse("YAMUTY")
+    return redirect(request.META.get('HTTP_REFERER'))

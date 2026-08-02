@@ -2565,16 +2565,33 @@ class SSML {
 
 
     async updateIssued() {
-        loader.show()
-        let payload = {
-            module: 'issue_def_qty',
-            data: {}
-        }
 
-        await api.v2('PATCH', payload, '/ssml/api/').then(response => {
-            kasa.response(response)
-            loader.hide()
-        }).catch(error => { kasa.error(error); loader.hide() })
+        let form = fom.date('start_date')
+        form += fom.date('end_date')
+
+        amodal.setBodyHtml(form)
+        amodal.setFooterHtml(`<button id="switch_up" class="btn btn-success">CHASE</button>`)
+        amodal.setTitleText('Update');
+        amodal.show()
+
+        $('#switch_up').click(async function () {
+            let ids = ['start_date','end_date']
+            if(anton.validateInputs(ids)){
+                loader.show()
+                let payload = {
+                    module: 'issue_def_qty',
+                    data: anton.Inputs(ids)
+                }
+
+                await api.v2('PATCH', payload, '/ssml/api/').then(response => {
+                    kasa.response(response)
+                    loader.hide()
+                }).catch(error => { kasa.error(error); loader.hide() })
+            } else {
+                kasa.error('Invalid Field')
+            }
+        })
+
     }
 
     async getJobs(doc, id, filter, purpose = '*', inv_date = '01-01-2000') {
@@ -5118,9 +5135,19 @@ class SSML {
     }
 
     async retired2Return() {
+        let form = "";
+        form += fom.date('start_date','',true)
+        form += fom.date('end_date','',true)
+        amodal.setBodyHtml(form)
+        amodal.setFooterHtml(`<button class="btn btn-success" id="chase_filter">Filter</button>`)
+        amodal.setTitleText(`Find pending retirement`)
+        amodal.show()
 
-        loader.show()
-        await api.v2('VIEW', { module: 'not_returned_installations', data: {} }, '/ssml/api/').then(response => {
+        $('#chase_filter').click(async function(){
+            let ids = ['start_date','end_date']
+            if(anton.validateInputs(ids)){
+                loader.show()
+                await api.v2('VIEW', { module: 'not_returned_installations', data: anton.Inputs(ids) }, '/ssml/api/').then(response => {
             if (anton.IsRequest(response, true)) {
                 anton.viewFile(`/${response.message}`)
                 loader.hide()
@@ -5128,6 +5155,12 @@ class SSML {
                 loader.hide()
             }
         }).catch(error => { kasa.error(error); loader.hide() })
+
+            } else {
+                kasa.error("Invalid Form")
+            }
+
+        })
 
     }
 

@@ -1363,7 +1363,7 @@ def interface(request):
 
 
                     from openai import OpenAI
-                    api_key = "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"
+                    api_key = ""
                     client = OpenAI(api_key=api_key)
 
                     prompt = f"As an AI Agent, Summarize this table into a quick Ghanaian business owner update. Focus on GRN (purchases), Adjustments, Transfers, Sales, and Returns. State the number of documents and their total values in plain language. Highlight the biggest contributor, note any negatives, and mention if there was no activity in some areas. Compare purchases (GRN total) with sales (POS Sales + Wholesale Invoice total). If purchases are higher than sales, warn of potential overstock and advise the owner to focus on boosting sales. If sales are higher, highlight the strong sales and advise monitoring inventory to avoid stockouts. Keep the update short, clear, business-friendly, and forward-looking. Make it simple, three sentences and plain text \n{html_rows}"

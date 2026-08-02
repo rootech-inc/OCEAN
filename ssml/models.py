@@ -525,6 +525,9 @@ class Contractor(models.Model):
         
             return result
 
+    def agents(self):
+        return [ag.obj() for ag in Agents.objects.filter(foc=self)]
+
     def obj(self):
         return {
             'id':self.id,
@@ -532,6 +535,7 @@ class Contractor(models.Model):
             'owner':self.owner,
             'phone':self.phone,
             'email':self.email,
+            'agents':self.agents(),
             'country':self.country,
             'city':self.city,
             'postal_code':self.postal_code,
@@ -707,6 +711,58 @@ class Contractor(models.Model):
         total_complied = FocCompliance.objects.filter(foc=self,c_type__is_required=True).count()
 
         return f"{total_complied} / {total_require_compliance}"
+
+
+class Agents(models.Model):
+    code = models.CharField(max_length=255,null=True,blank=True)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    email = models.EmailField(max_length=255,unique=True)
+    phone = models.CharField(max_length=255,unique=True)
+    foc = models.ForeignKey(Contractor, on_delete=models.CASCADE)
+    ghana_card = models.CharField(max_length=255,unique=True)
+    otp = models.CharField(max_length=10,null=True,blank=True)
+    is_approved = models.BooleanField(default=False)
+
+    def obj(self):
+        return {
+            'id':self.pk,
+            'name':f"{self.first_name} {self.last_name}",
+            'email':self.email,
+            'phone':self.phone,
+            'ghana_card':self.ghana_card,
+            'foc_code':self.foc.code,
+            'agent_code':self.code
+        }
+
+    def pending_retirement(self):
+        return  [p.obj() for p in Retiring.objects.filter(agent=self,is_verified=False)]
+
+
+class Retiring(models.Model):
+    agent = models.ForeignKey(Agents, on_delete=models.CASCADE)
+    old_meter = models.CharField(max_length=255)
+    new_meter = models.CharField(max_length=255,unique=True,null=False,blank=False)
+    final_reading = models.DecimalField(max_digits=10, decimal_places=2,default=0)
+    date_created = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+    image = models.ImageField(upload_to='static/uploads/files/ssml_docs', null=True, blank=True)
+
+
+    def obj(self):
+        return {
+            'id':self.pk,
+            'agent':f"{self.agent.first_name} {self.agent.last_name}",
+            'foc':self.agent.foc.company,
+            'old_meter':self.old_meter,
+            'new_meter':self.new_meter,
+            'final_reading':self.final_reading,
+            'date_created':self.date_created,
+            'is_verified':self.is_verified
+        }
+
+
+
 
 class ContractorDocuments(models.Model):
     contractor = models.ForeignKey(Contractor,on_delete=models.CASCADE)
@@ -1595,7 +1651,8 @@ class ContractorError(models.Model):
         ('CBL', 'Cabling'),
         ('INS', 'Installation'),
         ('MT',"Materials"),
-        ('OT',"Other")
+        ('OT',"Other"),
+        ("DAM","Data Manipulation"),
     ]   
     error_type = models.CharField(max_length=255, choices=error_type_choices)
     description = models.TextField()
@@ -2467,7 +2524,7 @@ def amount_to_words(amount):
 
 class FocInvoiceHd(models.Model):
 
-    entry_no = models.CharField(max_length=10, null=False, blank=False,unique=True)
+    entry_no = models.CharField(max_length=255, null=False, blank=False,unique=True)
     foc = models.ForeignKey(Contractor,models.CASCADE,related_name='invoices_foc')
     remarks = models.TextField(blank=True, null=True)
     invoice_date = models.DateField(null=False, blank=False)

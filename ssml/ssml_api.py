@@ -12,7 +12,7 @@ from ocean.settings import COMPANY_DETAILS
 from ssml.helper import generate_entry_entry
 from ssml.models import ServiceOrderType, InstallationTypePhaseRate, AccountLedger, \
     JournalVoucherHd, JournalVoucherTransactions, FocInvoiceHd, FocInvoiceTransactions, FocInvoiceAssets, \
-    FocComplianceType, EcgInvoiceAssets, EcgInvoiceTransactions, EcgInvoiceHd, FocCompliance
+    FocComplianceType, EcgInvoiceAssets, EcgInvoiceTransactions, EcgInvoiceHd, FocCompliance, Agents
 
 
 def safe_add_image_to_pdf(pdf, image_path, x, y, w, h=None):
@@ -126,6 +126,8 @@ def interface(request):
                 phase = Phase.objects.get(pk=data.get('phase'))
 
             elif module == 'sync_retired_meters_v2':
+                # update all returned meters
+
                 # get google sync
                 import gspread
                 from oauth2client.service_account import ServiceAccountCredentials
@@ -174,98 +176,148 @@ def interface(request):
                 
                 print(f"Syncing retired meters: Found {len(files)} files in Google Drive folder")
                 
+                # Find or create 'done' subfolder
+                done_folder_id = None
+                try:
+                    done_query = f"'{folder_id}' in parents and name = 'done' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+                    done_results = drive_service.files().list(
+                        q=done_query,
+                        supportsAllDrives=True,
+                        includeItemsFromAllDrives=True,
+                        fields="files(id)"
+                    ).execute()
+                    done_files = done_results.get('files', [])
+                    if done_files:
+                        done_folder_id = done_files[0]['id']
+                    else:
+                        file_metadata = {
+                            'name': 'done',
+                            'mimeType': 'application/vnd.google-apps.folder',
+                            'parents': [folder_id]
+                        }
+                        done_folder = drive_service.files().create(
+                            body=file_metadata,
+                            supportsAllDrives=True,
+                            fields='id'
+                        ).execute()
+                        done_folder_id = done_folder.get('id')
+                except Exception as e:
+                    print(f"Error finding/creating 'done' folder: {e}")
+
                 for f in files:
                     # Parse only Excel files
                     if f['name'].endswith('.xlsx') or f['mimeType'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                        print(f"Reading file: {f['name']} (ID: {f['id']})")
-                        request = drive_service.files().get_media(fileId=f['id'], supportsAllDrives=True)
-                        file_io = io.BytesIO()
-                        downloader = MediaIoBaseDownload(file_io, request)
-                        done = False
-                        while not done:
-                            status, done = downloader.next_chunk()
-                        
-                        file_io.seek(0)
-                        wb = openpyxl.load_workbook(file_io, data_only=True)
-                        sheet = wb.active
-                        
-                        # Find the header row (scanning first 10 rows for matches)
-                        header_row_idx = 1
-                        max_matches = 0
-                        for r_idx in range(1, min(11, sheet.max_row + 1)):
-                            matches = 0
+                        try:
+                            print(f"Reading file: {f['name']} (ID: {f['id']})")
+                            request = drive_service.files().get_media(fileId=f['id'], supportsAllDrives=True)
+                            file_io = io.BytesIO()
+                            downloader = MediaIoBaseDownload(file_io, request)
+                            done = False
+                            while not done:
+                                status, done = downloader.next_chunk()
+                            
+                            file_io.seek(0)
+                            wb = openpyxl.load_workbook(file_io, data_only=True)
+                            sheet = wb.active
+                            
+                            # Find the header row (scanning first 10 rows for matches)
+                            header_row_idx = 1
+                            max_matches = 0
+                            for r_idx in range(1, min(11, sheet.max_row + 1)):
+                                matches = 0
+                                for col_idx in range(1, sheet.max_column + 1):
+                                    val = sheet.cell(row=r_idx, column=col_idx).value
+                                    if val and str(val).strip().upper() in target_columns:
+                                        matches += 1
+                                if matches > max_matches:
+                                    max_matches = matches
+                                    header_row_idx = r_idx
+                            
+                            # Map headers to indices
+                            header_map = {}
                             for col_idx in range(1, sheet.max_column + 1):
-                                val = sheet.cell(row=r_idx, column=col_idx).value
-                                if val and str(val).strip().upper() in target_columns:
-                                    matches += 1
-                            if matches > max_matches:
-                                max_matches = matches
-                                header_row_idx = r_idx
-                        
-                        # Map headers to indices
-                        header_map = {}
-                        for col_idx in range(1, sheet.max_column + 1):
-                            cell_value = sheet.cell(row=header_row_idx, column=col_idx).value
-                            if cell_value:
-                                header_map[str(cell_value).strip().upper()] = col_idx
-                        
-                        col_indices = {target: header_map.get(target) for target in target_columns}
-                        
-                        # Loop through rows below the header row
-                        for row_idx in range(header_row_idx + 1, sheet.max_row + 1):
-                            retirement_code = sheet.cell(row=row_idx, column=col_indices['RETIREMENT CODE']).value if col_indices['RETIREMENT CODE'] else None
-                            meter_code = sheet.cell(row=row_idx, column=col_indices['METER CODE']).value if col_indices['METER CODE'] else None
-                            service_point_code = sheet.cell(row=row_idx, column=col_indices['SERVICE POINT CODE']).value if col_indices['SERVICE POINT CODE'] else None
-                            customer_name = sheet.cell(row=row_idx, column=col_indices['CUSTOMER NAME']).value if col_indices['CUSTOMER NAME'] else None
-                            replacement_order_code = sheet.cell(row=row_idx, column=col_indices['REPLACEMENT ORDER CODE']).value if col_indices['REPLACEMENT ORDER CODE'] else None
-                            meter_phase = sheet.cell(row=row_idx, column=col_indices['METER PHASE']).value if col_indices['METER PHASE'] else None
-                            meter_brand = sheet.cell(row=row_idx, column=col_indices['METER BRAND']).value if col_indices['METER BRAND'] else None
-                            meter_model = sheet.cell(row=row_idx, column=col_indices['METER MODEL']).value if col_indices['METER MODEL'] else None
-                            is_stolen_meter = sheet.cell(row=row_idx, column=col_indices['IS STOLEN METER?']).value if col_indices['IS STOLEN METER?'] else None
+                                cell_value = sheet.cell(row=header_row_idx, column=col_idx).value
+                                if cell_value:
+                                    header_map[str(cell_value).strip().upper()] = col_idx
                             
-                            # Skip if the entire row values are None
-                            if not any([retirement_code, meter_code, service_point_code, customer_name, replacement_order_code, meter_phase, meter_brand, meter_model, is_stolen_meter]):
-                                continue
+                            col_indices = {target: header_map.get(target) for target in target_columns}
                             
-                            # Print the values
-                            print(
-                                f"Row {row_idx}: \n"
-                                f"RETIREMENT CODE={retirement_code}, \n"
-                                f"METER CODE={meter_code}, \n"
-                                f"SERVICE POINT CODE={service_point_code}, \n"
-                                f"CUSTOMER NAME={customer_name}, \n"
-                                f"REPLACEMENT ORDER CODE={replacement_order_code}, \n"
-                                f"METER PHASE={meter_phase}, \n"
-                                f"METER BRAND={meter_brand}, \n"
-                                f"METER MODEL={meter_model}, \n"
-                                f"IS STOLEN METER?={is_stolen_meter}\n"
-                            )
-
-                            
-
-                            # get service
-                            try:
-                                installation = ServiceOrder.objects.get(spn=service_point_code)
-                                box, created = RetiredMetersBox.objects.get_or_create(
-                                    box_no=retirement_code,
-                                    location=installation.location
+                            # Loop through rows below the header row
+                            for row_idx in range(header_row_idx + 1, sheet.max_row + 1):
+                                retirement_code = sheet.cell(row=row_idx, column=col_indices['RETIREMENT CODE']).value if col_indices['RETIREMENT CODE'] else None
+                                meter_code = sheet.cell(row=row_idx, column=col_indices['METER CODE']).value if col_indices['METER CODE'] else None
+                                service_point_code = sheet.cell(row=row_idx, column=col_indices['SERVICE POINT CODE']).value if col_indices['SERVICE POINT CODE'] else None
+                                customer_name = sheet.cell(row=row_idx, column=col_indices['CUSTOMER NAME']).value if col_indices['CUSTOMER NAME'] else None
+                                replacement_order_code = sheet.cell(row=row_idx, column=col_indices['REPLACEMENT ORDER CODE']).value if col_indices['REPLACEMENT ORDER CODE'] else None
+                                meter_phase = sheet.cell(row=row_idx, column=col_indices['METER PHASE']).value if col_indices['METER PHASE'] else None
+                                meter_brand = sheet.cell(row=row_idx, column=col_indices['METER BRAND']).value if col_indices['METER BRAND'] else None
+                                meter_model = sheet.cell(row=row_idx, column=col_indices['METER MODEL']).value if col_indices['METER MODEL'] else None
+                                is_stolen_meter = sheet.cell(row=row_idx, column=col_indices['IS STOLEN METER?']).value if col_indices['IS STOLEN METER?'] else None
+                                
+                                # Skip if the entire row values are None
+                                if not any([retirement_code, meter_code, service_point_code, customer_name, replacement_order_code, meter_phase, meter_brand, meter_model, is_stolen_meter]):
+                                    continue
+                                
+                                # Print the values
+                                print(
+                                    f"Row {row_idx}: \n"
+                                    f"RETIREMENT CODE={retirement_code}, \n"
+                                    f"METER CODE={meter_code}, \n"
+                                    f"SERVICE POINT CODE={service_point_code}, \n"
+                                    f"CUSTOMER NAME={customer_name}, \n"
+                                    f"REPLACEMENT ORDER CODE={replacement_order_code}, \n"
+                                    f"METER PHASE={meter_phase}, \n"
+                                    f"METER BRAND={meter_brand}, \n"
+                                    f"METER MODEL={meter_model}, \n"
+                                    f"IS STOLEN METER?={is_stolen_meter}\n"
                                 )
 
-                                RetiredMetersTransactions.objects.create(
-                                    box = box,
-                                    sn=row_idx,
-                                    spn=service_point_code,
-                                    old_meter_no=meter_code,
-                                    manufacturere=meter_brand,
-                                    installation_type=installation.installation_type.name,
-                                    foc=installation.contractor
-                                )
+                                # get service
+                                try:
+                                    installation = ServiceOrder.objects.get(spn=service_point_code)
+                                    box, created = RetiredMetersBox.objects.get_or_create(
+                                        box_no=retirement_code,
+                                        location=installation.location
+                                    )
 
+                                    RetiredMetersTransactions.objects.filter(spn=service_point_code).delete()
 
+                                    RetiredMetersTransactions.objects.create(
+                                        box = box,
+                                        sn=row_idx,
+                                        spn=service_point_code,
+                                        old_meter_no=meter_code,
+                                        manufacturere=meter_brand,
+                                        installation_type=installation.installation_type.name,
+                                        foc=installation.contractor,
+                                        date_removed=installation.service_date,
+                                        phase=installation.meter_phase()
+                                    )
 
-                            except Exception as e:
-                                print(str(e))
-                            print("------------------------------------------------")
+                                    # mark meter as boxed
+                                    installation.is_boxed = True
+                                    installation.box_no = retirement_code
+                                    installation.save()
+
+                                except Exception as e:
+                                    print(str(e))
+                                print("------------------------------------------------")
+
+                            # Move file to 'done' subfolder
+                            if done_folder_id:
+                                try:
+                                    drive_service.files().update(
+                                        fileId=f['id'],
+                                        addParents=done_folder_id,
+                                        removeParents=folder_id,
+                                        supportsAllDrives=True,
+                                        fields='id, parents'
+                                    ).execute()
+                                    print(f"Moved file {f['name']} (ID: {f['id']}) to 'done' folder.")
+                                except Exception as move_err:
+                                    print(f"Error moving file {f['name']} to 'done' folder: {move_err}")
+                        except Exception as file_err:
+                            print(f"Error processing file {f['name']}: {file_err}")
                 
                 success_response['message'] = "Sync completed successfully"
 
@@ -325,7 +377,10 @@ def interface(request):
 
 
                 if len(transactions) > 0:
+                    entry_no = False;
+
                     entry_no = f"FOC-INV-{FocInvoiceHd.objects.all().last().pk + 1 if FocInvoiceHd.objects.all().count() > 0 else 1}"
+                    print(entry_no,"AS ENTRY NUMBER")
                     FocInvoiceHd.objects.create(
                         entry_no=entry_no,
                         foc=foc,
@@ -639,7 +694,7 @@ def interface(request):
                             # print(box.box_no)
                             if RetiredMetersTransactions.objects.filter(old_meter_no=old_meter_no).exists():
                                 print("box",box_no,"LINE",sn,"Old Meter Is Duplicate")
-                                old_meter_no += "D"
+                                old_meter_no = f"dupl_{make_md5_hash(old_meter_no)}"
                                 
 
                             try:
@@ -737,7 +792,9 @@ def interface(request):
                                         
 
                                         this_record = RetiredMetersTransactions.objects.filter(spn=spn).last()
-                                    
+                                        xp = ServiceOrder.objects.get(spn=spn)
+                                        xp.is_boxed = True
+                                        xp.save()
 
                                         #print("DONE: ",sn,spn,this_record.id)       
                                     
@@ -2708,9 +2765,15 @@ def interface(request):
                     import openpyxl
                     book = openpyxl.Workbook()
 
-                    total_sent = ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=True).count()
-                    total_not_sent = ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=False).count()
-                    total_expected = ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization']).count()
+                    start_date = data.get('start_date')
+                    end_date = data.get('end_date')
+
+                    total_sent = ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=True,service_date__gte=start_date,   # >= start
+    service_date__lte=end_date ).count()
+                    total_not_sent = ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=False,service_date__gte=start_date,   # >= start
+    service_date__lte=end_date ).count()
+                    total_expected = ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],service_date__gte=start_date,   # >= start
+    service_date__lte=end_date ).count()
                     xr = book.active
                     xr.append(["LEGEND","#"])
                     xr.append(["EXPECTED",total_expected])
@@ -2721,22 +2784,24 @@ def interface(request):
                     foc_sheet  = book.create_sheet(title = "FOC")
                     foc_sheet.append(["FOC","TOTAL"])
                     for foc in Contractor.objects.all().order_by('company'):
-                        total = ServiceOrder.objects.filter(contractor=foc,service_type__name__in=['Replacement', 'Regularization'],is_boxed=False).count()
+                        total = ServiceOrder.objects.filter(contractor=foc,service_type__name__in=['Replacement', 'Regularization'],is_boxed=False,service_date__gte=start_date,   # >= start
+    service_date__lte=end_date).count()
                         foc_sheet.append([foc.company,total])
 
                     sheet = book.create_sheet(title = "RETIRED METERS")
                     sheet.title = "RETIRED METERS"
                     sheet.append(["LN","SERVICE","DATE","FOC","NEW METER","SPN","OLD METER"])
                     sn = 1
-                    for service in ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=False).order_by('ecg_date'):
-                        li = [sn,service.service_type.name,service.ecg_date,service.contractor.company,service.new_meter,service.spn,service.old_meter_no]
+                    for service in ServiceOrder.objects.filter(service_type__name__in=['Replacement', 'Regularization'],is_boxed=False,service_date__gte=start_date,   # >= start
+    service_date__lte=end_date ).order_by('service_date'):
+                        li = [sn,service.service_type.name,service.service_date,service.contractor.company,service.new_meter,service.spn,service.old_meter_no]
                         sheet.append(li)
                         print(li)
                         sn += 1
 
                     import uuid
                     unique_id = uuid.uuid4()
-                    filename = f"static/general/tmp/pending_retired_materials_{unique_id}.xlsx"
+                    filename = f"static/general/tmp/pending_retired_materials_{start_date}to{end_date}_{unique_id}.xlsx"
                     book.save(filename)
 
                     success_response['message'] = filename
@@ -4641,6 +4706,24 @@ def interface(request):
                 material.save()
                 success_response['message'] = "Material Updated Successfully"
 
+            elif module == 'disapprove_agent':
+                pk = data.get('pk')
+                ag = Agents.objects.get(pk=pk)
+                ag.is_approved = False
+                ag.save()
+                success_response['message'] = "Agent Disapproved"
+
+            elif module == 'approve_agent':
+                pk = data.get('pk')
+                if Agents.objects.filter(code = data.get('code')).exists():
+                    raise Exception("Agent Exist")
+                ag = Agents.objects.get(pk=pk)
+                ag.is_approved = True
+                ag.code = data.get('code')
+                ag.save()
+
+                success_response['message'] = "Agent Approved"
+
             elif module == 'validate_foc_invoice':
                 entry_no = data.get('entry_no')
                 invoice = FocInvoiceHd.objects.get(entry_no=entry_no)
@@ -5220,25 +5303,10 @@ def interface(request):
                 updated = 0
                 created = 0
 
-
-                # for meterial in InventoryMaterial.objects.filter(is_issue=True,auto_issue=True):
-                    
-                #     issue_qty = meterial.issue_qty
-                #     MaterialOrderItem.objects.filter(material=meterial).update(
-                #         quantity=issue_qty,
-                #         rate=meterial.value,
-                #         amount=issue_qty*meterial.value
-                #     )
-                #     updated += 1
-
-                #     mt = meterial
-
-                #     print (mt.name, mt.issue_qty, '\n')
-
                 if True:
-
-
-                    for service in ServiceOrder.objects.all():
+                    start_date = data.get('start_date')
+                    end_date = data.get('end_date')
+                    for service in ServiceOrder.objects.filter(service_date__gte=start_date,service_date__lte=end_date):
                         service_type = service.service_type
                         meter_no = service.new_meter
                         meter = Meter.objects.get(meter_no=meter_no)

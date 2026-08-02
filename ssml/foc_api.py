@@ -7,8 +7,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from admin_panel.anton import make_md5_hash
-from admin_panel.models import MailQueues, MailSenders
-from ssml.models import Contractor, Issue, FocInvoiceHd, FocInvoiceTransactions, FocInvoiceAssets
+from admin_panel.models import MailQueues, MailSenders, Sms, SmsApi
+from ssml.models import Contractor, Issue, FocInvoiceHd, FocInvoiceTransactions, FocInvoiceAssets, Agents, Retiring
 
 
 @csrf_exempt
@@ -86,7 +86,55 @@ def interface(request):
 
                 success_response['message'] = f"Invoice {ms}"
 
+            elif module == 'agent':
+                first_name = data.get('first_name')
+                last_name = data.get('last_name')
+                phone = data.get('phone')
+                email = data.get('email')
+                ghana_card = data.get('ghana_card')
+                foc = data.get('foc_code')
+                foc = Contractor.objects.get(code=foc)
 
+                Agents.objects.create(
+                    first_name=first_name,
+                    last_name=last_name,
+                    phone=phone,
+                    email=email,
+                    foc=foc,
+                    ghana_card=ghana_card
+                )
+
+                foc_sms = (f"Dear {first_name} {last_name}, your data has been submitted by {foc.company} to add as agent, review your information below\n"
+                           f"Name: {first_name} {last_name}\nEmail:{email}\nGhana Card: {ghana_card}")
+                Sms.objects.create(
+                    api=SmsApi.objects.get(is_default=True),
+                    to=phone,
+                    message=foc_sms
+                )
+
+                success_response['message'] = "Agent Submitted"
+
+
+            elif module == 'retirement':
+                agent_code = data.get('agent_code')
+                old_meter = data.get('old_meter')
+                new_meter = data.get('new_meter')
+                final_readings = data.get('final_readings')
+
+                # todo:: validate meter belonging
+
+                Retiring.objects.create(
+                    agent=Agents.objects.get(code=agent_code),
+                    old_meter = old_meter,
+                    new_meter = new_meter,
+                    final_reading=final_readings
+                )
+
+                success_response['message'] = "Process Completed"
+
+
+            else:
+                raise Exception("Invalid Something")
 
 
 
@@ -150,8 +198,68 @@ def interface(request):
             elif module == 'my_profile':
                 success_response['message'] = Contractor.objects.get(code=data.get('foc_code')).minimal_obj()
 
+            elif module == 'agent':
+                foc = Contractor.objects.get(code=data.get('foc_code'))
+                success_response['message'] = [ag.obj() for ag in Agents.objects.filter(foc=foc)]
+
+            elif module == 'agent_otp':
+                phone = data.get('phone')
+                if Contractor.objects.filter(phone=phone).exists():
+                    # generate opt
+                    import random
+                    otp = random.randint(101010, 999999)
+
+                    contractor = Agents.objects.get(phone=phone)
+                    if contractor.code is None:
+                        raise Exception("Agent Not Approved")
+                    contractor.otp = otp
+                    ag_email = contractor.email
+                    contractor.save()
+
+                    # Send OTP via SMS
+                    to = phone.replace('233', '0').replace('+233', '0')
+                    messta = f"Your OTP code is: {otp}"
+                    if len(to) == 10:
+                        sms_message = messta
+                        Sms(
+                            api=SmsApi.objects.get(sender_id='SNEDA SML') if SmsApi.objects.filter(
+                                sender_id='SNEDA SML').exists() else SmsApi.objects.get(is_default=True),
+                            to=to,
+                            message=sms_message
+                        ).save()
+
+                        MailQueues.objects.create(
+                            sender=MailSenders.objects.get(is_default=True),
+                            body=messta,
+                            recipient=ag_email,
+                            mail_key=make_md5_hash(f"{messta}{to}{ag_email}"),
+                            subject="Sneda SML OTP Verification"
+                        )
+
+                    success_response['message'] = otp
+
+            elif module == 'verify_agent_otp':
+                    foc_verify_token = data.get('code')
+                    print(data)
+                    print(foc_verify_token)
+                    if Agents.objects.filter(otp=foc_verify_token).exists():
+                        contractor = Agents.objects.get(otp=foc_verify_token)
+                        c_code = contractor.code
+                        code = c_code
+                        phone = contractor.phone
+                        contractor.otp = None
+                        contractor.save()
+                        success_response['message'] = Agents.objects.get(phone=phone).obj()
+                    else:
+                        raise Exception("Invalid OTP")
+
+            elif module == 'retirement':
+                agent_code = data.get('agent_code')
+                agent = Agents.objects.get(code=agent_code)
+                success_response['message'] = agent.pending_retirement()
+
             else:
-                raise Exception("Invalid Module")
+                raise Exception(f"Invalid Module {module}")
 
         elif method == 'PATCH':
 

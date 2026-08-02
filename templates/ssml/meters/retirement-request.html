@@ -1,0 +1,71 @@
+{% extends 'ssml/ssmlbase.html' %}
+{% load static %}
+
+{% block body %}
+    <div class="card">
+        <div class="card-header">
+
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr><th>NEW METER</th><th>OLD METER</th><th>FINAL READING</th><th>ACTION</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for meter in pending %}
+                            <tr>
+                                <td>{{ meter.new_meter }}</td>
+                                <td>{{ meter.old_meter }}</td>
+                                <td>{{ meter.final_reading }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success approve" data-agent_code="{{ meter.agent.code }}" data-pk="{{ meter.pk }}" >APPROVE</button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('.approve').click(function() {
+                let pk = $(this).data('pk');
+                let agent_code = $(this).data('agent_code');
+                let form =  `
+                    <form method="POST" id='south' action="/ssml/approve-retirement/" enctype="multipart/form-data">
+                        ${fom.file('image',"image of approved",true)}
+                        <input type="hidden" name="agent_code" value="${agent_code}">
+                        <input type="hidden" name="pk" value="${pk}">
+                    </form>
+                `;
+
+                amodal.setBodyHtml(form);
+                amodal.setTitleText('Approve');
+                amodal.setFooterHtml(`<button class="btn btn-success" id="s_appr">APPROVE</button>`);
+                amodal.show();
+
+
+
+                $('#s_appr').click(function() {
+                    if(anton.validateInputs(['image'])){
+                        submitForm('south').then(function(response) {
+                            kasa.confirm(response.message, 1, 'here');
+                        }).catch(function(error) {
+                            kasa.error("Submission failed");
+                        });
+                    } else {
+                        kasa.error("Invalid form")
+                    }
+
+                })
+
+
+
+            })
+        
+        })
+    </script>
+{% endblock %}
