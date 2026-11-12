@@ -91,6 +91,61 @@ class PM {
     async deleteTimeline(pk) {
         return await api.v2('DELETE', { module: 'update_timeline', data: { pk } }, this.endpoint);
     }
+
+    // ---- Rich Text Editor Helpers (TinyMCE, matching blog) ----
+    createEditor(selector, initialHtml = '', height = 320) {
+        if (typeof tinymce === 'undefined') return null;
+        tinymce.remove(selector);
+        const useDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        tinymce.init({
+            selector,
+            plugins: 'preview importcss searchreplace autolink directionality code visualblocks visualchars fullscreen image link media table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help quickbars emoticons',
+            menubar: 'file edit view insert format tools table help',
+            toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | forecolor backcolor removeformat | link image table | code fullscreen preview',
+            toolbar_mode: 'sliding',
+            height,
+            skin: useDarkMode ? 'oxide-dark' : 'oxide',
+            content_css: useDarkMode ? 'dark' : 'default',
+            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:15px }',
+            setup: (editor) => {
+                editor.on('init', () => {
+                    editor.setContent(initialHtml || '');
+                });
+            },
+        });
+        return selector.replace(/^#/, '');
+    }
+
+    getEditorHtml(editorId) {
+        const ed = typeof tinymce !== 'undefined' ? tinymce.get(editorId) : null;
+        return ed ? ed.getContent() : ($(`#${editorId}`).val() || '');
+    }
+
+    isEditorEmpty(editorId) {
+        const ed = typeof tinymce !== 'undefined' ? tinymce.get(editorId) : null;
+        if (!ed) return ($(`#${editorId}`).val() || '').trim().length === 0;
+        return ed.getContent({ format: 'text' }).trim().length === 0;
+    }
+
+    stripHtml(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html || '';
+        return (tmp.textContent || tmp.innerText || '').trim();
+    }
+
+    sanitizeHtml(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html || '';
+        tmp.querySelectorAll('script, style, iframe, object, embed').forEach(node => node.remove());
+        tmp.querySelectorAll('*').forEach(el => {
+            [...el.attributes].forEach(attr => {
+                if (attr.name.toLowerCase().startsWith('on')) {
+                    el.removeAttribute(attr.name);
+                }
+            });
+        });
+        return tmp.innerHTML;
+    }
 }
 
 const pm = new PM();

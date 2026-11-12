@@ -34,6 +34,20 @@ def clients(request):
 
 
 @login_required
+def new_project(request):
+    context = {
+        'nav': True,
+        'clients': Clients.objects.all().order_by('name'),
+        'type_choices': Projects.type_choices,
+        'page': {
+            'title': 'New Project',
+            'card': False,
+        },
+    }
+    return render(request, 'pm/new_project.html', context=context)
+
+
+@login_required
 def project_detail(request, url):
     project = get_object_or_404(Projects, url=url)
     context = {

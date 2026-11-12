@@ -34,6 +34,7 @@
   <script src="{% static 'general/js/classes/anton.js' %}"></script>
   <script src="{% static 'general/js/classes/modal.js' %}"></script>
   <script src="{% static 'general/js/classes/form.js' %}"></script>
+  <script src="{% static 'assets/vendor/tinymce/tinymce.min.js' %}"></script>
   <script src="{% static 'general/js/classes/pm.js' %}"></script>
 
   <style>
@@ -81,6 +82,23 @@
       background: #4154f1;
       border: 2px solid #fff;
       box-shadow: 0 0 0 2px #4154f1;
+    }
+
+    .pm-editor-container {
+      min-height: 160px;
+      background: #fff;
+    }
+
+    .pm-rich-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .pm-line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   </style>
 </head>
@@ -154,6 +172,13 @@
       </li>
 
       <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name != 'pm_new_project' %}collapsed{% endif %}" href="{% url 'pm_new_project' %}">
+          <i class="bi bi-plus-square"></i>
+          <span>New Project</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name != 'pm_clients' %}collapsed{% endif %}" href="{% url 'pm_clients' %}">
           <i class="bi bi-buildings"></i>
           <span>Clients</span>
@@ -188,6 +213,15 @@
   <!-- Vendor JS Files -->
   <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'assets/js/main.js' %}"></script>
+
+  <script>
+    // Allow TinyMCE dialogs/menus to receive focus inside Bootstrap 5 modals
+    document.addEventListener('focusin', (e) => {
+      if (e.target.closest('.tox-tinymce, .tox-tinymce-aux, .moxman-window, .tam-assetmanager-root') !== null) {
+        e.stopImmediatePropagation();
+      }
+    });
+  </script>
 
   {% block scripts %}{% endblock %}
 </body>

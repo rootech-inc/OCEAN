@@ -5,7 +5,7 @@
   <a href="{% url 'pm_index' %}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-left me-1"></i> Back to Projects
   </a>
-  <div class="d-flex gap-2">
+  <div class="d-flex flex-wrap gap-2">
     <button id="toggleStatusBtn" class="btn btn-outline-primary btn-sm"></button>
     <button id="editProjectBtn" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-pencil me-1"></i> Edit Project
@@ -16,34 +16,54 @@
   </div>
 </div>
 
-<div class="row g-3">
-  <!-- Left: Project Info -->
-  <div class="col-lg-4">
-    <div class="card">
-      <div class="card-body pt-3" id="projectSummaryCard">
-        <div class="text-center py-4 text-muted">Loading project...</div>
-      </div>
-    </div>
+<!-- Responsive Project Overview Card -->
+<div class="card mb-3">
+  <div class="card-body pt-3" id="projectSummaryCard">
+    <div class="text-center py-4 text-muted">Loading project...</div>
+  </div>
+</div>
 
-    <div class="card">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-search me-1"></i> SEO Metadata
-      </div>
-      <div class="card-body pt-3" id="projectSeoCard">
-        <div class="text-muted small">Loading...</div>
-      </div>
-    </div>
+<!-- Tabbed Details: Timeline Updates | Project Description | SEO Metadata -->
+<div class="card">
+  <div class="card-header pb-0 border-bottom-0">
+    <ul class="nav nav-tabs card-header-tabs" id="projectDetailTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-timeline-btn" data-bs-toggle="tab" data-bs-target="#tab-timeline" type="button" role="tab">
+          <i class="bi bi-clock-history me-1"></i> Timeline Updates
+          <span id="timelineCountBadge" class="badge bg-primary rounded-pill ms-1">0</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-desc-btn" data-bs-toggle="tab" data-bs-target="#tab-desc" type="button" role="tab">
+          <i class="bi bi-file-text me-1"></i> Project Description
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-seo-btn" data-bs-toggle="tab" data-bs-target="#tab-seo" type="button" role="tab">
+          <i class="bi bi-search me-1"></i> SEO Metadata
+        </button>
+      </li>
+    </ul>
   </div>
 
-  <!-- Right: Timeline Updates -->
-  <div class="col-lg-8">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-semibold"><i class="bi bi-clock-history me-1"></i> Project Timeline Updates</span>
-        <span id="timelineCountBadge" class="badge bg-primary rounded-pill">0</span>
+  <div class="card-body pt-4">
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="tab-timeline" role="tabpanel">
+        <div id="timelineContainer">
+          <div class="text-center py-4 text-muted">Loading timeline...</div>
+        </div>
       </div>
-      <div class="card-body pt-4" id="timelineContainer">
-        <div class="text-center py-4 text-muted">Loading timeline...</div>
+
+      <div class="tab-pane fade" id="tab-desc" role="tabpanel">
+        <div id="projectDescContainer" class="pm-rich-content">
+          <div class="text-muted">Loading...</div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-seo" role="tabpanel">
+        <div id="projectSeoCard">
+          <div class="text-muted small">Loading...</div>
+        </div>
       </div>
     </div>
   </div>
@@ -79,9 +99,9 @@
     currentProject = p;
 
     const cover = p.cover_image
-      ? `<img src="${escapeHtml(p.cover_image)}" class="pm-cover-thumb mb-3" alt="">`
-      : `<div class="pm-cover-thumb mb-3 d-flex align-items-center justify-content-center text-muted border">
-           <i class="bi bi-image fs-2"></i>
+      ? `<img src="${escapeHtml(p.cover_image)}" class="w-100 rounded" style="height: 180px; object-fit: cover;" alt="">`
+      : `<div class="w-100 rounded d-flex align-items-center justify-content-center text-muted border bg-light" style="height: 180px;">
+           <i class="bi bi-image fs-1"></i>
          </div>`;
 
     const statusBadge = p.is_closed
@@ -97,28 +117,49 @@
     );
 
     $('#projectSummaryCard').html(`
-      ${cover}
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="badge bg-primary-subtle text-primary text-capitalize">${escapeHtml(p.type)}</span>
-        ${statusBadge}
+      <div class="row g-3 align-items-center">
+        <div class="col-md-4 col-lg-3">
+          ${cover}
+        </div>
+        <div class="col-md-8 col-lg-9">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <span class="badge bg-primary-subtle text-primary text-capitalize">${escapeHtml(p.type)}</span>
+            ${statusBadge}
+          </div>
+          <h4 class="fw-bold mb-2">${escapeHtml(p.title)}</h4>
+          <p class="text-muted small mb-3 pm-line-clamp-3">${escapeHtml(p.seo_description || '')}</p>
+          <div class="row g-2 small text-muted">
+            <div class="col-sm-6 col-lg-4">
+              <i class="bi bi-building me-1"></i><strong>Client:</strong> ${escapeHtml(p.client?.name || '')}
+            </div>
+            <div class="col-sm-6 col-lg-4">
+              <i class="bi bi-person me-1"></i><strong>Created by:</strong> ${escapeHtml(p.created_by || '')}
+            </div>
+            <div class="col-12">
+              <i class="bi bi-link-45deg me-1"></i><strong>Slug:</strong> <code class="text-break">${escapeHtml(p.url)}</code>
+            </div>
+          </div>
+        </div>
       </div>
-      <h5 class="fw-bold mb-1">${escapeHtml(p.title)}</h5>
-      <div class="small text-muted mb-3">
-        <div><i class="bi bi-building me-1"></i><strong>Client:</strong> ${escapeHtml(p.client?.name || '')}</div>
-        <div><i class="bi bi-person me-1"></i><strong>Created by:</strong> ${escapeHtml(p.created_by || '')}</div>
-        <div><i class="bi bi-link-45deg me-1"></i><strong>Slug:</strong> <code>${escapeHtml(p.url)}</code></div>
-      </div>
-      <p class="mb-0">${escapeHtml(p.description)}</p>
     `);
 
+    $('#projectDescContainer').html(pm.sanitizeHtml(p.description));
+
+    const keywordsHtml = (p.seo_keywords || '')
+      .split(',')
+      .map(k => k.trim())
+      .filter(Boolean)
+      .map(k => `<span class="badge bg-light text-dark border me-1 mb-1">${escapeHtml(k)}</span>`)
+      .join('');
+
     $('#projectSeoCard').html(`
-      <div class="mb-2">
-        <div class="small fw-semibold text-muted">Meta Description</div>
-        <div class="small">${escapeHtml(p.seo_description)}</div>
+      <div class="mb-3">
+        <div class="small fw-semibold text-muted mb-1">Meta Description</div>
+        <div>${escapeHtml(p.seo_description)}</div>
       </div>
       <div>
-        <div class="small fw-semibold text-muted">Keywords</div>
-        <div class="small text-muted">${escapeHtml(p.seo_keywords)}</div>
+        <div class="small fw-semibold text-muted mb-1">Keywords</div>
+        <div>${keywordsHtml || '<span class="text-muted">None</span>'}</div>
       </div>
     `);
 
@@ -137,14 +178,14 @@
 
     const itemsHtml = timeline.map(tl => `
       <div class="pm-timeline-item">
-        <div class="d-flex justify-content-between align-items-start gap-2">
-          <div>
-            <span class="badge bg-light text-dark border mb-1">${escapeHtml(tl.date)}</span>
-            <h6 class="fw-bold mb-1">${escapeHtml(tl.title)}</h6>
-            <p class="mb-1 text-muted">${escapeHtml(tl.description)}</p>
-            <div class="small text-muted">
-              <i class="bi bi-person-check me-1"></i>${escapeHtml(tl.created_by || '')}
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2">
+          <div class="w-100">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+              <span class="badge bg-light text-dark border">${escapeHtml(tl.date)}</span>
+              <span class="small text-muted"><i class="bi bi-person-check me-1"></i>${escapeHtml(tl.created_by || '')}</span>
             </div>
+            <h6 class="fw-bold mb-1">${escapeHtml(tl.title)}</h6>
+            <div class="pm-rich-content mb-0 text-muted">${pm.sanitizeHtml(tl.description)}</div>
           </div>
           <div class="btn-group btn-group-sm flex-shrink-0">
             <button class="btn btn-outline-secondary edit-timeline" data-pk="${tl.pk}" title="Edit">
@@ -185,10 +226,11 @@
       </div>
       <div class="mb-2">
         <label class="form-label">Description <span class="text-danger">*</span></label>
-        <textarea id="tl_description" class="form-control" rows="4" placeholder="Describe what was accomplished...">${escapeHtml(item ? item.description : '')}</textarea>
+        <textarea id="tl_description" class="form-control"></textarea>
       </div>
     `;
 
+    $('#g_modal_size').addClass('modal-lg');
     amodal.setTitleText(isEdit ? 'Edit Timeline Update' : 'New Timeline Update');
     amodal.setBodyHtml(bodyHtml);
     amodal.setFooterHtml(`
@@ -197,14 +239,16 @@
     `);
     amodal.show();
 
+    const tlEditor = pm.createEditor('#tl_description', item ? item.description : '');
+
     $('#saveTimelineBtn').off('click').on('click', async function () {
       const payload = {
         date: $('#tl_date').val(),
         title: ($('#tl_title').val() || '').trim(),
-        description: ($('#tl_description').val() || '').trim(),
+        description: pm.getEditorHtml(tlEditor),
       };
 
-      if (!payload.date || !payload.title || !payload.description) {
+      if (!payload.date || !payload.title || pm.isEditorEmpty(tlEditor)) {
         Swal.fire('Missing Fields', 'Please fill in date, title, and description.', 'warning');
         return;
       }
@@ -259,7 +303,7 @@
       </div>
       <div class="mb-3">
         <label class="form-label">Description</label>
-        <textarea id="ep_description" class="form-control" rows="4">${escapeHtml(p.description)}</textarea>
+        <textarea id="ep_description" class="form-control"></textarea>
       </div>
       <div class="mb-3">
         <label class="form-label">SEO Description</label>
@@ -271,6 +315,7 @@
       </div>
     `;
 
+    $('#g_modal_size').addClass('modal-lg');
     amodal.setTitleText('Edit Project');
     amodal.setBodyHtml(bodyHtml);
     amodal.setFooterHtml(`
@@ -279,13 +324,19 @@
     `);
     amodal.show();
 
+    const epEditor = pm.createEditor('#ep_description', p.description);
+
     $('#saveEditProjectBtn').off('click').on('click', async function () {
+      if (pm.isEditorEmpty(epEditor)) {
+        Swal.fire('Missing Fields', 'Project description cannot be empty.', 'warning');
+        return;
+      }
       const payload = {
         pk: p.pk,
         client_pk: $('#ep_client').val(),
         type: $('#ep_type').val(),
         title: ($('#ep_title').val() || '').trim(),
-        description: ($('#ep_description').val() || '').trim(),
+        description: pm.getEditorHtml(epEditor),
         seo_description: ($('#ep_seo_desc').val() || '').trim(),
         seo_keywords: ($('#ep_seo_kw').val() || '').trim(),
       };

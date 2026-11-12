@@ -1,0 +1,124 @@
+{% extends 'pm/base.html' %}
+
+{% block body %}
+<div class="mb-3 d-flex justify-content-between align-items-center">
+  <a href="{% url 'pm_index' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i> Back to Projects
+  </a>
+</div>
+
+<div class="row g-3">
+  <!-- Main Column: Title & Rich Description -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body pt-3">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Project Title <span class="text-danger">*</span></label>
+          <input type="text" id="np_title" class="form-control form-control-lg" placeholder="Enter project title...">
+        </div>
+        <div class="mb-0">
+          <label class="form-label fw-semibold">Project Description <span class="text-danger">*</span></label>
+          <textarea id="np_description" class="form-control"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Column: Client, Type, Cover, Submit -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header fw-semibold">Project Details</div>
+      <div class="card-body pt-3">
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label mb-0">Client <span class="text-danger">*</span></label>
+            <a href="{% url 'pm_clients' %}" class="small text-decoration-none">+ Manage Clients</a>
+          </div>
+          <select id="np_client" class="form-select">
+            <option value="">-- Select Client --</option>
+            {% for cl in clients %}
+              <option value="{{ cl.pk }}">{{ cl.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Project Type <span class="text-danger">*</span></label>
+          <select id="np_type" class="form-select">
+            {% for val, label in type_choices %}
+              <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Cover Image (optional)</label>
+          <input type="file" id="np_cover" class="form-control" accept="image/*">
+          <div id="np_cover_preview_wrap" class="mt-2 d-none">
+            <img id="np_cover_preview" src="" class="pm-cover-thumb" alt="Cover preview">
+          </div>
+        </div>
+
+        <div class="alert alert-light border small mb-3">
+          <i class="bi bi-stars text-primary me-1"></i>
+          SEO meta description & keywords will be generated automatically when you create the project.
+        </div>
+
+        <button type="button" id="createProjectBtn" class="btn btn-primary w-100">
+          <i class="bi bi-check-circle me-1"></i> Create Project
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function () {
+    const editorId = pm.createEditor('#np_description', '', 480);
+
+    $('#np_cover').on('change', function () {
+      const file = this.files && this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          $('#np_cover_preview').attr('src', e.target.result);
+          $('#np_cover_preview_wrap').removeClass('d-none');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        $('#np_cover_preview_wrap').addClass('d-none');
+      }
+    });
+
+    $('#createProjectBtn').on('click', async function () {
+      const client_pk = $('#np_client').val();
+      const type = $('#np_type').val();
+      const title = ($('#np_title').val() || '').trim();
+      const description = pm.getEditorHtml(editorId);
+
+      if (!client_pk || !type || !title || pm.isEditorEmpty(editorId)) {
+        Swal.fire('Missing Fields', 'Please select a client and fill in title and description.', 'warning');
+        return;
+      }
+
+      const $btn = $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Creating...');
+      const res = await pm.createProject({ client_pk, type, title, description });
+
+      if (anton.IsRequest(res)) {
+        const created = res.message;
+        const fileInput = document.getElementById('np_cover');
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+          await pm.uploadProjectCover(created.pk, fileInput.files[0]);
+        }
+        await Swal.fire('Created', 'Project created successfully.', 'success');
+        window.location.href = `/pm/projects/${encodeURIComponent(created.url)}/`;
+      } else {
+        $btn.prop('disabled', false).html('<i class="bi bi-check-circle me-1"></i> Create Project');
+        Swal.fire('Error', res.message || 'Could not create project.', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}

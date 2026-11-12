@@ -34,9 +34,9 @@
         </select>
       </div>
       <div class="col-md-2 text-md-end">
-        <button id="newProjectBtn" class="btn btn-primary w-100">
+        <a href="{% url 'pm_new_project' %}" class="btn btn-primary w-100">
           <i class="bi bi-plus-circle me-1"></i> New Project
-        </button>
+        </a>
       </div>
     </div>
   </div>
@@ -117,7 +117,7 @@
               <div class="small text-muted mb-2">
                 <i class="bi bi-building me-1"></i>${escapeHtml(p.client?.name || '')}
               </div>
-              <p class="small text-muted flex-grow-1 mb-3">${escapeHtml((p.description || '').slice(0, 130))}${(p.description || '').length > 130 ? '...' : ''}</p>
+              <p class="small text-muted pm-line-clamp-3 mb-3">${escapeHtml(p.seo_description || '')}</p>
               <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-auto">
                 <a href="${detailUrl}" class="btn btn-sm btn-outline-primary">
                   <i class="bi bi-clock-history me-1"></i>Timeline (${timelineCount})
@@ -215,7 +215,7 @@
       </div>
       <div class="mb-3">
         <label class="form-label">Description <span class="text-danger">*</span></label>
-        <textarea id="pj_description" class="form-control" rows="4">${escapeHtml(project ? project.description : '')}</textarea>
+        <textarea id="pj_description" class="form-control"></textarea>
       </div>
       ${isEdit ? `
         <div class="mb-3">
@@ -247,6 +247,7 @@
       `}
     `;
 
+    $('#g_modal_size').addClass('modal-lg');
     amodal.setTitleText(isEdit ? 'Edit Project' : 'New Project');
     amodal.setBodyHtml(bodyHtml);
     amodal.setFooterHtml(`
@@ -255,15 +256,17 @@
     `);
     amodal.show();
 
+    const descEditor = pm.createEditor('#pj_description', project ? project.description : '');
+
     $('#saveProjectBtn').off('click').on('click', async function () {
       const payload = {
         client_pk: $('#pj_client').val(),
         type: $('#pj_type').val(),
         title: ($('#pj_title').val() || '').trim(),
-        description: ($('#pj_description').val() || '').trim(),
+        description: pm.getEditorHtml(descEditor),
       };
 
-      if (!payload.client_pk || !payload.type || !payload.title || !payload.description) {
+      if (!payload.client_pk || !payload.type || !payload.title || pm.isEditorEmpty(descEditor)) {
         Swal.fire('Missing Fields', 'Please fill in all required fields.', 'warning');
         return;
       }
