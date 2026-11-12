@@ -1119,8 +1119,11 @@ def delete_type_service_rate(request,id):
 @login_required
 def invoice(request):
     # FocInvoiceHd.objects.all().delete()
-    
-    last_entry = FocInvoiceHd.objects.all().last().entry_no if FocInvoiceHd.objects.all().count() > 0 else None
+
+    if request.GET.get('entry_no'):
+        last_entry = request.GET['entry_no']
+    else:
+        last_entry = FocInvoiceHd.objects.all().last().entry_no if FocInvoiceHd.objects.all().count() > 0 else None
     page = {
         'title': 'FOC Invoice',
         'page': 'contractor_invoice',
@@ -2415,3 +2418,27 @@ def import_agents(request):
 
     # return HttpResponse("YAMUTY")
     return redirect(request.META.get('HTTP_REFERER'))
+
+@login_required()
+@csrf_exempt
+def upload_document(request):
+    if request.method == 'POST':
+        file = request.FILES['document']
+        title = request.POST['title']
+        description = request.POST['description']
+        ref = request.POST['ref']
+        doc_type = request.POST['doc_type']
+
+        from .models import Documents as letgo
+        letgo.objects.create(
+            file=file,
+            title=title,
+            description=description,
+            ref=ref,
+            doc_type=doc_type
+        )
+
+        return redirect(request.META.get('HTTP_REFERER'))
+
+    else:
+        return redirect(request.META.get('HTTP_REFERER'))

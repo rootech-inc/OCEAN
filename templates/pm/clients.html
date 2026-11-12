@@ -1,0 +1,268 @@
+{% extends 'pm/base.html' %}
+
+{% block body %}
+<div class="card">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 360px;">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" id="clientSearch" class="form-control" placeholder="Search clients...">
+      </div>
+    </div>
+    <button id="newClientBtn" class="btn btn-primary">
+      <i class="bi bi-plus-circle me-1"></i> New Client
+    </button>
+  </div>
+
+  <div class="card-body pt-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Address</th>
+            <th>Projects</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="clientsTableBody">
+          <tr>
+            <td colspan="6" class="text-center py-4 text-muted">Loading clients...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let allClients = [];
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function renderClients(list) {
+    const $tbody = $('#clientsTableBody');
+    if (!list.length) {
+      $tbody.html('<tr><td colspan="6" class="text-center py-4 text-muted">No clients found.</td></tr>');
+      return;
+    }
+
+    const rows = list.map(c => {
+      const initials = (c.name || '?').slice(0, 2).toUpperCase();
+      const avatar = c.logo
+        ? `<img src="${escapeHtml(c.logo)}" class="pm-avatar me-2" alt="">`
+        : `<span class="pm-avatar me-2">${escapeHtml(initials)}</span>`;
+
+      return `
+        <tr>
+          <td>
+            <div class="d-flex align-items-center">
+              ${avatar}
+              <div>
+                <div class="fw-semibold">${escapeHtml(c.name)}</div>
+              </div>
+            </div>
+          </td>
+          <td>${escapeHtml(c.email)}</td>
+          <td>${escapeHtml(c.phone)}</td>
+          <td class="text-muted small">${escapeHtml(c.address)}</td>
+          <td><span class="badge bg-light text-dark border">${c.project_count ?? 0}</span></td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-secondary edit-client" data-pk="${c.pk}" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-outline-info upload-logo" data-pk="${c.pk}" title="Upload Logo">
+                <i class="bi bi-image"></i>
+              </button>
+              <button class="btn btn-outline-danger delete-client" data-pk="${c.pk}" data-name="${escapeHtml(c.name)}" title="Delete">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    $tbody.html(rows.join(''));
+  }
+
+  async function loadClients() {
+    const res = await pm.listClients();
+    if (anton.IsRequest(res)) {
+      allClients = res.message || [];
+      applyClientFilter();
+    } else {
+      $('#clientsTableBody').html(`<tr><td colspan="6" class="text-center text-danger py-4">${escapeHtml(res.message || 'Failed to load clients')}</td></tr>`);
+    }
+  }
+
+  function applyClientFilter() {
+    const q = ($('#clientSearch').val() || '').toLowerCase().trim();
+    if (!q) {
+      renderClients(allClients);
+      return;
+    }
+    const filtered = allClients.filter(c =>
+      (c.name || '').toLowerCase().includes(q) ||
+      (c.email || '').toLowerCase().includes(q) ||
+      (c.phone || '').toLowerCase().includes(q) ||
+      (c.address || '').toLowerCase().includes(q)
+    );
+    renderClients(filtered);
+  }
+
+  function openClientModal(client = null) {
+    const isEdit = Boolean(client);
+    const bodyHtml = `
+      <div class="mb-3">
+        <label class="form-label">Client Name <span class="text-danger">*</span></label>
+        <input type="text" id="cl_name" class="form-control" value="${escapeHtml(client ? client.name : '')}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Email <span class="text-danger">*</span></label>
+        <input type="email" id="cl_email" class="form-control" value="${escapeHtml(client ? client.email : '')}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Phone <span class="text-danger">*</span></label>
+        <input type="text" id="cl_phone" class="form-control" value="${escapeHtml(client ? client.phone : '')}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Address <span class="text-danger">*</span></label>
+        <textarea id="cl_address" class="form-control" rows="3" required>${escapeHtml(client ? client.address : '')}</textarea>
+      </div>
+      ${!isEdit ? `
+      <div class="mb-2">
+        <label class="form-label">Logo (optional)</label>
+        <input type="file" id="cl_logo" class="form-control" accept="image/*">
+      </div>` : ''}
+    `;
+
+    amodal.setTitleText(isEdit ? 'Edit Client' : 'New Client');
+    amodal.setBodyHtml(bodyHtml);
+    amodal.setFooterHtml(`
+      <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+      <button type="button" class="btn btn-primary" id="saveClientBtn">${isEdit ? 'Update' : 'Create'} Client</button>
+    `);
+    amodal.show();
+
+    $('#saveClientBtn').off('click').on('click', async function () {
+      const payload = {
+        name: ($('#cl_name').val() || '').trim(),
+        email: ($('#cl_email').val() || '').trim(),
+        phone: ($('#cl_phone').val() || '').trim(),
+        address: ($('#cl_address').val() || '').trim(),
+      };
+
+      if (!payload.name || !payload.email || !payload.phone || !payload.address) {
+        Swal.fire('Missing Fields', 'Please fill in all required fields.', 'warning');
+        return;
+      }
+
+      const $btn = $(this).prop('disabled', true).text('Saving...');
+      let res;
+      if (isEdit) {
+        res = await pm.updateClient({ pk: client.pk, ...payload });
+      } else {
+        res = await pm.createClient(payload);
+        if (anton.IsRequest(res)) {
+          const fileInput = document.getElementById('cl_logo');
+          if (fileInput && fileInput.files && fileInput.files[0]) {
+            await pm.uploadClientLogo(res.message.pk, fileInput.files[0]);
+          }
+        }
+      }
+      $btn.prop('disabled', false);
+
+      if (anton.IsRequest(res)) {
+        amodal.hide();
+        Swal.fire('Success', isEdit ? 'Client updated.' : 'Client created.', 'success');
+        await loadClients();
+      } else {
+        Swal.fire('Error', res.message || 'Operation failed.', 'error');
+      }
+    });
+  }
+
+  $(document).ready(function () {
+    loadClients();
+
+    $('#clientSearch').on('input', applyClientFilter);
+
+    $('#newClientBtn').on('click', function () {
+      openClientModal(null);
+    });
+
+    $(document).on('click', '.edit-client', function () {
+      const pk = $(this).data('pk');
+      const client = allClients.find(c => c.pk === pk);
+      if (client) openClientModal(client);
+    });
+
+    $(document).on('click', '.upload-logo', function () {
+      const pk = $(this).data('pk');
+      amodal.setTitleText('Upload Client Logo');
+      amodal.setBodyHtml(`
+        <div class="mb-2">
+          <label class="form-label">Select Logo Image</label>
+          <input type="file" id="modal_cl_logo" class="form-control" accept="image/*">
+        </div>
+      `);
+      amodal.setFooterHtml(`
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="uploadLogoBtn">Upload</button>
+      `);
+      amodal.show();
+
+      $('#uploadLogoBtn').off('click').on('click', async function () {
+        const fileInput = document.getElementById('modal_cl_logo');
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+          Swal.fire('No File', 'Please select an image file.', 'warning');
+          return;
+        }
+        const res = await pm.uploadClientLogo(pk, fileInput.files[0]);
+        if (anton.IsRequest(res)) {
+          amodal.hide();
+          Swal.fire('Uploaded', 'Client logo updated.', 'success');
+          await loadClients();
+        } else {
+          Swal.fire('Error', res.message || 'Upload failed.', 'error');
+        }
+      });
+    });
+
+    $(document).on('click', '.delete-client', async function () {
+      const pk = $(this).data('pk');
+      const name = $(this).data('name');
+      const confirm = await Swal.fire({
+        title: 'Delete Client?',
+        text: `Are you sure you want to delete "${name}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete',
+      });
+      if (!confirm.isConfirmed) return;
+
+      const res = await pm.deleteClient(pk);
+      if (anton.IsRequest(res)) {
+        Swal.fire('Deleted', 'Client removed.', 'success');
+        await loadClients();
+      } else {
+        Swal.fire('Error', res.message || 'Could not delete client.', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}

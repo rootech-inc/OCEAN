@@ -90,7 +90,8 @@ INSTALLED_APPS = [
     'anton.apps.AntonConfig',
     'iclock.apps.IclockConfig',
     'webhooks.apps.WebhooksConfig',
-    'corsheaders'
+    'corsheaders',
+    'pm.apps.PmConfig',
 ]
 
 MIDDLEWARE = [
@@ -323,6 +324,10 @@ LOGISTIC_CONTACT = {
     'phone':'0546310011'
 }
 
+NOTIFIYERS = {
+    'services':os.environ.get('SERVICING_NOTIFICATION_EMAIL','rootech.inc@proton.me')
+}
+
 AMC_ASSIGN_COPIES = os.environ.get('REST_DB_HOST','uyinsolomon2@gmail.com')
 
 
@@ -341,6 +346,7 @@ COMPANY_DETAILS = {
     'logo': os.environ.get('COMPANY_LOGO', '/static/images/logo.png'),
     'website': os.environ.get('WEBSITE', 'www.rootectits.com'),
     'postal_address':os.environ.get('POSTAL_ADDRESS','P.O. Box 1024, Accra, Ghana'),
+
     
 }
 

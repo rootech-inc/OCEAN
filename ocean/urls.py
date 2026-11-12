@@ -47,6 +47,7 @@ urlpatterns = [
     path('anton/', include('anton.urls')),
     path('iclock/', include('iclock.urls')),
     path('webhooks/', include('webhooks.urls')),
+    path('pm/', include('pm.urls')),
 
 
 ]

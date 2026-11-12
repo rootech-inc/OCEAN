@@ -206,7 +206,7 @@
                     let data = response['message'];
                     let tr = "";
                     data.forEach(element => {
-                        tr +=`<tr><td>${element['entry_no']}</td><td>${element['remarks']}</td><td>${element['gross']}</td><td>${element['wht_amount']}</td><td>${element['service_charge']}</td><td>${element['net']}</td></tr>`
+                        tr +=`<tr><td><a href="/ssml/accounts/invoice/?entry_no=${element['entry_no']}">${element['entry_no']}</a></td><td>${element['remarks']}</td><td>${element['gross']}</td><td>${element['wht_amount']}</td><td>${element['service_charge']}</td><td>${element['net']}</td></tr>`
                     })
 
                     let table = `

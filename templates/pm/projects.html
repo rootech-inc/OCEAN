@@ -1,0 +1,372 @@
+{% extends 'pm/base.html' %}
+
+{% block body %}
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-3">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" id="projectSearch" class="form-control" placeholder="Search projects...">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <select id="filterStatus" class="form-select">
+          <option value="">All Statuses</option>
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select id="filterType" class="form-select">
+          <option value="">All Types</option>
+          {% for val, label in type_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select id="filterClient" class="form-select">
+          <option value="">All Clients</option>
+          {% for cl in clients %}
+            <option value="{{ cl.pk }}">{{ cl.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 text-md-end">
+        <button id="newProjectBtn" class="btn btn-primary w-100">
+          <i class="bi bi-plus-circle me-1"></i> New Project
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="projectsGrid" class="row g-3">
+  <div class="col-12 text-center py-5 text-muted">Loading projects...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let allProjects = [];
+  let clientsCache = [];
+
+  const TYPE_CHOICES = [
+    {% for val, label in type_choices %}
+      { val: "{{ val }}", label: "{{ label }}" },
+    {% endfor %}
+  ];
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function statusBadge(p) {
+    if (p.is_closed) {
+      return '<span class="badge bg-secondary">Closed</span>';
+    }
+    return p.is_open
+      ? '<span class="badge bg-success">Open</span>'
+      : '<span class="badge bg-warning text-dark">Paused</span>';
+  }
+
+  function renderProjects(list) {
+    const $grid = $('#projectsGrid');
+    if (!list.length) {
+      $grid.html(`
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+              <i class="bi bi-kanban fs-1 d-block mb-2"></i>
+              No projects match your filters.
+            </div>
+          </div>
+        </div>
+      `);
+      return;
+    }
+
+    const cards = list.map(p => {
+      const cover = p.cover_image
+        ? `<img src="${escapeHtml(p.cover_image)}" class="pm-cover-thumb mb-3" alt="">`
+        : `<div class="pm-cover-thumb mb-3 d-flex align-items-center justify-content-center text-muted border">
+             <i class="bi bi-image fs-2"></i>
+           </div>`;
+
+      const detailUrl = `/pm/projects/${encodeURIComponent(p.url)}/`;
+      const timelineCount = (p.timeline || []).length;
+
+      return `
+        <div class="col-md-6 col-xl-4">
+          <div class="card h-100 mb-0">
+            <div class="card-body d-flex flex-column pt-3">
+              ${cover}
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-primary-subtle text-primary text-capitalize">${escapeHtml(p.type)}</span>
+                ${statusBadge(p)}
+              </div>
+              <h5 class="card-title py-1 mb-1">
+                <a href="${detailUrl}" class="text-dark text-decoration-none">${escapeHtml(p.title)}</a>
+              </h5>
+              <div class="small text-muted mb-2">
+                <i class="bi bi-building me-1"></i>${escapeHtml(p.client?.name || '')}
+              </div>
+              <p class="small text-muted flex-grow-1 mb-3">${escapeHtml((p.description || '').slice(0, 130))}${(p.description || '').length > 130 ? '...' : ''}</p>
+              <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-auto">
+                <a href="${detailUrl}" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-clock-history me-1"></i>Timeline (${timelineCount})
+                </a>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-secondary edit-project" data-pk="${p.pk}" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn btn-outline-info upload-cover" data-pk="${p.pk}" title="Upload Cover">
+                    <i class="bi bi-image"></i>
+                  </button>
+                  <button class="btn btn-outline-danger delete-project" data-pk="${p.pk}" data-title="${escapeHtml(p.title)}" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    $grid.html(cards.join(''));
+  }
+
+  function applyProjectFilters() {
+    const q = ($('#projectSearch').val() || '').toLowerCase().trim();
+    const status = $('#filterStatus').val();
+    const type = $('#filterType').val();
+    const clientPk = $('#filterClient').val();
+
+    const filtered = allProjects.filter(p => {
+      if (status === 'open' && (!p.is_open || p.is_closed)) return false;
+      if (status === 'closed' && !p.is_closed) return false;
+      if (type && p.type !== type) return false;
+      if (clientPk && String(p.client?.pk) !== String(clientPk)) return false;
+      if (q) {
+        const hay = `${p.title} ${p.description} ${p.client?.name || ''} ${p.type}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    renderProjects(filtered);
+  }
+
+  async function loadProjects() {
+    const res = await pm.listProjects();
+    if (anton.IsRequest(res)) {
+      allProjects = res.message || [];
+      applyProjectFilters();
+    } else {
+      $('#projectsGrid').html(`<div class="col-12 text-center text-danger py-4">${escapeHtml(res.message || 'Failed to load projects')}</div>`);
+    }
+  }
+
+  async function ensureClientsLoaded() {
+    if (!clientsCache.length) {
+      const res = await pm.listClients();
+      if (anton.IsRequest(res)) {
+        clientsCache = res.message || [];
+      }
+    }
+    return clientsCache;
+  }
+
+  async function openProjectModal(project = null) {
+    const isEdit = Boolean(project);
+    const clients = await ensureClientsLoaded();
+    if (!clients.length) {
+      Swal.fire('No Clients', 'Please create a client first before creating a project.', 'info');
+      return;
+    }
+
+    const clientOptions = clients.map(c =>
+      `<option value="${c.pk}" ${isEdit && project.client?.pk === c.pk ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
+    ).join('');
+
+    const typeOptions = TYPE_CHOICES.map(t =>
+      `<option value="${t.val}" ${isEdit && project.type === t.val ? 'selected' : ''}>${escapeHtml(t.label)}</option>`
+    ).join('');
+
+    const bodyHtml = `
+      <div class="mb-3">
+        <label class="form-label">Client <span class="text-danger">*</span></label>
+        <select id="pj_client" class="form-select">${clientOptions}</select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Type <span class="text-danger">*</span></label>
+        <select id="pj_type" class="form-select">${typeOptions}</select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Project Title <span class="text-danger">*</span></label>
+        <input type="text" id="pj_title" class="form-control" value="${escapeHtml(project ? project.title : '')}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Description <span class="text-danger">*</span></label>
+        <textarea id="pj_description" class="form-control" rows="4">${escapeHtml(project ? project.description : '')}</textarea>
+      </div>
+      ${isEdit ? `
+        <div class="mb-3">
+          <label class="form-label">SEO Description</label>
+          <textarea id="pj_seo_desc" class="form-control" rows="2">${escapeHtml(project.seo_description)}</textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">SEO Keywords</label>
+          <input type="text" id="pj_seo_kw" class="form-control" value="${escapeHtml(project.seo_keywords)}">
+        </div>
+        <div class="d-flex gap-4">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="pj_is_open" ${project.is_open ? 'checked' : ''}>
+            <label class="form-check-label" for="pj_is_open">Open</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="pj_is_closed" ${project.is_closed ? 'checked' : ''}>
+            <label class="form-check-label" for="pj_is_closed">Closed</label>
+          </div>
+        </div>
+      ` : `
+        <div class="mb-2">
+          <label class="form-label">Cover Image (optional)</label>
+          <input type="file" id="pj_cover" class="form-control" accept="image/*">
+        </div>
+        <div class="small text-muted">
+          <i class="bi bi-stars me-1"></i>SEO description & keywords will be generated automatically.
+        </div>
+      `}
+    `;
+
+    amodal.setTitleText(isEdit ? 'Edit Project' : 'New Project');
+    amodal.setBodyHtml(bodyHtml);
+    amodal.setFooterHtml(`
+      <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+      <button type="button" class="btn btn-primary" id="saveProjectBtn">${isEdit ? 'Update' : 'Create'} Project</button>
+    `);
+    amodal.show();
+
+    $('#saveProjectBtn').off('click').on('click', async function () {
+      const payload = {
+        client_pk: $('#pj_client').val(),
+        type: $('#pj_type').val(),
+        title: ($('#pj_title').val() || '').trim(),
+        description: ($('#pj_description').val() || '').trim(),
+      };
+
+      if (!payload.client_pk || !payload.type || !payload.title || !payload.description) {
+        Swal.fire('Missing Fields', 'Please fill in all required fields.', 'warning');
+        return;
+      }
+
+      const $btn = $(this).prop('disabled', true).text(isEdit ? 'Updating...' : 'Creating...');
+      let res;
+      if (isEdit) {
+        payload.pk = project.pk;
+        payload.seo_description = ($('#pj_seo_desc').val() || '').trim();
+        payload.seo_keywords = ($('#pj_seo_kw').val() || '').trim();
+        payload.is_open = $('#pj_is_open').is(':checked');
+        payload.is_closed = $('#pj_is_closed').is(':checked');
+        res = await pm.updateProject(payload);
+      } else {
+        res = await pm.createProject(payload);
+        if (anton.IsRequest(res)) {
+          const fileInput = document.getElementById('pj_cover');
+          if (fileInput && fileInput.files && fileInput.files[0]) {
+            await pm.uploadProjectCover(res.message.pk, fileInput.files[0]);
+          }
+        }
+      }
+      $btn.prop('disabled', false);
+
+      if (anton.IsRequest(res)) {
+        amodal.hide();
+        Swal.fire('Success', isEdit ? 'Project updated.' : 'Project created.', 'success');
+        await loadProjects();
+      } else {
+        Swal.fire('Error', res.message || 'Operation failed.', 'error');
+      }
+    });
+  }
+
+  $(document).ready(function () {
+    loadProjects();
+
+    $('#projectSearch').on('input', applyProjectFilters);
+    $('#filterStatus, #filterType, #filterClient').on('change', applyProjectFilters);
+
+    $('#newProjectBtn').on('click', function () {
+      openProjectModal(null);
+    });
+
+    $(document).on('click', '.edit-project', function () {
+      const pk = $(this).data('pk');
+      const project = allProjects.find(p => p.pk === pk);
+      if (project) openProjectModal(project);
+    });
+
+    $(document).on('click', '.upload-cover', function () {
+      const pk = $(this).data('pk');
+      amodal.setTitleText('Upload Project Cover Image');
+      amodal.setBodyHtml(`
+        <div class="mb-2">
+          <label class="form-label">Select Cover Image</label>
+          <input type="file" id="modal_pj_cover" class="form-control" accept="image/*">
+        </div>
+      `);
+      amodal.setFooterHtml(`
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="uploadCoverBtn">Upload</button>
+      `);
+      amodal.show();
+
+      $('#uploadCoverBtn').off('click').on('click', async function () {
+        const fileInput = document.getElementById('modal_pj_cover');
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+          Swal.fire('No File', 'Please select an image file.', 'warning');
+          return;
+        }
+        const res = await pm.uploadProjectCover(pk, fileInput.files[0]);
+        if (anton.IsRequest(res)) {
+          amodal.hide();
+          Swal.fire('Uploaded', 'Cover image updated.', 'success');
+          await loadProjects();
+        } else {
+          Swal.fire('Error', res.message || 'Upload failed.', 'error');
+        }
+      });
+    });
+
+    $(document).on('click', '.delete-project', async function () {
+      const pk = $(this).data('pk');
+      const title = $(this).data('title');
+      const confirm = await Swal.fire({
+        title: 'Delete Project?',
+        text: `Are you sure you want to delete "${title}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete',
+      });
+      if (!confirm.isConfirmed) return;
+
+      const res = await pm.deleteProject(pk);
+      if (anton.IsRequest(res)) {
+        Swal.fire('Deleted', 'Project removed.', 'success');
+        await loadProjects();
+      } else {
+        Swal.fire('Error', res.message || 'Could not delete project.', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}

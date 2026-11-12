@@ -676,7 +676,7 @@ class Sales {
 
     salesCustomers(key='*') {
         return api.call('VIEW',{
-            module:'cmms_sales_customer',
+            module:'customer',
             data:{
                 key:key
             }

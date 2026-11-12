@@ -100,6 +100,8 @@ class InventoryMaterial(models.Model):
     required_qty = models.DecimalField(max_digits=10,default=0.00, decimal_places=2)
     is_billable = models.BooleanField(default=False)
 
+    max_use = models.DecimalField(default=0,max_digits=10, decimal_places=2)
+
 
     item_type_choices = [
         ('pri',"Primary"),
@@ -850,7 +852,8 @@ class Grn(models.Model):
             'grn_no':self.grn_no,
             'is_posted':self.is_posted,
             'posted_by':self.posted_by.get_full_name() if self.posted_by else "",
-            'location':self.location.loc_name if self.location else 'NOT SET'
+            'location':self.location.loc_name if self.location else 'NOT SET',
+            'documents':self.docs()
         }
     def status(self):
         if self.is_posted:
@@ -872,7 +875,10 @@ class Grn(models.Model):
         return Grn.objects.filter(id__gt=self.id).first().id if Grn.objects.filter(id__gt=self.id).count() > 0 else 0
     def prev_row(self):
         return Grn.objects.filter(id__lt=self.id).last().id if Grn.objects.filter(id__lt=self.id).count() > 0 else 0 
-    
+
+    def docs(self):
+        return [doc.obj() for doc in Documents.objects.filter(ref=self.grn_no,doc_type='GRN').all()]
+
 class GrnTransaction(models.Model):
     grn = models.ForeignKey(Grn, on_delete=models.CASCADE)
     material = models.ForeignKey(InventoryMaterial, on_delete=models.CASCADE)
@@ -2145,7 +2151,7 @@ class Documents(models.Model):
     # INSERT_YOUR_CODE
         data = {
             'id': self.id,
-            'tital': self.tital,
+            'title': self.title,
             'description': self.description,
             'doc_type': self.doc_type,
             'ref': self.ref,
@@ -3047,6 +3053,14 @@ class EcgInvoiceAssets(models.Model):
     spn = models.CharField(max_length=255, null=True, blank=True)
     installation = models.CharField(max_length=255, null=True, blank=True)
     phase = models.CharField(max_length=255, null=True, blank=True)
+
+class MmsToMms(models.Model):
+
+    new = models.OneToOneField(Service,on_delete=models.PROTECT, null=False, blank=False,related_name='new')
+    old = models.OneToOneField(Service,on_delete=models.PROTECT, null=True, blank=True,related_name='old')
+    reason = models.TextField(blank=False, null=False)
+
+    date_created = models.DateTimeField(auto_now_add=True)
 
 
 

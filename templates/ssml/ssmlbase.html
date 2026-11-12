@@ -450,6 +450,24 @@
             </a>
           </li>
 
+          <li>
+            <a id="foc_invoices_as_of_nav" href="javascript:void(0)">
+              <i class="bi bi-circle"></i><span>Invoices As Of Range</span>
+            </a>
+          </li>
+
+          <li>
+            <a id="issue_usage_analysis" href="javascript:void(0)">
+              <i class="bi bi-circle"></i><span>Issue vs Ussage</span>
+            </a>
+          </li>
+
+          <li>
+            <a id="all_issued_balance" href="javascript:void(0)">
+              <i class="bi bi-circle"></i><span>Materials Balance</span>
+            </a>
+          </li>
+
         </ul>
       </li><!-- End Invoicing Nav -->
 
@@ -658,6 +676,11 @@
             </a>
           </li>
           <li>
+            <a href="javascript:void(0)" onclick="ssml.updateFocQuotedMaterials()">
+              <i class="bi bi-circle"></i><span>Update Foc Quote</span>
+            </a>
+          </li>
+          <li>
             <a href="javascript:void(0)" onclick="ssml.updateRetiredFoc()">
               <i class="bi bi-circle"></i><span>Update Retired FOC</span>
             </a>
@@ -784,17 +807,25 @@
             </a>
           </li>
 
-      </li>
+          <li>
+            <a id="grn-report" href="javascript:void(0)">
+              <i class="bi bi-circle"></i><span>GRN</span>
+            </a>
+          </li>
 
-      <a href="javascript:void(0)" onclick="ssml.materialUsage()">
+
+
+      <li>
+        <a href="javascript:void(0)" onclick="ssml.materialUsage()">
         <i class="bi bi-circle"></i><span>Consumption</span>
       </a>
+      </li>
       <li>
         <a href="javascript:void(0)" onclick="ssml.ContractorsExport()">
           <i class="bi bi-circle"></i><span>Contractors</span>
         </a>
       </li>
-      </li>
+
 
 
       <li>
@@ -1090,9 +1121,25 @@
         ssml.itemAvailability()
       })
 
+      $('#grn-report').click(function () {
+        ssml.grnReportScreen()
+      })
+
         $('#fo_c_m_is').click(function () {
             ssml.focMonthInvoiceSummary()
         })
+
+        $('#foc_invoices_as_of_nav').click(function () {
+            ssml.focInvoicesAsOfScreen()
+        })
+
+      $('#issue_usage_analysis').click(function () {
+        ssml.IssueVsUssageScreen()
+      })
+
+      $('#all_issued_balance').click(function () {
+        ssml.allIssuedBalance()
+      })
     })
   </script>
 

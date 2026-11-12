@@ -18,6 +18,7 @@ from admin_panel.models import Emails, TicketHd, Sms, SmsApi, UserAddOns, Ticket
 from admin_panel.sms_hold import *
 from appscenter.models import App
 from meeting.models import MeetingHD
+from ocean.settings import NOTIFIYERS
 
 from reports.models import ReportForms, ReportLegend, LegendSubs, DepartmentReportMailQue
 from servicing.models import Services, SubServices, ServiceCard, ServiceMaterials, ServiceTechnicians, CheckList, \
@@ -92,7 +93,7 @@ def interface(request):
                 client_pk = head.get('client')
                 entry_date = head.get('ticket_date')
                 client = User.objects.get(pk=client_pk)
-                phone = head.get('phone').replace('+233', '0')
+                phone = head.get('phone').replace('+233', '0') if head.get('phone') else None
                 owner = User.objects.get(pk=head.get('owner'))
                 remarks = head.get('remarks')
                 annal = head.get('annal')
@@ -105,7 +106,7 @@ def interface(request):
                     service=service
                 )
                 tech_adon = UserAddOns.objects.get(user=technician.technician)
-                importance = head.get('importance')
+                importance = head.get('importance',0)
                 tick = head.get('ticket')
                 ticket_title = head.get('ticket_title')
                 ticked_description = head.get('description')
@@ -158,39 +159,45 @@ def interface(request):
 
                 tech_number = tech_adon.phone.replace('+233', '0')
                 # queue SMS
-                sms_api = SmsApi.objects.get(is_default=1)
-                Sms(api=SmsApi.objects.get(is_default=1),
-                    message=f"A ticket has been opened for your query \n\nTICKET : "
-                            f"{cardno} \n\nSERVICE "
-                            f"TYPE : {service.name} \n\nTITLE : "
-                            f"{ticket_title} \n\n"
-                            f"ASSIGNED TO : {tech_adon.user.get_full_name()} - {tech_number}\n\n"
-                            f"You can track service using the "
-                            f"link below "
-                            f"\n\nhttp://ocean.snedaghana.loc/servicing/jobcard/tracking/{uni}/",
-                    to=phone).save()
+                send_sms = head.get('send_sms','YES')
+                if send_sms == 'YES':
+                    send_sms = True
+                else:
+                    send_sms = False
+                if send_sms:
+                    sms_api = SmsApi.objects.get(is_default=1)
+                    Sms(api=SmsApi.objects.get(is_default=1),
+                        message=f"A ticket has been opened for your query \n\nTICKET : "
+                                f"{cardno} \n\nSERVICE "
+                                f"TYPE : {service.name} \n\nTITLE : "
+                                f"{ticket_title} \n\n"
+                                f"ASSIGNED TO : {tech_adon.user.get_full_name()} - {tech_number}\n\n"
+                                f"You can track service using the "
+                                f"link below "
+                                f"\n\nhttp://ocean.snedaghana.loc/servicing/jobcard/tracking/{uni}/",
+                        to=phone).save()
 
-                # technician notification
+                    # technician notification
 
-                tech_message = (f"NEW TICKET!!\n\n"
-                                f"You have been assigned a ticket and below are the details. \n\n"
-                                f"TITLE : {ticket_title} \n\n"
-                                f"DESCRIPTION : Sent via email \n\n"
-                                f"REQUEST BY : {client.get_full_name()} - {phone} \n\n"
-                                f"Please attend to the issue and call the owner if need be")
+                    tech_message = (f"NEW TICKET!!\n\n"
+                                    f"You have been assigned a ticket and below are the details. \n\n"
+                                    f"TITLE : {ticket_title} \n\n"
+                                    f"DESCRIPTION : Sent via email \n\n"
+                                    f"REQUEST BY : {client.get_full_name()} - {phone} \n\n"
+                                    f"Please attend to the issue and call the owner if need be")
 
-                email_body = (f"<strong>REPORTED BY</strong> : {client.get_full_name()}<br>"
-                              f"<strong>TITLE</strong> : {ticket_title}<hr>"
-                              f"{ticked_description}"
-                              f"<hr>"
-                              f"<i>NOTE: Please contact client with the details below for further discussion of issue </><br>"
-                              f"<strong>Mobile </strong> : <a href='tel:{phone}'>{phone}</a> <br>"
-                              f"<strong>Email : </strong> <a href='mailto:{client.email}'>{client.email}</a>")
+                    email_body = (f"<strong>REPORTED BY</strong> : {client.get_full_name()}<br>"
+                                  f"<strong>TITLE</strong> : {ticket_title}<hr>"
+                                  f"{ticked_description}"
+                                  f"<hr>"
+                                  f"<i>NOTE: Please contact client with the details below for further discussion of issue </><br>"
+                                  f"<strong>Mobile </strong> : <a href='tel:{phone}'>{phone}</a> <br>"
+                                  f"<strong>Email : </strong> <a href='mailto:{client.email}'>{client.email}</a>")
 
-                Sms(api=sms_api, message=tech_message, to=tech_number).save()
-                
-                Emails(sent_from='issues@snedaghana.loc', sent_to=technician.technician.email,
-                       subject=f"NEW TICKET!! {ticket_title}", body=email_body).save()
+                    Sms(api=sms_api, message=tech_message, to=tech_number).save()
+
+                    Emails(sent_from='issues@snedaghana.loc', sent_to=technician.technician.email,
+                           subject=f"NEW TICKET!! {ticket_title}", body=email_body).save()
                 success_response['message'] = just_service_card.pk
 
             elif module == 'send_ticket_to_client':
@@ -342,10 +349,10 @@ def interface(request):
                         arr.append({
                             'pk': service.pk,
                             'code': service.code,
+                            'name': service.name,
                             'description': service.description,
                             'subs': ss,
                             'technicians': tt
-
                         })
                         print(arr)
                     success_response['message'] = arr
@@ -645,6 +652,86 @@ def interface(request):
                     cards = file_name
 
                 success_response['message'] = cards
+
+            elif module == 'send_weekly_report':
+                # get data
+                start_date = data.get('start_date')
+                end_date = data.get('end_date')
+
+                closed_jobs = ServiceCard.objects.filter(status=2,closed_date__range=[start_date, end_date])
+                new_jobs = ServiceCard.objects.filter(status=1,created_date__range=[start_date, end_date])
+                pending_jobs = ServiceCard.objects.filter(status=2)
+
+                html = f"""
+                <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff; color: #111111; line-height: 1.6;">
+                    <h2 style="font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 12px; color: #111111; border-bottom: 2px solid #111111;">
+                        Weekly Resolving Reports
+                    </h2>
+                    <p style="font-size: 13px; color: #666666; margin-top: 6px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Maintained & IT Department Summary
+                    </p>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #111111;">
+                                <th style="text-align: left; padding: 12px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #111111;">STATUS</th>
+                                <th style="text-align: right; padding: 12px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #111111;">COUNT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #e5e5e5;">
+                                <td style="padding: 16px 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: #111111;">NEW JOBS</td>
+                                <td style="padding: 16px 8px; font-size: 13px; text-align: right; font-weight: 700; color: #111111;">{new_jobs.count()}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e5e5e5;">
+                                <td style="padding: 16px 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: #111111;">CLOSED JOBS</td>
+                                <td style="padding: 16px 8px; font-size: 13px; text-align: right; font-weight: 700; color: #111111;">{closed_jobs.count()}</td>
+                            </tr>
+                            <tr style="border-bottom: 2px solid #111111;">
+                                <td style="padding: 16px 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: #111111;">ALL TIME PENDING</td>
+                                <td style="padding: 16px 8px; font-size: 13px; text-align: right; font-weight: 700; color: #111111;">{pending_jobs.count()}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #999999; letter-spacing: 0.05em; text-transform: uppercase;">
+                        Ocean Live &bull; Automated System Report
+                    </div>
+                </div>
+                """
+
+                # make excel file
+                import openpyxl
+                book = openpyxl.Workbook()
+                sheet = book.active
+                hd = ["DATE","SERVICE","TITLE","DESCRIPTION","ANALYSIS","Lastest LOG","TECHNICIAN","REPORTER"]
+                sheet.append(hd)
+                for cj in closed_jobs:
+                    li = [cj.created_date,cj.service.name,cj.ticket.title,cj.ticket.descr,cj.analysis,cj.last_transaction(),cj.technician.technician.get_fullname(),cj.owner.get_fullname()]
+                    sheet.append(li)
+
+                import uuid
+                enc = make_md5_hash(uuid.uuid4().hex)
+                file_name = f"static/tmp/{enc}.xlsx"
+                book.save(file_name)
+
+
+                MailQueues.objects.create(
+                    sender=MailSenders.objects.get(is_default=True),
+                    recipient=NOTIFIYERS.get('services'),
+                    subject=f"Maintenance & IT Report from {start_date} to {end_date}",
+                    body=html,
+                    mail_key=enc
+                )
+
+                just_sent_mail = MailQueues.objects.get(mail_key=enc)
+                MailAttachments.objects.create(
+                    mail=just_sent_mail,
+                    attachment=file_name
+                )
+
+
+                success_response['message'] = "Report Sent"
+
+
 
             elif module == 'get_material_requests':
                 mrs = MR_Hd.objects.all().order_by('-created_date', '-created_time')

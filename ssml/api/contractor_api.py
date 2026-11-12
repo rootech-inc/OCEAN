@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import uuid
 from decimal import Decimal
 import json
 from django.http import JsonResponse
@@ -200,29 +201,110 @@ def contractor_api(request):
                 total = 0
 
                 contractor = Contractor.objects.get(id=contractor_id)
-                for issue in IssueTransaction.objects.filter(issue__contractor=contractor,issue__issue_type='ISS'):
-                    material = issue.material.obj()
-                    total_qty = issue.total_qty
-                    total_value = total_qty * material['value']
 
-                    total_used = MaterialOrderItem.objects.filter(service_order__contractor=contractor,material=issue.material,material_type='is').aggregate(total_qty=Sum('quantity'))['total_qty'] or 0    
-                    total_used_value = total_used * material['value']
+                distinct_issues = (
+                    IssueTransaction.objects.filter(issue__contractor=contractor, issue__issue_type='ISS')
+                    .values('material')
+                    .annotate(total_qty=Sum('total_qty'))
+                )
 
-                    total_diff = total_value - total_used_value
-                    total += total_diff
+                for row in distinct_issues:
+                    material_id = row['material']
+                    total_issued = row['total_qty']
+
+                    # get total_used
+                    total_used = (
+                            MaterialOrderItem.objects.filter(
+                                service_order__contractor=contractor,
+                                material_id=material_id,
+                                material_type='is'
+                            )
+                            .aggregate(total_qty=Sum('quantity'))['total_qty'] or 0
+                    )
+
+                    total_remaining_qty = total_issued - total_used
+                    material = InventoryMaterial.objects.get(id=material_id)
+                    value = material.value
+                    bal_val = value * total_remaining_qty if total_remaining_qty > 0 else 0
+
                     transactions.append({
-                        'material':material,
-                        'total_qty':total_qty,
-                        'total_value':total_value,
-                        'total_used':total_used,
-                        'total_used_value':total_used_value,
-                        'total_diff':total_diff
+                        "name":material.name,
+                        'total_issued': total_issued,
+                        'value': value,
+                        'total_used': total_used,
+                        "remaining":total_remaining_qty,
+                        'bal_val': bal_val,
                     })
+
+                    print(material_id,total_issued,total_used)
+
+
 
                 arr = {
                     'transactions':transactions,
-                    'total':total
+                    'total':total,
+                    "contractor":contractor.company
                 }
+
+            elif module == 'all_issued_balance':
+                start_date = data.get('start_date')
+                end_date = data.get('end_date')
+
+                import openpyxl
+                from django.db.models import Sum
+
+                book = openpyxl.Workbook()
+
+                for index, foc in enumerate(Contractor.objects.all()):
+                    sheet_title = foc.company[:30] if foc.company else f"Contractor_{foc.id}"
+
+                    # Use the default active sheet for the first contractor, create new ones for the rest
+                    if index == 0:
+                        sheet = book.active
+                        sheet.title = sheet_title
+                    else:
+                        sheet = book.create_sheet(title=sheet_title)
+
+                    hd = ["MATERIAL", "ISSUED", "USED", "BALANCE"]
+                    sheet.append(hd)
+
+                    distinct_issues = (
+                        IssueTransaction.objects.filter(
+                            issue__contractor=foc,
+                            issue__issue_type__in=['ISS', 'RET'],
+                            issue__issue_date__range=(start_date, end_date),
+                            issue__is_posted=True
+                        )
+                        .values('material')
+                        .annotate(total_qty=Sum('total_qty'))
+                    )
+
+                    for row in distinct_issues:
+                        material_id = row['material']
+                        total_issued = row['total_qty']
+
+                        total_used = (
+                                MaterialOrderItem.objects.filter(
+                                    service_order__contractor=foc,
+                                    material_id=material_id,
+                                    material_type='is',
+                                    service_order__service_date__range=(start_date, end_date)
+                                )
+                                .aggregate(total_qty=Sum('quantity'))['total_qty'] or 0
+                        )
+
+                        total_remaining_qty = total_issued - total_used
+                        material = InventoryMaterial.objects.get(id=material_id)
+                        value = material.value
+                        bal_val = value * total_remaining_qty if total_remaining_qty > 0 else 0
+
+                        li = [material.name, total_issued, total_used, total_remaining_qty]
+                        sheet.append(li)
+
+                file_name = f"static/tmp/{uuid.uuid4()}_{str(start_date).replace('-','_')}_to_{str(end_date).replace('-','_')}.xlsx"
+                book.save(file_name)
+                arr = file_name
+
 
             elif module == 'recievable':
                 try:

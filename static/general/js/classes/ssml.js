@@ -5683,6 +5683,217 @@ class SSML {
         })
     }
 
+    focInvoicesAsOfScreen() {
+        let form = `
+            <div class="p-2">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label font-weight-bold text-muted small text-uppercase" for="foc_range_start_date">
+                            Start Date <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" id="foc_range_start_date" name="foc_range_start_date" class="form-control rounded-0" required />
+                        <small class="text-muted">Select beginning of range</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label font-weight-bold text-muted small text-uppercase" for="foc_range_end_date">
+                            End Date <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" id="foc_range_end_date" name="foc_range_end_date" class="form-control rounded-0" required />
+                        <small class="text-muted">Select end of range</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        amodal.setBodyHtml(form);
+        amodal.setTitleText("FOC Invoices As Of Range");
+        amodal.setFooterHtml(`<button id="btn_fetch_foc_range" class="btn btn-success btn-sm px-4 font-weight-bold"><i class="fa fa-search mr-1"></i> RETRIEVE</button>`);
+        amodal.setSize('L');
+        amodal.show();
+
+        $('#btn_fetch_foc_range').click(async () => {
+            let start_date = $('#foc_range_start_date').val();
+            let end_date = $('#foc_range_end_date').val();
+
+            if (!start_date || !end_date) {
+                kasa.error("Please provide both start date and end date");
+                return;
+            }
+
+            if (start_date > end_date) {
+                kasa.error("Start date cannot be greater than end date");
+                return;
+            }
+
+            let btn = $('#btn_fetch_foc_range');
+            btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin mr-1"></i> Generating Files...');
+
+            try {
+                let payload = {
+                    module: 'foc_invoices_as_of',
+                    data: {
+                        start_date: start_date,
+                        end_date: end_date
+                    }
+                };
+
+                let response = await api.use_fetch('VIEW', payload, '/ssml/api/');
+
+                if (anton.IsRequest(response)) {
+                    let details = response.message || [];
+                    let gross = response.gross_total || 0;
+                    let service_fee = response.service_fee_total || 0;
+                    let wht = response.wht_total || 0;
+                    let net = response.net_total || 0;
+                    let bundle = response.bundle;
+                    let pdf = response.pdf;
+                    let excel = response.excel;
+
+                    let tr = '';
+                    if (details.length === 0) {
+                        tr = `<tr><td colspan="7" class="text-center text-muted py-4">No FOC invoices found for the selected period (${start_date} to ${end_date}).</td></tr>`;
+                    } else {
+                        details.forEach((rec, idx) => {
+                            tr += `
+                                <tr>
+                                    <td class="text-center font-weight-bold text-muted">${idx + 1}</td>
+                                    <td class="font-weight-bold text-dark">${rec.foc}</td>
+                                    <td class="text-right">${Number(rec.gross).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    <td class="text-right text-info">${Number(rec.service_fee).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    <td class="text-right text-danger">${Number(rec.wht).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    <td class="text-right font-weight-bold text-success">${Number(rec.net).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    <td class="text-center">
+                                        <a href="/${rec.file}" target="_blank" class="btn btn-sm btn-outline-primary" title="Download ${rec.foc} Invoices ZIP">
+                                            <i class="fa fa-file-archive-o mr-1"></i> ZIP
+                                        </a>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    }
+
+                    let ht = `
+                        <style>
+                            .dash-label { font-size: 0.7rem; letter-spacing: 0.5px; opacity: 0.8; }
+                            .dash-value { font-size: 1.15rem; }
+                            .invoice-card { transition: transform 0.2s; border: 1px solid #e3e6f0 !important; }
+                            .invoice-card:hover { transform: translateY(-2px); }
+                            .download-box { background: #f8f9fc; border: 1px dashed #4e73df; border-radius: 8px; padding: 15px; }
+                        </style>
+                        <div class="container-fluid py-2">
+                            <!-- Prominent Download Links Section -->
+                            <div class="download-box mb-4 text-center">
+                                <h6 class="text-primary font-weight-bold mb-3">
+                                    <i class="fa fa-cloud-download mr-1"></i> Download Reports for Period (${start_date} to ${end_date})
+                                </h6>
+                                <div class="d-flex flex-wrap justify-content-center">
+                                    ${excel ? `
+                                    <a href="/${excel}" target="_blank" class="btn btn-success btn-md shadow-sm font-weight-bold mx-2 mb-2">
+                                        <i class="fa fa-file-excel-o mr-2"></i> DOWNLOAD EXCEL MATRIX (.XLSX)
+                                    </a>` : ''}
+                                    <a href="/${pdf}" target="_blank" class="btn btn-danger btn-md shadow-sm font-weight-bold mx-2 mb-2">
+                                        <i class="fa fa-file-pdf-o mr-2"></i> DOWNLOAD SUMMARY (PDF)
+                                    </a>
+                                    <a href="/${bundle}" target="_blank" class="btn btn-primary btn-md shadow-sm font-weight-bold mx-2 mb-2">
+                                        <i class="fa fa-file-archive-o mr-2"></i> DOWNLOAD ALL CONTRACTORS (ZIP)
+                                    </a>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    * The Excel file includes a Monthly Net Matrix for each FOC, Financial Breakdown, and full Invoice Register.
+                                </small>
+                            </div>
+
+                            <!-- Summary Metric Cards -->
+                            <div class="row justify-content-center no-gutters mb-3">
+                                <div class="col-6 col-md-3 mb-2 px-1">
+                                    <div class="card invoice-card shadow-sm h-100">
+                                        <div class="card-body p-2 p-md-3 text-center">
+                                            <div class="text-muted dash-label text-uppercase font-weight-bold mb-1">Total Gross</div>
+                                            <div class="dash-value font-weight-bold text-dark">${Number(gross).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2 px-1">
+                                    <div class="card invoice-card shadow-sm h-100">
+                                        <div class="card-body p-2 p-md-3 text-center">
+                                            <div class="text-muted dash-label text-uppercase font-weight-bold mb-1">Service Fee</div>
+                                            <div class="dash-value font-weight-bold text-info">${Number(service_fee).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2 px-1">
+                                    <div class="card invoice-card shadow-sm h-100">
+                                        <div class="card-body p-2 p-md-3 text-center">
+                                            <div class="text-muted dash-label text-uppercase font-weight-bold mb-1">WHT (5%)</div>
+                                            <div class="dash-value font-weight-bold text-danger">${Number(wht).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2 px-1">
+                                    <div class="card invoice-card shadow-sm h-100 bg-success text-white border-success">
+                                        <div class="card-body p-2 p-md-3 text-center">
+                                            <div class="text-white-50 dash-label text-uppercase font-weight-bold mb-1">Total Net Owed</div>
+                                            <div class="dash-value font-weight-bold">${Number(net).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Table by Contractor -->
+                            <div class="card border shadow-sm rounded-lg overflow-hidden">
+                                <div class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-primary">Contractor Breakdown</h6>
+                                    <span class="badge badge-primary px-2 py-1">${details.length} Contractor(s)</span>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover table-striped mb-0">
+                                            <thead class="bg-light text-muted small text-uppercase font-weight-bold">
+                                                <tr>
+                                                    <th class="border-top-0 text-center" style="width: 50px;">#</th>
+                                                    <th class="border-top-0">Contractor</th>
+                                                    <th class="border-top-0 text-right">Gross</th>
+                                                    <th class="border-top-0 text-right">Service Fee</th>
+                                                    <th class="border-top-0 text-right">WHT (5%)</th>
+                                                    <th class="border-top-0 text-right">Net Owed</th>
+                                                    <th class="border-top-0 text-center">Invoices ZIP</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="text-dark" style="font-size: 0.85rem;">
+                                                ${tr}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    let foot = `
+                        <a href="/${bundle}" target="_blank" class="btn btn-primary px-3 shadow-sm font-weight-bold">
+                            <i class="fa fa-file-archive-o mr-1"></i> Download All (ZIP)
+                        </a>
+                        <a href="/${pdf}" target="_blank" class="btn btn-danger px-3 shadow-sm font-weight-bold">
+                            <i class="fa fa-file-pdf-o mr-1"></i> Download Summary (PDF)
+                        </a>
+                        <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Close</button>
+                    `;
+
+                    amodal.setBodyHtml(ht);
+                    amodal.setFooterHtml(foot);
+                    amodal.setTitleText(`FOC Invoices Summary (${start_date} to ${end_date})`);
+                    amodal.setSize('XL');
+                } else {
+                    kasa.response(response);
+                    btn.prop('disabled', false).html('<i class="fa fa-search mr-1"></i> RETRIEVE');
+                }
+            } catch (err) {
+                console.error("Error fetching FOC invoices:", err);
+                kasa.error("An unexpected error occurred while fetching invoices");
+                btn.prop('disabled', false).html('<i class="fa fa-search mr-1"></i> RETRIEVE');
+            }
+        });
+    }
+
     async newEcgInvoiceScreen() {
         loader.show()
         let focs = ssml.getContractor('*');
@@ -5982,6 +6193,179 @@ class SSML {
                 kasa.response(response)
             }
         }).catch(error => {kasa.error(error)})
+    }
+
+    grnReportScreen() {
+        let form = "";
+        form += fom.date('grn_start_date','',true)
+        form += fom.date('grn_end_date','',true)
+
+        amodal.setTitleText('GRN Report')
+        amodal.setBodyHtml(form)
+        amodal.setFooterHtml(`<button class="btn btn-info" id="filter_grn">GENERATE</button>`)
+        amodal.show()
+
+        $('#filter_grn').click(async function () {
+            let ids = ['grn_start_date', 'grn_end_date']
+            if (!anton.validateInputs(ids)) {
+                kasa.error("Invalid Form")
+                return
+            }
+            let payload = {
+                module: 'grn_report',
+                data: anton.Inputs(ids)
+            }
+
+            loader.show()
+            await api.use_fetch('VIEW', payload, '/ssml/api/').then(response => {
+                if(anton.IsRequest(response)){
+                    let data = response['message']
+                    console.table(data)
+                    anton.viewFile(`/${data}`)
+                    loader.hide()
+                } else {
+                    kasa.response(response)
+                    loader.hide()
+                }
+            }).catch(error => {kasa.error(error);loader.hide()})
+        })
+
+    }
+
+    async updateFocQuotedMaterials() {
+        let form = fom.date('start_date','',true)
+        form += fom.date('end_date','',true)
+
+        amodal.setBodyHtml(form)
+        amodal.show()
+        amodal.setTitleText("Update Foc Materials Quoted")
+        amodal.setFooterHtml(`<button class="btn btn-success" id="shot_patch">UPDATE</button>`)
+
+
+        $('#shot_patch').click(async function () {
+            let ids = ['start_date', 'end_date']
+            if (anton.validateInputs(ids)) {
+                let payload = {
+                    module: 'fix_foc_consumption',
+                    data: anton.Inputs(ids)
+                }
+                loader.show()
+                await api.use_fetch('PATCH', payload, '/ssml/api/').then(response => {
+                    loader.hide()
+                    kasa.confirm(response['message'],1,'here')
+                }).catch(error=>{kasa.error(error);loader.hide()})
+            }
+        })
+
+    }
+
+    async IssueVsUssageScreen() {
+        // get focs
+        loader.show()
+        await ssml.getContractor('*').then(response => {
+            if(anton.IsRequest(response)){
+                let data = response['message'];
+                let options = [];
+                data.forEach(dt=>{
+                    options.push({
+                        val:dt.id,
+                        desc:dt.company
+                    })
+                })
+
+                let html = fom.selectv2('contractor_id',options,'',true);
+                amodal.setBodyHtml(html)
+                amodal.setTitleText("Generate Issue Vs Ussage Report")
+
+                amodal.setFooterHtml(`<button id="ololo" class="btn btn-sm btn-success">GENERATE</button>`)
+                amodal.show()
+                loader.hide()
+
+                $('#ololo').click(async function (){
+                    let ids = ['contractor_id']
+                    if(anton.validateInputs(ids)){
+                        let payload = {
+                            module:'issued_recievable_balance',
+                            data:anton.Inputs(ids)
+                        }
+
+                        await api.use_fetch('VIEW',payload,'/ssml/api/contractor/').then(response => {
+                            if(anton.IsRequest(response)){
+                                let dt = response['message'];
+                                console.table(dt)
+                                let tr = "";
+                                dt['transactions'].forEach(row=>{
+                                    tr += `
+                                        <tr><td>${row['name']}</td><td>${row['total_issued']}</td><td>${row['total_used']}</td><td>${row['remaining']}</td><td>${row['value']}</td><td>${row['bal_val']}</td></tr>
+                                    `
+                                })
+
+                                let tab = `
+                                    <table class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>NAME</th><th>TOTAL ISSUED</th><th>TOTAL USED</th><th>REMAINING</th><th>VALUE</th><th>TOTAL VALUE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${tr}</tbody>
+                                    </table>
+                                `
+
+                                amodal.setBodyHtml(tab)
+                                amodal.setSize('L')
+                                amodal.setTitleText("Analysis")
+
+                            } else {
+                                kasa.response(response)
+                            }
+                        }).catch(error => {kasa.error(error)})
+
+                    }
+                })
+
+            } else {
+                kasa.response(response)
+                loader.hide()
+            }
+        }).catch(error => {kasa.error(error);loader.hide()})
+    }
+
+    async allIssuedBalance() {
+        let form = fom.date('start_date','',true)
+        form += fom.date('end_date','',true)
+
+        amodal.setBodyHtml(form)
+        amodal.setTitleText("Issued Materials Vs Used")
+        amodal.setFooterHtml(`<button id="all_issued_balance_retrieve" class="btn btn-success">RETRIEVE</button>`)
+        amodal.show()
+
+        $('#all_issued_balance_retrieve').click(async function (){
+
+            let ids = ['start_date','end_date']
+            if(anton.validateInputs(ids)){
+                loader.show()
+                let payload = {
+                    module:'all_issued_balance',
+                    data:anton.Inputs(ids)
+                }
+
+                let response = await api.use_fetch('VIEW',payload,'/ssml/api/contractor/');
+                try {
+                    if(anton.IsRequest(response)){
+                        let file = response['message'];
+                        anton.viewFile(`/${file}`)
+                        loader.hide()
+                    } else {
+                        kasa.response(response)
+                        loader.hide()
+                    }
+                } catch (e) {
+                    kasa.error(e)
+                    loader.hide()
+                }
+            }
+        })
+
     }
 }
 

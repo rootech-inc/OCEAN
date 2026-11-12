@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>OCEAN PM{% if page.title %} - {{ page.title }}{% endif %}</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
+  <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+  <!-- Vendor CSS Files -->
+  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/remixicon/remixicon.css' %}" rel="stylesheet">
+
+  <!-- Template Main CSS File -->
+  <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
+  <link href="{% static 'general/css/colors.css' %}" rel="stylesheet">
+
+  <script src="{% static 'blog/js/jquery.min.js' %}"></script>
+  <script src="{% static 'blog/js/popper.min.js' %}"></script>
+  <script src="{% static 'blog/js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'general/js/error_handler.js' %}"></script>
+  <script src="{% static 'general/js/sweetalert2@11' %}"></script>
+  <script src="{% static 'general/js/all.js' %}"></script>
+  <script src="{% static 'general/js/classes/api.js' %}"></script>
+  <script src="{% static 'general/js/classes/anton.js' %}"></script>
+  <script src="{% static 'general/js/classes/modal.js' %}"></script>
+  <script src="{% static 'general/js/classes/form.js' %}"></script>
+  <script src="{% static 'general/js/classes/pm.js' %}"></script>
+
+  <style>
+    .pm-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #eef2ff;
+      color: #4154f1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .pm-cover-thumb {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #f6f9ff;
+    }
+
+    .pm-timeline {
+      position: relative;
+      padding-left: 28px;
+      border-left: 2px solid #dee2e6;
+    }
+
+    .pm-timeline-item {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .pm-timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -35px;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #4154f1;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 2px #4154f1;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Global Modal (amodal) -->
+  <div id="g_modal" class="modal fade" tabindex="-1">
+    <div id="g_modal_size" class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="g_modal_title"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body overflow-auto" style="max-height: 75vh">
+          <div class="w-100" id="g_modal_body"></div>
+        </div>
+        <div class="modal-footer" id="g_footer"></div>
+      </div>
+    </div>
+  </div>
+
+  <input type="hidden" value="{{ request.user.pk }}" id="mypk">
+
+  <!-- ======= Header ======= -->
+  <header id="header" class="header fixed-top d-flex align-items-center">
+    <div class="d-flex align-items-center justify-content-between">
+      <a href="{% url 'pm_index' %}" class="logo d-flex align-items-center">
+        <img src="{% static 'assets/img/logo.png' %}" alt="">
+        <span class="d-none d-lg-block">OCEAN PM</span>
+      </a>
+      <i class="bi bi-list toggle-sidebar-btn"></i>
+    </div>
+
+    <nav class="header-nav ms-auto">
+      <ul class="d-flex align-items-center">
+        <li class="nav-item dropdown pe-3">
+          <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle fs-4"></i>
+            <span class="d-none d-md-block dropdown-toggle ps-2">{{ request.user.get_full_name|default:request.user.username }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
+            <li>
+              <a class="dropdown-item d-flex align-items-center" href="{% url 'home' %}">
+                <i class="bi bi-house"></i>
+                <span>Ocean Home</span>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Sign Out</span>
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </header><!-- End Header -->
+
+  <!-- ======= Sidebar ======= -->
+  <aside id="sidebar" class="sidebar">
+    <ul class="sidebar-nav" id="sidebar-nav">
+      <li class="nav-heading">Project Management</li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'pm_index' or request.resolver_match.url_name == 'pm_project_detail' %}{% else %}collapsed{% endif %}" href="{% url 'pm_index' %}">
+          <i class="bi bi-kanban"></i>
+          <span>Projects</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name != 'pm_clients' %}collapsed{% endif %}" href="{% url 'pm_clients' %}">
+          <i class="bi bi-buildings"></i>
+          <span>Clients</span>
+        </a>
+      </li>
+
+      <li class="nav-heading">Navigation</li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'home' %}">
+          <i class="bi bi-arrow-left-circle"></i>
+          <span>Back to Ocean</span>
+        </a>
+      </li>
+    </ul>
+  </aside><!-- End Sidebar -->
+
+  <main id="main" class="main">
+    <div class="pagetitle">
+      <h1>{{ page.title|default:"Project Management" }}</h1>
+    </div>
+
+    <section class="section">
+      {% block body %}{% endblock %}
+    </section>
+  </main>
+
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center">
+    <i class="bi bi-arrow-up-short"></i>
+  </a>
+
+  <!-- Vendor JS Files -->
+  <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'assets/js/main.js' %}"></script>
+
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

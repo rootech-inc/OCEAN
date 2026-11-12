@@ -5,6 +5,7 @@ import uuid
 from urllib.parse import urlencode
 
 from django.contrib.auth.models import User
+from django.http import JsonResponse
 
 from django.utils import timezone
 
@@ -430,4 +431,20 @@ def make_thumbnail(image_field, size=(300, 200)):
     thumb_name = f"{name}_thumb.jpg"
     
     return ContentFile(thumb_io.getvalue(), name=thumb_name)
-    
+
+
+def success_response(message={}):
+    obj = {
+        "status_code": 200,
+        "message":message,
+    }
+
+    return obj
+
+def error_response(message={}):
+    obj = {
+        "status_code": 400,
+        "message":message,
+    }
+
+    return obj

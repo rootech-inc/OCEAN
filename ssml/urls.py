@@ -83,6 +83,7 @@ urlpatterns = [
     path('inventory/transfer/post/<entry_no>/',views.post_transfer,name='ssml_post_transfer'),
     path('sync_retired_meter/',views.sync_retired_meter,name='sync_retired_meter'),
     path('approve_document/',views.approve_document, name='ssml_approve_document'),
+    path('upload-document/',views.upload_document, name='ssml_upload_document'),
     path('foc-portal/',views.foc_portal,name='ssml_foc_portal'),
     path('foc-portal/my-company/',views.my_company,name='ssml_foc_compnay'),
     path('upload_contractor_docs/',views.upload_contractor_docs,name='ssml_upload_contractor_docs'),

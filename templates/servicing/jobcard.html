@@ -67,6 +67,11 @@
             <button onclick="svc.pendingCards()" class="btn btn-outline-primary btn-sm px-3 d-none d-sm-block">
                 <i class="fa fa-clock me-1"></i> Pending
             </button>
+            <button onclick="svc.importCards()" class="btn btn-outline-success btn-sm px-3 d-none d-sm-block"
+                id="import_cards" title="Import Job Cards">
+                <i class="fa fa-file-import me-1"></i> Import
+            </button>
+
             <div class="btn-group btn-group-sm rounded shadow-sm border">
                 <button id="prev" onclick="loadJobCard(this.value)" class="btn btn-light border-0"
                     title="Previous Job Card">
@@ -809,6 +814,303 @@
             });
 
         }
+
+        async importCards() {
+            // Show loader before async operations
+            loader.show();
+            loader.setMessage("Loading form options...");
+
+            // 1. Payloads for asynchronous requests
+            let apps_payload = {
+                module: 'apps',
+                data: {
+                    pk: '*'
+                }
+            };
+            let users_payload = {
+                module: 'users',
+                data: {
+                    pk: '*'
+                }
+            };
+            let services_payload = {
+                module: 'services',
+                data: {
+                    pk: '*'
+                }
+            };
+
+            try {
+                // Fetch data in parallel asynchronously to prevent browser hanging
+                let [apps_res, users_res, services_res] = await Promise.all([
+                    api.use_fetch("VIEW", apps_payload, '/appscenter/api/'),
+                    api.use_fetch("VIEW", users_payload, '/apiv2/'),
+                    api.use_fetch("VIEW", services_payload, '/servicing/api/')
+                ]);
+
+                // Hide loader when done
+                console.table(apps_res)
+                loader.hide();
+
+                let apps_option = '<option value="">SELECT APP</option>';
+                if (anton.IsRequest(apps_res)) {
+                    let apps = apps_res['message'];
+                    for (let ap = 0; ap < apps.length; ap++) {
+                        let app = apps[ap];
+                        apps_option += `<option value="${app['pk']}">${app['name']}</option>`;
+                    }
+                }
+
+                let users_option = '<option value="">SELECT USER / TECHNICIAN</option>';
+                if (anton.IsRequest(users_res)) {
+                    let users = users_res['message'];
+                    for (let u = 0; u < users.length; u++) {
+                        let user = users[u];
+                        users_option += `<option value="${user['pk']}">${user['name'] || user['username']}</option>`;
+                    }
+                }
+
+                let services_option = '<option value="">SELECT SERVICE</option>';
+                let services_map = {};
+                if (anton.IsRequest(services_res)) {
+                    let services = services_res['message'];
+                    for (let s = 0; s < services.length; s++) {
+                        let service = services[s];
+                        services_option += `<option value="${service['pk']}">${service['name']}</option>`;
+                        services_map[service['pk']] = service['subs'] || [];
+                    }
+                }
+
+                // 3. Render modal form
+                let form = `
+                    <div class="p-2">
+                        <div class="form-group mb-3">
+                            <label for="import_assign_to" class="small fw-bold">Assign To</label>
+                            <select id="import_assign_to" class="form-control rounded-0">${users_option}</select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="import_app" class="small fw-bold">App</label>
+                            <select id="import_app" class="form-control rounded-0">${apps_option}</select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="import_service" class="small fw-bold">Service</label>
+                            <select id="import_service" class="form-control rounded-0">${services_option}</select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="import_service_sub" class="small fw-bold">Service Sub</label>
+                            <select id="import_service_sub" class="form-control rounded-0" disabled>
+                                <option value="">SELECT SUB SERVICE</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="import_file" class="small fw-bold">CSV File</label>
+                            <input type="file" id="import_file" accept=".csv" class="form-control rounded-0">
+                        </div>
+                    </div>
+                `;
+
+                amodal.setTitleText("Import Job Cards");
+                amodal.setBodyHtml(form);
+                amodal.setFooterHtml('<button class="btn btn-success w-100 rounded-0" id="submit_import_btn">SUBMIT</button>');
+                amodal.show();
+
+                // Dynamic service change loading
+                $('#import_service').change(function () {
+                    let serviceId = $(this).val();
+                    let subSelect = $('#import_service_sub');
+                    subSelect.empty();
+                    subSelect.append('<option value="">SELECT SUB SERVICE</option>');
+
+                    if (serviceId && services_map[serviceId] && services_map[serviceId].length > 0) {
+                        let subs = services_map[serviceId];
+                        for (let s = 0; s < subs.length; s++) {
+                            subSelect.append(`<option value="${subs[s].pk}">${subs[s].name}</option>`);
+                        }
+                        subSelect.prop('disabled', false);
+                    } else {
+                        subSelect.prop('disabled', true);
+                    }
+                });
+
+                // 4. Handle submit click
+                $('#submit_import_btn').click(function () {
+                    let assignTo = $('#import_assign_to').val();
+                    let app = $('#import_app').val();
+                    let serviceId = $('#import_service').val();
+                    let serviceSubId = $('#import_service_sub').val();
+                    let fileInput = document.getElementById('import_file');
+
+                    if (!assignTo) {
+                        kasa.error("Please select an Assign To user.");
+                        return;
+                    }
+                    if (!app) {
+                        kasa.error("Please select an App.");
+                        return;
+                    }
+                    if (!serviceId) {
+                        kasa.error("Please select a Service.");
+                        return;
+                    }
+                    if (!serviceSubId) {
+                        kasa.error("Please select a Sub Service.");
+                        return;
+                    }
+                    if (!fileInput.files || fileInput.files.length === 0) {
+                        kasa.error("Please upload a CSV file.");
+                        return;
+                    }
+
+                    // Show loader during CSV processing
+                    loader.show();
+                    loader.setMessage("Processing CSV file...");
+
+                    let file = fileInput.files[0];
+                    let reader = new FileReader();
+
+                    reader.onload = async function (e) {
+                        let text = e.target.result;
+
+                        // Simple CSV Parse helper
+                        function parseCSV(text) {
+                            let lines = [];
+                            let row = [""];
+                            let inQuotes = false;
+                            for (let i = 0; i < text.length; i++) {
+                                let char = text[i];
+                                let nextChar = text[i + 1];
+                                if (char === '"') {
+                                    if (inQuotes && nextChar === '"') {
+                                        row[row.length - 1] += '"';
+                                        i++;
+                                    } else {
+                                        inQuotes = !inQuotes;
+                                    }
+                                } else if (char === ',') {
+                                    if (inQuotes) {
+                                        row[row.length - 1] += char;
+                                    } else {
+                                        row.push("");
+                                    }
+                                } else if (char === '\r' || char === '\n') {
+                                    if (inQuotes) {
+                                        row[row.length - 1] += char;
+                                    } else {
+                                        if (char === '\r' && nextChar === '\n') {
+                                            i++;
+                                        }
+                                        if (row.length > 1 || row[0] !== "") {
+                                            lines.push(row);
+                                        }
+                                        row = [""];
+                                    }
+                                } else {
+                                    row[row.length - 1] += char;
+                                }
+                            }
+                            if (row.length > 1 || row[0] !== "") {
+                                lines.push(row);
+                            }
+                            return lines;
+                        }
+
+                        function isValidDate(dateString) {
+                            if (!dateString || dateString.trim() === "") return false;
+                            let timestamp = Date.parse(dateString);
+                            return !isNaN(timestamp);
+                        }
+
+                        function getTodayString() {
+                            let today = new Date();
+                            let yyyy = today.getFullYear();
+                            let mm = String(today.getMonth() + 1).padStart(2, '0');
+                            let dd = String(today.getDate()).padStart(2, '0');
+                            return `${yyyy}-${mm}-${dd}`;
+                        }
+
+                        let parsedLines = parseCSV(text);
+                        // console.log("Total parsed lines from CSV:", parsedLines.length);
+
+                        let total_pass = 0;
+                        let total_failed = 0;
+
+                        for (let i = 0; i < parsedLines.length; i++) {
+                            let row = parsedLines[i];
+                            // Skip header row
+                            if (i === 0) {
+                                console.log("Skipping header row:", row);
+                                continue;
+                            }
+
+                            let title = row[0] || "";
+                            let description = row[1] || "";
+                            let analysis = row[2] || "";
+                            let dateReported = row[3];
+
+                            if (!isValidDate(dateReported)) {
+                                dateReported = getTodayString();
+                            } else {
+                                let d = new Date(dateReported);
+                                let yyyy = d.getFullYear();
+                                let mm = String(d.getMonth() + 1).padStart(2, '0');
+                                let dd = String(d.getDate()).padStart(2, '0');
+                                dateReported = `${yyyy}-${mm}-${dd}`;
+                            }
+
+                            let payload = {
+                                module: "jobcard",
+                                data: {
+                                    head: {
+                                        client: $('#mypk').val(),
+                                        ticket_date: dateReported,
+                                        owner: assignTo,
+                                        annal: analysis,
+                                        service: serviceId,
+                                        service_sub: serviceSubId,
+                                        technician: assignTo,
+                                        ticket: '0',
+                                        ticket_title: title,
+                                        description: description,
+                                        app: app,
+                                        send_sms: 'NO'
+                                    },
+                                    materials: []
+                                }
+                            }
+                            console.log(payload);
+
+                            await api.use_fetch('PUT', payload, '/servicing/api/').then(response => {
+                                console.table(response);
+                                if(anton.IsRequest(response)){
+                                    total_pass += 1
+                                } else {
+                                    total_failed += 1
+                                    console.table(response);
+                                }
+                            }).catch(error => {total_failed += 1; console.log(error);});
+
+                        }
+
+                        loader.hide();
+                        kasa.info(`Proces completed with ${total_pass} success and ${total_failed} Failed!!`)
+                        // kasa.success("CSV file successfully processed. Check browser console for logged lines.");
+                        amodal.hide();
+                    };
+
+                    reader.onerror = function () {
+                        loader.hide();
+                        kasa.error("Error reading file.");
+                    };
+
+                    reader.readAsText(file);
+                });
+
+            } catch (error) {
+                loader.hide();
+                console.error("Error loading import modal data:", error);
+                kasa.error("Failed to load options from server.");
+            }
+        }
     }
     const svc = new Service()
 
@@ -974,4 +1276,13 @@
         }
     }
 </script>
+
+<!-- LOADER MODAL -->
+<div id="loader"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="h-100 d-flex flex-column align-items-center justify-content-center">
+        <img src="{% static 'general/img/icons/2.gif' %}" alt="Loading..." class="img-fluid">
+        <div id="loader_message" class="text-white mt-2 font-weight-bold">Loading....</div>
+    </div>
+</div>
 {% endblock %}

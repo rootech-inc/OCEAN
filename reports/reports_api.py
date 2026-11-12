@@ -562,6 +562,7 @@ def interface(request):
 
             response = success_response
 
+
     except Exception as e:
         error_type, error_instance, traceback = sys.exc_info()
         tb_path = traceback.tb_frame.f_code.co_filename

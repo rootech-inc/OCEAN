@@ -367,7 +367,7 @@ class CmmsSales{
 
     getCustomer(key='all'){
         let payload = {
-            module:'cmms_sales_customer',
+            module:'customerrun',
             data:{
                 'key':key
             }

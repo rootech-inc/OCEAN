@@ -1,0 +1,358 @@
+{% extends 'pm/base.html' %}
+
+{% block body %}
+<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <a href="{% url 'pm_index' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i> Back to Projects
+  </a>
+  <div class="d-flex gap-2">
+    <button id="toggleStatusBtn" class="btn btn-outline-primary btn-sm"></button>
+    <button id="editProjectBtn" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-pencil me-1"></i> Edit Project
+    </button>
+    <button id="addTimelineBtn" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-circle me-1"></i> Add Timeline Update
+    </button>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Left: Project Info -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body pt-3" id="projectSummaryCard">
+        <div class="text-center py-4 text-muted">Loading project...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-search me-1"></i> SEO Metadata
+      </div>
+      <div class="card-body pt-3" id="projectSeoCard">
+        <div class="text-muted small">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Timeline Updates -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-clock-history me-1"></i> Project Timeline Updates</span>
+        <span id="timelineCountBadge" class="badge bg-primary rounded-pill">0</span>
+      </div>
+      <div class="card-body pt-4" id="timelineContainer">
+        <div class="text-center py-4 text-muted">Loading timeline...</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const PROJECT_URL = "{{ project.url|escapejs }}";
+  const TYPE_CHOICES = [
+    {% for val, label in type_choices %}
+      { val: "{{ val }}", label: "{{ label }}" },
+    {% endfor %}
+  ];
+  const CLIENTS = [
+    {% for cl in clients %}
+      { pk: {{ cl.pk }}, name: "{{ cl.name|escapejs }}" },
+    {% endfor %}
+  ];
+
+  let currentProject = null;
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function renderProjectDetail(p) {
+    currentProject = p;
+
+    const cover = p.cover_image
+      ? `<img src="${escapeHtml(p.cover_image)}" class="pm-cover-thumb mb-3" alt="">`
+      : `<div class="pm-cover-thumb mb-3 d-flex align-items-center justify-content-center text-muted border">
+           <i class="bi bi-image fs-2"></i>
+         </div>`;
+
+    const statusBadge = p.is_closed
+      ? '<span class="badge bg-secondary">Closed</span>'
+      : (p.is_open
+        ? '<span class="badge bg-success">Open</span>'
+        : '<span class="badge bg-warning text-dark">Paused</span>');
+
+    $('#toggleStatusBtn').html(
+      p.is_closed
+        ? '<i class="bi bi-unlock me-1"></i> Reopen Project'
+        : '<i class="bi bi-check2-circle me-1"></i> Close Project'
+    );
+
+    $('#projectSummaryCard').html(`
+      ${cover}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="badge bg-primary-subtle text-primary text-capitalize">${escapeHtml(p.type)}</span>
+        ${statusBadge}
+      </div>
+      <h5 class="fw-bold mb-1">${escapeHtml(p.title)}</h5>
+      <div class="small text-muted mb-3">
+        <div><i class="bi bi-building me-1"></i><strong>Client:</strong> ${escapeHtml(p.client?.name || '')}</div>
+        <div><i class="bi bi-person me-1"></i><strong>Created by:</strong> ${escapeHtml(p.created_by || '')}</div>
+        <div><i class="bi bi-link-45deg me-1"></i><strong>Slug:</strong> <code>${escapeHtml(p.url)}</code></div>
+      </div>
+      <p class="mb-0">${escapeHtml(p.description)}</p>
+    `);
+
+    $('#projectSeoCard').html(`
+      <div class="mb-2">
+        <div class="small fw-semibold text-muted">Meta Description</div>
+        <div class="small">${escapeHtml(p.seo_description)}</div>
+      </div>
+      <div>
+        <div class="small fw-semibold text-muted">Keywords</div>
+        <div class="small text-muted">${escapeHtml(p.seo_keywords)}</div>
+      </div>
+    `);
+
+    const timeline = p.timeline || [];
+    $('#timelineCountBadge').text(timeline.length);
+
+    if (!timeline.length) {
+      $('#timelineContainer').html(`
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-calendar-event fs-1 d-block mb-2"></i>
+          No timeline updates yet. Click <strong>Add Timeline Update</strong> to log progress.
+        </div>
+      `);
+      return;
+    }
+
+    const itemsHtml = timeline.map(tl => `
+      <div class="pm-timeline-item">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <span class="badge bg-light text-dark border mb-1">${escapeHtml(tl.date)}</span>
+            <h6 class="fw-bold mb-1">${escapeHtml(tl.title)}</h6>
+            <p class="mb-1 text-muted">${escapeHtml(tl.description)}</p>
+            <div class="small text-muted">
+              <i class="bi bi-person-check me-1"></i>${escapeHtml(tl.created_by || '')}
+            </div>
+          </div>
+          <div class="btn-group btn-group-sm flex-shrink-0">
+            <button class="btn btn-outline-secondary edit-timeline" data-pk="${tl.pk}" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger delete-timeline" data-pk="${tl.pk}" data-title="${escapeHtml(tl.title)}" title="Delete">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    $('#timelineContainer').html(`<div class="pm-timeline">${itemsHtml}</div>`);
+  }
+
+  async function loadProjectDetail() {
+    const res = await pm.getProject(PROJECT_URL);
+    if (anton.IsRequest(res)) {
+      renderProjectDetail(res.message);
+    } else {
+      $('#projectSummaryCard').html(`<div class="text-danger">${escapeHtml(res.message || 'Failed to load project')}</div>`);
+    }
+  }
+
+  function openTimelineModal(item = null) {
+    const isEdit = Boolean(item);
+    const today = new Date().toISOString().split('T')[0];
+
+    const bodyHtml = `
+      <div class="mb-3">
+        <label class="form-label">Date <span class="text-danger">*</span></label>
+        <input type="date" id="tl_date" class="form-control" value="${escapeHtml(item ? item.date : today)}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Update Title <span class="text-danger">*</span></label>
+        <input type="text" id="tl_title" class="form-control" value="${escapeHtml(item ? item.title : '')}" placeholder="e.g. Phase 1 Deployment Completed">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Description <span class="text-danger">*</span></label>
+        <textarea id="tl_description" class="form-control" rows="4" placeholder="Describe what was accomplished...">${escapeHtml(item ? item.description : '')}</textarea>
+      </div>
+    `;
+
+    amodal.setTitleText(isEdit ? 'Edit Timeline Update' : 'New Timeline Update');
+    amodal.setBodyHtml(bodyHtml);
+    amodal.setFooterHtml(`
+      <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+      <button type="button" class="btn btn-primary" id="saveTimelineBtn">${isEdit ? 'Update' : 'Add'} Entry</button>
+    `);
+    amodal.show();
+
+    $('#saveTimelineBtn').off('click').on('click', async function () {
+      const payload = {
+        date: $('#tl_date').val(),
+        title: ($('#tl_title').val() || '').trim(),
+        description: ($('#tl_description').val() || '').trim(),
+      };
+
+      if (!payload.date || !payload.title || !payload.description) {
+        Swal.fire('Missing Fields', 'Please fill in date, title, and description.', 'warning');
+        return;
+      }
+
+      const $btn = $(this).prop('disabled', true).text('Saving...');
+      let res;
+      if (isEdit) {
+        res = await pm.updateTimeline({ pk: item.pk, ...payload });
+      } else {
+        res = await pm.createTimeline({ url: PROJECT_URL, ...payload });
+      }
+      $btn.prop('disabled', false);
+
+      if (anton.IsRequest(res)) {
+        amodal.hide();
+        Swal.fire('Saved', isEdit ? 'Timeline update saved.' : 'Timeline update added.', 'success');
+        if (res.message && res.message.project) {
+          renderProjectDetail(res.message.project);
+        } else {
+          await loadProjectDetail();
+        }
+      } else {
+        Swal.fire('Error', res.message || 'Could not save timeline update.', 'error');
+      }
+    });
+  }
+
+  function openEditProjectModal() {
+    if (!currentProject) return;
+    const p = currentProject;
+
+    const clientOptions = CLIENTS.map(c =>
+      `<option value="${c.pk}" ${p.client?.pk === c.pk ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
+    ).join('');
+
+    const typeOptions = TYPE_CHOICES.map(t =>
+      `<option value="${t.val}" ${p.type === t.val ? 'selected' : ''}>${escapeHtml(t.label)}</option>`
+    ).join('');
+
+    const bodyHtml = `
+      <div class="mb-3">
+        <label class="form-label">Client</label>
+        <select id="ep_client" class="form-select">${clientOptions}</select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Type</label>
+        <select id="ep_type" class="form-select">${typeOptions}</select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Title</label>
+        <input type="text" id="ep_title" class="form-control" value="${escapeHtml(p.title)}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea id="ep_description" class="form-control" rows="4">${escapeHtml(p.description)}</textarea>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">SEO Description</label>
+        <textarea id="ep_seo_desc" class="form-control" rows="2">${escapeHtml(p.seo_description)}</textarea>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">SEO Keywords</label>
+        <input type="text" id="ep_seo_kw" class="form-control" value="${escapeHtml(p.seo_keywords)}">
+      </div>
+    `;
+
+    amodal.setTitleText('Edit Project');
+    amodal.setBodyHtml(bodyHtml);
+    amodal.setFooterHtml(`
+      <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+      <button type="button" class="btn btn-primary" id="saveEditProjectBtn">Save Changes</button>
+    `);
+    amodal.show();
+
+    $('#saveEditProjectBtn').off('click').on('click', async function () {
+      const payload = {
+        pk: p.pk,
+        client_pk: $('#ep_client').val(),
+        type: $('#ep_type').val(),
+        title: ($('#ep_title').val() || '').trim(),
+        description: ($('#ep_description').val() || '').trim(),
+        seo_description: ($('#ep_seo_desc').val() || '').trim(),
+        seo_keywords: ($('#ep_seo_kw').val() || '').trim(),
+      };
+
+      const res = await pm.updateProject(payload);
+      if (anton.IsRequest(res)) {
+        amodal.hide();
+        Swal.fire('Updated', 'Project details updated.', 'success');
+        renderProjectDetail(res.message);
+      } else {
+        Swal.fire('Error', res.message || 'Update failed.', 'error');
+      }
+    });
+  }
+
+  $(document).ready(function () {
+    loadProjectDetail();
+
+    $('#addTimelineBtn').on('click', function () {
+      openTimelineModal(null);
+    });
+
+    $('#editProjectBtn').on('click', openEditProjectModal);
+
+    $('#toggleStatusBtn').on('click', async function () {
+      if (!currentProject) return;
+      const closing = !currentProject.is_closed;
+      const res = await pm.updateProject({
+        pk: currentProject.pk,
+        is_closed: closing,
+        is_open: !closing,
+      });
+      if (anton.IsRequest(res)) {
+        renderProjectDetail(res.message);
+      } else {
+        Swal.fire('Error', res.message || 'Could not update status.', 'error');
+      }
+    });
+
+    $(document).on('click', '.edit-timeline', function () {
+      if (!currentProject) return;
+      const pk = $(this).data('pk');
+      const item = (currentProject.timeline || []).find(t => t.pk === pk);
+      if (item) openTimelineModal(item);
+    });
+
+    $(document).on('click', '.delete-timeline', async function () {
+      const pk = $(this).data('pk');
+      const title = $(this).data('title');
+      const confirm = await Swal.fire({
+        title: 'Delete Timeline Update?',
+        text: `Remove "${title}" from the timeline?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete',
+      });
+      if (!confirm.isConfirmed) return;
+
+      const res = await pm.deleteTimeline(pk);
+      if (anton.IsRequest(res)) {
+        Swal.fire('Deleted', 'Timeline update removed.', 'success');
+        renderProjectDetail(res.message);
+      } else {
+        Swal.fire('Error', res.message || 'Could not delete timeline update.', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}

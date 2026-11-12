@@ -2,21 +2,62 @@
 {% load static %}
 
 {% block body %}
+<style>
+    /* Modern Form styling */
+    .fs-7 {
+        font-size: 0.8rem;
+        letter-spacing: 0.05rem;
+    }
+
+    .file-upload-wrapper {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border-style: dashed !important;
+        background-color: #f9fafb !important;
+    }
+
+    .file-upload-wrapper:hover {
+        border-color: #0d6efd !important;
+        background-color: #f1f5f9 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .file-upload-wrapper.dragover {
+        border-color: #0d6efd !important;
+        background-color: #eff6ff !important;
+        transform: scale(1.01);
+    }
+
+    .hover-shadow {
+        transition: box-shadow 0.2s ease-in-out;
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Document list modal styling */
+    .table-hover tbody tr:hover {
+        background-color: #f8fafc;
+    }
+</style>
 
 <div class="card-header">
     <div class="d-flex justify-content-between">
         <div class="w-50 d-flex">
             <button id="create_grn" class="btn btn-primary ms-2"><i class="bi bi-plus"></i> New</button>
-            <button id="previous_grn" {% if last_grn_prev_row == 0 %} disabled {% endif %} class="btn btn-info ms-2"><i class="bi bi-caret-left-fill"></i></button>
-            <button id="next_grn" {% if last_grn_next_row == 0 %} disabled {% endif %} class="btn btn-info ms-2"><i class="bi bi-caret-right-fill"></i></button>
+            <button id="previous_grn" {% if last_grn_prev_row == 0 %} disabled {% endif %} class="btn btn-info ms-2"><i
+                    class="bi bi-caret-left-fill"></i></button>
+            <button id="next_grn" {% if last_grn_next_row == 0 %} disabled {% endif %} class="btn btn-info ms-2"><i
+                    class="bi bi-caret-right-fill"></i></button>
         </div>
         <div class="w-50 d-flex justify-content-end align-items-center">
             <button id="edit" class="btn btn-warning ms-2">Edit</button>
-            <button id="post" class="btn btn-success ms-2" {% if last_grn_status == 'Posted' %}disabled{% endif %}>Post</button>
-            <button id="unpost" class="btn btn-danger ms-2" {% if last_grn_status == 'Posted' %} {%else%}disabled{% endif %}>Unpost</button>
-            <button id="delete" class="btn btn-warning ms-2" {% if last_grn_status == 'Posted' %} {%else%}disabled{% endif %}>Delete</button>
+            <button id="post" class="btn btn-success ms-2" {% if last_grn_status == 'Posted'%}disabled{%endif%}>Post</button>
+            <button id="unpost" class="btn btn-danger ms-2" {% if last_grn_status == 'Posted' %}{%else%}disabled{%endif%}>Unpost</button>
+            <button id="delete" class="btn btn-warning ms-2" {% if last_grn_status == 'Posted' %} {%else%}disabled{%endif%}>Delete</button>
             <button id="print" class="btn btn-info ms-2"><i class="bi bi-printer"></i></button>
-            
+            <button id="files" class="btn btn-info ms-2"><i class="bi bi-file"></i></button>
+
         </div>
     </div>
 </div>
@@ -72,7 +113,7 @@
                     <label for="grn_type" class="col-sm-4 col-form-label">GRN Type</label>
                     <div class="col-sm-8">
                         <input type="text" value="" disabled class="form-control" id="grn_type" name="grn_type">
-                    
+
                     </div>
                 </div>
                 <div class="form-group row mb-2">
@@ -83,7 +124,7 @@
                 </div>
                 <div class="form-group row mb-2">
                     <label for="created_by" class="col-sm-4 col-form-label">Created By</label>
-                    <div class="col-sm-8">  
+                    <div class="col-sm-8">
                         <input type="text" value="" disabled class="form-control" id="created_by" name="created_by">
                     </div>
                 </div>
@@ -93,7 +134,7 @@
         <div class="row my-2 h-75 overflow-auto">
             <div class="col-md-12" style="background-color: #d0d0d0;">
                 <div class="table-responsive">
-                    
+
                     <table class="table table-bordered table-sm">
                         <thead>
                             <tr>
@@ -134,17 +175,18 @@
     let next_row = "";
     let prev_row = "";
 
-    async function load_grn(id){
+    async function load_grn(id) {
         let payload = {
-            module:'grn',
-            data:{
-                id:id
+            module: 'grn',
+            data: {
+                id: id
             }
         }
 
-        await api.v2('VIEW',payload,'/ssml/api/').then(response => {
-            if(anton.IsRequest(response)){
+        await api.v2('VIEW', payload, '/ssml/api/').then(response => {
+            if (anton.IsRequest(response)) {
                 let grn = response.message;
+                console.table(grn)
                 $('#supplier').val(grn.supplier.supplier_name);
                 $('#grn_no').val(grn.grn_no);
                 $('#grn_date').val(grn.grn_date);
@@ -157,29 +199,29 @@
                 $('#grn_id').val(grn.id);
                 $('#location').val(grn.location)
 
-                if(grn.is_posted){
-                    $('#post').attr('disabled',true);
-                    $('#edit').attr('disabled',true);
-                    $('#unpost').attr('disabled',false)
-                    $('#delete').attr('disabled',true)
+                if (grn.is_posted) {
+                    $('#post').attr('disabled', true);
+                    $('#edit').attr('disabled', true);
+                    $('#unpost').attr('disabled', false)
+                    $('#delete').attr('disabled', true)
                 } else {
-                    $('#post').attr('disabled',false);
-                    $('#edit').attr('disabled',false);
-                    $('#unpost').attr('disabled',true)
-                    $('#delete').attr('disabled',false)
+                    $('#post').attr('disabled', false);
+                    $('#edit').attr('disabled', false);
+                    $('#unpost').attr('disabled', true)
+                    $('#delete').attr('disabled', false)
                 }
 
                 next_row = grn.next_row;
                 prev_row = grn.prev_row;
-                if(next_row > 0){
-                    $('#next_grn').prop('disabled',false);
+                if (next_row > 0) {
+                    $('#next_grn').prop('disabled', false);
                 } else {
-                    $('#next_grn').prop('disabled',true);
+                    $('#next_grn').prop('disabled', true);
                 }
-                if(prev_row > 0){
-                    $('#previous_grn').prop('disabled',false);
+                if (prev_row > 0) {
+                    $('#previous_grn').prop('disabled', false);
                 } else {
-                    $('#previous_grn').prop('disabled',true);
+                    $('#previous_grn').prop('disabled', true);
                 }
 
                 let transactions = grn.transactions;
@@ -187,10 +229,10 @@
                 row_list.empty();
                 let line = 1;
                 transactions.forEach(transaction => {
-                    console.table(transaction);
+
                     let qty = transaction.qty;
                     let pack_qty = transaction.pack_qty;
-                    console.log(qty);
+
                     row_list.append(`<tr>
                         <td>${line}</td>
                         <td>${transaction.barcode}</td>
@@ -205,6 +247,141 @@
                     line++;
                 });
                 $('#row_list').append(row_list);
+                $('#files').click(function () {
+                    let trx = ``;
+
+                    if (grn.documents && grn.documents.length > 0) {
+                        grn.documents.forEach(doc => {
+                            trx += `
+                                <tr class="align-middle">
+                                    <td class="fw-semibold text-dark">${doc.title}</td>
+                                    <td class="text-muted small">${doc.description || '<span class="fst-italic text-light-emphasis">No description</span>'}</td>
+                                    <td class="text-center">
+                                        <a href="javascript:void(0)" class="btn btn-sm btn-outline-primary entry_document px-3 py-1" data-url="${doc.file}">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    }
+
+                    let html = ``;
+                    if (trx === ``) {
+                        html = `
+                            <div class="text-center py-5">
+                                <i class="bi bi-file-earmark-text text-muted display-4 d-block mb-3"></i>
+                                <h5 class="text-secondary fw-semibold">No Documents Found</h5>
+                                <p class="text-muted small">No documents have been attached to this GRN yet.</p>
+                            </div>
+                        `;
+                    } else {
+                        html = `
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border-0 mb-0">
+                                    <thead class="table-light text-uppercase fs-7 text-secondary">
+                                        <tr>
+                                            <th scope="col" class="border-0">Title</th>
+                                            <th scope="col" class="border-0">Description</th>
+                                            <th scope="col" class="border-0 text-center" style="width: 120px;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="border-top-0">
+                                        ${trx}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    }
+
+                    amodal.setBodyHtml(html);
+                    amodal.setTitleText("Files");
+                    amodal.show();
+                    amodal.setFooterHtml(`<button class="btn btn-success" id="upload_file_grn">Add Document</button>`);
+
+                    $('#upload_file_grn').click(function () {
+                        amodal.setSize('L');
+
+                        let fm = `
+                            <form id="grn_doc_form" method="post" action="/ssml/upload-document/" enctype="multipart/form-data">
+                                <input type="hidden" name="ref" value="${grn.grn_no}" id="ref">
+                                <input type="hidden" name="doc_type" value="GRN" id="doc_type">
+
+                                <div class="mb-3">
+                                    <label for="title" class="form-label fw-semibold text-secondary text-uppercase fs-7">Document Title <span class="text-danger">*</span></label>
+                                    <input type="text" id="title" name="title" required class="form-control border-light-subtle rounded-3 shadow-sm" placeholder="e.g. Delivery Challan, Invoice, Gate Pass">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label fw-semibold text-secondary text-uppercase fs-7">Description <span class="text-danger">*</span></label>
+                                    <textarea id="description" name="description" required class="form-control border-light-subtle rounded-3 shadow-sm" rows="3" placeholder="Provide a brief description of the document..."></textarea>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold text-secondary text-uppercase fs-7">Upload Document <span class="text-danger">*</span></label>
+                                    <div class="file-upload-wrapper position-relative border border-2 border-dashed border-primary rounded-3 p-4 text-center bg-light transition-all hover-shadow cursor-pointer">
+                                        <input type="file" id="document" name="document" required class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" style="z-index: 2;">
+                                        <div class="file-upload-message py-2">
+                                            <i class="bi bi-cloud-arrow-up text-primary fs-1 display-5 d-block mb-2"></i>
+                                            <span class="fw-semibold text-dark d-block">Drag & drop your file here or <span class="text-primary text-decoration-underline">browse</span></span>
+                                            <span class="text-muted small">Supports PDF, Images, DOCX</span>
+                                        </div>
+                                        <div class="file-upload-preview d-none py-2 text-success">
+                                            <i class="bi bi-file-earmark-check fs-1 d-block mb-2"></i>
+                                            <span class="fw-bold filename-display d-block"></span>
+                                            <span class="small text-muted">Click or drag again to replace</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        `;
+
+                        amodal.setBodyHtml(fm);
+                        amodal.setTitleText("Upload File");
+                        amodal.setFooterHtml(`
+                            <button class="btn btn-light border-0 me-2" data-bs-dismiss="modal">Cancel</button>
+                            <button class="btn btn-success px-4" id="upload_file_upload">Upload</button>
+                        `);
+
+                        // File selection preview update
+                        $('#document').on('change', function (e) {
+                            let fileName = e.target.files[0] ? e.target.files[0].name : '';
+                            if (fileName) {
+                                $('.file-upload-message').addClass('d-none');
+                                $('.file-upload-preview').removeClass('d-none');
+                                $('.filename-display').text(fileName);
+                            } else {
+                                $('.file-upload-message').removeClass('d-none');
+                                $('.file-upload-preview').addClass('d-none');
+                                $('.filename-display').text('');
+                            }
+                        });
+
+                        // Drag over style class toggling
+                        $('#document').on('dragenter dragover', function () {
+                            $('.file-upload-wrapper').addClass('dragover');
+                        });
+                        $('#document').on('dragleave drop', function () {
+                            $('.file-upload-wrapper').removeClass('dragover');
+                        });
+
+                        $('#upload_file_upload').click(function () {
+                            let ids = ['title', 'document', 'description', 'ref', 'doc_type'];
+
+                            if (anton.validateInputs(ids)) {
+                                $('#grn_doc_form').submit();
+                            } else {
+                                kasa.error("Invalid Form");
+                            }
+                        });
+                    });
+
+                    // Event delegation for dynamically added elements
+                    $(document).off('click', '.entry_document').on('click', '.entry_document', function () {
+                        let xurl = $(this).data('url');
+                        windowPopUp(xurl, "FILE", 1200, 600);
+                    });
+                })
             } else {
                 kasa.response(response);
             }
@@ -213,28 +390,28 @@
             kasa.response(error);
         });
     }
-    $(document).ready(function(){
+    $(document).ready(function () {
 
         load_grn(`{{last_grn.id}}`);
 
-        $('#create_grn').click(function(){
+        $('#create_grn').click(function () {
             window.location.href = '{% url "grn_add" %}';
         });
 
-        $('#post').click(async function(){
+        $('#post').click(async function () {
             let payload = {
-                module:'post_grn',
-                data:{
-                    id:`${$('#grn_id').val()}`,
-                    mypk:`${$('#mypk').val()}`
+                module: 'post_grn',
+                data: {
+                    id: `${$('#grn_id').val()}`,
+                    mypk: `${$('#mypk').val()}`
                 }
-            }   
-            if(confirm("Are you sure?")){
-                await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+            }
+            if (confirm("Are you sure?")) {
+                await api.v2('PATCH', payload, '/ssml/api/').then(response => {
                     kasa.response(response);
-                    if(anton.IsRequest(response)){
+                    if (anton.IsRequest(response)) {
                         console.table(response);
-                        {#load_grn(`${$('#grn_id').val()}`);#}
+                        load_grn(`${$('#grn_id').val()}`)
                     }
                 }).catch(error => {
                     console.log(error);
@@ -242,31 +419,31 @@
             } else {
                 kasa.info("Operation Canceled")
             }
-            
+
         })
 
-        $('#previous_grn').click(function(){
+        $('#previous_grn').click(function () {
             load_grn(prev_row);
         });
 
-        $('#next_grn').click(function(){
+        $('#next_grn').click(function () {
             load_grn(next_row);
         });
 
-        $('#edit').click(function(){
+        $('#edit').click(function () {
             window.location.href = '{% url "grn_edit" last_grn.id %}';
         });
 
-        $('#print').click(async function(){
+        $('#print').click(async function () {
             let payload = {
-                module:'print_grn',
-                data:{
-                    id:`${$('#grn_id').val()}`
+                module: 'print_grn',
+                data: {
+                    id: `${$('#grn_id').val()}`
                 }
             }
-            await api.v2('VIEW',payload,'/ssml/api/').then(response => {
+            await api.v2('VIEW', payload, '/ssml/api/').then(response => {
                 // kasa.response(response);
-                if(anton.IsRequest(response)){
+                if (anton.IsRequest(response)) {
                     let grn = response.message;
                     let url = grn;
                     anton.viewFile(`/${url}`, 'GRN Print');
@@ -278,17 +455,20 @@
             });
         });
 
-        $('#unpost').click(async function(){
+
+
+
+        $('#unpost').click(async function () {
             let payload = {
-                module:'unpost_grn',
-                data:{
-                    id:`${$('#grn_id').val()}`
+                module: 'unpost_grn',
+                data: {
+                    id: `${$('#grn_id').val()}`
                 }
             }
-            if(confirm("Are you sure?")){
-                await api.v2('PATCH',payload,'/ssml/api/').then(response => {
+            if (confirm("Are you sure?")) {
+                await api.v2('PATCH', payload, '/ssml/api/').then(response => {
                     kasa.response(response);
-                    if(anton.IsRequest(response)){
+                    if (anton.IsRequest(response)) {
                         load_grn(`${$('#grn_id').val()}`);
                     }
                 }).catch(error => {
@@ -299,17 +479,17 @@
             }
         });
 
-        $('#delete').click(async function(){
+        $('#delete').click(async function () {
             let payload = {
-                module:'grn',
-                data:{
-                    id:`${$('#grn_id').val()}`
+                module: 'grn',
+                data: {
+                    id: `${$('#grn_id').val()}`
                 }
             }
-            if(confirm("Are you sure?")){
-                await api.v2('DELETE',payload,'/ssml/api/').then(response => {
+            if (confirm("Are you sure?")) {
+                await api.v2('DELETE', payload, '/ssml/api/').then(response => {
                     kasa.response(response);
-                    if(anton.IsRequest(response)){
+                    if (anton.IsRequest(response)) {
                         load_grn(`${$('#grn_id').val()}`);
                     }
                 }).catch(error => {
@@ -320,14 +500,14 @@
             }
         });
 
-        $('#searchQuery').on('keyup', function(event){
+        $('#searchQuery').on('keyup', function (event) {
             let key = event.key;
-            if(key === 'Enter'){
+            if (key === 'Enter') {
                 let value = $(this).val();
                 load_grn(value);
             }
         });
-        
+
     });
 </script>
 

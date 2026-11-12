@@ -1,5 +1,6 @@
 import os
 from calendar import monthrange
+from uuid import uuid4
 
 import now
 from django.db.models import Model
@@ -12,7 +13,7 @@ from ocean.settings import COMPANY_DETAILS
 from ssml.helper import generate_entry_entry
 from ssml.models import ServiceOrderType, InstallationTypePhaseRate, AccountLedger, \
     JournalVoucherHd, JournalVoucherTransactions, FocInvoiceHd, FocInvoiceTransactions, FocInvoiceAssets, \
-    FocComplianceType, EcgInvoiceAssets, EcgInvoiceTransactions, EcgInvoiceHd, FocCompliance, Agents
+    FocComplianceType, EcgInvoiceAssets, EcgInvoiceTransactions, EcgInvoiceHd, FocCompliance, Agents, MmsToMms
 
 
 def safe_add_image_to_pdf(pdf, image_path, x, y, w, h=None):
@@ -116,6 +117,23 @@ def interface(request):
                                           city=city,postal_code=postal_code,gh_card_no=gh_card_no,gh_post_code=gh_post_code,created_by=created_by)
 
                 success_response['message'] = "Contractor Created Successfully"
+
+            elif module == 'mms_to_mms':
+                new_sts_no = data.get('new_sts_no')
+                old_sts_no = data.get('old_sts_no')
+                old_service = ServiceOrder.objects.filter(new_meter=old_sts_no)
+                new_service = ServiceOrder.objects.filter(new_meter=new_sts_no)
+                reason = data.get('reason')
+
+                # todo:: Validate SPN, Validate Service Type
+
+                MmsToMms.objects.create(
+                    new=new_service,
+                    old=old_service,
+                    reason=reason
+                )
+
+                response = success_response
 
             elif module == 'link_phase_to_material':
                 phase = Phase.objects.get(pk=data.get('phase'))
@@ -274,7 +292,8 @@ def interface(request):
 
                                 # get service
                                 try:
-                                    installation = ServiceOrder.objects.get(spn=service_point_code)
+
+                                    installation = ServiceOrder.objects.get(spn=service_point_code,old_meter_no=meter_code)
                                     box, created = RetiredMetersBox.objects.get_or_create(
                                         box_no=retirement_code,
                                         location=installation.location
@@ -300,7 +319,9 @@ def interface(request):
                                     installation.save()
 
                                 except Exception as e:
-                                    print(str(e))
+                                    import traceback
+                                    line_no = e.__traceback__.tb_lineno
+                                    print(f"Error on line {line_no}: {e}")
                                 print("------------------------------------------------")
 
                             # Move file to 'done' subfolder
@@ -362,7 +383,7 @@ def interface(request):
 
                 d = datetime.strptime(invoice_date, '%Y-%m-%d').date()
 
-
+                from calendar import monthrange
                 first_day = date(d.year, d.month, 1)
                 last_day = date(d.year, d.month, monthrange(d.year, d.month)[1])
                 services = ServiceOrder.objects.filter(
@@ -1967,6 +1988,30 @@ def interface(request):
                         contractor = Contractor.objects.get(id=id)
                         success_response['message'] = contractor.obj()
 
+                elif module == 'grn_report':
+                    start_date = data.get('grn_start_date')
+                    end_date = data.get('grn_end_date')
+                    import openpyxl
+                    book = openpyxl.Workbook()
+                    sheet = book.active
+
+                    hd = ["LOCATION","SUPPLIER",'DATE','ENTRY',"POSTED","DOCUMENTS"]
+                    sheet.append(hd)
+
+                    for hd in Grn.objects.filter(grn_date__range=(start_date, end_date)):
+                        li = [hd.location.loc_name,hd.supplier.supplier_name,hd.grn_date,hd.grn_no,hd.is_posted,len(hd.docs())]
+                        print(li)
+                        sheet.append(li)
+
+                    import uuid
+                    file = uuid.uuid4().hex
+                    file = f"static/tmp/GRN-REPORT{file}.xlsx"
+
+                    book.save(file)
+                    success_response['message'] = file
+
+
+
                 elif module == 'foc_compliance':
                     success_response['message'] = [x.obj() for x in FocCompliance.objects.all()]
                     success_response['statuc_code'] = 200
@@ -2031,6 +2076,9 @@ def interface(request):
 
                     with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zf:
                         for finv in fq:
+                            # loop through months in dat range
+                            
+
                             invoice_file_name = finv.obj().get('invoice')
                             if invoice_file_name:
                                 invoice_full_path = f"static/tmp/{invoice_file_name}"
@@ -2038,6 +2086,8 @@ def interface(request):
                                     zf.write(invoice_full_path, arcname=invoice_file_name)
 
                     success_response['bundle'] = zip_file_path
+
+
 
                     # 2. Generate Professional Summary PDF
                     class MISPDF(FPDF):
@@ -2201,9 +2251,316 @@ def interface(request):
 
                     success_response['pdf'] = summary_pdf_path
 
+                elif module == 'foc_invoices_as_of':
+                    from datetime import datetime, date
+                    from calendar import monthrange
+                    import os
+                    import uuid
+                    import zipfile
+                    from django.db.models import Sum
+                    from fpdf import FPDF
 
+                    os.makedirs('static/tmp', exist_ok=True)
 
+                    start_date_raw = data.get('start_date')
+                    end_date_raw = data.get('end_date')
 
+                    # 1. Validate start and end date
+                    if not start_date_raw or not end_date_raw:
+                        success_response['status_code'] = 400
+                        success_response['message'] = "start_date and end_date are required"
+                    else:
+                        try:
+                            start_date = datetime.strptime(start_date_raw, '%Y-%m-%d').date() if isinstance(start_date_raw, str) else start_date_raw
+                            end_date = datetime.strptime(end_date_raw, '%Y-%m-%d').date() if isinstance(end_date_raw, str) else end_date_raw
+                        except (ValueError, TypeError) as e:
+                            success_response['status_code'] = 400
+                            success_response['message'] = f"Invalid date format (expected YYYY-MM-DD): {e}"
+                        else:
+                            if start_date > end_date:
+                                success_response['status_code'] = 400
+                                success_response['message'] = "start_date cannot be greater than end_date"
+                            else:
+                                # 2. Query all FOC invoices within the date range
+                                fq = FocInvoiceHd.objects.filter(
+                                    invoice_date__gte=start_date,
+                                    invoice_date__lte=end_date
+                                ).order_by('invoice_date')
+
+                                gross_total = fq.aggregate(Sum('gross_amount'))['gross_amount__sum'] or 0
+                                taxable_total = fq.aggregate(Sum('taxable_amount'))['taxable_amount__sum'] or 0
+                                tax_total = fq.aggregate(Sum('tax_amount'))['tax_amount__sum'] or 0
+                                wht_total = fq.aggregate(Sum('wht_amount'))['wht_amount__sum'] or 0
+                                net_total = fq.aggregate(Sum('net_amount'))['net_amount__sum'] or 0
+                                service_total = fq.aggregate(Sum('service_charge'))['service_charge__sum'] or 0
+
+                                # 3. Group by FOC (Contractor) and build per-FOC ZIPs
+                                foc_ids = list(fq.values_list('foc_id', flat=True).distinct())
+                                contractors = Contractor.objects.filter(id__in=foc_ids).order_by('company')
+
+                                foc_summary_list = []
+                                master_zip_name = f"all_foc_invoices_{uuid.uuid4().hex[:6]}.zip"
+                                master_zip_path = f"static/tmp/{master_zip_name}"
+
+                                with zipfile.ZipFile(master_zip_path, 'w', zipfile.ZIP_DEFLATED) as master_zf:
+                                    for contractor in contractors:
+                                        c_invoices = fq.filter(foc=contractor).order_by('invoice_date')
+                                        c_gross = c_invoices.aggregate(Sum('gross_amount'))['gross_amount__sum'] or 0
+                                        c_taxable = c_invoices.aggregate(Sum('taxable_amount'))['taxable_amount__sum'] or 0
+                                        c_service = c_invoices.aggregate(Sum('service_charge'))['service_charge__sum'] or 0
+                                        c_wht = c_invoices.aggregate(Sum('wht_amount'))['wht_amount__sum'] or 0
+                                        c_net = c_invoices.aggregate(Sum('net_amount'))['net_amount__sum'] or 0
+
+                                        # Generate individual ZIP for this contractor
+                                        clean_name = "".join(c for c in contractor.company if c.isalnum() or c in (' ', '_', '-')).strip().replace(' ', '_')
+                                        foc_zip_name = f"{clean_name}_invoices.zip"
+                                        foc_zip_path = f"static/tmp/{foc_zip_name}"
+
+                                        inv_records = []
+                                        with zipfile.ZipFile(foc_zip_path, 'w', zipfile.ZIP_DEFLATED) as foc_zf:
+                                            for finv in c_invoices:
+                                                inv_file_name = finv.invoice_pdf()
+                                                if inv_file_name:
+                                                    inv_full_path = f"static/tmp/{inv_file_name}"
+                                                    if os.path.exists(inv_full_path):
+                                                        foc_zf.write(inv_full_path, arcname=inv_file_name)
+
+                                                inv_records.append({
+                                                    'entry_no': finv.entry_no,
+                                                    'date': str(finv.invoice_date),
+                                                    'gross_amount': float(finv.gross_amount),
+                                                    'service_charge': float(finv.service_charge),
+                                                    'wht_amount': float(finv.wht_amount),
+                                                    'net_amount': float(finv.net_amount),
+                                                    'invoice_pdf': inv_file_name
+                                                })
+
+                                        # Add the contractor's individual zip to the master bundle
+                                        if os.path.exists(foc_zip_path):
+                                            master_zf.write(foc_zip_path, arcname=foc_zip_name)
+
+                                        foc_summary_list.append({
+                                            'foc': contractor.company,
+                                            'file': foc_zip_path,
+                                            'gross': float(c_gross),
+                                            'service_fee': float(c_service),
+                                            'wht': float(c_wht),
+                                            'net': float(c_net),
+                                            'foc_id': contractor.pk,
+                                            'bank_name': contractor.bank_name or 'N/A',
+                                            'bank_acct_number': contractor.bank_acct_number or 'N/A',
+                                            'bank_branch': contractor.bank_branch or 'N/A',
+                                            'invoices_count': c_invoices.count(),
+                                        })
+
+                                # 4. Generate Professional PDF Summary Report
+                                class FocSummaryPDF(FPDF):
+                                    def header(self):
+                                        logo_path = 'static/general/logo.png'
+                                        if os.path.exists(logo_path):
+                                            self.image(logo_path, 10, 10, 35)
+
+                                        self.set_font('Arial', 'B', 16)
+                                        self.set_text_color(44, 62, 80)
+                                        self.set_xy(50, 10)
+                                        self.cell(0, 10, str(COMPANY_DETAILS.get('name', '')), 0, 1, 'L')
+
+                                        self.set_font('Arial', '', 9)
+                                        self.set_text_color(100, 100, 100)
+                                        self.set_x(50)
+                                        self.cell(0, 4, str(COMPANY_DETAILS.get('address', '')), 0, 1, 'L')
+                                        self.set_x(50)
+                                        self.cell(0, 4, f"{COMPANY_DETAILS.get('email', '')} | {COMPANY_DETAILS.get('phone', '')}", 0, 1, 'L')
+
+                                        self.ln(10)
+                                        self.set_draw_color(44, 62, 80)
+                                        self.line(10, 35, 200, 35)
+                                        self.ln(5)
+
+                                    def footer(self):
+                                        self.set_y(-15)
+                                        self.set_font('Arial', 'I', 8)
+                                        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
+                                pdf = FocSummaryPDF()
+                                pdf.set_auto_page_break(auto=True, margin=15)
+                                pdf.add_page()
+
+                                # Report Title & Period
+                                pdf.set_font('Arial', 'B', 14)
+                                pdf.set_text_color(0, 0, 0)
+                                pdf.cell(0, 10, 'FOC INVOICES SUMMARY REPORT', 0, 1, 'C')
+                                pdf.set_font('Arial', '', 10)
+                                pdf.cell(0, 5, f"Period: {start_date.strftime('%d %b, %Y')} to {end_date.strftime('%d %b, %Y')}", 0, 1, 'C')
+                                pdf.ln(8)
+
+                                # Metric Cards: Gross, Service Fee, WHT (5%), Net
+                                pdf.set_fill_color(248, 249, 250)
+                                pdf.set_draw_color(227, 230, 240)
+
+                                card_w = 45
+                                gap = 3.33
+                                curr_x = 10
+                                curr_y = pdf.get_y()
+
+                                metrics = [
+                                    ("Gross Amount", gross_total, (0, 0, 0)),
+                                    ("Service Fee", service_total, (23, 162, 184)),
+                                    ("WHT (5%)", wht_total, (220, 53, 69)),
+                                    ("Total Net", net_total, (40, 167, 69))
+                                ]
+
+                                for title, val, color in metrics:
+                                    pdf.rect(curr_x, curr_y, card_w, 22, 'FD')
+                                    pdf.set_xy(curr_x, curr_y + 3)
+                                    pdf.set_font('Arial', 'B', 8)
+                                    pdf.set_text_color(100, 100, 100)
+                                    pdf.cell(card_w, 5, title.upper(), 0, 1, 'C')
+
+                                    pdf.set_xy(curr_x, curr_y + 10)
+                                    pdf.set_font('Arial', 'B', 12)
+                                    pdf.set_text_color(*color)
+                                    pdf.cell(card_w, 10, f"{val:,.2f}", 0, 1, 'C')
+                                    curr_x += card_w + gap
+
+                                pdf.set_xy(10, curr_y + 28)
+                                pdf.set_text_color(0, 0, 0)
+
+                                def print_table_header(pdf_obj):
+                                    pdf_obj.set_font('Arial', 'B', 9)
+                                    pdf_obj.set_fill_color(44, 62, 80)
+                                    pdf_obj.set_text_color(255, 255, 255)
+
+                                    pdf_obj.cell(12, 8, 'NO', 1, 0, 'C', True)
+                                    pdf_obj.cell(62, 8, ' FOC / CONTRACTOR', 1, 0, 'L', True)
+                                    pdf_obj.cell(29, 8, 'GROSS', 1, 0, 'R', True)
+                                    pdf_obj.cell(29, 8, 'SERVICE FEE', 1, 0, 'R', True)
+                                    pdf_obj.cell(27, 8, 'WHTAX (5%)', 1, 0, 'R', True)
+                                    pdf_obj.cell(31, 8, 'NET', 1, 1, 'R', True)
+
+                                    pdf_obj.set_font('Arial', '', 8)
+                                    pdf_obj.set_text_color(0, 0, 0)
+
+                                print_table_header(pdf)
+
+                                if len(foc_summary_list) == 0:
+                                    pdf.set_font('Arial', 'I', 10)
+                                    pdf.cell(190, 12, 'No FOC invoices found for the specified period.', 1, 1, 'C')
+                                else:
+                                    for idx, foc_item in enumerate(foc_summary_list, 1):
+                                        if pdf.get_y() > 240:
+                                            pdf.add_page()
+                                            print_table_header(pdf)
+
+                                        # Contractor Main Row
+                                        pdf.set_font('Arial', 'B', 8)
+                                        pdf.cell(12, 8, str(idx), 1, 0, 'C')
+
+                                        pdf.set_font('Arial', '', 8)
+                                        pdf.cell(62, 8, f" {foc_item['foc'][:32]}", 1, 0, 'L')
+                                        pdf.cell(29, 8, f"{foc_item['gross']:,.2f}", 1, 0, 'R')
+                                        pdf.cell(29, 8, f"{foc_item['service_fee']:,.2f}", 1, 0, 'R')
+                                        pdf.cell(27, 8, f"{foc_item['wht']:,.2f}", 1, 0, 'R')
+                                        pdf.set_font('Arial', 'B', 8)
+                                        pdf.set_text_color(40, 167, 69)
+                                        pdf.cell(31, 8, f"{foc_item['net']:,.2f}", 1, 1, 'R')
+                                        pdf.set_text_color(0, 0, 0)
+
+                                        # Bank details sub-row
+                                        curr_y = pdf.get_y()
+                                        pdf.set_font('Arial', 'I', 7)
+                                        pdf.set_text_color(80, 80, 80)
+                                        pdf.set_fill_color(252, 252, 252)
+                                        bank_info = f"BANK: {foc_item['bank_name']} | A/C: {foc_item['bank_acct_number']} | BRANCH: {foc_item['bank_branch']}"
+                                        pdf.cell(12, 6, '', 1, 0, 'C', True)
+                                        pdf.rect(14, curr_y + 1, 4, 4)
+                                        pdf.cell(178, 6, f" {bank_info}", 1, 1, 'L', True)
+                                        pdf.set_font('Arial', '', 8)
+                                        pdf.set_text_color(0, 0, 0)
+
+                                    # Total Row
+                                    pdf.set_font('Arial', 'B', 9)
+                                    pdf.set_fill_color(240, 240, 240)
+                                    pdf.cell(74, 10, 'TOTALS', 1, 0, 'R', True)
+                                    pdf.cell(29, 10, f"{gross_total:,.2f}", 1, 0, 'R', True)
+                                    pdf.cell(29, 10, f"{service_total:,.2f}", 1, 0, 'R', True)
+                                    pdf.cell(27, 10, f"{wht_total:,.2f}", 1, 0, 'R', True)
+                                    pdf.set_text_color(40, 167, 69)
+                                    pdf.cell(31, 10, f"{net_total:,.2f}", 1, 1, 'R', True)
+                                    pdf.set_text_color(0, 0, 0)
+
+                                # Approvals & Signatures Section
+                                pdf.ln(12)
+                                y_sign = pdf.get_y()
+                                if y_sign > 230:
+                                    pdf.add_page()
+                                    y_sign = pdf.get_y()
+
+                                def draw_sign_block(x, title):
+                                    pdf.set_xy(x, y_sign)
+                                    pdf.set_font('Arial', 'B', 9)
+                                    pdf.set_text_color(44, 62, 80)
+                                    pdf.cell(60, 7, title, 0, 1, 'L')
+                                    pdf.set_draw_color(200, 200, 200)
+                                    pdf.line(x, y_sign + 7, x + 55, y_sign + 7)
+
+                                    pdf.set_font('Arial', '', 8)
+                                    pdf.set_text_color(0, 0, 0)
+                                    pdf.set_xy(x, y_sign + 10)
+                                    pdf.cell(60, 6, "Name: __________________________", 0, 1, 'L')
+                                    pdf.set_x(x)
+                                    pdf.cell(60, 6, "Position: _______________________", 0, 1, 'L')
+                                    pdf.set_x(x)
+                                    pdf.cell(60, 6, "Date: __________________________", 0, 1, 'L')
+                                    pdf.set_x(x)
+                                    pdf.cell(60, 10, "Sign: __________________________", 0, 1, 'L')
+
+                                draw_sign_block(10, "PREPARED BY")
+                                draw_sign_block(75, "VERIFIED BY")
+                                draw_sign_block(140, "APPROVED BY")
+
+                                summary_pdf_name = f"foc_summary_{uuid.uuid4().hex[:6]}.pdf"
+                                summary_pdf_path = f"static/tmp/{summary_pdf_name}"
+                                pdf.output(summary_pdf_path)
+
+                                # 5. Generate Excel Matrix Report
+                                excel_file_path = None
+                                try:
+                                    from ssml.foc_reports import generate_foc_invoices_excel
+                                    excel_rep = generate_foc_invoices_excel(start_date, end_date)
+                                    excel_file_path = excel_rep.get('file_path')
+                                except Exception as exc_err:
+                                    print(f"Error generating FOC Excel matrix: {exc_err}")
+
+                                # 6. Populate Response
+                                success_response['pdf'] = summary_pdf_path
+                                success_response['bundle'] = master_zip_path
+                                success_response['excel'] = excel_file_path
+                                success_response['gross_total'] = float(gross_total)
+                                success_response['service_fee_total'] = float(service_total)
+                                success_response['wht_total'] = float(wht_total)
+                                success_response['net_total'] = float(net_total)
+                                success_response['message'] = [
+                                    {
+                                        'foc': item['foc'],
+                                        'file': item['file'],
+                                        'gross': item['gross'],
+                                        'service_fee': item['service_fee'],
+                                        'wht': item['wht'],
+                                        'net': item['net']
+                                    }
+                                    for item in foc_summary_list
+                                ]
+
+                elif module == 'foc_excel_matrix':
+                    from ssml.foc_reports import generate_foc_invoices_excel
+                    start_date_raw = data.get('start_date')
+                    end_date_raw = data.get('end_date')
+                    if not start_date_raw or not end_date_raw:
+                        raise Exception("start_date and end_date are required")
+                    excel_rep = generate_foc_invoices_excel(start_date_raw, end_date_raw)
+                    success_response['message'] = excel_rep.get('file_path')
+                    success_response['report'] = excel_rep
 
                 elif module == 'foc_compliance_type':
                     success_response['message'] = [ct.obj() for ct in FocComplianceType.objects.all().order_by('name')]
@@ -4793,8 +5150,6 @@ def interface(request):
 
                 success_response['message'] = "Invoice Validated Successfully"
 
-
-
             elif module == 'prop_patch':
                 # update service materials
                 barcodes = {
@@ -5318,8 +5673,9 @@ def interface(request):
                             material = ServiceMaterials.objects.filter(service=service_type,phase=phase)
                         else:
                             item = InventoryMaterial.objects.get(pk=pk)
-                            material =ServiceMaterials.objects.filter(service=service_type,material=item,phase=phase)
+                            material = ServiceMaterials.objects.filter(service=service_type,material=item,phase=phase)
                         for mt in material:
+
                             try:
                             # create
                                 MaterialOrderItem.objects.create(
@@ -5334,6 +5690,8 @@ def interface(request):
                                 created += 1
                             except Exception as e:
                                 print("NO NEED")
+
+
 
                 success_response['message'] = f"UPDATED {updated}, CREATED:{created}"
 
@@ -5981,6 +6339,32 @@ def interface(request):
                 except Exception as e:
                     success_response['status_code'] = 400
                     success_response['message'] = f"Posting Error: {e}"
+
+            elif module == 'fix_foc_consumption':
+                start_date = data.get('start_date')
+                end_date = data.get('end_date')
+
+                it = MaterialOrderItem.objects.filter(
+                    service_order__service_date__gte=start_date,
+                    service_order__service_date__lte=end_date,
+                    material__max_use__gt=0
+                )
+
+
+                for mt in it:
+                    material = mt.material
+                    name = material.name
+                    issue_qty = material.max_use
+                    quantity = mt.quantity
+
+                    if quantity > issue_qty:
+                        print(name,f"MAX_CAP: {issue_qty},ISSUED:{quantity}")
+                        mt.quantity = issue_qty
+                        mt.save()
+
+                        print("Lets Go")
+
+
             else:
                 success_response['status_code'] = 505
                 success_response['message'] = "Invalid Module for PATCH"
