@@ -33,24 +33,38 @@ def interface(request):
         if method == 'PUT':
             success_response['message'] = "Data Added"
             if module == 'new_article':
-                owner = data.get('mypk')
-                title = data.get('title')
-                content = data.get('content')
-                author = User.objects.get(pk=owner)
-                tags = data.get('tags')
-                uni = f"{tags} {title}".replace(' ','-').lower().replace(':','-')
+                from blog.views import resolve_blog_meta
+                owner = data.get('mypk') or data.get('owner')
+                title = (data.get('title') or '').strip()
+                content = (data.get('content') or '').strip()
+                author = User.objects.get(pk=owner) if owner else None
+                tags = (data.get('tags') or '').strip()
+                custom_uni = data.get('uni')
+                custom_intro = data.get('intro')
+                custom_meta = data.get('meta')
+                scope = data.get('scope', 'public')
 
-                # make intro from content
-                intro = generate_text(
-                    f"Summarize this in one sentence, maximum 150 characters, plain text only, no markdown:\n\n{content}"
-                )   
-                # Save the object and get the pk
-                new_article = articles(uni=uni, article=content, author=author, tag=tags, title=title, intro=intro)
+                slug, intro, meta = resolve_blog_meta(
+                    title=title,
+                    content=content,
+                    custom_uni=custom_uni,
+                    custom_intro=custom_intro,
+                    custom_meta=custom_meta,
+                    tags=tags,
+                )
+
+                new_article = articles(
+                    uni=slug,
+                    article=content,
+                    author=author,
+                    tag=tags or 'General',
+                    title=title,
+                    intro=intro,
+                    meta=meta,
+                    scope=scope,
+                )
                 new_article.save()
-
-                # Access the pk of the just-created object
-                just_created_pk = new_article.pk
-                success_response['message'] = uni
+                success_response['message'] = slug
         elif method == 'VIEW':
             if module == 'article':
                 uni = data.get('uni','*')

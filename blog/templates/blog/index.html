@@ -1,58 +1,165 @@
-
 {% extends 'blog/base.html' %}
 {% load static %}
 
 {% block body %}
+<!-- Hero Section -->
+<div class="blog-hero mb-4">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <div class="d-inline-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary text-white px-2 py-1"><i class="bi bi-journal-text me-1"></i> Knowledge Base</span>
+                <span class="text-white-50 small">{{ total_count }} Article{{ total_count|pluralize }}</span>
+            </div>
+            <h1 class="h2 fw-bold text-white mb-2">Ocean Knowledge & Guides</h1>
+            <p class="text-white-50 mb-0" style="max-width: 650px;">
+                Explore tutorials, how-to guides, and in-depth walkthroughs designed to keep your workflows efficient and connected.
+            </p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+            <a href="{% url 'new-article' %}" class="btn btn-primary btn-lg shadow-sm px-4">
+                <i class="bi bi-pencil-square me-1"></i> Write New Article
+            </a>
+        </div>
+    </div>
+</div>
 
-    <div class="card-body h-100">
+<!-- Search & Category Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{% url 'blog-home' %}" class="row g-2 align-items-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control bg-light border-start-0" placeholder="Search articles by title, keywords, or content...">
+                    {% if search_query %}
+                    <a href="{% url 'blog-home' %}" class="btn btn-outline-secondary" title="Clear Search">
+                        <i class="bi bi-x"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-7 d-flex flex-wrap align-items-center gap-1 justify-content-md-end mt-2 mt-md-0">
+                <span class="small text-muted me-2"><i class="bi bi-funnel me-1"></i>Filter:</span>
+                <a href="{% url 'blog-home' %}{% if search_query %}?q={{ search_query }}{% endif %}" 
+                   class="btn btn-sm {% if not current_tag %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill">
+                   All
+                </a>
+                {% for t in tags %}
+                <a href="{% url 'blog-home' %}?tag={{ t }}{% if search_query %}&q={{ search_query }}{% endif %}" 
+                   class="btn btn-sm {% if current_tag == t %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill">
+                   {{ t }}
+                </a>
+                {% endfor %}
+            </div>
+        </form>
+    </div>
+</div>
 
-        <div class="container h-100 py-3 overflow-auto">
+<!-- Articles Grid -->
+<div class="row g-4 mb-4">
+    {% if articles %}
+        {% for article in articles %}
+        <div class="col-md-6 col-lg-4">
+            <div class="blog-card h-100 shadow-sm">
+                <div class="blog-thumb-wrap">
+                    <a href="{% url 'article' article.uni %}">
+                        {% if article.image_url %}
+                            <img src="{{ article.image_url }}" alt="{{ article.title }}" class="blog-card-thumb">
+                        {% elif article.image %}
+                            <img src="{{ article.image.url }}" alt="{{ article.title }}" class="blog-card-thumb">
+                        {% else %}
+                            <div class="blog-card-thumb d-flex align-items-center justify-content-center text-muted">
+                                <i class="bi bi-card-image fs-1 opacity-50"></i>
+                            </div>
+                        {% endif %}
+                    </a>
+                </div>
+                <div class="card-body d-flex flex-column p-4 flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="blog-tag-badge">{{ article.tag|default:"General" }}</span>
+                        {% if article.scope != 'public' %}
+                            <span class="badge bg-warning-subtle text-warning-emphasis border text-capitalize small">
+                                <i class="bi bi-lock-fill me-1"></i>{{ article.scope }}
+                            </span>
+                        {% endif %}
+                    </div>
 
-            <div class="row no-gutters">
-                <div style="height: 300px" class="col-sm-12 bg-dark text-light p-5 rounded_c d-flex flex-wrap align-content-center">
-                    <div>
-                        <h1>OceanFlow Guides</h1>
-                        <div class="w-50">
-                            <p>
-Welcome to OceanFlow Guides, your go-to resource for tutorials, how-to guides, and in-depth instructions within the Ocean app ecosystem. Dive into a sea of knowledge where we navigate the currents of technology, exploration, and innovation.
-                            </p>
+                    <h5 class="fw-bold mb-2">
+                        <a href="{% url 'article' article.uni %}" class="text-dark text-decoration-none">
+                            {{ article.title }}
+                        </a>
+                    </h5>
+
+                    <p class="text-muted small blog-clamp-3 mb-3 flex-grow-1">
+                        {% if article.intro and article.intro != 'none' %}
+                            {{ article.intro }}
+                        {% else %}
+                            {{ article.article|striptags }}
+                        {% endif %}
+                    </p>
+
+                    <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
+                        <div class="d-flex align-items-center gap-2">
+                            {% if article.author_dp %}
+                                <img src="/{{ article.author_dp }}" class="blog-avatar" alt="">
+                            {% else %}
+                                <div class="blog-avatar">
+                                    {{ article.author.first_name|default:article.author.username|slice:":1"|upper }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <div class="small fw-semibold text-dark lh-1">
+                                    {{ article.author.get_full_name|default:article.author.username|default:"Author" }}
+                                </div>
+                                <small class="text-muted" style="font-size: 0.75rem;">
+                                    {{ article.date_created|date:"M d, Y"|default:article.date_created }}
+                                </small>
+                            </div>
                         </div>
-                        <a href="#">Read More ></a>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'article' article.uni %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                Read <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                            {% if request.user.is_superuser or request.user == article.author %}
+                            <a href="{% url 'edit_article' article.uni %}" class="btn btn-sm btn-light border text-muted" title="Edit Article">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-
-                {% for article in articles %}
-
-                    <div class="col-sm-6  p-2" style="height: 200px">
-                        <div  class="rounded_c d-flex flex-wrap border overflow-hidden h-100">
-
-                            <div style="background: #eaeaea" class="w-75 p-3 h-100">
-                                <h3 class="ellipsis">{{ article.title }}</h3>
-                                <p class="ellipsis_2">
-                                    {{ article.article | striptags | slice:":100"  }}
-                                </p>
-                                <a href="javascript:void(0)" onclick="location.href='{% url 'article' article.uni %}'">Continue Reading</a>
-                                <div class="w-100">
-                                    <span class="badge bg-info">{{ article.tag }}</span>
-                                </div>
-
-                            </div>
-
-                            <div class="w-25 h-100 d-flex flex-wrap align-content-center">
-                                <img src="{{ article.image.url }}" alt="" class="imf-fluid h-100">
-                            </div>
-
-                        </div>
-                    </div>
-
-                {% endfor %}
-
-
-
             </div>
-
         </div>
-
-    </div>
-
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm py-5 text-center">
+                <div class="card-body">
+                    <i class="bi bi-journal-x fs-1 text-muted d-block mb-3"></i>
+                    <h4 class="fw-bold text-dark">No Articles Found</h4>
+                    <p class="text-muted" style="max-width: 480px; margin: 0 auto;">
+                        {% if search_query or current_tag %}
+                            No articles match your current search or category filter. Try clearing filters to see all articles.
+                        {% else %}
+                            There are currently no articles in the knowledge base. Be the first to share an article!
+                        {% endif %}
+                    </p>
+                    <div class="mt-4 d-flex justify-content-center gap-2">
+                        {% if search_query or current_tag %}
+                            <a href="{% url 'blog-home' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> View All Articles
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'new-article' %}" class="btn btn-primary">
+                            <i class="bi bi-pencil-square me-1"></i> Write New Article
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

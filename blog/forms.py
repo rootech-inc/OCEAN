@@ -11,17 +11,17 @@ class NewArticle(forms.ModelForm):
     class Meta:
         model = articles
         exclude = ['date_created','time_created','updated_at']
-    page_title = forms.CharField(max_length=200)
-    article_desc = forms.CharField(max_length=5000)
-    meta = forms.CharField(max_length=100)
+    page_title = forms.CharField(max_length=255)
+    article_desc = forms.CharField(max_length=5000000)
+    meta = forms.CharField(max_length=255, required=False)
     post_img = forms.ImageField()
 
 
 class EdArticle(forms.Form):
-    page_title = forms.CharField(max_length=200)
+    page_title = forms.CharField(max_length=255)
     article_desc = forms.CharField(max_length=5000000)
-    meta = forms.CharField(max_length=100)
-    uni = forms.CharField(max_length=100)
+    meta = forms.CharField(max_length=255, required=False)
+    uni = forms.CharField(max_length=255)
 
 
 

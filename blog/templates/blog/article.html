@@ -1,57 +1,139 @@
-
 {% extends 'blog/base.html' %}
 {% load static %}
 
 {% block body %}
-    <style>
-        img{
-            max-width: 100% !important;
-            height: auto;
+<!-- Top Action Bar -->
+<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'blog-home' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Articles
+        </a>
+        <span class="badge bg-light text-muted border text-uppercase" style="font-size: 0.75rem;">{{ article.tag|default:"Guide" }}</span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        {% if request.user.is_superuser or request.user == article.author %}
+        <a href="{% url 'edit_article' article.uni %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Edit Article
+        </a>
+        {% endif %}
+        <button type="button" onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-printer me-1"></i> Print
+        </button>
+    </div>
+</div>
 
-        }
-    </style>
+<div class="row g-4 justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <!-- Meta tags & scope -->
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="blog-tag-badge">{{ article.tag|default:"General" }}</span>
+                    {% if article.scope != 'public' %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border text-capitalize small">
+                            <i class="bi bi-lock-fill me-1"></i>{{ article.scope }}
+                        </span>
+                    {% endif %}
+                    <span class="text-muted small ms-auto">
+                        <i class="bi bi-eye me-1"></i>{{ view_count }} view{{ view_count|pluralize }}
+                    </span>
+                </div>
 
-    <div class="card-body h-100 overflow-auto py-2 bg-light" >
-        <h2 class="m-0 p-0">{{ article.title }}</h2>
-            <small class="text-muted">Created By {{ article.author.get_full_name }} on {{ article.date_created }} {{ article.time_created }}</small>
-            {% if user.is_superuser %}
-                <span onclick="location.href='{% url 'edit_article' article.uni %}'" class="badge bg-info pointer">edit</span>
-            {% endif %}
-            <hr>
-{#        <div class="article-header mb-5 text-light" style="background: url('{{ article.image.url }}')">#}
-{#            <div class="w-100 h-100 bg_trans_30 d-flex flex-wrap align-content-center justify-content-center">#}
-{##}
-{#            </div>#}
-{#        </div>#}
-        <div class="row d-flex flex-wrap justify-content-between no-gutters">
-            <!-- ARTICLE -->
-            <section class="col-sm-12 text-justify" style="font-size: large">
+                <!-- Title -->
+                <h1 class="fw-bold text-dark mb-3 lh-sm" style="font-size: 2.25rem;">
+                    {{ article.title }}
+                </h1>
 
-                {{ article.article | safe }}
+                <!-- Author & Date Header -->
+                <div class="d-flex align-items-center justify-content-between border-top border-bottom py-3 mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        {% if article.author_dp %}
+                            <img src="/{{ article.author_dp }}" class="blog-avatar" style="width: 44px; height: 44px;" alt="">
+                        {% else %}
+                            <div class="blog-avatar" style="width: 44px; height: 44px; font-size: 1rem;">
+                                {{ article.author.first_name|default:article.author.username|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <div class="fw-bold text-dark">
+                                {{ article.author.get_full_name|default:article.author.username|default:"Author" }}
+                            </div>
+                            <small class="text-muted">
+                                Published on {{ article.date_created|date:"F d, Y"|default:article.date_created }}
+                                {% if article.updated_at %}
+                                    <span class="mx-1">&bull;</span> Updated {{ article.updated_at|date:"M d, Y" }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
 
-            </section>
+                <!-- Featured Image -->
+                {% if article.image_url %}
+                    <div class="mb-4 text-center">
+                        <img src="{{ article.image_url }}" alt="{{ article.title }}" class="img-fluid rounded shadow-sm" style="max-height: 420px; width: 100%; object-fit: cover;">
+                    </div>
+                {% elif article.image and article.image.url != 'static/general/img/articles/def_img.png' %}
+                    <div class="mb-4 text-center">
+                        <img src="{{ article.image.url }}" alt="{{ article.title }}" class="img-fluid rounded shadow-sm" style="max-height: 420px; width: 100%; object-fit: cover;">
+                    </div>
+                {% endif %}
 
+                <!-- Summary / Intro Callout if available -->
+                {% if article.intro and article.intro != 'none' %}
+                <div class="alert alert-light border-start border-primary border-4 p-3 mb-4 rounded-end text-dark">
+                    <div class="small fw-semibold text-primary text-uppercase mb-1" style="letter-spacing: 0.5px;">Summary</div>
+                    <div class="fst-italic" style="font-size: 1.05rem;">{{ article.intro }}</div>
+                </div>
+                {% endif %}
 
+                <!-- Main Content -->
+                <div class="blog-prose mb-5">
+                    {{ article.article|safe }}
+                </div>
 
-
+                <!-- Keywords / Tags Footer -->
+                {% if article.meta and article.meta != 'none' %}
+                <div class="border-top pt-4 mt-5">
+                    <div class="small fw-semibold text-muted text-uppercase mb-2"><i class="bi bi-tags me-1"></i> Keywords</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for kw in article.meta.split %}
+                            <span class="badge bg-light text-dark border px-2 py-1">{{ kw|cut:"," }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
         </div>
+
+        <!-- Related Articles -->
+        {% if related_articles %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-grid-3x3-gap me-2 text-primary"></i>Related Articles</h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    {% for rel in related_articles %}
+                    <div class="col-md-4">
+                        <div class="h-100 p-3 rounded border bg-light d-flex flex-column">
+                            <span class="blog-tag-badge align-self-start mb-2">{{ rel.tag|default:"Guide" }}</span>
+                            <h6 class="fw-bold mb-2">
+                                <a href="{% url 'article' rel.uni %}" class="text-dark text-decoration-none">
+                                    {{ rel.title }}
+                                </a>
+                            </h6>
+                            <small class="text-muted blog-clamp-2 mt-auto mb-2">{{ rel.intro|default:rel.article|striptags }}</small>
+                            <a href="{% url 'article' rel.uni %}" class="small text-primary text-decoration-none fw-semibold">
+                                Read More &rarr;
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
-
-    {% if request.user.is_superuser %}
-    <div class="card-footer bg-light mb-0 mt-2 border-top border-danger text-center text-danger font-weight-bold h-fit w-100 d-flex flex-wrap align-content-center justify-content-center py-2 px-2 overflow-auto py-2 bg-light">
-        <button onclick="windowPopUp(`/blog/print/{{ article.uni }}/`,100,100)"   class="btn btn-info">PRINT</button>
-    </div>
-    {% endif %}
-
-    <script>
-        load_convo_message()
-        setInterval(function() {
-           load_convo_message()
-         }, 1000);
-
-        var d = $('#messages');
-        d.scrollTop(d.prop("scrollHeight"));
-
-    </script>
-
+</div>
 {% endblock %}

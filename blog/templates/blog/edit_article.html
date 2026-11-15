@@ -2,43 +2,245 @@
 {% load static %}
 
 {% block body %}
+<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'article' article.uni %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Article
+        </a>
+        <a href="{% url 'blog-home' %}" class="btn btn-outline-light text-muted border btn-sm">
+            All Articles
+        </a>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary-subtle text-primary border px-2 py-1">Editing Mode</span>
+        <a href="{% url 'article' article.uni %}" class="btn btn-sm btn-outline-info" target="_blank">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Live View
+        </a>
+    </div>
+</div>
 
-    <form class="h-100 card" action="{% url 'edit_save' %}" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-{#                {% for f in form %}#}
-{#                    {{ f }}#}
-{#                {% endfor %}#}
+<form id="editArticleForm" action="{% url 'edit_save' %}" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="original_uni" value="{{ article.uni }}">
 
-                <div class="w-100 card-header d-flex flex-wrap justify-content-between">
-                    <div class="input-group w-45 mb-2">
-                        <div class="input-group-prepend bg-light border-0">
-                            <span class="input-group-text bg-light border-0 text-danger">Post Title</span>
-                        </div>
-                        <input type="text" value="{{ article.title }}" autocomplete="off" required name="page_title" class="form-control rounded-0 border-danger">
+    <div class="row g-4">
+        <!-- Main Column: Title & Content -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark fs-5">Article Title <span class="text-danger">*</span></label>
+                        <input type="text" id="page_title" name="page_title" required autocomplete="off"
+                               class="form-control form-control-lg fw-bold" 
+                               value="{{ article.title }}"
+                               placeholder="Article title..."
+                               style="font-size: 1.25rem;">
                     </div>
 
-                    <div class="input-group w-25 mb-2">
-                        <div class="input-group-prepend bg-light border-0">
-                            <span class="input-group-text bg-light border-0 text-danger">Meta</span>
+                    <div class="mb-0">
+                        <label class="form-label fw-bold text-dark">Article Content <span class="text-danger">*</span></label>
+                        <textarea name="article_desc" id="article_desc" class="tinymce-editor">{{ article.article }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Column: Publishing, Cover Image, URL & SEO -->
+        <div class="col-lg-4">
+            <!-- Publishing & Media Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-image me-1 text-primary"></i> Cover Image & Metadata</h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Cover Image</label>
+                        <div class="blog-dropzone" id="coverDropzone" onclick="document.getElementById('post_img').click();">
+                            <input type="file" id="post_img" name="post_img" accept="image/*" class="d-none">
+                            <div id="dropzonePrompt" class="{% if article.image_url or article.image %}d-none{% endif %}">
+                                <i class="bi bi-cloud-arrow-up fs-2 text-primary d-block mb-1"></i>
+                                <span class="small fw-semibold text-dark d-block">Click to select new cover image</span>
+                                <span class="text-muted" style="font-size: 0.75rem;">JPEG, PNG, WebP supported</span>
+                            </div>
+                            <div id="dropzonePreview" class="{% if not article.image_url and not article.image %}d-none{% endif %} text-center">
+                                <img id="coverPreviewImg" 
+                                     src="{% if article.image_url %}{{ article.image_url }}{% elif article.image %}{{ article.image.url }}{% endif %}" 
+                                     class="img-fluid rounded mb-2" style="max-height: 160px; object-fit: cover;" alt="">
+                                <div>
+                                    <span class="badge bg-light text-muted border small">Click to replace</span>
+                                </div>
+                            </div>
                         </div>
-                        <input type="text" name="meta" value="{{ article.meta }}" class="form-control rounded-0 border-danger" id="">
                     </div>
 
-{#                    <input type="file" accept="image/jpeg" name="post_img">#}
-                    <input type="hidden" name="uni" value="{{ article.uni }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Category / Tag <span class="text-danger">*</span></label>
+                        <input type="text" id="tags" name="tags" required list="tagList" autocomplete="off"
+                               class="form-control" value="{{ article.tag }}" placeholder="e.g. Tutorials, Networking, Guides">
+                        <datalist id="tagList">
+                            {% for tg in existing_tags %}
+                                <option value="{{ tg }}"></option>
+                            {% endfor %}
+                        </datalist>
+                    </div>
 
-
-
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-muted">Visibility Scope</label>
+                        <select name="scope" id="scope" class="form-select">
+                            {% for val, label in scope_choices %}
+                                <option value="{{ val }}" {% if val == article.scope %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
+            </div>
 
-                 <div class="card-body">
-                     <textarea name="article_desc" class="tinymce-editor">{{ article.article }}</textarea>
-
-                 </div>
-                <div class="card-footer">
-                    <button type="submit" class="btn btn-success rounded-0 h-fit">SAVE CHANGES</button>
+            <!-- URL & SEO Settings Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-globe me-1 text-info"></i> URL & SEO Settings</h6>
+                    <span class="badge bg-light text-muted border small">Customizable</span>
                 </div>
+                <div class="card-body p-3">
+                    <!-- Custom Blog URL (uni) -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-semibold text-muted mb-0">Blog URL Slug</label>
+                            <button type="button" class="btn btn-link p-0 text-primary small text-decoration-none" id="generateSlugBtn" style="font-size: 0.75rem;">
+                                <i class="bi bi-magic me-1"></i>Sync from title
+                            </button>
+                        </div>
+                        <input type="text" id="custom_uni" name="custom_uni" autocomplete="off"
+                               class="form-control font-monospace" style="font-size: 0.85rem;"
+                               value="{{ article.uni }}"
+                               placeholder="enter-custom-url-slug">
+                        <div class="small text-muted mt-1" style="font-size: 0.75rem;">
+                            Live URL: <code class="text-primary">/blog/view/<span id="slugPreviewText">{{ article.uni }}</span>/</code>
+                        </div>
+                    </div>
 
-            </form>
+                    <!-- SEO Description (intro) -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-semibold text-muted mb-0">SEO Description (Summary)</label>
+                            <span class="small text-muted" id="introCharCount" style="font-size: 0.75rem;">{{ article.intro|length }}/200</span>
+                        </div>
+                        <textarea id="intro" name="intro" rows="3" class="form-control" style="font-size: 0.85rem;"
+                                  placeholder="Summary used for meta descriptions and article cards...">{% if article.intro != 'none' %}{{ article.intro }}{% endif %}</textarea>
+                        <small class="text-muted" style="font-size: 0.75rem;">Leave blank to re-generate automatically using Anton AI.</small>
+                    </div>
 
+                    <!-- SEO Keywords (meta) -->
+                    <div class="mb-1">
+                        <label class="form-label small fw-semibold text-muted">SEO Keywords</label>
+                        <input type="text" id="meta" name="meta" autocomplete="off"
+                               class="form-control" style="font-size: 0.85rem;"
+                               value="{% if article.meta != 'none' %}{{ article.meta }}{% endif %}"
+                               placeholder="e.g. pfSense, UniFi, Firewall, Networking">
+                        <small class="text-muted" style="font-size: 0.75rem;">Comma-separated keywords.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button Card -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3">
+                    <button type="submit" id="submitArticleBtn" class="btn btn-primary btn-lg w-100 shadow-sm mb-2">
+                        <i class="bi bi-check2-circle me-1"></i> Save Changes
+                    </button>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'article' article.uni %}" class="small text-muted text-decoration-none">
+                            <i class="bi bi-x me-1"></i>Cancel
+                        </a>
+                        <small class="text-muted">Last updated: {{ article.updated_at|date:"M d, H:i" }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function slugify(text) {
+        return text.toString().toLowerCase()
+            .replace(/\s+/g, '-')           // Replace spaces with -
+            .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+            .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+            .replace(/^-+/, '')             // Trim - from start of text
+            .replace(/-+$/, '');            // Trim - from end of text
+    }
+
+    // Live slug preview & auto helper
+    function updateSlugPreview() {
+        const custom = $('#custom_uni').val().trim();
+        if (custom) {
+            $('#slugPreviewText').text(slugify(custom));
+        } else {
+            const title = $('#page_title').val().trim();
+            const tag = $('#tags').val().trim();
+            const combo = tag ? `${tag} ${title}` : title;
+            $('#slugPreviewText').text(combo ? slugify(combo) : 'auto-generated');
+        }
+    }
+
+    $('#custom_uni').on('input', updateSlugPreview);
+
+    $('#generateSlugBtn').on('click', function() {
+        const title = $('#page_title').val().trim();
+        const tag = $('#tags').val().trim();
+        const combo = tag ? `${tag} ${title}` : title;
+        if (combo) {
+            $('#custom_uni').val(slugify(combo));
+            updateSlugPreview();
+        }
+    });
+
+    // Intro char counter
+    $('#intro').on('input', function() {
+        const len = $(this).val().length;
+        $('#introCharCount').text(`${len}/200`);
+    });
+
+    // Cover image preview
+    $('#post_img').on('change', function() {
+        const file = this.files && this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#coverPreviewImg').attr('src', e.target.result);
+                $('#dropzonePrompt').addClass('d-none');
+                $('#dropzonePreview').removeClass('d-none');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Submit validation
+    $('#editArticleForm').on('submit', function(e) {
+        const title = $('#page_title').val().trim();
+        const tag = $('#tags').val().trim();
+        const content = typeof tinymce !== 'undefined' && tinymce.get('article_desc')
+            ? tinymce.get('article_desc').getContent()
+            : $('#article_desc').val();
+
+        if (!title || !tag) {
+            e.preventDefault();
+            Swal.fire('Missing Information', 'Please provide both an article title and a category/tag.', 'warning');
+            return false;
+        }
+
+        const plainText = content.replace(/<[^>]*>/g, '').trim();
+        if (!plainText) {
+            e.preventDefault();
+            Swal.fire('Empty Content', 'Please write some content for the article.', 'warning');
+            return false;
+        }
+
+        const $btn = $('#submitArticleBtn');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving Changes...');
+        return true;
+    });
+</script>
 {% endblock %}

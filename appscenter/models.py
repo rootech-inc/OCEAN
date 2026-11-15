@@ -104,7 +104,7 @@ class App(models.Model):
             'description': app.description,
             'version': app.version,
             'latest': app.lastest_url(),
-            'changelog':self.changelog(),
+            'changelog': "",
             'subscribers':[sub.obj() for sub in Subscribers.objects.filter(app=self)]
         }
 

@@ -6,6 +6,8 @@ from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites import requests
 from django.core.mail import send_mail
+from django.db import models
+from django.utils.text import slugify
 
 import blog.urls
 from django.contrib.messages.storage import session
@@ -23,49 +25,127 @@ search_form = SearchForm()
 all_meta = article_meta.objects.all()
 
 
+def resolve_blog_meta(title, content, custom_uni=None, custom_intro=None, custom_meta=None, tags=None, current_pk=None):
+    """
+    Resolves blog URL (uni), SEO description (intro), and keywords (meta).
+    If custom values are provided by the user, cleans and validates them.
+    If not provided, uses current auto-generation mechanisms with fallback.
+    Guarantees unique uni across articles.
+    """
+    # 1. Resolve uni (URL slug)
+    cleaned_uni = (custom_uni or "").strip().lower()
+    if cleaned_uni:
+        base_slug = slugify(cleaned_uni)
+        if not base_slug:
+            base_slug = slugify(title.strip()) or "article"
+    else:
+        # Current mechanism: tags + title
+        tag_str = (tags or "").strip()
+        base_str = f"{tag_str} {title}".strip() if tag_str else title.strip()
+        base_slug = slugify(base_str) or "article"
+
+    base_slug = base_slug[:180]
+    slug = base_slug
+    counter = 2
+    qs = articles.objects.all()
+    if current_pk:
+        qs = qs.exclude(pk=current_pk)
+    while qs.filter(uni=slug).exists():
+        slug = f"{base_slug[:175]}-{counter}"
+        counter += 1
+
+    # 2. Resolve intro (SEO description)
+    cleaned_intro = (custom_intro or "").strip()
+    plain_content = remove_tags(content).strip() if content else ""
+    if cleaned_intro:
+        intro = cleaned_intro[:500]
+    else:
+        # Current mechanism: Anton AI generate_text, fallback to first 160 chars of plain text
+        try:
+            from admin_panel.anton import generate_text
+            summary_prompt = f"Summarize this blog post in one concise sentence (maximum 160 characters). Return ONLY plain text:\n\nTitle: {title}\nContent: {plain_content[:600]}"
+            generated = generate_text(summary_prompt)
+            if generated and generated.strip():
+                intro = generated.strip().replace('"', '').replace("'", "")[:250]
+            else:
+                intro = plain_content[:160].strip() or title
+        except Exception:
+            intro = plain_content[:160].strip() or title
+
+    # 3. Resolve meta (Keywords)
+    cleaned_meta = (custom_meta or "").strip()
+    if cleaned_meta:
+        meta = cleaned_meta[:200]
+    else:
+        # Current mechanism: tags or title
+        tag_str = (tags or "").strip()
+        meta = tag_str[:200] if tag_str else f"{title}, ocean, guide"[:200]
+
+    return slug, intro, meta
+
+
 # Create your views here.
 @login_required()
 def index(request):
-    artcs = articles.objects.all().order_by('-id')[:200]
-    groups = article_meta.objects.all()
-    all_articles = articles.objects.all()[:50]
-    cats = tags.objects.all()
+    all_articles = articles.objects.all().select_related('author').order_by('-id')
+
+    q = request.GET.get('q', '').strip()
+    tag_filter = request.GET.get('tag', '').strip()
+
+    if q:
+        all_articles = all_articles.filter(
+            models.Q(title__icontains=q) |
+            models.Q(intro__icontains=q) |
+            models.Q(tag__icontains=q) |
+            models.Q(meta__icontains=q)
+        )
+    if tag_filter:
+        all_articles = all_articles.filter(tag__iexact=tag_filter)
+
+    all_tags = articles.objects.exclude(tag='').values_list('tag', flat=True).distinct()[:12]
 
     context = {
         'nav': True,
-        'page_title': 'Ocean | The Power In Sharing',
-        'search_form': search_form,
-        'artcs': artcs,
-        'groups': groups,
-        'meta': article_meta.objects.all(),
+        'page_title': 'Ocean Blog & Guides',
         'articles': all_articles,
+        'tags': all_tags,
+        'current_tag': tag_filter,
+        'search_query': q,
+        'total_count': all_articles.count(),
     }
     return render(request, 'blog/index.html', context)
 
+
 @login_required()
 def article(request, title):
-    if articles.objects.filter(uni=title).count() < 1:
-        return redirect('finder')
-    if request.user.is_authenticated:
-        user_id = request.user.id
+    if articles.objects.filter(uni=title).exists():
+        this_article = articles.objects.get(uni=title)
+    elif articles.objects.filter(title=title).exists():
+        this_article = articles.objects.filter(title=title).first()
     else:
-        user_id = 0
+        return redirect('blog-home')
 
-    this_article = articles.objects.get(uni=title)
-
-    context = {
-        'page_title': 'Ocean | Article | ' + str(title),
-        'page':{
-            'description':this_article.intro,
-            'keywords':this_article.meta,
-        },
-        'search_form': search_form,
-        'article': this_article,
-        'nav': True
-    }
+    user_id = request.user.id if request.user.is_authenticated else 0
 
     if ArticleView.objects.filter(article=this_article.uni, user=user_id).count() < 1:
         ArticleView(article=this_article.uni, user=user_id).save()
+
+    view_count = ArticleView.objects.filter(article=this_article.uni).count()
+    related_articles = articles.objects.filter(tag=this_article.tag).exclude(pk=this_article.pk)[:3]
+    if not related_articles.exists():
+        related_articles = articles.objects.exclude(pk=this_article.pk).order_by('-id')[:3]
+
+    context = {
+        'page_title': f'{this_article.title} | Ocean Blog',
+        'page': {
+            'description': this_article.intro,
+            'keywords': this_article.meta,
+        },
+        'article': this_article,
+        'view_count': view_count,
+        'related_articles': related_articles,
+        'nav': True,
+    }
     return render(request, 'blog/article.html', context)
 
 
@@ -117,62 +197,62 @@ def search_result(request, query):
 
 @login_required()
 def new_article(request):
-    form = NewArticle()
     meta_data = tags.objects.all().order_by('tag_dec')
+    existing_tags = list(articles.objects.exclude(tag='').values_list('tag', flat=True).distinct()[:15])
     context = {
-        'page_title': 'Ocean | The Power In Sharing | New Article',
-        'form': form,
+        'page_title': 'New Article',
         'meta_dat': meta_data,
+        'existing_tags': existing_tags,
+        'scope_choices': articles.scope_type,
         'nav': True
     }
     return render(request, 'blog/new-article.html', context=context)
 
 @login_required()
 def save_article(request):
-    # validate for
     if request.method == 'POST':
+        page_title = (request.POST.get('page_title') or '').strip()
+        article_desc_raw_htm = (request.POST.get('article_desc') or '').strip()
+        custom_uni = (request.POST.get('custom_uni') or request.POST.get('uni') or '').strip()
+        tags_val = (request.POST.get('tags') or request.POST.get('tag') or '').strip()
+        custom_intro = (request.POST.get('intro') or '').strip()
+        custom_meta = (request.POST.get('meta') or '').strip()
+        scope = request.POST.get('scope', 'public')
 
-        form = NewArticle(request.POST, request.FILES)
+        if not page_title:
+            return HttpResponse('Article title is required.', status=400)
 
-        if form.is_valid():
-            # get form details
-            page_title = form.cleaned_data['page_title']
-            article_desc_raw_htm = form.cleaned_data['article_desc']
+        slug, intro, meta = resolve_blog_meta(
+            title=page_title,
+            content=article_desc_raw_htm,
+            custom_uni=custom_uni,
+            custom_intro=custom_intro,
+            custom_meta=custom_meta,
+            tags=tags_val,
+        )
 
-            meta = form.cleaned_data['tags']
-            article_into = remove_tags(article_desc_raw_htm[0:200])
-            uni = f"{meta} {page_title}".replace(' ','-').lower()
-            owner = 'anton'
-            post_img = form.cleaned_data['post_img']
+        author = request.user if request.user.is_authenticated else None
 
+        article_save = articles(
+            uni=slug,
+            title=page_title,
+            article=article_desc_raw_htm,
+            intro=intro,
+            tag=tags_val or 'General',
+            meta=meta,
+            scope=scope,
+            author=author,
+        )
 
+        if 'post_img' in request.FILES:
+            post_img = request.FILES['post_img']
+            article_save.image = post_img
+            article_save.thumbnail = make_thumbnail(post_img)
 
-            if articles.objects.filter(uni=uni):
-                return HttpResponse("article exist")
-            else:
-                article_save = articles(uni=uni, title=page_title, article=article_desc_raw_htm, intro=article_into,
-                                        owner=owner
-                                        , image=post_img, meta=meta)
+        article_save.save()
+        return redirect('article', slug)
 
-                article_save.save()
-                from PIL import Image
-                img = Image.open(post_img)  # Open image using self
-
-                if img.height > 300 or img.width > 300:
-                    new_img = (622, 350)
-                    img.resize(new_img)
-                    img.save(post_img)
-
-                return redirect('article', page_title)
-
-            # insert into database
-
-
-        else:
-            return HttpResponse('Form Not Valid')
-            # throw error
-    else:
-        return HttpResponse("Not Posted Form")
+    return HttpResponse("Not Posted Form", status=405)
 
 @login_required()
 def load_meta(request, meta):
@@ -240,57 +320,77 @@ def logout_view(request):
 
 @login_required()
 def edit_article(request, uni):
-    form = EdArticle()
-    if 'login' not in request.session:
-        logedin = False
-        username = False
-        meta_kword = False
-    else:
-        logedin = request.session['login']
-        username = request.session['user']
-        user_details = userAccounts.objects.get(username=username)
-        meta_kword = user_details.meta_words
+    try:
+        this_article = articles.objects.get(uni=uni)
+    except articles.DoesNotExist:
+        if articles.objects.filter(title=uni).exists():
+            this_article = articles.objects.filter(title=uni).first()
+        else:
+            return redirect('blog-home')
 
-    this_article = articles.objects.get(uni=uni)
+    existing_tags = list(articles.objects.exclude(tag='').values_list('tag', flat=True).distinct()[:15])
     meta_data = tags.objects.all()
     context = {
-        'page_title': 'Ocean | Article | Edit',
-        'search_form': search_form, 'form': form,
-        'article': this_article, 'meta_dat': this_article.meta,
-        'nav':True,
-
+        'page_title': f'Edit Article | {this_article.title}',
+        'article': this_article,
+        'existing_tags': existing_tags,
+        'scope_choices': articles.scope_type,
+        'meta_dat': meta_data,
+        'nav': True,
     }
     return render(request, 'blog/edit_article.html', context)
 
 
+@login_required()
 def edit_save(request):
-    # validate for
     if request.method == 'POST':
-        form = EdArticle(request.POST)
-        if form.is_valid():
-            # get form details
-            page_title = form.cleaned_data['page_title']
-            article_desc_raw_htm = form.cleaned_data['article_desc']
-            uni = form.cleaned_data['uni']
+        original_uni = request.POST.get('original_uni') or request.POST.get('uni')
+        try:
+            target_article = articles.objects.get(uni=original_uni)
+        except articles.DoesNotExist:
+            if articles.objects.filter(title=original_uni).exists():
+                target_article = articles.objects.filter(title=original_uni).first()
+            else:
+                return HttpResponse('Article not found', status=404)
 
-            article_into = remove_tags(article_desc_raw_htm[0:200])
-            owner = 'anton'
-            meta = form.cleaned_data['meta']
+        page_title = (request.POST.get('page_title') or '').strip()
+        article_desc_raw_htm = (request.POST.get('article_desc') or '').strip()
+        custom_uni = (request.POST.get('custom_uni') or request.POST.get('uni') or '').strip()
+        tags_val = (request.POST.get('tags') or request.POST.get('tag') or '').strip()
+        custom_intro = (request.POST.get('intro') or '').strip()
+        custom_meta = (request.POST.get('meta') or '').strip()
+        scope = request.POST.get('scope', target_article.scope)
 
-            articles.objects.filter(uni=uni).update(title=page_title, intro=article_into, article=article_desc_raw_htm,
-                                                    meta=meta)
-            return redirect('article', page_title)
-            # return HttpResponse('Form Valid')
+        if not page_title:
+            return HttpResponse('Article title is required.', status=400)
 
-            # insert into database
+        slug, intro, meta = resolve_blog_meta(
+            title=page_title,
+            content=article_desc_raw_htm,
+            custom_uni=custom_uni if custom_uni != original_uni else original_uni,
+            custom_intro=custom_intro,
+            custom_meta=custom_meta,
+            tags=tags_val or target_article.tag,
+            current_pk=target_article.pk,
+        )
 
+        target_article.title = page_title
+        target_article.article = article_desc_raw_htm
+        target_article.uni = slug
+        target_article.intro = intro
+        target_article.meta = meta
+        target_article.tag = tags_val or target_article.tag
+        target_article.scope = scope
 
-        else:
-            errors = form.errors.as_json()
-            return HttpResponse(f"Form is not valid: {errors}", content_type="application/json")
-            # throw error
-    else:
-        return HttpResponse("Not Posted Form")
+        if 'post_img' in request.FILES:
+            new_img = request.FILES['post_img']
+            target_article.image = new_img
+            target_article.thumbnail = make_thumbnail(new_img)
+
+        target_article.save()
+        return redirect('article', slug)
+
+    return HttpResponse("Not Posted Form", status=405)
 
 
 def finder(request):
